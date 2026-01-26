@@ -251,6 +251,7 @@ CREATE TABLE public.admission_applications (
     parent_name TEXT,
     parent_email TEXT,
     parent_phone TEXT,
+    parent_id UUID REFERENCES public.profiles(id),
     student_user_id UUID REFERENCES public.profiles(id),
     branch_id BIGINT REFERENCES public.school_branches(id),
     submitted_at TIMESTAMPTZ DEFAULT NOW(),
@@ -885,9 +886,6 @@ BEGIN
         department = EXCLUDED.department;
 END;
 $$;
-
--- RLS: Add Parent Column to Admission Applications for Security
-ALTER TABLE public.admission_applications ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES public.profiles(id);
 
 -- RLS: Enhanced Parent Policies for Admissions
 -- 1. SELECT: Parents view their own submissions
