@@ -583,6 +583,18 @@ CREATE POLICY "Users view own notifications" ON public.notifications FOR ALL USI
 CREATE POLICY "Users view own transport profile" ON public.transport_profiles FOR ALL USING (user_id = auth.uid());
 CREATE POLICY "Users manage own parent profile" ON public.parent_profiles FOR ALL USING (user_id = auth.uid());
 
+-- RLS: Share Code Management
+ALTER TABLE public.share_codes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Parents manage own share codes" ON public.share_codes
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.admission_applications aa 
+            WHERE aa.id = share_codes.admission_id 
+            AND (aa.parent_id = auth.uid() OR aa.parent_email = (SELECT email FROM public.profiles WHERE profiles.id = auth.uid()))
+        )
+    );
+
 -- 11. RPC FUNCTIONS
 -- ===============================================================================================
 
@@ -877,11 +889,70 @@ $$;
 -- RLS: Add Parent Column to Admission Applications for Security
 ALTER TABLE public.admission_applications ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES public.profiles(id);
 
--- RLS: Update Parent policies for Admissions
-CREATE POLICY "Parents can view their children's applications" ON public.admission_applications
+-- RLS: Enhanced Parent Policies for Admissions
+-- 1. SELECT: Parents view their own submissions
+CREATE POLICY "Parents select own applications" ON public.admission_applications
     FOR SELECT USING (
         parent_id = auth.uid() 
-        OR parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid())
+        OR parent_email = (SELECT email FROM public.profiles WHERE profiles.id = auth.uid())
+    );
+
+-- 2. INSERT: Parents can create new applications
+CREATE POLICY "Parents insert own applications" ON public.admission_applications
+    FOR INSERT WITH CHECK (
+        parent_id = auth.uid()
+        OR parent_email = (SELECT email FROM public.profiles WHERE profiles.id = auth.uid())
+    );
+
+-- 3. UPDATE: Parents can update pending applications
+CREATE POLICY "Parents update own applications" ON public.admission_applications
+    FOR UPDATE USING (
+        parent_id = auth.uid() 
+        OR parent_email = (SELECT email FROM public.profiles WHERE profiles.id = auth.uid())
+    ) WITH CHECK (
+        status IN ('Pending Review', 'Draft', 'ENQUIRY_ACTIVE') -- Only allow updates in early stages
+    );
+
+-- RLS: Document Vault Security
+ALTER TABLE public.admission_documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Parents manage own documents" ON public.admission_documents
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.admission_applications aa 
+            WHERE aa.id = admission_documents.admission_id 
+            AND (aa.parent_id = auth.uid() OR aa.parent_email = (SELECT email FROM public.profiles WHERE profiles.id = auth.uid()))
+        )
+    );
+
+-- RLS: Financial Transparency for Parents
+CREATE POLICY "Parents view children invoices" ON public.fee_invoices
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.admission_applications aa 
+            WHERE aa.student_user_id = fee_invoices.student_id 
+            AND (aa.parent_id = auth.uid() OR aa.parent_email = (SELECT email FROM public.profiles WHERE profiles.id = auth.uid()))
+        )
+    );
+
+CREATE POLICY "Parents view children payments" ON public.fee_payments
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.admission_applications aa 
+            WHERE aa.student_user_id = fee_payments.student_id 
+            AND (aa.parent_id = auth.uid() OR aa.parent_email = (SELECT email FROM public.profiles WHERE profiles.id = auth.uid()))
+        )
+    );
+
+-- RLS: Communication Inbox Access
+ALTER TABLE public.communications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users view relevant communications" ON public.communications
+    FOR SELECT USING (
+        sender_id = auth.uid()
+        OR auth.uid()::text = ANY(recipients)
+        -- OR check for role-based broadcast (simplified)
+        OR (SELECT role FROM public.profiles WHERE profiles.id = auth.uid()) = ANY(recipients)
     );
 
 -- RLS: Update Student Profile policies
@@ -944,5 +1015,25 @@ BEGIN
     );
 END;
 $$;
+
+-- 15. STORAGE ACCESS CONTROL (BUCKET POLICIES)
+-- ===============================================================================================
+-- Note: These run on storage.objects
+
+CREATE POLICY "Parents can upload documents" ON storage.objects
+    FOR INSERT TO authenticated
+    WITH CHECK (bucket_id = 'documents');
+
+CREATE POLICY "Parents can view their own documents" ON storage.objects
+    FOR SELECT TO authenticated
+    USING (bucket_id = 'documents');
+
+CREATE POLICY "Public avatar access" ON storage.objects
+    FOR SELECT TO public
+    USING (bucket_id = 'avatars');
+
+CREATE POLICY "Users can upload own avatar" ON storage.objects
+    FOR INSERT TO authenticated
+    WITH CHECK (bucket_id = 'avatars');
 
 COMMIT;
