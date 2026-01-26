@@ -1018,6 +1018,11 @@ $$;
 -- ===============================================================================================
 -- Note: These run on storage.objects
 
+DROP POLICY IF EXISTS "Parents can upload documents" ON storage.objects;
+DROP POLICY IF EXISTS "Parents can view their own documents" ON storage.objects;
+DROP POLICY IF EXISTS "Public avatar access" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload own avatar" ON storage.objects;
+
 CREATE POLICY "Parents can upload documents" ON storage.objects
     FOR INSERT TO authenticated
     WITH CHECK (bucket_id = 'documents');
