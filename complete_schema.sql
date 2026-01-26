@@ -776,7 +776,7 @@ BEGIN
     -- In a real app, you might log an audit event or verify access again.
     -- For now, we perform a read to ensure the parent actually has access.
     PERFORM 1 FROM public.admission_applications 
-    WHERE id = p_new_admission_id; 
+    WHERE admission_applications.id = p_new_admission_id; 
     -- If we used strict RLS, we'd add checks here.
 END;
 $$;
@@ -795,7 +795,7 @@ DECLARE
 BEGIN
     -- 1. Fetch Basic Identity
     -- Try to find by Admission ID first (Applicant phase) or User ID (Enrolled phase)
-    SELECT * INTO v_admission FROM public.admission_applications WHERE id = p_student_id OR student_user_id = p_student_id LIMIT 1;
+    SELECT * INTO v_admission FROM public.admission_applications WHERE admission_applications.id = p_student_id OR student_user_id = p_student_id LIMIT 1;
     
     -- If no admission record, try looking up student profile directly
     IF v_admission IS NULL THEN
@@ -932,7 +932,7 @@ BEGIN
     UPDATE public.profiles 
     SET role = p_target_role,
         profile_completed = v_profile_exists
-    WHERE id = auth.uid()
+    WHERE profiles.id = auth.uid()
     RETURNING profile_completed INTO v_profile_completed;
 
     -- 4. Secure State Synchronization
