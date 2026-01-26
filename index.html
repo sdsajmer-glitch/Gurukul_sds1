@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Gurukul OS | Institutional Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root, .light {
+        --background: 0 0% 100%;
+        --foreground: 224 71.4% 4.1%;
+        --card: 0 0% 100%;
+        --card-foreground: 224 71.4% 4.1%;
+        --primary: 262.1 83.3% 57.8%;
+        --primary-foreground: 210 20% 98%;
+        --border: 220 13% 91%;
+        --input: 220 13% 91%;
+        --skel-base: #E2E8F0;
+        --skel-highlight: #F1F5F9;
+      }
+      .dark {
+        --background: 228 9% 6%;
+        --foreground: 210 20% 98%;
+        --card: 228 9% 10%;
+        --card-foreground: 210 20% 98%;
+        --primary: 258 90% 66%;
+        --primary-foreground: 210 20% 98%;
+        --border: 228 9% 16%;
+        --input: 228 9% 18%;
+        --skel-base: #101115;
+        --skel-highlight: #1a1b23;
+        --skel-glow: #312e81;
+      }
+      
+      * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #08090a;
+        overflow-x: hidden;
+        width: 100%;
+        position: relative;
+        min-height: 100vh;
+      }
+      
+      /* Atmospheric Overlays */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+        opacity: 0.015;
+        pointer-events: none;
+        z-index: 9999;
+      }
+
+      ::-webkit-scrollbar { width: 4px; height: 4px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.2); border-radius: 20px; }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.5); }
+
+      @keyframes scanner-move {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(calc(100vh + 100%)); }
+      }
+      .animate-scanner-move { animation: scanner-move 3s linear infinite; }
+      
+      @keyframes pulse-velvet {
+        0%, 100% { opacity: 0.8; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.02); }
+      }
+      .animate-pulse-velvet { animation: pulse-velvet 3s infinite ease-in-out; }
+
+      .perspective-1000 { perspective: 1000px; }
+      
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      input[type=number] { -moz-appearance: textfield; }
+      
+      .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(139, 92, 246, 0.2) transparent;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Lora', 'serif'],
+              mono: ['Fira Code', 'monospace'],
+            },
+            colors: {
+              border: 'hsl(var(--border))',
+              input: 'hsl(var(--input))',
+              background: 'hsl(var(--background))',
+              foreground: 'hsl(var(--foreground))',
+              primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+              card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
+              skeleton: {
+                base: 'var(--skel-base)',
+                highlight: 'var(--skel-highlight)',
+                glow: 'var(--skel-glow)',
+              }
+            },
+            boxShadow: {
+              '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.6)',
+            }
+          }
+        }
+      }
+    </script>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "framer-motion": "https://esm.sh/framer-motion@^12.27.1",
+    "process": "https://esm.sh/process@^0.11.10",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1",
+    "path": "https://esm.sh/path@^0.12.7",
+    "url": "https://esm.sh/url@^0.11.4"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-[#08090a] text-foreground">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
