@@ -752,7 +752,7 @@ RETURNS TABLE (
 DECLARE
     v_parent_email TEXT;
 BEGIN
-    SELECT email INTO v_parent_email FROM public.profiles WHERE id = auth.uid();
+    SELECT email INTO v_parent_email FROM public.profiles WHERE profiles.id = auth.uid();
     
     RETURN QUERY
     SELECT 
