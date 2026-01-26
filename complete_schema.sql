@@ -195,8 +195,13 @@ CREATE TABLE public.teacher_profiles (
 CREATE TABLE public.parent_profiles (
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
     relationship_to_student TEXT,
+    gender TEXT,
+    number_of_children INT DEFAULT 1,
     address TEXT,
-    number_of_children INT DEFAULT 1
+    city TEXT,
+    state TEXT,
+    country TEXT,
+    pin_code TEXT
 );
 
 CREATE TABLE public.transport_profiles (
