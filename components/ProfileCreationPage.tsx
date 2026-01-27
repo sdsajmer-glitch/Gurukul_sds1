@@ -135,7 +135,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     country: formData.country,
                     admin_contact_name: formData.admin_contact_name,
                     admin_contact_phone: formData.admin_contact_phone,
-                    onboarding_step: 'completed'
+                    onboarding_step: 'pricing'
                 });
                 if (sError) throw sError;
             }
@@ -143,7 +143,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
             const { error: profileError } = await supabase.from('profiles').update({
                 display_name: formData.display_name,
                 phone: formData.phone,
-                profile_completed: true,
+                profile_completed: role !== BuiltInRoles.SCHOOL_ADMINISTRATION,
                 role: role
             }).eq('id', profile.id);
 

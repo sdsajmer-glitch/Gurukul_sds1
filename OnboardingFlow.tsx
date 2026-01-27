@@ -30,13 +30,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [loading, setLoading] = useState(true);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    
+
     const isMounted = useRef(true);
 
     useEffect(() => {
         return () => { isMounted.current = false; };
     }, []);
-    
+
     useEffect(() => {
         if (!isMounted.current || isTransitioning) return;
 
@@ -48,7 +48,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
         }
 
         setSelectedRole(profile.role);
-        
+
         if (profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
             const dbStep = onboardingStep;
             if (dbStep && ['profile', 'pricing', 'branches'].includes(dbStep)) {
@@ -65,7 +65,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
                 setStep('profile');
             }
         }
-        
+
         setLoading(false);
     }, [profile.role, profile.profile_completed, onboardingStep, isTransitioning]);
 
@@ -73,21 +73,26 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
         if (!isMounted.current || isTransitioning) return;
         setIsTransitioning(true);
         setLoading(true);
-        
+
         try {
             // Atomic Role Switch with sub-profile verification
             const { data, error } = await supabase.rpc('switch_active_role', { p_target_role: role });
             if (error) throw error;
 
             if (onStepChange) await onStepChange();
-            
+
             setSelectedRole(role);
 
             // AUTO-SKIP: If the profile was already established, finalize immediately
             if (data?.profile_restored) {
                 onComplete();
             } else {
-                setStep('profile');
+                const nextStep = (data as any)?.onboarding_step;
+                if (nextStep && ['profile', 'pricing', 'branches'].includes(nextStep)) {
+                    setStep(nextStep as any);
+                } else {
+                    setStep('profile');
+                }
                 setLoading(false);
                 setIsTransitioning(false);
             }
@@ -128,7 +133,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
             </div>
         );
     }
-    
+
     let content;
     switch (step) {
         case 'role':

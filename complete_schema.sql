@@ -1165,7 +1165,8 @@ RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
     v_profile_exists BOOLEAN := false;
     v_table_name TEXT;
-    v_profile_completed BOOLEAN;
+    v_profile_completed BOOLEAN := false;
+    v_onboarding_step TEXT := 'profile';
 BEGIN
     -- 1. Identify target table based on role to check for existing context
     v_table_name := CASE p_target_role
@@ -1183,27 +1184,35 @@ BEGIN
     END;
 
     -- 2. Performance-Aware Restoration Check
-    -- If they previously onboarded for this role, we want to restore their session immediately
     IF v_table_name IS NOT NULL THEN
         EXECUTE format('SELECT EXISTS(SELECT 1 FROM public.%I WHERE user_id = $1)', v_table_name)
         INTO v_profile_exists
         USING auth.uid();
+
+        -- Special handling for School Admin onboarding state
+        IF p_target_role = 'School Administration' AND v_profile_exists THEN
+            SELECT onboarding_step INTO v_onboarding_step 
+            FROM public.school_admin_profiles 
+            WHERE user_id = auth.uid();
+            
+            v_profile_completed := (v_onboarding_step = 'completed');
+        ELSE
+            v_profile_completed := v_profile_exists;
+        END IF;
     END IF;
 
     -- 3. Atomic Identity Upgrade
-    -- Update the main profile with the new role.
-    -- If specialized data exists, we consider the high-level profile 'completed'.
     UPDATE public.profiles 
     SET role = p_target_role,
-        profile_completed = v_profile_exists
-    WHERE profiles.id = auth.uid()
-    RETURNING profile_completed INTO v_profile_completed;
+        profile_completed = v_profile_completed
+    WHERE profiles.id = auth.uid();
 
     -- 4. Secure State Synchronization
     RETURN jsonb_build_object(
         'success', true,
-        'profile_restored', v_profile_exists,
+        'profile_restored', v_profile_completed,
         'new_role', p_target_role,
+        'onboarding_step', v_onboarding_step,
         'context_table', v_table_name
     );
 END;
@@ -1466,6 +1475,17 @@ BEGIN
     UPDATE public.profiles
     SET profile_completed = true
     WHERE id = auth.uid();
+END;
+$$;
+
+-- RPC: Update School Plan & Progress Onboarding
+CREATE OR REPLACE FUNCTION public.update_school_plan(p_plan_id TEXT)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    UPDATE public.school_admin_profiles SET
+        base_plan_id = p_plan_id,
+        onboarding_step = 'branches'
+    WHERE user_id = auth.uid();
 END;
 $$;
 

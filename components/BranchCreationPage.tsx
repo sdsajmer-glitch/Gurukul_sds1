@@ -300,10 +300,17 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
         }
     };
 
-    const handleFinish = () => {
+    const handleFinish = async () => {
         if (isFinishing || !onNext) return;
         setIsFinishing(true);
-        onNext();
+        try {
+            const { error: finishError } = await supabase.rpc('complete_branch_step');
+            if (finishError) throw finishError;
+            onNext();
+        } catch (err: any) {
+            alert(`Finalization Error: ${formatError(err)}`);
+            setIsFinishing(false);
+        }
     };
 
     const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, country: e.target.value, state: '', city: '' });
