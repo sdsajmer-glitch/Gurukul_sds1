@@ -1409,10 +1409,10 @@ BEGIN
     END IF;
 
     INSERT INTO public.school_branches (
-        name, address, city, state, country, is_main_branch, admin_email, access_key, school_id
+        name, address, city, state, country, is_main_branch, admin_email, access_key, school_id, status
     ) VALUES (
         p_name, p_address, p_city, p_state, p_country, p_is_main, p_admin_email, 
-        upper(substr(md5(random()::text), 1, 8)), auth.uid()
+        upper(substr(md5(random()::text), 1, 8)), auth.uid(), 'Pending'
     ) RETURNING id INTO v_branch_id;
 
     RETURN QUERY SELECT * FROM public.school_branches WHERE id = v_branch_id;
@@ -1510,11 +1510,14 @@ BEGIN
     SELECT id INTO v_branch_id 
     FROM public.school_branches 
     WHERE access_key = p_invitation_code 
-      AND status = 'Active';
+      AND (status = 'Active' OR status = 'Pending');
 
     IF v_branch_id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', 'The Access Key provided is invalid, expired, or not authorized for this identity.');
     END IF;
+
+    -- Update branch status to Active (Linked)
+    UPDATE public.school_branches SET status = 'Active' WHERE id = v_branch_id;
 
     UPDATE public.profiles SET
         branch_id = v_branch_id,
