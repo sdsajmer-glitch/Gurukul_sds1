@@ -169,6 +169,7 @@ const App: React.FC = () => {
             );
         }
 
+        // --- Role-Based Identity Routing ---
         switch (profile.role) {
             case BuiltInRoles.SCHOOL_ADMINISTRATION:
             case BuiltInRoles.BRANCH_ADMIN:

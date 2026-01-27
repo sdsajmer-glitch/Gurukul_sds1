@@ -45,29 +45,40 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
     };
 
     const renderActiveComponent = () => {
-        switch (activeComponent) {
-            case 'Overview':
-                return <OverviewTab profile={profile} setActiveComponent={setActiveComponent} />;
-            case 'My Children':
-                return <MyChildrenTab onManageDocuments={handleManageDocuments} profile={profile} />;
-            case 'Documents':
-                return <DocumentsTab profile={profile} focusOnAdmissionId={focusedAdmissionId} onClearFocus={() => setFocusedAdmissionId(null)} setActiveComponent={setActiveComponent} />;
-            case 'Messages':
-                return <MessagesTab />;
-            case 'Share Codes':
-                return <ShareCodesTab onNavigate={setActiveComponent} />;
-            case 'My Profile':
-                return (
-                    <ProfileCreationPage
-                        profile={profile}
-                        role={profile.role || BuiltInRoles.PARENT_GUARDIAN}
-                        onComplete={onProfileUpdate}
-                        onBack={() => setActiveComponent('Overview')}
-                        showBackButton={true}
-                    />
-                );
-            default:
-                return <OverviewTab profile={profile} setActiveComponent={setActiveComponent} />;
+        try {
+            switch (activeComponent) {
+                case 'Overview':
+                    return <OverviewTab profile={profile} setActiveComponent={setActiveComponent} />;
+                case 'My Children':
+                    return <MyChildrenTab onManageDocuments={handleManageDocuments} profile={profile} />;
+                case 'Documents':
+                    return <DocumentsTab profile={profile} focusOnAdmissionId={focusedAdmissionId} onClearFocus={() => setFocusedAdmissionId(null)} setActiveComponent={setActiveComponent} />;
+                case 'Messages':
+                    return <MessagesTab />;
+                case 'Share Codes':
+                    return <ShareCodesTab onNavigate={setActiveComponent} />;
+                case 'My Profile':
+                    return (
+                        <ProfileCreationPage
+                            profile={profile}
+                            role={profile.role || BuiltInRoles.PARENT_GUARDIAN}
+                            onComplete={onProfileUpdate}
+                            onBack={() => setActiveComponent('Overview')}
+                            showBackButton={true}
+                        />
+                    );
+                default:
+                    return <OverviewTab profile={profile} setActiveComponent={setActiveComponent} />;
+            }
+        } catch (err) {
+            console.error("Internal Portal Component Failure:", err);
+            return (
+                <div className="p-20 text-center flex flex-col items-center justify-center bg-red-500/5 rounded-[2.5rem] border border-red-500/10">
+                    <p className="text-red-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Module Desync</p>
+                    <p className="text-white/40 text-sm italic mb-8">The requested workstation node failed to initialize.</p>
+                    <button onClick={() => setActiveComponent('Overview')} className="px-8 py-3 bg-red-500 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-600 transition-all">Reload Dashboard</button>
+                </div>
+            );
         }
     };
 

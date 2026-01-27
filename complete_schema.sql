@@ -1536,10 +1536,8 @@ BEGIN
     RETURN QUERY
     SELECT * FROM public.admissions
     WHERE parent_id = auth.uid()
-    OR parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid())
+    OR (parent_email IS NOT NULL AND parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid()))
     ORDER BY updated_at DESC;
 END;
 $$;
-
-COMMIT;
 

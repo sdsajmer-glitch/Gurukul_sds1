@@ -23,6 +23,7 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  error?: Error;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -32,11 +33,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
-    this.props = props;
   }
 
-  static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -53,12 +53,23 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             </svg>
           </div>
           <h1 className="text-2xl font-bold mb-2">Portal Temporarily Unavailable</h1>
-          <p className="mb-8 text-muted-foreground max-w-sm mx-auto">An unexpected error occurred. We've logged the incident and are working on it.</p>
-          <button 
-            onClick={() => window.location.hash = '#/'} 
-            className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:bg-primary/90 transition-all active:scale-95"
+          <p className="mb-8 text-muted-foreground max-w-sm mx-auto">
+            An unexpected error occurred in your current session.
+          </p>
+          {this.state.error && (
+            <div className="mb-8 p-4 bg-red-500/5 border border-red-500/10 rounded-xl max-w-lg mx-auto text-left overflow-auto custom-scrollbar">
+              <p className="text-red-400 font-mono text-[10px] uppercase font-black mb-2 tracking-widest">Instructional Exception</p>
+              <p className="text-white/60 font-mono text-[11px] leading-relaxed">{this.state.error.message}</p>
+            </div>
+          )}
+          <button
+            onClick={() => {
+              window.location.hash = '#/';
+              window.location.reload();
+            }}
+            className="px-8 py-3 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
           >
-            Return to Home
+            Synchronize Node
           </button>
         </div>
       );
