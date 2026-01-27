@@ -16,7 +16,10 @@ import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { GlobeIcon } from './icons/GlobeIcon';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI } from '@google/genai';
+import { HashIcon } from './icons/HashIcon';
+import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
 
 interface BranchCreationPageProps {
     onNext?: () => void;
@@ -24,21 +27,51 @@ interface BranchCreationPageProps {
     onBack?: () => void;
 }
 
+const DiagnosticErrorConsole: React.FC<{ message: string; onClear: () => void }> = ({ message, onClear }) => (
+    <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: -20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: -20 }}
+        className="relative overflow-hidden rounded-[2.5rem] border border-red-500/20 bg-red-500/5 backdrop-blur-3xl p-8 shadow-[0_32px_128px_-16px_rgba(239,68,68,0.25)] group mb-10"
+    >
+        <div className="absolute top-0 right-0 p-6">
+            <button onClick={onClear} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-red-500/40 hover:text-red-500 hover:bg-red-500/10 transition-all duration-300">
+                <XIcon className="w-5 h-5" />
+            </button>
+        </div>
+        <div className="flex gap-8 items-start">
+            <div className="w-16 h-16 rounded-[1.5rem] bg-red-500/10 flex items-center justify-center text-red-500 shadow-inner border border-red-500/20 shrink-0">
+                <AlertTriangleIcon className="w-8 h-8 animate-pulse text-red-500" />
+            </div>
+            <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                    <p className="text-[11px] font-black uppercase text-red-500 tracking-[0.6em]">Protocol Exception Detected</p>
+                    <div className="h-px w-16 bg-red-500/20" />
+                </div>
+                <p className="text-[15px] font-medium text-red-200/80 leading-relaxed font-mono tracking-tight">
+                    {message}
+                </p>
+            </div>
+        </div>
+        <div className="absolute -bottom-8 -right-8 w-36 h-36 bg-red-500/10 rounded-full blur-[80px] group-hover:bg-red-500/20 transition-all duration-1000" />
+    </motion.div>
+);
+
 const FloatingLabelInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string, icon?: React.ReactNode, action?: React.ReactNode }> = ({ label, icon, action, className, ...props }) => (
-    <div className="relative group">
-        <div className="absolute top-1/2 -translate-y-1/2 left-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors duration-200 z-10 pointer-events-none">
+    <div className="relative group w-full">
+        {label && (
+            <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0a0b10] px-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/30 group-focus-within:text-primary transition-all duration-300 z-20">
+                {label}
+            </label>
+        )}
+        <div className="absolute top-1/2 -translate-y-1/2 left-6 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none">
             {icon}
         </div>
         <input
             {...props}
             placeholder=" "
-            className={`peer block w-full rounded-xl border border-input bg-background px-4 py-3.5 pl-11 ${action ? 'pr-12' : ''} text-sm text-foreground shadow-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none placeholder-transparent ${className}`}
+            className={`peer block w-full h-[64px] rounded-[1.5rem] border border-white/5 bg-white/[0.01] px-6 pl-14 ${action ? 'pr-16' : ''} text-sm text-white font-medium shadow-inner transition-all duration-500 hover:border-white/10 focus:border-primary/50 focus:ring-8 focus:ring-primary/5 focus:outline-none placeholder-transparent ${className}`}
         />
-        <label className="absolute left-11 top-0 -translate-y-1/2 bg-card/95 px-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 transition-all duration-200 
-            peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-placeholder-shown:font-medium peer-placeholder-shown:normal-case peer-placeholder-shown:text-muted-foreground/60
-            peer-focus:top-0 peer-focus:text-[10px] peer-focus:font-bold peer-focus:uppercase peer-focus:text-primary pointer-events-none">
-            {label}
-        </label>
         {action && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
                 {action}
@@ -48,21 +81,23 @@ const FloatingLabelInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> &
 );
 
 const StyledSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement> & { label: string, icon?: React.ReactNode }> = ({ label, icon, children, className, ...props }) => (
-    <div className="relative group">
-        <div className="absolute top-1/2 -translate-y-1/2 left-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors duration-200 z-10 pointer-events-none">
+    <div className="relative group w-full">
+        {label && (
+            <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0a0b10] px-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/30 group-focus-within:text-primary transition-all duration-300 z-20">
+                {label}
+            </label>
+        )}
+        <div className="absolute top-1/2 -translate-y-1/2 left-6 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none">
             {icon}
         </div>
         <select
             {...props}
-            className={`peer block w-full appearance-none rounded-xl border border-input bg-background px-4 py-3.5 pl-11 text-sm text-foreground shadow-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none cursor-pointer ${className}`}
+            className={`peer block w-full h-[64px] appearance-none rounded-[1.5rem] border border-white/5 bg-white/[0.01] px-6 pl-14 text-sm text-white font-medium shadow-inner transition-all duration-500 hover:border-white/10 focus:border-primary/50 focus:ring-8 focus:ring-primary/5 focus:outline-none cursor-pointer ${className}`}
         >
             {children}
         </select>
-        <label className="absolute left-11 top-0 -translate-y-1/2 bg-card/95 px-1.5 text-[10px] font-bold uppercase tracking-wider text-primary transition-all duration-200 pointer-events-none">
-            {label}
-        </label>
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground group-hover:text-foreground transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-white/10 group-focus-within:text-primary transition-colors">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
         </div>
     </div>
 );
@@ -72,7 +107,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const [schoolData, setSchoolData] = useState<SchoolAdminProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBranch, setEditingBranch] = useState<SchoolBranch | null>(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -81,11 +116,11 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const [deletingBranch, setDeletingBranch] = useState<SchoolBranch | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isFinishing, setIsFinishing] = useState(false);
-    
+
     const isMounted = useRef(true);
 
     const [formData, setFormData] = useState({
-        name: '', address: '', country: 'India', city: '', state: '', 
+        name: '', address: '', country: 'India', city: '', state: '',
         adminName: '', adminPhone: '', adminEmail: '', isMain: false
     });
 
@@ -107,7 +142,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 const newBranches = exists
                     ? prev.map(b => (b.id === updatedBranch.id ? updatedBranch : b))
                     : [...prev, updatedBranch];
-                return newBranches.sort((a,b) => (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0));
+                return newBranches.sort((a, b) => (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0));
             });
         }
     };
@@ -128,7 +163,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             if (isMounted.current) {
                 const currentBranches = (branchRes.data || []).sort((a: SchoolBranch, b: SchoolBranch) => (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0));
                 setBranches(currentBranches);
-                if(schoolRes.data) setSchoolData(schoolRes.data);
+                if (schoolRes.data) setSchoolData(schoolRes.data);
             }
         } catch (err: any) {
             if (isMounted.current) setError(formatError(err));
@@ -214,16 +249,16 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
         setModalError(null);
         try {
             const payload = {
-                p_name: formData.name, 
-                p_address: formData.address, 
-                p_city: formData.city, 
+                p_name: formData.name,
+                p_address: formData.address,
+                p_city: formData.city,
                 p_state: formData.state,
                 p_country: formData.country,
-                p_contact_number: " ", 
-                p_is_main: formData.isMain, 
-                p_email: formData.adminEmail, 
-                p_admin_name: formData.adminName, 
-                p_admin_phone: formData.adminPhone, 
+                p_contact_number: " ",
+                p_is_main: formData.isMain,
+                p_email: formData.adminEmail,
+                p_admin_name: formData.adminName,
+                p_admin_phone: formData.adminPhone,
                 p_admin_email: formData.adminEmail
             };
 
@@ -243,12 +278,12 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             if (isMounted.current) setIsSaving(false);
         }
     };
-    
+
     const handleDelete = async () => {
         if (!deletingBranch) return;
         setIsDeleting(true);
         const { error } = await supabase.rpc('delete_school_branch', { p_branch_id: deletingBranch.id });
-        
+
         if (isMounted.current) {
             if (error) {
                 alert(`Failed to delete: ${formatError(error)}`);
@@ -280,250 +315,341 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-card p-4 rounded-xl border border-border shadow-sm">
-                <div>
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-12 bg-white/[0.02] p-6 rounded-[2rem] border border-white/5 backdrop-blur-3xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-primary/[0.01] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                <div className="relative z-10">
                     {onBack && (
                         <button
                             onClick={onBack}
                             disabled={isFinishing}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-sm font-medium disabled:opacity-50"
+                            className="flex items-center gap-3 px-6 py-3 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 transition-all text-xs font-black uppercase tracking-[0.3em] disabled:opacity-20"
                         >
                             <ChevronLeftIcon className="w-4 h-4" />
-                            Back to Pricing
+                            Return <span className="italic opacity-40">Home</span>
                         </button>
                     )}
                 </div>
-                <div className="flex items-center gap-3">
-                    <button 
-                        onClick={() => handleOpenCreate()} 
-                        disabled={loading} 
-                        className="px-5 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary text-sm font-bold rounded-lg transition-all flex items-center gap-2 border border-primary/20 shadow-sm"
+                <div className="flex items-center gap-4 relative z-10">
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleOpenCreate()}
+                        disabled={loading}
+                        className="px-8 py-4 bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl transition-all flex items-center gap-3 border border-primary/20 shadow-2xl"
                     >
-                        <PlusIcon className="w-4 h-4" /> Add Branch
-                    </button>
+                        <PlusIcon className="w-4 h-4" /> New Branch Node
+                    </motion.button>
                     {onNext && branches.length > 0 && (
-                        <button 
-                            onClick={handleFinish} 
-                            disabled={isFinishing} 
-                            className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all hover:bg-primary/90 shadow-md min-w-[180px] justify-center"
+                        <motion.button
+                            whileHover={{ scale: 1.02, boxShadow: "0 20px 40px -10px rgba(var(--primary), 0.5)" }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleFinish}
+                            disabled={isFinishing}
+                            className="bg-primary text-primary-foreground px-10 py-4 rounded-2xl font-black text-[12px] uppercase tracking-[0.3em] flex items-center gap-4 transition-all shadow-2xl min-w-[240px] justify-center"
                         >
-                            {isFinishing ? <><Spinner size="sm" className="text-current" /> Finalizing...</> : <>Complete Setup & Continue &rarr;</>}
-                        </button>
+                            {isFinishing ? <><Spinner size="sm" className="text-current" /> Finalizing Node...</> : <>Synchronize Registry &rarr;</>}
+                        </motion.button>
                     )}
                 </div>
             </div>
 
             {loading ? (
-                <div className="flex justify-center p-20"><Spinner size="lg" /></div>
-            ) : error ? (
-                <div className="p-6 bg-destructive/10 text-destructive rounded-xl text-center font-medium">{error}</div>
-            ) : branches.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-muted/30 border-2 border-dashed border-border rounded-2xl text-center hover:bg-muted/50 transition-colors cursor-pointer group" onClick={() => handleOpenCreate()}>
-                    <div className="w-20 h-20 bg-background rounded-full flex items-center justify-center mb-6 shadow-sm border border-border group-hover:scale-110 transition-transform duration-300">
-                        <SchoolIcon className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors" />
+                <div className="flex flex-col items-center justify-center p-40 space-y-8">
+                    <div className="relative">
+                        <div className="absolute -inset-8 bg-primary/20 rounded-full blur-2xl animate-pulse" />
+                        <Spinner size="xl" className="text-primary relative z-10" />
                     </div>
-                    <h3 className="text-xl font-bold text-foreground">Welcome to Branch Setup</h3>
-                    <p className="text-muted-foreground mt-2 max-sm mx-auto">
-                        You haven't added any branches yet. Let's start by establishing your <strong>Head Office</strong>.
+                    <p className="text-[11px] font-black uppercase text-white/20 tracking-[0.8em] animate-pulse">Scanning Institutional Ledger</p>
+                </div>
+            ) : error ? (
+                <DiagnosticErrorConsole message={error} onClear={() => setError(null)} />
+            ) : branches.length === 0 ? (
+                <div
+                    className="flex flex-col items-center justify-center py-32 bg-[#0a0b10]/40 border-2 border-dashed border-white/5 rounded-[4rem] text-center hover:bg-white/[0.02] hover:border-primary/40 transition-all duration-1000 cursor-pointer group relative overflow-hidden"
+                    onClick={() => handleOpenCreate()}
+                >
+                    <div className="absolute inset-0 bg-primary/[0.01] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                    <div className="relative mb-12">
+                        <div className="absolute inset-0 bg-primary/30 rounded-[3rem] blur-[50px] opacity-0 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-150" />
+                        <div className="relative w-28 h-28 bg-white/[0.02] rounded-[2.5rem] flex items-center justify-center border border-white/5 shadow-2xl transition-all duration-700 group-hover:bg-primary/20 group-hover:scale-110 group-hover:rotate-[15deg] group-hover:border-primary/40">
+                            <SchoolIcon className="w-12 h-12 text-white/10 group-hover:text-primary transition-all duration-700" />
+                        </div>
+                    </div>
+                    <h3 className="text-3xl md:text-5xl font-serif font-black text-white/40 tracking-tighter uppercase leading-none group-hover:text-white transition-all duration-700">
+                        Protocol <span className="text-white/10 italic group-hover:text-primary">Initialization.</span>
+                    </h3>
+                    <p className="text-white/20 mt-6 text-lg font-serif italic max-w-lg mx-auto leading-relaxed group-hover:text-white/40 transition-all duration-700">
+                        No geographic nodes detected. Let's begin by establishing your <strong className="text-white/40 group-hover:text-white">Institutional Head Office</strong>.
                     </p>
-                    <button className="mt-8 px-8 py-3 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 transition-all">
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="mt-12 px-12 py-5 bg-primary text-primary-foreground font-black text-[13px] uppercase tracking-[0.4em] rounded-[1.5rem] shadow-[0_32px_64px_-16px_rgba(var(--primary),0.5)] transition-all"
+                    >
                         Create Head Office
-                    </button>
+                    </motion.button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {branches.map(branch => (
-                        <div 
-                            key={branch.id} 
-                            className="group relative bg-card border border-border hover:border-primary/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
+                <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                        hidden: { opacity: 0 },
+                        visible: {
+                            opacity: 1,
+                            transition: { staggerChildren: 0.1 }
+                        }
+                    }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
+                >
+                    {branches.map((branch, idx) => (
+                        <motion.div
+                            key={branch.id}
+                            variants={{
+                                hidden: { opacity: 0, y: 30, scale: 0.95 },
+                                visible: { opacity: 1, y: 0, scale: 1 }
+                            }}
+                            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                            className="group relative bg-[#0d0e12]/60 backdrop-blur-3xl border border-white/5 hover:border-primary/40 rounded-[3rem] p-10 shadow-2xl hover:shadow-primary/10 transition-all duration-1000 flex flex-col h-full min-h-[360px]"
                         >
-                            <div className="flex justify-between items-start mb-4">
-                                <div className={`p-3 rounded-xl ${branch.is_main_branch ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                                    <SchoolIcon className="w-6 h-6"/>
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-40" />
+                            <div className="flex justify-between items-start mb-8">
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-700 ${branch.is_main_branch ? 'bg-primary/10 text-primary shadow-[0_0_30px_rgba(var(--primary),0.2)]' : 'bg-white/5 text-white/20'}`}>
+                                    <SchoolIcon className="w-8 h-8" />
                                 </div>
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => handleOpenEdit(branch)} className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors"><EditIcon className="w-4 h-4"/></button>
+                                <div className="flex gap-4 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
+                                    <button onClick={() => handleOpenEdit(branch)} className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-xl flex items-center justify-center text-white/40 hover:text-white transition-all"><EditIcon className="w-4 h-4" /></button>
                                     {!branch.is_main_branch && (
-                                        <button onClick={() => setDeletingBranch(branch)} className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive transition-colors"><XIcon className="w-4 h-4"/></button>
+                                        <button onClick={() => setDeletingBranch(branch)} className="w-10 h-10 bg-red-500/5 hover:bg-red-500/10 rounded-xl flex items-center justify-center text-red-500/40 hover:text-red-500 transition-all"><XIcon className="w-4 h-4" /></button>
                                     )}
                                 </div>
                             </div>
-                            
-                            <h3 className="text-lg font-bold text-foreground truncate mb-1">{branch.name}</h3>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
-                                <LocationIcon className="w-3.5 h-3.5"/>
-                                <span className="truncate">{[branch.city, branch.state, branch.country].filter(Boolean).join(', ')}</span>
+
+                            <h3 className="text-2xl font-serif font-black text-white/80 group-hover:text-white truncate mb-2 leading-none uppercase tracking-tighter transition-all">{branch.name}</h3>
+                            <div className="flex items-center gap-3 text-[10px] font-black uppercase text-white/20 tracking-[0.2em] mb-8">
+                                <LocationIcon className="w-3.5 h-3.5" />
+                                <span className="truncate">{[branch.city, branch.state, branch.country].filter(Boolean).join(' • ')}</span>
                             </div>
 
-                            {branch.is_main_branch ? (
-                                <span className="inline-flex self-start items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20">
-                                    <CheckCircleIcon className="w-3 h-3"/> Head Office
-                                </span>
-                            ) : (
-                                <span className="inline-flex self-start items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-[10px] font-bold uppercase tracking-wider border border-border">
-                                    Satellite Branch
-                                </span>
-                            )}
+                            <div className="flex flex-wrap gap-3 mb-10">
+                                {branch.is_main_branch ? (
+                                    <span className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-[0.2em] border border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.2)]">
+                                        <CheckCircleIcon className="w-3.5 h-3.5" /> HEAD OFFICE
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/5 text-white/20 text-[9px] font-black uppercase tracking-[0.2em] border border-white/5">
+                                        SATELLITE NODE
+                                    </span>
+                                )}
+                            </div>
 
-                            <div className="mt-auto pt-5 border-t border-border flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                                    {branch.admin_name ? branch.admin_name.charAt(0) : '?'}
+                            <div className="mt-auto pt-8 border-t border-white/[0.03] flex items-center gap-5">
+                                <div className="w-12 h-12 rounded-[1rem] bg-gradient-to-tr from-primary/40 to-primary/10 flex items-center justify-center text-white text-sm font-black shadow-2xl relative overflow-hidden group-hover:scale-110 transition-all">
+                                    <div className="absolute inset-0 bg-primary/20 blur-md" />
+                                    <span className="relative z-10">{branch.admin_name ? branch.admin_name.charAt(0) : '?'}</span>
                                 </div>
-                                <div className="overflow-hidden">
-                                    <p className="text-xs font-bold text-foreground truncate">{branch.admin_name || 'No Admin Assigned'}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{branch.admin_email || '—'}</p>
+                                <div className="overflow-hidden space-y-1">
+                                    <p className="text-[11px] font-black text-white/80 uppercase tracking-widest truncate">{branch.admin_name || 'NO CUSTODIAN'}</p>
+                                    <p className="text-[10px] font-medium text-white/20 italic truncate">{branch.admin_email || '—'}</p>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
-                    
-                    {/* Add New Card */}
-                    <button 
+
+                    {/* Add New Card: Ultra-Premium Focal Point */}
+                    <motion.button
+                        variants={{
+                            hidden: { opacity: 0, scale: 0.9 },
+                            visible: { opacity: 1, scale: 1 }
+                        }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         onClick={() => handleOpenCreate()}
-                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 transition-all group min-h-[200px]"
+                        className="flex flex-col items-center justify-center p-14 rounded-[3rem] border border-dashed border-white/10 bg-white/[0.01] hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-1000 group relative overflow-hidden h-full min-h-[360px] shadow-2xl"
                     >
-                        <div className="w-12 h-12 rounded-full bg-muted group-hover:bg-background flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors mb-3 shadow-sm group-hover:shadow-md border border-border group-hover:border-primary/20">
-                            <PlusIcon className="w-6 h-6 transform group-hover:rotate-90 transition-transform duration-300"/>
+                        <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover:opacity-100 transition-all duration-1000" />
+                        <div className="relative mb-10">
+                            <div className="absolute inset-0 bg-primary/20 rounded-[2rem] blur-3xl opacity-0 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-150" />
+                            <div className="relative w-20 h-20 rounded-[1.5rem] bg-white/[0.02] flex items-center justify-center border border-white/10 shadow-2xl transition-all duration-1000 group-hover:bg-primary/20 group-hover:scale-110 group-hover:rotate-[15deg] group-hover:border-primary/40">
+                                <PlusIcon className="w-8 h-8 text-white/10 group-hover:text-primary transition-all duration-700" />
+                            </div>
                         </div>
-                        <span className="font-bold text-foreground">Add Another Branch</span>
-                    </button>
-                </div>
+                        <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em] group-hover:text-white transition-all duration-700 relative z-10">Initialize New Node</span>
+
+                        <div className="absolute top-10 left-10 w-4 h-4 border-t border-l border-white/10 rounded-tl-lg group-hover:border-primary/20 transition-all" />
+                        <div className="absolute bottom-10 right-10 w-4 h-4 border-b border-r border-white/10 rounded-br-lg group-hover:border-primary/20 transition-all" />
+                    </motion.button>
+                </motion.div>
             )}
 
             {isModalOpen && (
-                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300" onClick={() => setIsModalOpen(false)}>
-                    <div className="bg-card w-full max-w-3xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        
-                        {/* Modal Header */}
-                        <div className="px-8 py-6 border-b border-border flex justify-between items-center bg-muted/30">
-                            <div>
-                                <h3 className="text-xl font-bold text-foreground">
-                                    {editingBranch ? 'Edit Branch Details' : (branches.length === 0 ? 'Create Head Office' : 'Add New Branch')}
-                                </h3>
-                                <p className="text-sm text-muted-foreground mt-1">Please provide the campus and administrator details.</p>
-                            </div>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                                <XIcon className="w-5 h-5"/>
-                            </button>
-                        </div>
+                <AnimatePresence>
+                    {isModalOpen && (
+                        <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl flex items-center justify-center z-[200] p-4 overflow-hidden" onClick={() => setIsModalOpen(false)}>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 30 }}
+                                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                                className="bg-[#07080a] w-full max-w-4xl rounded-[4rem] shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] border border-white/10 flex flex-col max-h-[92vh] relative overflow-hidden ring-1 ring-white/5"
+                                onClick={e => e.stopPropagation()}
+                            >
+                                <div className="absolute inset-0 bg-primary/[0.02] pointer-events-none" />
 
-                        <form onSubmit={handleSave} className="flex flex-col flex-grow overflow-hidden">
-                            <div className="flex-grow overflow-y-auto p-8 space-y-8 custom-scrollbar">
-                                {modalError && (
-                                    <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-medium border border-destructive/20 flex items-center gap-3">
-                                        <XIcon className="w-5 h-5"/> {modalError}
-                                    </div>
-                                )}
-                                
-                                {/* Section 1: Campus Details */}
-                                <div className="space-y-5">
-                                     <div className="flex items-center gap-2 mb-2">
-                                         <SchoolIcon className="w-5 h-5 text-primary" />
-                                         <h4 className="text-sm font-bold uppercase text-foreground tracking-wide">Campus Information</h4>
-                                     </div>
-                                     
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        <div className="md:col-span-2">
-                                            <FloatingLabelInput 
-                                                label="Branch Name" 
-                                                value={formData.name} 
-                                                onChange={e => setFormData({...formData, name: e.target.value})} 
-                                                required 
-                                                icon={<SchoolIcon className="w-4 h-4"/>} 
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <FloatingLabelInput 
-                                                label="Street Address" 
-                                                value={formData.address} 
-                                                onChange={e => setFormData({...formData, address: e.target.value})} 
-                                                required 
-                                                icon={<LocationIcon className="w-4 h-4"/>}
-                                                action={
-                                                    <button 
-                                                        type="button"
-                                                        onClick={handleResolveAddress}
-                                                        disabled={isResolvingAddress || !formData.address.trim()}
-                                                        className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-30 disabled:grayscale"
-                                                        title="Auto-fill city, state, country"
-                                                    >
-                                                        {isResolvingAddress ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5" />}
-                                                    </button>
-                                                }
-                                            />
-                                        </div>
-                                        
-                                        <StyledSelect label="Country" required value={formData.country} onChange={handleCountryChange} icon={<GlobeIcon className="w-4 h-4"/>}>
-                                            {countries.map(c => <option key={c} value={c}>{c}</option>)}
-                                        </StyledSelect>
-                                        
-                                        <StyledSelect label="State/Province" required value={formData.state} onChange={handleStateChange} disabled={!formData.country} icon={<LocationIcon className="w-4 h-4"/>}>
-                                            <option value="">Select State</option>
-                                            {availableStates.map(s => <option key={s} value={s}>{s}</option>)}
-                                        </StyledSelect>
-                                        
-                                        {availableCities.length > 0 ? (
-                                            <StyledSelect className="md:col-span-2" label="City" required value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} disabled={!formData.state} icon={<LocationIcon className="w-4 h-4"/>}>
-                                                <option value="">Select City</option>
-                                                {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
-                                            </StyledSelect>
-                                        ) : (
-                                            <FloatingLabelInput className="md:col-span-2" label="City" required value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} disabled={!formData.state} icon={<LocationIcon className="w-4 h-4"/>} />
-                                        )}
-                                     </div>
-                                </div>
-
-                                <div className="h-px bg-border/50 w-full"></div>
-
-                                {/* Section 2: Administrator Details */}
-                                <div className="space-y-5">
-                                    <div className="flex items-center gap-2 mb-2">
-                                         <UsersIcon className="w-5 h-5 text-primary" />
-                                         <h4 className="text-sm font-bold uppercase text-foreground tracking-wide">IT Administrator Credentials</h4>
-                                     </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <FloatingLabelInput label="Admin Name" value={formData.adminName} onChange={e => setFormData({...formData, adminName: e.target.value})} icon={<UsersIcon className="w-4 h-4"/>} />
-                                        <FloatingLabelInput label="Admin Phone" type="tel" value={formData.adminPhone} onChange={e => setFormData({...formData, adminPhone: e.target.value})} icon={<PhoneIcon className="w-4 h-4"/>} />
-                                        <div className="md:col-span-2"><FloatingLabelInput label="Login Email" type="email" required value={formData.adminEmail} onChange={e => setFormData({...formData, adminEmail: e.target.value})} icon={<MailIcon className="w-4 h-4"/>} /></div>
-                                    </div>
-                                </div>
-
-                                {isHeadOfficeAdmin && (
-                                    <div 
-                                        className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${formData.isMain ? 'bg-primary/5 border-primary/30' : 'bg-muted/30 border-border hover:border-primary/30'}`} 
-                                        onClick={() => setFormData({...formData, isMain: !formData.isMain})}
-                                    >
-                                        <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.isMain ? 'bg-primary border-primary' : 'bg-background border-muted-foreground'}`}>
-                                            {formData.isMain && <CheckCircleIcon className="w-3.5 h-3.5 text-primary-foreground"/>}
+                                {/* Modal Header */}
+                                <div className="px-12 py-10 border-b border-white/[0.03] bg-white/[0.01] flex justify-between items-center shrink-0">
+                                    <div className="flex items-center gap-8">
+                                        <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center text-primary shadow-inner border border-primary/20">
+                                            <PlusIcon className="w-8 h-8" />
                                         </div>
                                         <div>
-                                            <p className="font-bold text-sm text-foreground">Set as Head Office</p>
-                                            <p className="text-xs text-muted-foreground mt-1">This branch will be the primary headquarters for your institution.</p>
+                                            <h3 className="text-3xl font-serif font-black text-white tracking-tighter uppercase leading-none">
+                                                {editingBranch ? 'MANAGE' : 'INITIALIZE'} <span className="text-white/20 italic">{editingBranch ? 'NODE.' : (branches.length === 0 ? 'HEAD OFFICE.' : 'SATELLITE.')}</span>
+                                            </h3>
+                                            <p className="text-[10px] font-black tracking-[0.6em] text-white/10 uppercase mt-2">Geographic Identity Registry</p>
                                         </div>
                                     </div>
-                                )}
-                            </div>
+                                    <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 rounded-full bg-white/5 text-white/20 hover:text-white hover:bg-white/10 hover:rotate-90 transition-all flex items-center justify-center">
+                                        <XIcon className="w-6 h-6" />
+                                    </button>
+                                </div>
 
-                            <div className="p-6 border-t border-border bg-muted/20 flex justify-end gap-4 flex-shrink-0">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 text-sm font-bold">Cancel</button>
-                                <button type="submit" disabled={isSaving} className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:bg-primary/90 flex items-center min-w-[140px] justify-center">
-                                    {isSaving ? <Spinner size="sm" /> : (editingBranch ? 'Update' : 'Add Branch')}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                                <form onSubmit={handleSave} className="flex flex-col flex-grow overflow-hidden select-text">
+                                    <div className="flex-grow overflow-y-auto p-12 space-y-16 custom-scrollbar">
+                                        <AnimatePresence>
+                                            {modalError && <DiagnosticErrorConsole message={modalError} onClear={() => setModalError(null)} />}
+                                        </AnimatePresence>
+
+                                        {/* Section 1: Campus Identity */}
+                                        <div className="space-y-10">
+                                            <div className="flex items-center gap-4 px-2">
+                                                <div className="h-6 w-[2px] bg-primary/40 rounded-full" />
+                                                <h4 className="text-[11px] font-black uppercase text-white/20 tracking-[0.4em]">Campus Infrastructure Node</h4>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                                                <div className="md:col-span-12">
+                                                    <FloatingLabelInput
+                                                        label="Formal Campus Designation"
+                                                        value={formData.name}
+                                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                                        required
+                                                        icon={<SchoolIcon className="w-5 h-5" />}
+                                                    />
+                                                </div>
+                                                <div className="md:col-span-12">
+                                                    <FloatingLabelInput
+                                                        label="Geospatial Street Address"
+                                                        value={formData.address}
+                                                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                                        required
+                                                        icon={<LocationIcon className="w-5 h-5" />}
+                                                        action={
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleResolveAddress}
+                                                                disabled={isResolvingAddress || !formData.address.trim()}
+                                                                className="p-3 bg-primary/10 text-primary hover:bg-primary/20 rounded-2xl border border-primary/20 backdrop-blur-xl transition-all disabled:opacity-20"
+                                                            >
+                                                                {isResolvingAddress ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5 animate-pulse" />}
+                                                            </button>
+                                                        }
+                                                    />
+                                                </div>
+
+                                                <div className="md:col-span-6">
+                                                    <StyledSelect label="National Domain" required value={formData.country} onChange={handleCountryChange} icon={<GlobeIcon className="w-5 h-5" />}>
+                                                        {countries.map(c => <option key={c} value={c}>{c}</option>)}
+                                                    </StyledSelect>
+                                                </div>
+
+                                                <div className="md:col-span-6">
+                                                    <StyledSelect label="Regional Protocol" required value={formData.state} onChange={handleStateChange} disabled={!formData.country} icon={<LocationIcon className="w-5 h-5" />}>
+                                                        <option value="">Select State</option>
+                                                        {availableStates.map(s => <option key={s} value={s}>{s}</option>)}
+                                                    </StyledSelect>
+                                                </div>
+
+                                                <div className="md:col-span-12">
+                                                    {availableCities.length > 0 ? (
+                                                        <StyledSelect label="Primary Municipality" required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} icon={<LocationIcon className="w-5 h-5" />}>
+                                                            <option value="">Select City</option>
+                                                            {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+                                                        </StyledSelect>
+                                                    ) : (
+                                                        <FloatingLabelInput label="Municipality Node" required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} icon={<LocationIcon className="w-5 h-5" />} />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Section 2: Custodian Credentials */}
+                                        <div className="space-y-10">
+                                            <div className="flex items-center gap-4 px-2">
+                                                <div className="h-6 w-[2px] bg-primary/40 rounded-full" />
+                                                <h4 className="text-[11px] font-black uppercase text-white/20 tracking-[0.4em]">Administrative Security Custodian</h4>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                                                <div className="md:col-span-6"><FloatingLabelInput label="Custodian Legal Name" value={formData.adminName} onChange={e => setFormData({ ...formData, adminName: e.target.value })} icon={<UsersIcon className="w-5 h-5" />} /></div>
+                                                <div className="md:col-span-6"><FloatingLabelInput label="Telecom Telemetry" type="tel" value={formData.adminPhone} onChange={e => setFormData({ ...formData, adminPhone: e.target.value })} icon={<PhoneIcon className="w-5 h-5" />} /></div>
+                                                <div className="md:col-span-12"><FloatingLabelInput label="Institutional Email Node" type="email" required value={formData.adminEmail} onChange={e => setFormData({ ...formData, adminEmail: e.target.value })} icon={<MailIcon className="w-5 h-5" />} /></div>
+                                            </div>
+                                        </div>
+
+                                        {isHeadOfficeAdmin && (
+                                            <motion.div
+                                                whileHover={{ scale: 1.01 }}
+                                                className={`flex items-start gap-6 p-10 rounded-[2.5rem] border transition-all cursor-pointer relative overflow-hidden group/opt ${formData.isMain ? 'bg-primary/[0.04] border-primary/30 shadow-[0_32px_64px_-16px_rgba(var(--primary),0.2)]' : 'bg-white/[0.01] border-white/5 hover:border-primary/20'}`}
+                                                onClick={() => setFormData({ ...formData, isMain: !formData.isMain })}
+                                            >
+                                                <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover/opt:opacity-100 transition-opacity" />
+                                                <div className={`mt-1 w-7 h-7 rounded-[0.75rem] border flex items-center justify-center transition-all duration-500 shrink-0 ${formData.isMain ? 'bg-primary border-primary rotate-0 scale-110 shadow-[0_0_20px_rgba(var(--primary),0.5)]' : 'bg-white/5 border-white/10 rotate-12'}`}>
+                                                    {formData.isMain && <CheckCircleIcon className="w-4 h-4 text-primary-foreground" />}
+                                                </div>
+                                                <div className="relative z-10">
+                                                    <p className="text-[14px] font-black uppercase text-white tracking-[0.2em]">Authorize as Institutional Headquarters</p>
+                                                    <p className="text-[12px] font-medium text-white/30 italic mt-2 leading-relaxed">This node will be designated as the central synchronization headquarters for the entire registry.</p>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </div>
+
+                                    <div className="px-12 py-10 border-t border-white/[0.03] bg-white/[0.01] flex flex-col md:flex-row justify-between items-center gap-8 shrink-0">
+                                        <button type="button" onClick={() => setIsModalOpen(false)} className="text-[11px] font-black uppercase tracking-[0.6em] text-white/10 hover:text-white/40 transition-all order-2 md:order-1">
+                                            ABORT <span className="italic">PROTOCOL</span>
+                                        </button>
+                                        <motion.button
+                                            whileHover={{ scale: 1.02, boxShadow: "0 20px 40px -10px rgba(var(--primary), 0.5)" }}
+                                            whileTap={{ scale: 0.98 }}
+                                            type="submit"
+                                            disabled={isSaving}
+                                            className="w-full md:w-auto px-16 py-6 bg-primary text-primary-foreground rounded-[1.75rem] font-black text-[13px] uppercase tracking-[0.4em] shadow-2xl hover:bg-primary/90 flex items-center gap-5 transition-all order-1 md:order-2"
+                                        >
+                                            {isSaving ? <Spinner size="sm" className="text-white" /> : (
+                                                <>
+                                                    {editingBranch ? 'SYNC UPDATES' : 'INITIALIZE NODE'}
+                                                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                                                        <CheckCircleIcon className="w-4 h-4" />
+                                                    </div>
+                                                </>
+                                            )}
+                                        </motion.button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             )}
-            
-            <ConfirmationModal 
-                isOpen={!!deletingBranch} 
-                onClose={() => setDeletingBranch(null)} 
-                onConfirm={handleDelete} 
-                title="Delete Branch" 
-                message={`Are you sure you want to permanently delete the "${deletingBranch?.name}" branch? This action cannot be undone.`} 
-                confirmText="Yes, Delete Branch" 
-                loading={isDeleting} 
+
+            <ConfirmationModal
+                isOpen={!!deletingBranch}
+                onClose={() => setDeletingBranch(null)}
+                onConfirm={handleDelete}
+                title="Delete Branch"
+                message={`Are you sure you want to permanently delete the "${deletingBranch?.name}" branch? This action cannot be undone.`}
+                confirmText="Yes, Delete Branch"
+                loading={isDeleting}
             />
         </div>
     );

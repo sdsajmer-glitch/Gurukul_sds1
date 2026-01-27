@@ -1395,7 +1395,7 @@ DECLARE
 BEGIN
     -- Global Singleton Check for Main Branch
     IF p_is_main THEN
-        UPDATE public.school_branches SET is_main_branch = false;
+        UPDATE public.school_branches SET is_main_branch = false WHERE is_main_branch = true;
     END IF;
 
     INSERT INTO public.school_branches (
@@ -1440,6 +1440,7 @@ BEGIN
         admin_email = p_admin_email,
         updated_at = NOW()
     WHERE id = p_branch_id;
+
 
     RETURN QUERY SELECT * FROM public.school_branches WHERE id = p_branch_id;
 END;
