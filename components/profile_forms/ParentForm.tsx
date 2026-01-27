@@ -346,9 +346,9 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     />
                 </div>
 
-                {/* Ultra-Wide Institutional Registry Grid: Optimized for maximum field visibility */}
-                <div className="grid grid-cols-1 md:grid-cols-10 gap-10 items-end">
-                    <div className="md:col-span-3">
+                {/* High-Fidelity Institutional Registry Grid: Optimized for long-form geographic strings */}
+                <div className="grid grid-cols-1 md:grid-cols-10 gap-x-12 gap-y-16 items-end">
+                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.01]">
                         <CustomSelect
                             label="State Protocol"
                             value={formData.state || ''}
@@ -360,7 +360,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             isSynced={syncedFields.has('state')}
                         />
                     </div>
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.01]">
                         <CustomSelect
                             label="City Module"
                             value={formData.city || ''}
@@ -372,15 +372,15 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             isSynced={syncedFields.has('city')}
                         />
                     </div>
-                    <div className="md:col-span-4">
+                    <div className="md:col-span-2 transition-all duration-700 hover:scale-[1.01]">
                         <PremiumFloatingInput
-                            label="PIN Code Node"
+                            label="PIN NODE"
                             name="pin_code"
                             value={formData.pin_code}
                             onChange={handleChange}
                             isSynced={syncedFields.has('pin_code')}
                             icon={<LocationIcon />}
-                            className="ring-1 ring-white/5 hover:ring-primary/20 transition-all duration-500"
+                            className="ring-1 ring-white/5 hover:ring-primary/30 transition-all duration-500 shadow-2xl"
                         />
                     </div>
                 </div>
