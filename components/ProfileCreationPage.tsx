@@ -306,7 +306,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                        className="premium-card p-12 md:p-16 space-y-16 relative overflow-hidden"
+                        className="premium-card p-12 md:p-16 space-y-16 relative"
                     >
                         {/* Ambient Card Atmosphere */}
                         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />

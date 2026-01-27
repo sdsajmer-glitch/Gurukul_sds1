@@ -92,10 +92,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     };
 
     return (
-        <div className={`relative group w-full ${className || ''} ${disabled ? 'opacity-40 cursor-not-allowed' : ''} ${isOpen ? 'z-[500]' : 'z-auto'}`} ref={containerRef}>
+        <div className={`relative group w-full ${className || ''} ${disabled ? 'opacity-40 cursor-not-allowed' : ''} ${isOpen ? 'z-[9999]' : 'z-auto'}`} ref={containerRef}>
             {label && (
-                <label className={`absolute left-10 top-0 -translate-y-1/2 bg-[#0f111a] px-2 text-[10px] font-black uppercase tracking-[0.3em] z-30 transition-all duration-500 pointer-events-none rounded
-                    ${isOpen ? 'text-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]' : isSynced ? 'text-primary' : 'text-white/20 group-hover:text-white/40'}`}>
+                <label className={`absolute left-10 top-0 -translate-y-1/2 bg-[#0d0e14] px-2 text-[10px] font-black uppercase tracking-[0.3em] z-[10000] transition-all duration-500 pointer-events-none rounded
+                    ${isOpen ? 'text-primary shadow-[0_0_15px_rgba(var(--primary),0.4)] ring-1 ring-primary/20' : isSynced ? 'text-primary' : 'text-white/20 group-hover:text-white/40'}`}>
                     {label}
                 </label>
             )}
@@ -110,7 +110,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                         flex items-center px-8 border backdrop-blur-3xl
                         ${icon ? 'pl-16' : 'pl-8'}
                         ${isOpen
-                            ? 'bg-primary/5 border-primary/40 shadow-[0_0_40px_rgba(var(--primary),0.1)] ring-8 ring-primary/5'
+                            ? 'bg-primary/10 border-primary/50 shadow-[0_0_50px_rgba(var(--primary),0.15)] ring-12 ring-primary/5'
                             : 'bg-black/40 border-white/5 hover:border-white/10 hover:bg-black/60 shadow-inner'
                         }
                     `}
@@ -147,7 +147,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                             stiffness: 400
                         }}
                         style={{ perspective: '1000px' }}
-                        className={`absolute z-[600] ${openUpwards ? 'bottom-[calc(100%+12px)]' : 'top-[calc(100%+12px)]'} w-full bg-[#0a0b10]/95 rounded-[2.5rem] shadow-[0_80px_120px_-20px_rgba(0,0,0,1)] border border-white/10 overflow-hidden origin-${openUpwards ? 'bottom' : 'top'} backdrop-blur-[60px] ring-1 ring-white/10`}
+                        className={`absolute z-[10001] ${openUpwards ? 'bottom-[calc(100%+12px)]' : 'top-[calc(100%+12px)]'} w-full bg-[#0d0e14] rounded-[2.5rem] shadow-[0_100px_150px_-30px_rgba(0,0,0,1)] border border-white/10 overflow-hidden origin-${openUpwards ? 'bottom' : 'top'} backdrop-blur-[80px] ring-2 ring-white/5`}
                     >
                         {searchable && (
                             <div className="p-6 border-b border-white/5 bg-white/[0.02]">
