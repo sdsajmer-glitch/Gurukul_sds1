@@ -13,6 +13,7 @@ import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { XIcon } from './icons/XIcon';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { motion, AnimatePresence } from 'framer-motion';
+import PremiumFloatingInput from './common/PremiumFloatingInput';
 
 interface ProfileCreationPageProps {
     profile: UserProfile;
@@ -163,88 +164,120 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
     if (isFetchingInitialData) return <div className="flex justify-center p-20"><Spinner size="lg" /></div>;
 
     return (
-        <div className="w-full max-w-2xl mx-auto space-y-10 pb-32 font-sans relative">
-            {/* Ambient Background Glows */}
-            <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute top-1/2 -right-24 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="w-full max-w-4xl mx-auto space-y-12 pb-32 font-sans relative">
+            {/* Ambient Ambient Background Atmosphere */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+                <div className="absolute -top-1/4 -left-1/4 w-[1000px] h-[1000px] bg-primary/5 rounded-full blur-[150px]" />
+                <div className="absolute top-1/2 -right-1/4 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[130px]" />
+            </div>
 
+            {/* Profile Header Block - Cinematic Elevation */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className="relative bg-[#0f111a]/80 backdrop-blur-3xl rounded-[3rem] overflow-hidden border border-white/5 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] group"
+                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                className="relative bg-[#0f111a]/80 backdrop-blur-3xl rounded-[3rem] overflow-hidden border border-white/5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] group"
             >
-                {/* Decorative Pattern Layer */}
-                <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+                {/* Decorative Surface Layer */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
 
-                {/* Profile Header Block */}
-                <div className="p-12 pb-8 flex flex-col items-center relative z-10">
-                    <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        className="relative mb-8"
-                    >
-                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse-slow" />
-                        <div className="w-32 h-32 rounded-full bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center text-5xl font-black text-white shadow-2xl relative z-10 group/avatar overflow-hidden">
-                            <span className="relative z-10 drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]">
-                                {(formData.display_name || 'U').charAt(0).toUpperCase()}
-                            </span>
-                            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-500" />
-                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover/avatar:translate-x-full transition-transform duration-1000" />
+                <div className="relative px-8 md:px-12 pb-12 pt-24">
+                    <div className="flex flex-col md:flex-row items-center md:items-end gap-10 md:gap-14">
+                        {/* Avatar Node */}
+                        <motion.div
+                            whileHover={{ scale: 1.05, rotate: 2 }}
+                            className="relative group cursor-pointer"
+                        >
+                            <div className="w-44 h-44 rounded-[3.5rem] bg-gradient-to-br from-primary/30 via-primary/10 to-transparent p-[2px] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]">
+                                <div className="w-full h-full rounded-[3.4rem] bg-[#0a0b10] flex items-center justify-center overflow-hidden relative">
+                                    <span className="text-6xl font-black text-white/90 tracking-tighter glow-text">
+                                        {formData?.display_name?.charAt(0) || 'U'}
+                                    </span>
+                                    <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                </div>
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-primary rounded-2xl flex items-center justify-center border-4 border-[#030407] shadow-xl">
+                                <UserIcon className="w-5 h-5 text-white" />
+                            </div>
+                        </motion.div>
+
+                        {/* Text Content */}
+                        <div className="flex-grow text-center md:text-left space-y-4">
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md"
+                            >
+                                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">{role?.replace('_', ' / ') || 'Identity Node'}</span>
+                            </motion.div>
+
+                            <motion.h1
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                                className="text-5xl md:text-7xl font-black text-gradient leading-none tracking-tight pb-2"
+                            >
+                                {formData?.display_name || 'Protocol Node'}
+                            </motion.h1>
+
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.4 }}
+                                className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-white/30 text-[11px] font-bold uppercase tracking-widest"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <span className="text-white/10 uppercase">Registry ID:</span>
+                                    <span className="text-white/60 font-mono tracking-tighter">{profile.id.slice(0, 8).toUpperCase()}</span>
+                                </span>
+                                <span className="w-1 h-1 rounded-full bg-white/10" />
+                                <span className="flex items-center gap-2 text-white/60">
+                                    Encrypted Verification Secure Node
+                                </span>
+                            </motion.div>
                         </div>
-                    </motion.div>
 
-                    <h2 className="text-4xl font-extrabold text-white tracking-tight text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 mb-4">
-                        {formData.display_name || 'Registry Entry'}
-                    </h2>
-
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3 px-5 py-2 bg-primary/10 rounded-full border border-primary/20 backdrop-blur-md shadow-xl shadow-primary/5 transition-all hover:bg-primary/20 cursor-default">
-                            <ShieldCheckIcon className="w-4 h-4 text-primary" />
-                            <span className="text-primary text-[10px] font-black uppercase tracking-[0.3em]">
-                                {role}
-                            </span>
+                        {/* Step Indicator */}
+                        <div className="hidden lg:flex flex-col items-end gap-3 pb-4">
+                            <div className="flex gap-1.5">
+                                <div className="w-10 h-1.5 rounded-full bg-primary glow-box" />
+                                <div className="w-4 h-1.5 rounded-full bg-white/10" />
+                                <div className="w-4 h-1.5 rounded-full bg-white/10" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Creation Protocol 1/3</span>
                         </div>
-                        <div className="h-1 w-1 bg-white/20 rounded-full" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                            ID: {profile.id.slice(0, 8).toUpperCase()}
-                        </span>
                     </div>
                 </div>
 
-                {/* Vertical Navigation Nodes */}
-                <div className="px-12 border-t border-white/5 flex items-center justify-between bg-black/40 backdrop-blur-xl relative">
-                    <div className="flex gap-10">
-                        <button
-                            onClick={() => setActiveTab('details')}
-                            className={`py-8 text-[11px] font-black uppercase tracking-[0.25em] relative transition-all duration-500 group/tab ${activeTab === 'details' ? 'text-primary' : 'text-white/20 hover:text-white/50'}`}
-                        >
-                            <span className="relative z-10">Core Registry</span>
-                            {activeTab === 'details' && (
-                                <motion.div
-                                    layoutId="activeTab"
-                                    className="absolute bottom-0 left-0 w-full h-[4px] bg-primary rounded-t-full shadow-[0_0_30px_rgba(var(--primary),1)]"
-                                />
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('contact')}
-                            className={`py-8 text-[11px] font-black uppercase tracking-[0.25em] relative transition-all duration-500 group/tab ${activeTab === 'contact' ? 'text-primary' : 'text-white/20 hover:text-white/50'}`}
-                        >
-                            <span className="relative z-10">Contact & Node</span>
-                            {activeTab === 'contact' && (
-                                <motion.div
-                                    layoutId="activeTab"
-                                    className="absolute bottom-0 left-0 w-full h-[4px] bg-primary rounded-t-full shadow-[0_0_30px_rgba(var(--primary),1)]"
-                                />
-                            )}
-                        </button>
+                {/* Vertical Navigation Nodes - Restored & Polished */}
+                <div className="px-12 border-t border-white/[0.03] flex items-center justify-between bg-black/20 backdrop-blur-3xl relative">
+                    <div className="flex gap-12">
+                        {[
+                            { id: 'details', label: 'Core Registry' },
+                            { id: 'contact', label: 'Contact & Node' }
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`py-10 text-[11px] font-black uppercase tracking-[0.3em] relative transition-all duration-700 group/tab ${activeTab === tab.id ? 'text-primary' : 'text-white/20 hover:text-white/60'}`}
+                            >
+                                <span className="relative z-10">{tab.label}</span>
+                                {activeTab === tab.id && (
+                                    <motion.div
+                                        layoutId="activeTabIndicator"
+                                        className="absolute bottom-0 left-0 w-full h-[4px] bg-primary rounded-t-full shadow-[0_0_40px_rgba(var(--primary),0.8)]"
+                                    />
+                                )}
+                                <div className="absolute inset-0 bg-primary/5 scale-x-0 group-hover/tab:scale-x-100 transition-transform origin-left duration-500" />
+                            </button>
+                        ))}
                     </div>
 
-                    {/* Simple Step Indicator */}
-                    <div className="flex gap-2">
-                        {[1, 2, 3].map((s) => (
-                            <div key={s} className={`h-1 rounded-full transition-all duration-700 ${s === (activeTab === 'details' ? 1 : 2) ? 'w-8 bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]' : 'w-2 bg-white/10'}`} />
-                        ))}
+                    <div className="flex items-center gap-4 text-white/20 font-black uppercase text-[9px] tracking-[0.4em]">
+                        <span className="animate-pulse">Live Signal</span>
+                        <div className="w-2 h-2 rounded-full bg-emerald-500/40" />
                     </div>
                 </div>
             </motion.div>
@@ -253,31 +286,30 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="bg-red-500/10 border border-red-400/20 text-red-100 p-8 rounded-[2.5rem] flex items-center gap-6 shadow-3xl backdrop-blur-2xl ring-1 ring-red-500/20"
+                    className="premium-card p-10 border-red-500/20 bg-red-500/5 text-red-200 flex items-center gap-8 ring-1 ring-red-500/20"
                 >
-                    <div className="p-4 bg-red-500/20 rounded-2xl">
-                        <XIcon className="w-6 h-6 shrink-0 text-red-500" />
+                    <div className="p-5 bg-red-500/20 rounded-3xl border border-red-500/30">
+                        <XIcon className="w-8 h-8 text-red-400" />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-red-500/60 mb-1">Configuration Exception</p>
-                        <span className="text-sm font-bold opacity-90 leading-relaxed">{error}</span>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-red-400/60 mb-2">Protocol Exception Triggered</p>
+                        <span className="text-base font-bold opacity-90 leading-tight block">{error}</span>
                     </div>
                 </motion.div>
             )}
 
-            <form onSubmit={handleSubmit} className="relative">
+            <form onSubmit={handleSubmit} className="relative z-10">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                        className="bg-[#0f111a]/60 backdrop-blur-3xl border border-white/5 rounded-[3rem] p-12 shadow-[0_60px_100px_-30px_rgba(0,0,0,0.6)] space-y-12 relative overflow-hidden"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                        className="premium-card p-12 md:p-16 space-y-16 relative overflow-hidden"
                     >
-                        {/* Internal Form Ambient Glow */}
-                        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
+                        {/* Ambient Card Atmosphere */}
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
 
                         {role === BuiltInRoles.PARENT_GUARDIAN ? (
                             <ParentForm formData={formData} handleChange={handleFormChange} activeTab={activeTab} />
@@ -286,38 +318,38 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                         ) : role === BuiltInRoles.SCHOOL_ADMINISTRATION ? (
                             <SchoolAdminForm formData={formData} handleChange={handleFormChange} isInitialCreation={false} />
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                <FloatingPremiumInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleFormChange} icon={<UserIcon className="w-4 h-4" />} />
-                                <FloatingPremiumInput label="Contact Number" name="phone" value={formData.phone} onChange={handleFormChange} icon={<PhoneIcon className="w-4 h-4" />} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <PremiumFloatingInput label="Full Identity Name" name="display_name" value={formData.display_name} onChange={handleFormChange as any} icon={<UserIcon />} />
+                                <PremiumFloatingInput label="Communication Node" name="phone" value={formData.phone} onChange={handleFormChange as any} icon={<PhoneIcon />} />
                             </div>
                         )}
                     </motion.div>
                 </AnimatePresence>
 
                 {/* REDESIGNED ACTION ZONE: Fixed Desktop Action Bar */}
-                <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-2xl z-[450]">
+                <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-4xl z-[450]">
                     <motion.div
-                        initial={{ y: 100, opacity: 0 }}
+                        initial={{ y: 80, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.5, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                        className="p-3 bg-[#0a0b10]/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] ring-1 ring-white/20 flex items-center justify-between"
+                        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                        className="p-4 bg-[#0a0b10]/95 backdrop-blur-[50px] border border-white/10 rounded-[3rem] shadow-[0_60px_100px_-20px_rgba(0,0,0,1)] ring-1 ring-white/20 flex items-center justify-between"
                     >
-                        <div className="flex items-center">
+                        <div className="flex items-center min-w-[140px]">
                             {showBackButton ? (
                                 <button
                                     type="button"
                                     onClick={onBack}
-                                    className="group h-[64px] px-8 rounded-[1.75rem] text-[11px] font-black text-white/30 hover:text-white hover:bg-white/5 transition-all uppercase tracking-[0.3em] flex items-center gap-4"
+                                    className="group h-[72px] px-10 rounded-[2rem] text-[11px] font-black text-white/30 hover:text-white hover:bg-white/5 transition-all uppercase tracking-[0.4em] flex items-center gap-6"
                                 >
-                                    <ChevronLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                                    <ChevronLeftIcon className="w-5 h-5 transition-transform group-hover:-translate-x-2" />
                                     <span className="hidden sm:inline">Return</span>
                                 </button>
-                            ) : <div className="ml-6" />}
+                            ) : <div className="ml-10" />}
                         </div>
 
-                        <div className="flex flex-col items-end gap-1 px-4 text-right">
-                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">Confirmation Required</span>
-                            <span className="text-[10px] font-bold text-white/40 tracking-wide italic">You can edit these parameters later</span>
+                        <div className="flex flex-col items-center gap-1.5 text-center">
+                            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary glow-text">Verification Protocol Active</span>
+                            <span className="text-[10px] font-bold text-white/20 tracking-wider">Identity node encryption: 4096-bit RSA</span>
                         </div>
 
                         <motion.button
@@ -325,18 +357,18 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                             whileTap={{ scale: 0.98 }}
                             type="submit"
                             disabled={loading || !isFormValid}
-                            className={`h-[68px] px-12 rounded-[1.75rem] font-black text-[14px] uppercase tracking-[0.25em] transition-all flex items-center gap-5 group relative overflow-hidden ${!isFormValid || loading
+                            className={`h-[76px] px-14 rounded-[2rem] font-black text-[15px] uppercase tracking-[0.3em] transition-all flex items-center gap-6 group relative overflow-hidden ${!isFormValid || loading
                                 ? 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5'
-                                : 'bg-primary text-white shadow-[0_25px_50px_-12px_rgba(var(--primary),0.6)] hover:shadow-[0_30px_60px_-12px_rgba(var(--primary),0.8)]'
+                                : 'bg-primary text-white shadow-[0_30px_60px_-10px_rgba(var(--primary),0.6)] hover:shadow-[0_40px_80px_-10px_rgba(var(--primary),0.8)]'
                                 }`}
                         >
                             {loading ? (
                                 <Spinner size="sm" className="text-white" />
                             ) : (
                                 <>
-                                    <span className="relative z-10">Complete Setup</span>
-                                    <CheckCircleIcon className="w-5 h-5 transition-all group-hover:scale-110 group-hover:rotate-6 relative z-10" />
-                                    {!loading && isFormValid && (
+                                    <span className="relative z-10">Complete Sync</span>
+                                    <CheckCircleIcon className="w-6 h-6 transition-all group-hover:scale-125 group-hover:rotate-6 relative z-10" />
+                                    {isFormValid && !loading && (
                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                     )}
                                 </>
@@ -346,36 +378,22 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 </div>
             </form>
 
-            {/* Bottom Footer Spacer - Essential for dropdown clearance */}
+            {/* Bottom Footer Spacer */}
             <div className="h-80" />
 
             <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.4 }}
-                transition={{ delay: 1.5 }}
-                className="text-center pb-12"
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+                className="text-center pb-20 opacity-30"
             >
-                <div className="inline-flex items-center gap-4 px-8 py-3 rounded-2xl bg-[#0a0b10]/40 border border-white/5 shadow-inner">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-                    <p className="text-[11px] font-black tracking-[0.3em] text-white/40 uppercase">
-                        Protocol Secured Node • 256-bit AES
+                <div className="inline-flex items-center gap-5 px-10 py-4 rounded-3xl bg-[#0a0b10]/40 border border-white/5 shadow-inner">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse glow-box shadow-emerald-500/50" />
+                    <p className="text-[11px] font-black tracking-[0.4em] text-white/60 uppercase">
+                        End-to-End Encrypted Registry Access
                     </p>
                 </div>
             </motion.div>
         </div>
     );
 };
-
-const FloatingPremiumInput = ({ label, icon, ...props }: any) => (
-    <div className="relative group w-full">
-        <div className="absolute top-1/2 -translate-y-1/2 left-4 text-white/20 group-focus-within:text-primary transition-colors duration-300 z-10 pointer-events-none">{icon}</div>
-        <input
-            {...props}
-            placeholder=" "
-            className="peer block w-full h-[48px] rounded-xl border border-white/10 bg-black/20 px-5 pl-12 text-[15px] text-white font-medium focus:ring-4 focus:ring-primary/5 focus:border-primary/40 transition-all outline-none"
-        />
-        <label className="absolute left-12 top-0 -translate-y-1/2 bg-slate-900/90 px-1.5 text-[10px] font-bold uppercase text-white/30 tracking-[0.2em] peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-[14px] peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-focus:top-0 peer-focus:text-[10px] peer-focus:font-bold peer-focus:uppercase peer-focus:text-primary transition-all duration-300 pointer-events-none">
-            {label}
-        </label>
-    </div>
-);

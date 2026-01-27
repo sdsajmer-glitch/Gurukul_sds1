@@ -23,46 +23,7 @@ const LocateFixedIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const PremiumFloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string; icon?: React.ReactNode; isTextArea?: boolean; isSynced?: boolean; action?: React.ReactNode }> = ({ label, icon, isTextArea, isSynced, action, className, ...props }) => (
-    <div className="relative group w-full">
-        {label && (
-            <label className={`absolute left-10 top-0 -translate-y-1/2 bg-[#0f111a] px-2 text-[10px] font-black uppercase tracking-[0.25em] z-20 transition-all duration-300 pointer-events-none rounded
-                ${isSynced ? 'text-primary' : 'text-white/20 group-focus-within:text-primary'}`}>
-                {label}
-            </label>
-        )}
-        <div className={`absolute ${isTextArea ? 'top-6' : 'top-1/2 -translate-y-1/2'} left-5 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none ${isSynced ? 'text-primary/60' : ''}`}>
-            {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5 transition-transform group-focus-within:scale-110' })}
-        </div>
-        {isTextArea ? (
-            <textarea
-                {...(props as any)}
-                placeholder=" "
-                className={`peer block w-full h-32 rounded-2xl border transition-all duration-500 px-6 pl-14 pr-14 pt-6 pb-2 text-[15px] text-white font-bold outline-none placeholder-transparent
-                    ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.05)]' : 'border-white/5 bg-black/40 hover:border-white/10 focus:border-primary/30 focus:bg-black/60 focus:ring-8 focus:ring-primary/5'} 
-                    ${className}`}
-            />
-        ) : (
-            <input
-                {...props}
-                placeholder=" "
-                className={`peer block w-full h-[60px] rounded-2xl border transition-all duration-500 px-6 pl-14 pt-4 pb-1 text-[16px] text-white font-bold outline-none placeholder-transparent
-                    ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.05)]' : 'border-white/5 bg-black/40 hover:border-white/10 focus:border-primary/30 focus:bg-black/60 focus:ring-8 focus:ring-primary/5'} 
-                    ${className}`}
-            />
-        )}
-        {action && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30">
-                {action}
-            </div>
-        )}
-        {isSynced && !action && (
-            <div className="absolute right-5 top-1/2 -translate-y-1/2 animate-in zoom-in-95 duration-500">
-                <CheckCircleIcon className="w-5 h-5 text-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]" />
-            </div>
-        )}
-    </div>
-);
+import PremiumFloatingInput from '../common/PremiumFloatingInput';
 
 interface FormProps {
     formData: Partial<ParentProfileData & { phone: string; display_name: string; }>;

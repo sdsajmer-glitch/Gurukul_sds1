@@ -100,37 +100,37 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 </label>
             )}
 
-            <div className="relative h-[64px]">
+            <div className="relative h-[72px]">
                 <button
                     type="button"
                     onClick={() => !disabled && setIsOpen(!isOpen)}
                     disabled={disabled}
                     className={`
-                        peer w-full h-full text-left rounded-2xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] outline-none select-none
-                        flex items-center px-6 border backdrop-blur-3xl
-                        ${icon ? 'pl-14' : 'pl-6'}
+                        peer w-full h-full text-left rounded-[2rem] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] outline-none select-none
+                        flex items-center px-8 border backdrop-blur-3xl
+                        ${icon ? 'pl-16' : 'pl-8'}
                         ${isOpen
                             ? 'bg-primary/5 border-primary/40 shadow-[0_0_40px_rgba(var(--primary),0.1)] ring-8 ring-primary/5'
                             : 'bg-black/40 border-white/5 hover:border-white/10 hover:bg-black/60 shadow-inner'
                         }
                     `}
                 >
-                    <span className="flex items-center h-full min-w-0 flex-grow">
+                    <span className="flex items-center h-full min-w-0 flex-grow pt-2">
                         {selectedOption ? (
-                            <span className="text-white font-bold text-[16px] tracking-tight truncate">{selectedOption.label}</span>
+                            <span className="text-white font-bold text-[17px] tracking-tight truncate">{selectedOption.label}</span>
                         ) : (
-                            <span className="text-white/20 font-bold text-[15px] truncate tracking-wide italic leading-none">{placeholder}</span>
+                            <span className="text-white/20 font-bold text-[16px] truncate tracking-wide italic leading-none">{placeholder}</span>
                         )}
                     </span>
 
-                    <div className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-700 ${isOpen ? 'bg-primary text-white rotate-180 shadow-lg shadow-primary/40' : 'bg-white/5 text-white/20 group-hover:bg-white/10 group-hover:text-white/40'}`}>
-                        <ChevronDownIcon className="h-4 w-4" />
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-[1.25rem] transition-all duration-700 ${isOpen ? 'bg-primary text-white rotate-180 shadow-lg shadow-primary/40' : 'bg-white/5 text-white/20 group-hover:bg-white/10 group-hover:text-white/40'}`}>
+                        <ChevronDownIcon className="h-5 w-5" />
                     </div>
                 </button>
 
                 {icon && (
-                    <div className={`absolute left-5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-500 ${isOpen ? 'text-primary scale-125' : 'text-white/10'}`}>
-                        {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
+                    <div className={`absolute left-6 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-500 ${isOpen ? 'text-primary scale-125' : 'text-white/10'}`}>
+                        {React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}
                     </div>
                 )}
             </div>
