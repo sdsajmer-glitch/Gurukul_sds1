@@ -218,7 +218,9 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                 </div>
                             </div>
 
-                            <div className="bg-white/[0.02] p-12 rounded-[3.5rem] border border-white/5 shadow-inner space-y-12">
+                            <div className="bg-[#0a0b10] p-12 rounded-[3.5rem] border border-white/5 shadow-inner space-y-16 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-primary/[0.01] pointer-events-none" />
+
                                 <PremiumFloatingInput
                                     label="Global Positioning Address"
                                     name="address"
@@ -227,15 +229,16 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                     required
                                     icon={<LocationIcon />}
                                     isTextArea
+                                    className="ring-1 ring-white/5 focus:ring-primary/20 transition-all duration-700"
                                     action={
-                                        <button onClick={handleResolveAddress} disabled={isResolving} className="p-4 bg-primary/10 text-primary rounded-2xl border border-primary/20 backdrop-blur-xl">
-                                            {isResolving ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5" />}
+                                        <button onClick={handleResolveAddress} disabled={isResolving} className="p-4 bg-primary/10 text-primary rounded-2xl border border-primary/20 backdrop-blur-xl hover:bg-primary/20 transition-all">
+                                            {isResolving ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5 animate-pulse" />}
                                         </button>
                                     }
                                 />
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                                    <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
+                                    <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
                                         <CustomSelect
                                             label="National Domain"
                                             options={countries.map(c => ({ label: c, value: c }))}
@@ -245,7 +248,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                             searchable
                                         />
                                     </div>
-                                    <div className="space-y-4">
+                                    <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
                                         <CustomSelect
                                             label="Regional Node"
                                             options={availableStates.map(s => ({ label: s, value: s }))}
@@ -256,7 +259,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                             searchable
                                         />
                                     </div>
-                                    <div className="space-y-4">
+                                    <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
                                         <CustomSelect
                                             label="Primary Municipality"
                                             options={availableCities.map(c => ({ label: c, value: c }))}
@@ -284,16 +287,22 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-white/[0.02] p-12 rounded-[3.5rem] border border-white/5">
-                                <PremiumFloatingInput label="Custodian Legal Name" name="admin_contact_name" value={formData.admin_contact_name || ''} onChange={handleChange} required icon={<UserIcon />} />
-                                <PremiumFloatingInput label="Professional Designation" name="admin_designation" value={formData.admin_designation || ''} onChange={handleChange} required icon={<CheckCircleIcon />} />
-                                <div className="md:col-span-2">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 bg-[#0a0b10] p-12 rounded-[3.5rem] border border-white/5 shadow-inner relative overflow-hidden">
+                                <div className="absolute inset-0 bg-primary/[0.01] pointer-events-none" />
+
+                                <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
+                                    <PremiumFloatingInput label="Custodian Legal Name" name="admin_contact_name" value={formData.admin_contact_name || ''} onChange={handleChange} required icon={<UserIcon />} />
+                                </div>
+                                <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
+                                    <PremiumFloatingInput label="Professional Designation" name="admin_designation" value={formData.admin_designation || ''} onChange={handleChange} required icon={<CheckCircleIcon />} />
+                                </div>
+                                <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
                                     <PremiumFloatingInput label="Institutional Email Node" type="email" name="admin_contact_email" value={formData.admin_contact_email || ''} onChange={handleChange} required icon={<MailIcon />} />
                                 </div>
-                                <div className="md:col-span-2 flex gap-8">
-                                    <div className="w-[180px]">
+                                <div className="md:col-span-6 grid grid-cols-12 gap-6 items-end transition-all duration-700 hover:scale-[1.01]">
+                                    <div className="col-span-4">
                                         <CustomSelect
-                                            label="Telecom Code"
+                                            label="Code"
                                             options={countryCodes.map(c => ({ value: c.dial_code, label: `${c.code} ${c.dial_code}` }))}
                                             value={formData.admin_contact_phone_country_code || '+91'}
                                             onChange={(v) => handleChange({ target: { name: 'admin_contact_phone_country_code', value: v } } as any)}
@@ -301,8 +310,8 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                             searchable
                                         />
                                     </div>
-                                    <div className="flex-grow">
-                                        <PremiumFloatingInput label="Primary Telemetry Number" name="admin_contact_phone_local" value={formData.admin_contact_phone_local || ''} onChange={handleChange} icon={<PhoneIcon />} />
+                                    <div className="col-span-8">
+                                        <PremiumFloatingInput label="Telemetry Number" name="admin_contact_phone_local" value={formData.admin_contact_phone_local || ''} onChange={handleChange} icon={<PhoneIcon />} />
                                     </div>
                                 </div>
                             </div>
@@ -321,45 +330,57 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                 </div>
                             </div>
 
-                            <div className="space-y-12">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-white/[0.02] p-12 rounded-[3.5rem] border border-white/5">
-                                    <CustomSelect
-                                        label="Pedagogical Board"
-                                        options={[
-                                            { value: 'CBSE', label: 'CBSE (Central Core)' },
-                                            { value: 'ICSE', label: 'ICSE (Indian Standard)' },
-                                            { value: 'IB', label: 'IB (Global Baccalaureate)' },
-                                            { value: 'State Board', label: 'Regional State Board' },
-                                        ]}
-                                        value={formData.academic_board || ''}
-                                        onChange={(v) => handleChange({ target: { name: 'academic_board', value: v } } as any)}
-                                        icon={<BookIcon />}
-                                        searchable
-                                    />
-                                    <PremiumFloatingInput label="Institutional Registry Code" name="affiliation_number" value={formData.affiliation_number || ''} onChange={handleChange} icon={<HashIcon />} />
+                            <div className="space-y-16">
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-12 bg-[#0a0b10] p-12 rounded-[3.5rem] border border-white/5 shadow-inner relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-primary/[0.01] pointer-events-none" />
 
-                                    <CustomSelect
-                                        label="Demographic Nexus"
-                                        options={[{ value: 'Co-Educational', label: 'Co-Educational' }, { value: 'Boys', label: 'Boys School' }, { value: 'Girls', label: 'Girls School' }]}
-                                        value={formData.school_type || ''}
-                                        onChange={(v) => handleChange({ target: { name: 'school_type', value: v } } as any)}
-                                        icon={<UsersIcon />}
-                                    />
+                                    <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
+                                        <CustomSelect
+                                            label="Pedagogical Board"
+                                            options={[
+                                                { value: 'CBSE', label: 'CBSE (Central Core)' },
+                                                { value: 'ICSE', label: 'ICSE (Indian Standard)' },
+                                                { value: 'IB', label: 'IB (Global Baccalaureate)' },
+                                                { value: 'State Board', label: 'Regional State Board' },
+                                            ]}
+                                            value={formData.academic_board || ''}
+                                            onChange={(v) => handleChange({ target: { name: 'academic_board', value: v } } as any)}
+                                            icon={<BookIcon />}
+                                            searchable
+                                        />
+                                    </div>
+                                    <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
+                                        <PremiumFloatingInput label="Institutional Registry Code" name="affiliation_number" value={formData.affiliation_number || ''} onChange={handleChange} icon={<HashIcon />} />
+                                    </div>
 
-                                    <div className="grid grid-cols-2 gap-8">
+                                    <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
+                                        <CustomSelect
+                                            label="Demographic Nexus"
+                                            options={[{ value: 'Co-Educational', label: 'Co-Educational' }, { value: 'Boys', label: 'Boys School' }, { value: 'Girls', label: 'Girls School' }]}
+                                            value={formData.school_type || ''}
+                                            onChange={(v) => handleChange({ target: { name: 'school_type', value: v } } as any)}
+                                            icon={<UsersIcon />}
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-6 grid grid-cols-2 gap-8 transition-all duration-700 hover:scale-[1.01]">
                                         <CustomSelect label="Session Start" options={MONTHS} value={formData.academic_year_start || ''} onChange={(v) => handleChange({ target: { name: 'academic_year_start', value: v } } as any)} icon={<CalendarIcon />} searchable />
                                         <CustomSelect label="Session End" options={MONTHS} value={formData.academic_year_end || ''} onChange={(v) => handleChange({ target: { name: 'academic_year_end', value: v } } as any)} icon={<CalendarIcon />} searchable />
                                     </div>
                                 </div>
 
-                                <div className="bg-emerald-500/[0.03] p-12 rounded-[3.5rem] border border-emerald-500/10 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px]" />
-                                    <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] mb-10 flex items-center gap-4">
-                                        <LayersIcon className="w-5 h-5" /> Grade Spectrum Nodes
+                                <div className="bg-emerald-500/[0.03] p-12 rounded-[3.5rem] border border-emerald-500/10 relative overflow-hidden shadow-2xl">
+                                    <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px] animate-pulse" />
+                                    <h4 className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.6em] mb-12 flex items-center gap-4">
+                                        <LayersIcon className="w-6 h-6" /> Grade Spectrum Nodes
                                     </h4>
-                                    <div className="grid grid-cols-2 gap-12 relative z-10">
-                                        <CustomSelect label="Terminal Grade Node (Low)" options={GRADES} value={formData.grade_range_start || ''} onChange={(v) => handleChange({ target: { name: 'grade_range_start', value: v } } as any)} searchable />
-                                        <CustomSelect label="Terminal Grade Node (High)" options={GRADES} value={formData.grade_range_end || ''} onChange={(v) => handleChange({ target: { name: 'grade_range_end', value: v } } as any)} searchable />
+                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-12 relative z-10">
+                                        <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
+                                            <CustomSelect label="Terminal Grade Node (Low)" options={GRADES} value={formData.grade_range_start || ''} onChange={(v) => handleChange({ target: { name: 'grade_range_start', value: v } } as any)} searchable />
+                                        </div>
+                                        <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.01]">
+                                            <CustomSelect label="Terminal Grade Node (High)" options={GRADES} value={formData.grade_range_end || ''} onChange={(v) => handleChange({ target: { name: 'grade_range_end', value: v } } as any)} searchable />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
