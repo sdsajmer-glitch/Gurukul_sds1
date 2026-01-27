@@ -346,9 +346,9 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     />
                 </div>
 
-                {/* High-Fidelity Institutional Registry Grid: Optimized for long-form geographic strings */}
-                <div className="grid grid-cols-1 md:grid-cols-10 gap-x-12 gap-y-16 items-end">
-                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.01]">
+                {/* Ultra-World-Class Symmetrical Registry Grid: 4-4-4 Sibling Architecture */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-x-12 gap-y-16 items-end">
+                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.015] group/state">
                         <CustomSelect
                             label="State Protocol"
                             value={formData.state || ''}
@@ -360,7 +360,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             isSynced={syncedFields.has('state')}
                         />
                     </div>
-                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.01]">
+                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.015] group/city">
                         <CustomSelect
                             label="City Module"
                             value={formData.city || ''}
@@ -372,7 +372,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             isSynced={syncedFields.has('city')}
                         />
                     </div>
-                    <div className="md:col-span-2 transition-all duration-700 hover:scale-[1.01]">
+                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.015] group/pin">
                         <PremiumFloatingInput
                             label="PIN NODE"
                             name="pin_code"
@@ -380,7 +380,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             onChange={handleChange}
                             isSynced={syncedFields.has('pin_code')}
                             icon={<LocationIcon />}
-                            className="ring-1 ring-white/5 hover:ring-primary/30 transition-all duration-500 shadow-2xl"
+                            className="ring-2 ring-white/5 hover:ring-primary/40 transition-all duration-500 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.4)]"
                         />
                     </div>
                 </div>
