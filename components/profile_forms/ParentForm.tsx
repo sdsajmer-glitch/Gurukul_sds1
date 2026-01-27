@@ -346,9 +346,9 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     />
                 </div>
 
-                {/* Ultra-World-Class Symmetrical Registry Grid: 4-4-4 Sibling Architecture */}
+                {/* Ultra-Expanded Symmetrical Registry Grid: 6-6-6 Institutional Staggering */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-x-12 gap-y-16 items-end">
-                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.015] group/state">
+                    <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.015] group/state">
                         <CustomSelect
                             label="State Protocol"
                             value={formData.state || ''}
@@ -360,7 +360,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             isSynced={syncedFields.has('state')}
                         />
                     </div>
-                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.015] group/city">
+                    <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.015] group/city">
                         <CustomSelect
                             label="City Module"
                             value={formData.city || ''}
@@ -372,7 +372,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             isSynced={syncedFields.has('city')}
                         />
                     </div>
-                    <div className="md:col-span-4 transition-all duration-700 hover:scale-[1.015] group/pin">
+                    <div className="md:col-span-6 transition-all duration-700 hover:scale-[1.015] group/pin">
                         <PremiumFloatingInput
                             label="PIN NODE"
                             name="pin_code"
