@@ -25,7 +25,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
     const [editingChild, setEditingChild] = useState<AdmissionApplication | null>(null);
     const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
     const [searchTerm, setSearchTerm] = useState('');
-    
+
     const fetchData = useCallback(async () => {
         if (!profile?.id) return;
         setLoading(true);
@@ -43,7 +43,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
 
     useEffect(() => {
         fetchData();
-        
+
         // Setup Realtime Subscription for instant updates
         const channel = supabase.channel('family-nodes-sync')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'admissions' }, () => {
@@ -60,13 +60,13 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchData]); 
+    }, [fetchData]);
 
     const filteredApplications = useMemo(() => {
         return applications.filter(app => {
             const matchesSearch = (app.applicant_name || '').toLowerCase().includes(searchTerm.toLowerCase());
             const status = (app.status || '').toUpperCase();
-            
+
             if (activeFilter === 'APPROVED') return matchesSearch && (status === 'APPROVED' || status === 'VERIFIED' || status === 'ENROLLED');
             if (activeFilter === 'REJECTED') return matchesSearch && status === 'REJECTED';
             if (activeFilter === 'PENDING') {
@@ -90,7 +90,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 mb-16">
                 <div className="max-w-2xl">
                     <div className="flex items-center gap-3 mb-4">
-                         <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em] border-l-2 border-primary/40 pl-4">Institutional Roster</span>
+                        <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em] border-l-2 border-primary/40 pl-4">Institutional Roster</span>
                     </div>
                     <h2 className="text-3xl md:text-4xl font-serif font-black text-white tracking-tighter uppercase leading-none">
                         Family <span className="text-white/20 font-normal italic">Nodes.</span>
@@ -99,10 +99,10 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
                         Centralized oversight for enrollment identities, academic records, and secure institutional access.
                     </p>
                 </div>
-                
+
                 <div className="flex items-center gap-4 w-full lg:w-auto">
-                    <button 
-                        onClick={() => { setEditingChild(null); setIsModalOpen(true); }} 
+                    <button
+                        onClick={() => { setEditingChild(null); setIsModalOpen(true); }}
                         className="flex-grow lg:flex-grow-0 h-12 md:h-14 px-10 bg-primary hover:bg-primary/90 text-white font-bold text-[12px] uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 transition-all transform active:scale-[0.98] hover:scale-[1.02] flex items-center justify-center gap-3 group"
                     >
                         <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" /> Provision Node
@@ -123,12 +123,12 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
                         </button>
                     ))}
                 </div>
-                
+
                 <div className="relative flex-grow w-full md:max-w-md group">
                     <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors duration-300" />
-                    <input 
-                        type="text" 
-                        placeholder="Search identities..." 
+                    <input
+                        type="text"
+                        placeholder="Search identities..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="h-12 w-full pl-12 pr-6 bg-black/20 border border-white/5 rounded-xl text-sm font-medium text-white focus:bg-black/30 outline-none transition-all placeholder:text-white/10 focus:ring-4 focus:ring-primary/10"
@@ -148,10 +148,10 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 {filteredApplications.map((app, idx) => (
                     <div key={app.id} className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${idx * 60}ms` }}>
-                        <ChildProfileCard 
+                        <ChildProfileCard
                             child={app}
                             isExpanded={false}
-                            onToggleExpand={() => {}}
+                            onToggleExpand={() => { }}
                             onEdit={() => { setEditingChild(app); setIsModalOpen(true); }}
                             onManageDocuments={() => onManageDocuments(app.id)}
                             onNavigateDashboard={async () => {
@@ -162,9 +162,9 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
                         />
                     </div>
                 ))}
-                
+
                 {/* Empty State / Add Child Trigger */}
-                <button 
+                <button
                     onClick={() => { setEditingChild(null); setIsModalOpen(true); }}
                     className="flex flex-col items-center justify-center p-12 rounded-2xl border-2 border-dashed border-white/5 hover:border-primary/40 hover:bg-primary/[0.01] transition-all duration-700 group relative overflow-hidden h-full min-h-[340px] bg-black/20"
                 >
@@ -179,7 +179,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
             </div>
 
             {isModalOpen && (
-                <ChildRegistrationModal 
+                <ChildRegistrationModal
                     child={editingChild}
                     onClose={() => { setIsModalOpen(false); setEditingChild(null); }}
                     onSave={fetchData}
@@ -191,7 +191,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
 };
 
 const AlertTriangleIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
 );
 
 export default MyChildrenTab;

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { ParentProfileData } from '../../types';
 import { UserIcon } from '../icons/UserIcon';
 import { PhoneIcon } from '../icons/PhoneIcon';
@@ -75,7 +76,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
     const [isLocating, setIsLocating] = useState(false);
     const [isResolving, setIsResolving] = useState(false);
     const [syncStatus, setSyncStatus] = useState<string>('');
-    const [syncError, setSyncError] = useState<{message: string, isWarning: boolean} | null>(null);
+    const [syncError, setSyncError] = useState<{ message: string, isWarning: boolean } | null>(null);
     const [syncedFields, setSyncedFields] = useState<Set<string>>(new Set());
 
     const availableStates = useMemo(() => formData.country ? statesByCountry[formData.country] || [] : [], [formData.country]);
@@ -112,7 +113,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
         setIsResolving(true);
         setSyncStatus('Resolving Address...');
         setSyncError(null);
-        
+
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const prompt = `Based on the residential address "${formData.address}", extract or identify city, state, and country.
@@ -135,7 +136,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                 if (data.country) handleSelectChange('country', false)(data.country);
                 if (data.state) handleSelectChange('state', false)(data.state);
                 if (data.city) handleSelectChange('city', false)(data.city);
-                
+
                 setSyncStatus('Address Resolved.');
                 setTimeout(() => setSyncStatus(''), 3000);
             }
@@ -189,7 +190,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     if (data.city) handleSelectChange('city', false)(data.city);
                     if (data.address) handleChange({ target: { name: 'address', value: data.address } } as any);
                     if (data.pin_code) handleChange({ target: { name: 'pin_code', value: data.pin_code } } as any);
-                    
+
                     setSyncStatus('Identity Synced.');
                     setTimeout(() => setSyncStatus(''), 3000);
                 }
@@ -206,153 +207,181 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
 
     if (activeTab === 'details') {
         return (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
-                <div className="flex items-center gap-4 mb-4">
-                    <div className="p-3 bg-primary/5 rounded-xl text-primary/60 border border-primary/10 shadow-inner">
-                        <UsersIcon className="w-5 h-5" />
+            <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-10"
+            >
+                <div className="flex items-center gap-6 mb-8 group/header">
+                    <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.15)] group-hover/header:shadow-[0_0_30px_rgba(var(--primary),0.3)] transition-all duration-500">
+                        <UsersIcon className="w-6 h-6" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-bold text-white tracking-widest uppercase">Guardian Identity</h3>
-                        <p className="text-[11px] text-white/30 font-medium tracking-wider">Define your institutional role and relationship.</p>
+                        <h3 className="text-base font-black text-white tracking-[0.2em] uppercase glow-text">Guardian Identity</h3>
+                        <p className="text-xs text-white/40 font-medium tracking-widest mt-1">Institutional verification & relationship nodes.</p>
                     </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4"/>} />
-                    
-                    <CustomSelect 
-                        label="Relationship Status" 
-                        value={formData.relationship_to_student || ''} 
-                        onChange={handleSelectChange('relationship_to_student')} 
-                        options={[{value:'Father', label:'Father'}, {value:'Mother', label:'Mother'}, {value:'Guardian', label:'Legal Guardian'}, {value:'Other', label:'Authorized Affiliate'}]}
-                        icon={<UsersIcon className="w-4 h-4"/>}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} />
+
+                    <CustomSelect
+                        label="Relationship Status"
+                        value={formData.relationship_to_student || ''}
+                        onChange={handleSelectChange('relationship_to_student')}
+                        options={[{ value: 'Father', label: 'Father' }, { value: 'Mother', label: 'Mother' }, { value: 'Guardian', label: 'Legal Guardian' }, { value: 'Other', label: 'Authorized Affiliate' }]}
+                        icon={<UsersIcon className="w-4 h-4" />}
                     />
-                    
-                    <CustomSelect 
-                        label="Gender" 
-                        value={formData.gender || ''} 
-                        onChange={handleSelectChange('gender')} 
-                        options={[{value:'Male', label:'Male'}, {value:'Female', label:'Female'}, {value:'Other', label:'Diverse'}, {value:'Prefer not to say', label:'Prefer not to say'}]}
-                        icon={<UserIcon className="w-4 h-4"/>}
+
+                    <CustomSelect
+                        label="Gender"
+                        value={formData.gender || ''}
+                        onChange={handleSelectChange('gender')}
+                        options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Diverse' }, { value: 'Prefer not to say', label: 'Prefer not to say' }]}
+                        icon={<UserIcon className="w-4 h-4" />}
                     />
-                    
-                    <CustomSelect 
-                        label="Family Size" 
-                        value={String(formData.number_of_children || '1')} 
-                        onChange={handleSelectChange('number_of_children')} 
-                        options={[{value:'1', label:'Single Child'}, {value:'2', label:'2 Children'}, {value:'3', label:'3 Children'}, {value:'4', label:'4+ Children'}]}
-                        icon={<UsersIcon className="w-4 h-4"/>}
+
+                    <CustomSelect
+                        label="Family Size"
+                        value={String(formData.number_of_children || '1')}
+                        onChange={handleSelectChange('number_of_children')}
+                        options={[{ value: '1', label: 'Single Child' }, { value: '2', label: '2 Children' }, { value: '3', label: '3 Children' }, { value: '4', label: '4+ Children' }]}
+                        icon={<UsersIcon className="w-4 h-4" />}
                     />
                 </div>
-            </div>
+            </motion.div>
         );
     }
 
     return (
-        <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
-            <div className="flex items-center justify-between gap-6 p-6 rounded-2xl bg-white/[0.02] border border-white/5 relative overflow-hidden group">
-                <div className="flex items-center gap-4 relative z-10">
-                    <div className="p-3 bg-indigo-500/5 rounded-xl text-indigo-400 border border-indigo-500/10 shadow-inner">
-                        <HomeIcon className="w-5 h-5" />
+        <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-10"
+        >
+            <div className="flex items-center justify-between gap-8 p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 relative overflow-hidden group/loc">
+                {/* Decorative background pulse */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover/loc:scale-150 transition-transform duration-700" />
+
+                <div className="flex items-center gap-6 relative z-10">
+                    <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-xl">
+                        <HomeIcon className="w-6 h-6" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-bold text-white tracking-widest uppercase">Residency & Contact</h3>
-                        <p className="text-[11px] text-white/30 font-medium tracking-wider">{syncStatus || 'Primary contact and telemetry.'}</p>
+                        <h3 className="text-base font-black text-white tracking-[0.2em] uppercase">Residency & Contact</h3>
+                        <p className="text-xs text-white/40 font-medium tracking-widest mt-1">
+                            {syncStatus ? (
+                                <span className="text-indigo-400 animate-pulse font-bold">{syncStatus}</span>
+                            ) : 'Primary contact & telemetry synchronization.'}
+                        </p>
                     </div>
                 </div>
 
-                <button 
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     type="button"
                     onClick={handleAutoLocate}
                     disabled={isLocating}
-                    className={`h-[40px] px-6 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300 border
-                        ${isLocating 
-                            ? 'bg-primary/20 text-primary border-primary/40 animate-pulse' 
-                            : 'bg-white/5 text-white/50 border-white/5 hover:border-primary/40 hover:text-white active:scale-[0.98]'
+                    className={`h-[48px] px-8 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-500 border relative z-10 overflow-hidden
+                        ${isLocating
+                            ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40 animate-pulse'
+                            : 'bg-white/5 text-white/50 border-white/5 hover:border-indigo-400 hover:text-white hover:shadow-[0_0_20px_rgba(99,102,241,0.2)]'
                         }
                     `}
                 >
-                    {isLocating ? <Spinner size="sm" className="text-primary"/> : <><LocateFixedIcon className="w-4 h-4 inline mr-2"/> Locate Node</>}
-                </button>
+                    {isLocating ? (
+                        <Spinner size="sm" className="text-indigo-400" />
+                    ) : (
+                        <div className="flex items-center gap-3">
+                            <LocateFixedIcon className="w-4 h-4" />
+                            Locate Node
+                        </div>
+                    )}
+                </motion.button>
             </div>
 
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <PremiumFloatingInput 
-                        label="Primary Mobile" 
-                        name="phone" 
-                        type="tel" 
-                        value={formData.phone} 
-                        onChange={handleChange} 
-                        required 
-                        icon={<PhoneIcon className="w-4 h-4"/>} 
+            <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <PremiumFloatingInput
+                        label="Primary Mobile"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        required
+                        icon={<PhoneIcon className="w-4 h-4" />}
                     />
-                    
-                    <CustomSelect 
-                        label="Country" 
-                        value={formData.country || ''} 
-                        onChange={handleSelectChange('country')} 
-                        options={countries.map(c => ({value: c, label: c}))}
-                        icon={<GlobeIcon className="w-4 h-4"/>}
+
+                    <CustomSelect
+                        label="Country"
+                        value={formData.country || ''}
+                        onChange={handleSelectChange('country')}
+                        options={countries.map(c => ({ value: c, label: c }))}
+                        icon={<GlobeIcon className="w-4 h-4" />}
                         placeholder="Select Region..."
                         searchable
                         isSynced={syncedFields.has('country')}
                     />
                 </div>
 
-                <PremiumFloatingInput 
-                    label="Full Residential Address" 
-                    name="address" 
-                    value={formData.address} 
-                    onChange={handleChange as any} 
-                    isTextArea 
-                    isSynced={syncedFields.has('address')}
-                    icon={<LocationIcon className="w-4 h-4"/>} 
-                    action={
-                        <button 
-                            type="button"
-                            onClick={handleResolveAddress}
-                            disabled={isResolving || !formData.address?.trim()}
-                            className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all disabled:opacity-30"
-                            title="Auto-fill city, state, country"
-                        >
-                            {isResolving ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5" />}
-                        </button>
-                    }
-                />
+                <div className="relative group">
+                    <PremiumFloatingInput
+                        label="Full Residential Address"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange as any}
+                        isTextArea
+                        isSynced={syncedFields.has('address')}
+                        icon={<LocationIcon className="w-4 h-4" />}
+                        action={
+                            <motion.button
+                                whileHover={{ scale: 1.1, rotate: 15 }}
+                                whileTap={{ scale: 0.9 }}
+                                type="button"
+                                onClick={handleResolveAddress}
+                                disabled={isResolving || !formData.address?.trim()}
+                                className="p-3 bg-primary/10 text-primary rounded-xl transition-all shadow-lg shadow-primary/10 hover:shadow-primary/20 border border-primary/20"
+                                title="Auto-fill city, state, country"
+                            >
+                                {isResolving ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5" />}
+                            </motion.button>
+                        }
+                    />
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <CustomSelect 
-                        label="State" 
-                        value={formData.state || ''} 
-                        onChange={handleSelectChange('state')} 
-                        options={availableStates.map(s => ({value: s, label: s}))}
-                        icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4"/>}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <CustomSelect
+                        label="State"
+                        value={formData.state || ''}
+                        onChange={handleSelectChange('state')}
+                        options={availableStates.map(s => ({ value: s, label: s }))}
+                        icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
                         disabled={!formData.country}
                         searchable
                         isSynced={syncedFields.has('state')}
                     />
-                    <CustomSelect 
-                        label="City" 
-                        value={formData.city || ''} 
-                        onChange={handleSelectChange('city')} 
-                        options={availableCities.map(c => ({value: c, label: c}))}
-                        icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4"/>}
+                    <CustomSelect
+                        label="City"
+                        value={formData.city || ''}
+                        onChange={handleSelectChange('city')}
+                        options={availableCities.map(c => ({ value: c, label: c }))}
+                        icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
                         disabled={!formData.state}
                         searchable
                         isSynced={syncedFields.has('city')}
                     />
-                    <PremiumFloatingInput 
-                        label="Pin Code" 
-                        name="pin_code" 
-                        value={formData.pin_code} 
-                        onChange={handleChange} 
+                    <PremiumFloatingInput
+                        label="Pin Code"
+                        name="pin_code"
+                        value={formData.pin_code}
+                        onChange={handleChange}
                         isSynced={syncedFields.has('pin_code')}
-                        icon={<LocationIcon className="w-4 h-4"/>} 
+                        icon={<LocationIcon className="w-4 h-4" />}
                     />
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 
