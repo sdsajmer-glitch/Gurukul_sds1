@@ -275,8 +275,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             onKeyDown={handleKeyDown}
         >
             {label && (
-                <label className={`absolute left-10 top-0 -translate-y-1/2 bg-[#0d0e14] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em] z-20 transition-all duration-700 pointer-events-none border border-transparent
-                    ${isOpen ? 'text-primary shadow-[0_0_30px_rgba(var(--primary),0.4)] ring-1 ring-primary/40 border-primary/20 bg-[#0a0b10]' : isSynced ? 'text-primary' : 'text-white/10 group-hover:text-white/30'}`}>
+                <label className={`absolute left-10 top-0 -translate-y-1/2 bg-[#0a0b10] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em] z-20 transition-all duration-700 pointer-events-none border border-transparent
+                    ${isOpen ? 'text-primary shadow-[0_0_30px_rgba(var(--primary),0.4)] ring-1 ring-primary/40 border-primary/20 bg-[#0a0b10]' : isSynced ? 'text-primary' : 'text-white/20 group-hover:text-white/40'}`}>
                     {label}
                 </label>
             )}
@@ -289,18 +289,18 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                     className={`
                         peer w-full h-full text-left rounded-[2.25rem] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none select-none
                         flex items-center px-10 border backdrop-blur-3xl
-                        ${icon ? 'pl-20' : 'pl-10'}
+                        ${icon ? 'pl-16' : 'pl-8'}
                         ${isOpen
                             ? 'bg-primary/10 border-primary shadow-[0_0_80px_-20px_rgba(var(--primary),0.2)] ring-12 ring-primary/5'
-                            : 'bg-black/60 border-white/5 hover:border-white/20 hover:bg-black/80 shadow-[inset_0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[inset_0_4px_30px_rgba(var(--primary),0.05)]'
+                            : 'bg-black/60 border-white/10 hover:border-white/20 hover:bg-black/80 shadow-[inset_0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[inset_0_4px_30px_rgba(var(--primary),0.05)]'
                         }
                     `}
                 >
-                    <span className="flex items-center h-full min-w-0 flex-grow pt-2">
+                    <span className="flex items-center h-full min-w-0 flex-grow">
                         {selectedOption ? (
-                            <span className="text-white font-bold text-[18px] tracking-tight truncate glow-text">{selectedOption.label}</span>
+                            <span className="text-white font-bold text-[16px] tracking-tight truncate glow-text">{selectedOption.label}</span>
                         ) : (
-                            <span className="text-white/10 font-black text-[15px] truncate tracking-[0.2em] uppercase leading-none">{placeholder}</span>
+                            <span className="text-white/10 font-bold text-[14px] truncate tracking-[0.2em] uppercase leading-none">{placeholder}</span>
                         )}
                     </span>
 
@@ -317,8 +317,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 </button>
 
                 {icon && (
-                    <div className={`absolute left-8 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-700 ${isOpen ? 'text-primary scale-125' : 'text-white/10 scale-100 group-hover:text-primary/40'}`}>
-                        {React.cloneElement(icon as React.ReactElement, { className: 'w-7 h-7' })}
+                    <div className={`absolute left-6 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-700 ${isOpen ? 'text-primary scale-125' : 'text-white/10 scale-100 group-hover:text-primary/40'}`}>
+                        {React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}
                     </div>
                 )}
             </div>

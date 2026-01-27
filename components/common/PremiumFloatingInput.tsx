@@ -27,7 +27,7 @@ const PremiumFloatingInput: React.FC<PremiumFloatingInputProps> = ({ label, icon
                 <textarea
                     {...(props as any)}
                     placeholder=" "
-                    className={`peer block w-full h-40 rounded-[2rem] border transition-all duration-500 px-8 pl-16 pr-16 pt-8 pb-4 text-[16px] text-white font-bold outline-none placeholder-transparent
+                    className={`peer block w-full h-40 rounded-[2rem] border transition-all duration-500 px-8 ${icon ? 'pl-16' : 'pl-10'} pr-16 pt-8 pb-4 text-[16px] text-white font-bold outline-none placeholder-transparent
                         ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_30px_rgba(var(--primary),0.05)]' : 'border-white/5 bg-black/40 hover:border-white/10 focus:border-primary/30 focus:bg-black/60 focus:ring-8 focus:ring-primary/5'} 
                         ${className}`}
                 />
@@ -35,7 +35,7 @@ const PremiumFloatingInput: React.FC<PremiumFloatingInputProps> = ({ label, icon
                 <input
                     {...props}
                     placeholder=" "
-                    className={`peer block w-full h-[72px] rounded-[2rem] border transition-all duration-500 px-8 pl-16 pt-6 pb-2 text-[17px] text-white font-bold outline-none placeholder-transparent
+                    className={`peer block w-full h-[72px] rounded-[2rem] border transition-all duration-500 px-8 ${icon ? 'pl-16' : 'pl-10'} pt-6 pb-2 text-[17px] text-white font-bold outline-none placeholder-transparent
                         ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_30px_rgba(var(--primary),0.05)]' : 'border-white/5 bg-black/40 hover:border-white/10 focus:border-primary/30 focus:bg-black/60 focus:ring-8 focus:ring-primary/5'} 
                         ${className}`}
                 />

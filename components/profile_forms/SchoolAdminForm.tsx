@@ -150,14 +150,24 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                             </div>
                         </div>
 
-                        <div className="flex-grow w-full md:pb-6 text-center md:text-left">
-                            <p className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mb-4 glow-text">Institutional Recognition Node</p>
-                            <input
+                        <div className="flex-grow w-full md:pb-6 text-center md:text-left space-y-6">
+                            <motion.div
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="flex items-center justify-center md:justify-start gap-3"
+                            >
+                                <div className="h-[1px] w-6 bg-primary/40" />
+                                <span className="text-primary text-[9px] font-black uppercase tracking-[0.4em] glow-text">Institutional Identity Node</span>
+                            </motion.div>
+
+                            <PremiumFloatingInput
+                                label="Formal Entity Name"
                                 name="school_name"
                                 value={formData.school_name || ''}
-                                onChange={handleChange}
+                                onChange={handleChange as any}
                                 placeholder="Formal Entity Name"
-                                className="w-full bg-transparent text-4xl md:text-6xl font-black text-white placeholder:text-white/5 focus:outline-none tracking-tighter leading-none"
+                                className="!bg-transparent !border-none !shadow-none !px-0 !h-auto !text-4xl md:!text-6xl font-black !tracking-tighter"
+                                required
                             />
                         </div>
                     </div>
@@ -224,33 +234,39 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                     }
                                 />
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                                    <CustomSelect
-                                        label="National Domain"
-                                        options={countries.map(c => ({ label: c, value: c }))}
-                                        value={formData.country || 'India'}
-                                        onChange={(v) => handleChange({ target: { name: 'country', value: v } } as any)}
-                                        icon={<GlobeIcon />}
-                                        searchable
-                                    />
-                                    <CustomSelect
-                                        label="Regional Node"
-                                        options={availableStates.map(s => ({ label: s, value: s }))}
-                                        value={formData.state || ''}
-                                        onChange={(v) => handleChange({ target: { name: 'state', value: v } } as any)}
-                                        disabled={!formData.country}
-                                        icon={<LocationIcon />}
-                                        searchable
-                                    />
-                                    <CustomSelect
-                                        label="Primary Municipality"
-                                        options={availableCities.map(c => ({ label: c, value: c }))}
-                                        value={formData.city || ''}
-                                        onChange={(v) => handleChange({ target: { name: 'city', value: v } } as any)}
-                                        disabled={!formData.state}
-                                        icon={<LocationIcon />}
-                                        searchable
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                                    <div className="space-y-4">
+                                        <CustomSelect
+                                            label="National Domain"
+                                            options={countries.map(c => ({ label: c, value: c }))}
+                                            value={formData.country || 'India'}
+                                            onChange={(v) => handleChange({ target: { name: 'country', value: v } } as any)}
+                                            icon={<GlobeIcon />}
+                                            searchable
+                                        />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <CustomSelect
+                                            label="Regional Node"
+                                            options={availableStates.map(s => ({ label: s, value: s }))}
+                                            value={formData.state || ''}
+                                            onChange={(v) => handleChange({ target: { name: 'state', value: v } } as any)}
+                                            disabled={!formData.country}
+                                            icon={<LocationIcon />}
+                                            searchable
+                                        />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <CustomSelect
+                                            label="Primary Municipality"
+                                            options={availableCities.map(c => ({ label: c, value: c }))}
+                                            value={formData.city || ''}
+                                            onChange={(v) => handleChange({ target: { name: 'city', value: v } } as any)}
+                                            disabled={!formData.state}
+                                            icon={<LocationIcon />}
+                                            searchable
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
