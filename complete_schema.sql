@@ -1499,4 +1499,47 @@ BEGIN
 END;
 $$;
 
+-- Parent Portal RPCs
+CREATE OR REPLACE FUNCTION public.get_parent_dashboard_stats()
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_total INT;
+    v_pending INT;
+    v_approved INT;
+BEGIN
+    SELECT count(*) INTO v_total FROM public.admissions WHERE parent_id = auth.uid();
+    SELECT count(*) INTO v_pending FROM public.admissions WHERE parent_id = auth.uid() AND status NOT IN ('Approved', 'Verified', 'Enrolled');
+    SELECT count(*) INTO v_approved FROM public.admissions WHERE parent_id = auth.uid() AND status IN ('Approved', 'Verified', 'Enrolled');
+    
+    RETURN jsonb_build_object(
+        'total_applications', v_total,
+        'pending_applications', v_pending,
+        'approved_applications', v_approved
+    );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_my_messages()
+RETURNS SETOF public.communications LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    RETURN QUERY 
+    SELECT * FROM public.communications 
+    WHERE recipient_role = 'Parent/Guardian'
+    OR recipient_id = auth.uid()
+    ORDER BY sent_at DESC;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_my_enquiries()
+RETURNS SETOF public.admissions LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    RETURN QUERY
+    SELECT * FROM public.admissions
+    WHERE parent_id = auth.uid()
+    OR parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid())
+    ORDER BY updated_at DESC;
+END;
+$$;
+
 COMMIT;
+
