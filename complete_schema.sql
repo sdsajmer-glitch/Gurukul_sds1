@@ -103,6 +103,7 @@ CREATE TABLE public.school_branches (
     is_main_branch BOOLEAN DEFAULT false,
     admin_email TEXT,
     access_key TEXT UNIQUE,
+    school_id UUID REFERENCES public.school_admin_profiles(user_id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     status TEXT DEFAULT 'Active',
@@ -1408,13 +1409,24 @@ BEGIN
     END IF;
 
     INSERT INTO public.school_branches (
-        name, address, city, state, country, is_main_branch, admin_email, access_key
+        name, address, city, state, country, is_main_branch, admin_email, access_key, school_id
     ) VALUES (
         p_name, p_address, p_city, p_state, p_country, p_is_main, p_admin_email, 
-        upper(substr(md5(random()::text), 1, 8))
+        upper(substr(md5(random()::text), 1, 8)), auth.uid()
     ) RETURNING id INTO v_branch_id;
 
     RETURN QUERY SELECT * FROM public.school_branches WHERE id = v_branch_id;
+END;
+$$;
+
+
+-- RPC: Get School Branches
+CREATE OR REPLACE FUNCTION public.get_school_branches()
+RETURNS SETOF public.school_branches LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM public.school_branches 
+    WHERE school_id = auth.uid()
+    ORDER BY is_main_branch DESC, created_at ASC;
 END;
 $$;
 

@@ -445,9 +445,9 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 <span className="truncate">{[branch.city, branch.state, branch.country].filter(Boolean).join(' • ')}</span>
                             </div>
 
-                            <div className="flex flex-wrap gap-3 mb-10">
+                            <div className="flex flex-wrap gap-3 mb-8">
                                 {branch.is_main_branch ? (
-                                    <span className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/10 text-primary text-[9px] font-black uppercase tracking-[0.2em] border border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.2)]">
+                                    <span className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-[0.2em] border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                                         <CheckCircleIcon className="w-3.5 h-3.5" /> HEAD OFFICE
                                     </span>
                                 ) : (
@@ -457,14 +457,39 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 )}
                             </div>
 
-                            <div className="mt-auto pt-8 border-t border-white/[0.03] flex items-center gap-5">
-                                <div className="w-12 h-12 rounded-[1rem] bg-gradient-to-tr from-primary/40 to-primary/10 flex items-center justify-center text-white text-sm font-black shadow-2xl relative overflow-hidden group-hover:scale-110 transition-all">
-                                    <div className="absolute inset-0 bg-primary/20 blur-md" />
+                            {/* ACCESS VAULT UI */}
+                            <div className="mb-8 p-6 bg-black/40 rounded-3xl border border-white/5 relative group/vault overflow-hidden">
+                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.1]" />
+                                <div className="absolute top-0 right-0 p-3 opacity-50 group-hover/vault:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-2 text-[9px] font-black text-white/20 uppercase tracking-widest">
+                                        <HashIcon className="w-3 h-3" /> Encrypted
+                                    </div>
+                                </div>
+                                <p className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] mb-3">Access Protocol Key</p>
+                                <div className="flex items-center gap-4">
+                                    <code className="text-xl font-mono font-black text-primary tracking-[0.2em]">{branch.access_key || '••••••••'}</code>
+                                    <button
+                                        onClick={() => {
+                                            if (branch.access_key) {
+                                                navigator.clipboard.writeText(branch.access_key);
+                                                alert('Access Key Copied to Clipboard');
+                                            }
+                                        }}
+                                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                                        title="Copy Access Key"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="mt-auto pt-6 border-t border-white/[0.03] flex items-center gap-5">
+                                <div className="w-10 h-10 rounded-[1rem] bg-gradient-to-tr from-white/10 to-white/5 flex items-center justify-center text-white/60 text-xs font-black shadow-inner relative overflow-hidden">
                                     <span className="relative z-10">{branch.admin_name ? branch.admin_name.charAt(0) : '?'}</span>
                                 </div>
-                                <div className="overflow-hidden space-y-1">
-                                    <p className="text-[11px] font-black text-white/80 uppercase tracking-widest truncate">{branch.admin_name || 'NO CUSTODIAN'}</p>
-                                    <p className="text-[10px] font-medium text-white/20 italic truncate">{branch.admin_email || '—'}</p>
+                                <div className="overflow-hidden space-y-0.5">
+                                    <p className="text-[10px] font-black text-white/60 uppercase tracking-widest truncate">{branch.admin_name || 'NO CUSTODIAN'}</p>
+                                    <p className="text-[9px] font-medium text-white/20 italic truncate">{branch.admin_email || '—'}</p>
                                 </div>
                             </div>
                         </motion.div>
