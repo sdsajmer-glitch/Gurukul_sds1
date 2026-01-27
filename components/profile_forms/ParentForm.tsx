@@ -223,7 +223,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12 bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-16 bg-white/[0.02] p-10 rounded-[3rem] border border-white/5 shadow-inner">
                     <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon />} />
 
                     <CustomSelect

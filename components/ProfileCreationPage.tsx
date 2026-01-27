@@ -295,12 +295,12 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 </AnimatePresence>
 
                 {/* REDESIGNED ACTION ZONE: Fixed Desktop Action Bar */}
-                <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-2xl z-[200]">
+                <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-2xl z-[450]">
                     <motion.div
                         initial={{ y: 100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.5, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                        className="p-3 bg-[#0a0b10]/80 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] ring-1 ring-white/10 flex items-center justify-between"
+                        className="p-3 bg-[#0a0b10]/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] ring-1 ring-white/20 flex items-center justify-between"
                     >
                         <div className="flex items-center">
                             {showBackButton ? (
