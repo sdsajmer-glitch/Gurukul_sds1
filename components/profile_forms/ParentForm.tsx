@@ -37,7 +37,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
     const [isLocating, setIsLocating] = useState(false);
     const [isResolving, setIsResolving] = useState(false);
     const [syncStatus, setSyncStatus] = useState<string>('');
-    const [syncError, setSyncError] = useState<{ message: string, isWarning: boolean } | null>(null);
+    const [syncError, setSyncError] = useState<{ message: string, isWarning: boolean, detail?: string } | null>(null);
     const [syncedFields, setSyncedFields] = useState<Set<string>>(new Set());
 
     const availableStates = useMemo(() => formData.country ? statesByCountry[formData.country] || [] : [], [formData.country]);
@@ -72,14 +72,15 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
     const handleResolveAddress = async () => {
         if (!formData.address?.trim()) return;
         setIsResolving(true);
-        setSyncStatus('Mapping Geocodes...');
+        setSyncStatus('Synchronizing Geocodes...');
         setSyncError(null);
 
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const prompt = `Based on the residential address "${formData.address}", extract or identify city, state, and country.
-            Output Strictly as valid JSON: {"city": "string", "state": "string", "country": "string"}.
-            Country must match one of: ${countries.join(', ')}.`;
+            const prompt = `System: You are an address normalization node.
+            Extract details from: "${formData.address}".
+            Constraint: Country MUST match one of: ${countries.join(', ')}.
+            Format: JSON only: {"city": string, "state": string, "country": string, "pin": string}.`;
 
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
@@ -91,19 +92,38 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const data = JSON.parse(jsonMatch[0]);
-                const fields = ['country', 'state', 'city'];
-                setSyncedFields(new Set(fields));
+                const foundFields: string[] = [];
 
-                if (data.country) handleSelectChange('country', false)(data.country);
-                if (data.state) handleSelectChange('state', false)(data.state);
-                if (data.city) handleSelectChange('city', false)(data.city);
+                if (data.country) {
+                    handleSelectChange('country', false)(data.country);
+                    foundFields.push('country');
+                }
+                if (data.state) {
+                    handleSelectChange('state', false)(data.state);
+                    foundFields.push('state');
+                }
+                if (data.city) {
+                    handleSelectChange('city', false)(data.city);
+                    foundFields.push('city');
+                }
+                if (data.pin) {
+                    handleChange({ target: { name: 'pin_code', value: data.pin } } as any);
+                    foundFields.push('pin_code');
+                }
 
-                setSyncStatus('Address Resolved.');
-                setTimeout(() => setSyncStatus(''), 3000);
+                setSyncedFields(prev => new Set([...Array.from(prev), ...foundFields]));
+                setSyncStatus(`Sync Success: ${foundFields.length} Node(s) Updated.`);
+                setTimeout(() => setSyncStatus(''), 4000);
+            } else {
+                throw new Error("Invalid telemetry response.");
             }
         } catch (err) {
             console.error("Resolve failed", err);
-            setSyncError({ message: "Auto-fill failed. Please enter manually.", isWarning: true });
+            setSyncError({
+                message: "Sync Interrupted.",
+                detail: "The registry could not resolve this address automatically. Manual node entry is required.",
+                isWarning: true
+            });
         } finally {
             setIsResolving(false);
         }
@@ -111,12 +131,12 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
 
     const handleAutoLocate = async () => {
         setIsLocating(true);
-        setSyncStatus('Synchronizing Telemetry...');
+        setSyncStatus('Establishing Satellite Link...');
         setSyncError(null);
         setSyncedFields(new Set());
 
         if (!navigator.geolocation) {
-            setSyncError({ message: "Geolocation not supported.", isWarning: false });
+            setSyncError({ message: "Telemetry Fault.", detail: "Geolocation nodes are disabled or unsupported by your device.", isWarning: false });
             setIsLocating(false);
             return;
         }
@@ -126,8 +146,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
             try {
                 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
                 const prompt = `Identify official address for coordinates: ${latitude}, ${longitude}. 
-                Output JSON: {"address": string, "city": string, "state": string, "country": string, "pin_code": string}. 
-                Country must be full name. Use official registry names.`;
+                Output JSON: {"address": string, "city": string, "state": string, "country": string, "pin_code": string}.`;
 
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
@@ -151,16 +170,16 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     if (data.address) handleChange({ target: { name: 'address', value: data.address } } as any);
                     if (data.pin_code) handleChange({ target: { name: 'pin_code', value: data.pin_code } } as any);
 
-                    setSyncStatus('Identity Synced.');
-                    setTimeout(() => setSyncStatus(''), 3000);
+                    setSyncStatus('Registry Synchronized.');
+                    setTimeout(() => setSyncStatus(''), 4000);
                 }
             } catch (err: any) {
-                setSyncError({ message: "Detection failed. Manual entry required.", isWarning: true });
+                setSyncError({ message: "Sync Timeout.", detail: "Spatial telemetry failed. Please enter residency nodes manually.", isWarning: true });
             } finally {
                 setIsLocating(false);
             }
         }, () => {
-            setSyncError({ message: "Location access denied.", isWarning: true });
+            setSyncError({ message: "Access Denied.", detail: "Residency sync requires location permissions. Check browser protocols.", isWarning: true });
             setIsLocating(false);
         });
     };
@@ -225,7 +244,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                 {/* Decorative background pulse */}
                 <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-[80px] group-hover/loc:scale-150 transition-transform duration-1000" />
 
-                <div className="flex items-center gap-8 relative z-10">
+                <div className="flex items-center gap-8 relative z-10 font-['Outfit']">
                     <div className="p-5 bg-indigo-500/10 rounded-[1.5rem] text-indigo-400 border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.1)]">
                         <HomeIcon className="w-7 h-7" />
                     </div>
@@ -312,45 +331,58 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <CustomSelect
-                        label="State"
-                        value={formData.state || ''}
-                        onChange={handleSelectChange('state')}
-                        options={availableStates.map(s => ({ value: s, label: s }))}
-                        icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon />}
-                        disabled={!formData.country}
-                        searchable
-                        isSynced={syncedFields.has('state')}
-                    />
-                    <CustomSelect
-                        label="City"
-                        value={formData.city || ''}
-                        onChange={handleSelectChange('city')}
-                        options={availableCities.map(c => ({ value: c, label: c }))}
-                        icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon />}
-                        disabled={!formData.state}
-                        searchable
-                        isSynced={syncedFields.has('city')}
-                    />
-                    <PremiumFloatingInput
-                        label="Pin Code"
-                        name="pin_code"
-                        value={formData.pin_code}
-                        onChange={handleChange}
-                        isSynced={syncedFields.has('pin_code')}
-                        icon={<LocationIcon />}
-                    />
+                {/* Refined 5-column grid for State (2), City (2), PIN Code (1) */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-end">
+                    <div className="md:col-span-2">
+                        <CustomSelect
+                            label="State Protocol"
+                            value={formData.state || ''}
+                            onChange={handleSelectChange('state')}
+                            options={availableStates.map(s => ({ value: s, label: s }))}
+                            icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon />}
+                            disabled={!formData.country}
+                            searchable
+                            isSynced={syncedFields.has('state')}
+                        />
+                    </div>
+                    <div className="md:col-span-2">
+                        <CustomSelect
+                            label="City Module"
+                            value={formData.city || ''}
+                            onChange={handleSelectChange('city')}
+                            options={availableCities.map(c => ({ value: c, label: c }))}
+                            icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon />}
+                            disabled={!formData.state}
+                            searchable
+                            isSynced={syncedFields.has('city')}
+                        />
+                    </div>
+                    <div className="md:col-span-1">
+                        <PremiumFloatingInput
+                            label="PIN Code"
+                            name="pin_code"
+                            value={formData.pin_code}
+                            onChange={handleChange}
+                            isSynced={syncedFields.has('pin_code')}
+                            icon={<LocationIcon />}
+                        />
+                    </div>
                 </div>
             </div>
+
             {syncError && (
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`p-6 rounded-2xl border flex items-center gap-4 ${syncError.isWarning ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-red-500/10 border-red-500/20 text-red-200'}`}
+                    className={`p-8 rounded-[2rem] border flex items-start gap-6 transition-all duration-500 shadow-2xl ${syncError.isWarning ? 'bg-amber-500/[0.03] border-amber-500/20 text-amber-200 shadow-amber-500/5' : 'bg-red-500/[0.03] border-red-500/20 text-red-200 shadow-red-500/5'}`}
                 >
-                    <AlertTriangleIcon className="w-5 h-5 shrink-0" />
-                    <span className="text-[11px] font-bold uppercase tracking-widest">{syncError.message}</span>
+                    <div className={`p-3 rounded-xl ${syncError.isWarning ? 'bg-amber-500/10' : 'bg-red-500/10'}`}>
+                        {syncError.isWarning ? <AlertTriangleIcon className="w-6 h-6" /> : <XCircleIcon className="w-6 h-6" />}
+                    </div>
+                    <div className="space-y-1">
+                        <h4 className="text-[12px] font-black uppercase tracking-[0.2em]">{syncError.message}</h4>
+                        <p className="text-[10px] opacity-60 font-bold leading-relaxed tracking-wider">{syncError.detail}</p>
+                    </div>
                 </motion.div>
             )}
         </motion.div>
