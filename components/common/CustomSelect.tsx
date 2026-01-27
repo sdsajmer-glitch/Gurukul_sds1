@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { SearchIcon } from '../icons/SearchIcon';
 import { ChevronDownIcon } from '../icons/ChevronDownIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
@@ -40,9 +41,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [openUpwards, setOpenUpwards] = useState(false);
+    const [openUpwards, setOpenUpwards] = useState(true); // Preference for Upward
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+    const [activeIndex, setActiveIndex] = useState(-1);
     const containerRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const optionsRef = useRef<(HTMLButtonElement | null)[]>([]);
+    const [portalNode, setPortalNode] = useState<HTMLElement | null>(null);
 
     const selectedOption = options.find(opt => opt.value === value);
 
@@ -53,49 +58,211 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     }, [options, searchTerm, searchable]);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        setPortalNode(document.body);
     }, []);
 
     useEffect(() => {
-        if (isOpen) {
-            // Smart positioning logic: Detect if there's enough room below
-            if (containerRef.current) {
-                const rect = containerRef.current.getBoundingClientRect();
-                const spaceBelow = window.innerHeight - rect.bottom;
-                const menuHeight = 400; // Estimated max height
-                if (spaceBelow < menuHeight && rect.top > menuHeight) {
-                    setOpenUpwards(true);
-                } else {
-                    setOpenUpwards(false);
-                }
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                // Also check if click is inside portal (if we had a ref for it, but for now simple check)
+                const dropdownPanel = document.getElementById('custom-select-portal-panel');
+                if (dropdownPanel && dropdownPanel.contains(event.target as Node)) return;
+                setIsOpen(false);
             }
+        };
+
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setIsOpen(false);
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('keydown', handleEscape);
+            setActiveIndex(filteredOptions.findIndex(opt => opt.value === value));
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [isOpen, filteredOptions, value]);
+
+    const updatePosition = () => {
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const spaceAbove = rect.top;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const menuHeight = Math.min(filteredOptions.length * 60 + 100, 400); // Estimated max height
+
+            // Default to Upward if there's room, or if it's better than below
+            const preferUp = spaceAbove >= menuHeight || spaceAbove > spaceBelow;
+            setOpenUpwards(preferUp);
+
+            setCoords({
+                top: rect.top,
+                left: rect.left,
+                width: rect.width
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            updatePosition();
+            window.addEventListener('scroll', updatePosition, true);
+            window.addEventListener('resize', updatePosition);
 
             if (searchable && searchInputRef.current) {
-                setTimeout(() => {
-                    searchInputRef.current?.focus();
-                }, 100);
+                setTimeout(() => searchInputRef.current?.focus(), 100);
             }
-        } else {
-            setSearchTerm('');
         }
-    }, [isOpen, searchable]);
+        return () => {
+            window.removeEventListener('scroll', updatePosition, true);
+            window.removeEventListener('resize', updatePosition);
+        };
+    }, [isOpen]);
 
     const handleSelect = (optionValue: string) => {
         onChange(optionValue);
         setIsOpen(false);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (disabled) return;
+
+        if (!isOpen) {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                setIsOpen(true);
+            }
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setActiveIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : 0));
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setActiveIndex(prev => (prev > 0 ? prev - 1 : filteredOptions.length - 1));
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (activeIndex >= 0 && activeIndex < filteredOptions.length) {
+                    handleSelect(filteredOptions[activeIndex].value);
+                }
+                break;
+            case 'Tab':
+                setIsOpen(false);
+                break;
+        }
+    };
+
+    useEffect(() => {
+        if (activeIndex >= 0 && optionsRef.current[activeIndex]) {
+            optionsRef.current[activeIndex]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }, [activeIndex]);
+
+    const DropdownPanel = (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    id="custom-select-portal-panel"
+                    initial={{ opacity: 0, scale: 0.98, y: openUpwards ? 15 : -15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98, y: openUpwards ? 15 : -15 }}
+                    transition={{ type: "spring", damping: 30, stiffness: 450 }}
+                    style={{
+                        position: 'fixed',
+                        top: openUpwards ? 'auto' : coords.top + 76,
+                        bottom: openUpwards ? window.innerHeight - coords.top + 12 : 'auto',
+                        left: coords.left,
+                        width: coords.width,
+                        zIndex: 11000,
+                        perspective: '1200px'
+                    }}
+                    className={`bg-[#0a0b10]/95 rounded-[2.75rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] border border-white/10 overflow-hidden origin-${openUpwards ? 'bottom' : 'top'} backdrop-blur-[120px] ring-2 ring-white/5`}
+                >
+                    {searchable && (
+                        <div className="p-5 border-b border-white/[0.04] bg-white/[0.01]">
+                            <div className="relative group/search">
+                                <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/10 group-focus-within/search:text-primary transition-all duration-500" />
+                                <input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => {
+                                        setSearchTerm(e.target.value);
+                                        setActiveIndex(0);
+                                    }}
+                                    placeholder="Registry Node Filtering..."
+                                    className="w-full h-14 pl-14 pr-6 text-[11px] rounded-[1.5rem] bg-black/40 border border-white/5 focus:border-primary/40 focus:ring-12 focus:ring-primary/5 outline-none text-white placeholder:text-white/10 font-black uppercase tracking-[0.25em] transition-all"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="max-h-[320px] overflow-auto p-4 custom-scrollbar space-y-2">
+                        {filteredOptions.length > 0 ? (
+                            filteredOptions.map((option, index) => (
+                                <motion.button
+                                    ref={el => optionsRef.current[index] = el}
+                                    whileHover={{ x: 8, backgroundColor: "rgba(255,255,255,0.02)" }}
+                                    whileTap={{ scale: 0.97 }}
+                                    key={option.value}
+                                    type="button"
+                                    onMouseEnter={() => setActiveIndex(index)}
+                                    onClick={() => handleSelect(option.value)}
+                                    className={`
+                                        w-full flex items-center gap-6 px-7 py-5 text-[11px] font-black uppercase tracking-[0.2em] rounded-[1.85rem] transition-all duration-500 group/item select-none cursor-pointer border relative overflow-hidden
+                                        ${value === option.value
+                                            ? 'bg-primary text-white border-primary shadow-[0_20px_40px_-10px_rgba(var(--primary),0.6)] z-10'
+                                            : activeIndex === index
+                                                ? 'bg-white/[0.05] text-white border-white/10'
+                                                : 'text-white/20 border-transparent hover:text-white/60'
+                                        }
+                                    `}
+                                >
+                                    <div className="relative flex items-center justify-center w-4 h-4">
+                                        <div className={`w-2 h-2 rounded-full transition-all duration-700 ${value === option.value ? 'bg-white shadow-[0_0_20px_rgba(255,255,255,1)] scale-125' : 'bg-white/10'}`} />
+                                        {activeIndex === index && value !== option.value && (
+                                            <motion.div layoutId="hoverIndicator" className="absolute inset-0 bg-primary/20 rounded-full blur-md" />
+                                        )}
+                                    </div>
+                                    <span className="flex-grow text-left truncate leading-none relative z-10">{option.label}</span>
+                                    {value === option.value && (
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.5 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="px-4 py-1.5 rounded-full bg-black/30 text-[9px] font-black text-white/60 tracking-[0.2em] shadow-lg"
+                                        >
+                                            IDENTIFIED
+                                        </motion.div>
+                                    )}
+                                </motion.button>
+                            ))
+                        ) : (
+                            <div className="py-24 text-center space-y-8 opacity-20 group">
+                                <SearchIcon className="w-12 h-12 mx-auto transition-transform group-hover:scale-110 duration-700" />
+                                <p className="text-[11px] font-black uppercase tracking-[0.4em] italic leading-relaxed">No Authorized Data Found</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+
     return (
-        <div className={`relative group w-full ${className || ''} ${disabled ? 'opacity-40 cursor-not-allowed' : ''} ${isOpen ? 'z-[9999]' : 'z-auto'}`} ref={containerRef}>
+        <div
+            className={`relative group w-full ${className || ''} ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+            ref={containerRef}
+            onKeyDown={handleKeyDown}
+        >
             {label && (
-                <label className={`absolute left-10 top-0 -translate-y-1/2 bg-[#0d0e14] px-2 text-[10px] font-black uppercase tracking-[0.3em] z-[10000] transition-all duration-500 pointer-events-none rounded
-                    ${isOpen ? 'text-primary shadow-[0_0_15px_rgba(var(--primary),0.4)] ring-1 ring-primary/20' : isSynced ? 'text-primary' : 'text-white/20 group-hover:text-white/40'}`}>
+                <label className={`absolute left-10 top-0 -translate-y-1/2 bg-[#0d0e14] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.3em] z-20 transition-all duration-700 pointer-events-none border border-transparent
+                    ${isOpen ? 'text-primary shadow-[0_0_30px_rgba(var(--primary),0.4)] ring-1 ring-primary/40 border-primary/20 bg-[#0a0b10]' : isSynced ? 'text-primary' : 'text-white/10 group-hover:text-white/30'}`}>
                     {label}
                 </label>
             )}
@@ -106,118 +273,44 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                     onClick={() => !disabled && setIsOpen(!isOpen)}
                     disabled={disabled}
                     className={`
-                        peer w-full h-full text-left rounded-[2rem] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] outline-none select-none
-                        flex items-center px-8 border backdrop-blur-3xl
-                        ${icon ? 'pl-16' : 'pl-8'}
+                        peer w-full h-full text-left rounded-[2.25rem] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none select-none
+                        flex items-center px-10 border backdrop-blur-3xl
+                        ${icon ? 'pl-20' : 'pl-10'}
                         ${isOpen
-                            ? 'bg-primary/10 border-primary/50 shadow-[0_0_50px_rgba(var(--primary),0.15)] ring-12 ring-primary/5'
-                            : 'bg-black/40 border-white/5 hover:border-white/10 hover:bg-black/60 shadow-inner'
+                            ? 'bg-primary/5 border-primary shadow-[0_0_80px_-20px_rgba(var(--primary),0.2)] ring-12 ring-primary/5'
+                            : 'bg-black/60 border-white/5 hover:border-white/20 hover:bg-black/80 shadow-[inset_0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[inset_0_4px_30px_rgba(var(--primary),0.05)]'
                         }
                     `}
                 >
                     <span className="flex items-center h-full min-w-0 flex-grow pt-2">
                         {selectedOption ? (
-                            <span className="text-white font-bold text-[17px] tracking-tight truncate">{selectedOption.label}</span>
+                            <span className="text-white font-bold text-[18px] tracking-tight truncate glow-text">{selectedOption.label}</span>
                         ) : (
-                            <span className="text-white/20 font-bold text-[16px] truncate tracking-wide italic leading-none">{placeholder}</span>
+                            <span className="text-white/10 font-black text-[15px] truncate tracking-[0.2em] uppercase leading-none">{placeholder}</span>
                         )}
                     </span>
 
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-[1.25rem] transition-all duration-700 ${isOpen ? 'bg-primary text-white rotate-180 shadow-lg shadow-primary/40' : 'bg-white/5 text-white/20 group-hover:bg-white/10 group-hover:text-white/40'}`}>
-                        <ChevronDownIcon className="h-5 w-5" />
-                    </div>
+                    <motion.div
+                        animate={{
+                            rotate: isOpen ? 180 : 0,
+                            scale: isOpen ? 1.1 : 1,
+                            backgroundColor: isOpen ? "rgba(var(--primary), 1)" : "rgba(255,255,255,0.05)"
+                        }}
+                        className={`flex items-center justify-center w-11 h-11 rounded-[1.5rem] transition-all duration-700 ${isOpen ? 'text-white shadow-[0_15px_30px_-5px_rgba(var(--primary),0.5)]' : 'text-white/10 group-hover:text-white/40 group-hover:bg-white/10'}`}
+                    >
+                        <ChevronDownIcon className="h-6 w-6" />
+                    </motion.div>
                 </button>
 
                 {icon && (
-                    <div className={`absolute left-6 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-500 ${isOpen ? 'text-primary scale-125' : 'text-white/10'}`}>
-                        {React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}
+                    <div className={`absolute left-8 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-700 ${isOpen ? 'text-primary scale-125' : 'text-white/10 scale-100 group-hover:text-primary/40'}`}>
+                        {React.cloneElement(icon as React.ReactElement, { className: 'w-7 h-7' })}
                     </div>
                 )}
             </div>
 
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: openUpwards ? 20 : -20, rotateX: openUpwards ? 10 : -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: openUpwards ? 20 : -20, rotateX: openUpwards ? 10 : -10 }}
-                        transition={{
-                            type: "spring",
-                            damping: 25,
-                            stiffness: 400
-                        }}
-                        style={{ perspective: '1000px' }}
-                        className={`absolute z-[10001] ${openUpwards ? 'bottom-[calc(100%+12px)]' : 'top-[calc(100%+12px)]'} w-full bg-[#0d0e14] rounded-[2.5rem] shadow-[0_100px_150px_-30px_rgba(0,0,0,1)] border border-white/10 overflow-hidden origin-${openUpwards ? 'bottom' : 'top'} backdrop-blur-[80px] ring-2 ring-white/5`}
-                    >
-                        {searchable && (
-                            <div className="p-6 border-b border-white/5 bg-white/[0.02]">
-                                <div className="relative">
-                                    <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                                    <input
-                                        ref={searchInputRef}
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Identification Filter..."
-                                        className="w-full pl-12 pr-4 py-4 text-[10px] rounded-2xl bg-black/60 border border-white/5 focus:border-primary/40 focus:ring-8 focus:ring-primary/5 outline-none text-white placeholder:text-white/10 font-black uppercase tracking-[0.25em] transition-all"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="max-h-[320px] overflow-auto p-4 custom-scrollbar space-y-1.5">
-                            {filteredOptions.length > 0 ? (
-                                <div className="space-y-1.5">
-                                    {filteredOptions.map((option) => (
-                                        <motion.button
-                                            whileHover={{ x: 6, backgroundColor: "rgba(255,255,255,0.03)" }}
-                                            whileTap={{ scale: 0.98 }}
-                                            key={option.value}
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleSelect(option.value);
-                                            }}
-                                            className={`
-                                                w-full flex items-center gap-5 px-6 py-5 text-[11px] font-black uppercase tracking-[0.2em] rounded-[1.5rem] transition-all duration-500 group/item select-none cursor-pointer border
-                                                ${value === option.value
-                                                    ? 'bg-primary text-white border-primary shadow-[0_15px_30px_-10px_rgba(var(--primary),0.4)]'
-                                                    : 'text-white/20 border-transparent hover:text-white/80'
-                                                }
-                                            `}
-                                        >
-                                            <div className="relative">
-                                                <div className={`w-2 h-2 rounded-full transition-all duration-500 ${value === option.value ? 'bg-white shadow-[0_0_15px_rgba(255,255,255,1)] scale-125' : 'bg-white/10 group-hover/item:bg-white/30'}`} />
-                                            </div>
-                                            <span className="flex-grow text-left truncate leading-none">{option.label}</span>
-                                            {value === option.value && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, x: 10 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    className="px-3 py-1.5 rounded-lg bg-black/20 text-[8px] font-black text-white/60 shadow-lg whitespace-nowrap"
-                                                >
-                                                    ACTIVE NODE
-                                                </motion.div>
-                                            )}
-                                        </motion.button>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="px-8 py-20 text-center space-y-6 opacity-40">
-                                    <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto border border-white/[0.03]">
-                                        <SearchIcon className="w-8 h-8 text-white/20" />
-                                    </div>
-                                    <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.4em] italic">
-                                        Registry Entry Not Found
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {portalNode && createPortal(DropdownPanel, portalNode)}
         </div>
-
     );
 };
 
