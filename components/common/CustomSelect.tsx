@@ -42,7 +42,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [openUpwards, setOpenUpwards] = useState(true); // Preference for Upward
-    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, height: 0 });
     const [activeIndex, setActiveIndex] = useState(-1);
     const containerRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +100,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             setCoords({
                 top: rect.top,
                 left: rect.left,
-                width: rect.width
+                width: rect.width,
+                height: rect.height
             });
         }
     };
@@ -165,93 +166,106 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     }, [activeIndex]);
 
     const DropdownPanel = (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div
-                    id="custom-select-portal-panel"
-                    initial={{ opacity: 0, scale: 0.98, y: openUpwards ? 15 : -15 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.98, y: openUpwards ? 15 : -15 }}
-                    transition={{ type: "spring", damping: 30, stiffness: 450 }}
-                    style={{
-                        position: 'fixed',
-                        top: openUpwards ? 'auto' : coords.top + 76,
-                        bottom: openUpwards ? window.innerHeight - coords.top + 12 : 'auto',
-                        left: coords.left,
-                        width: coords.width,
-                        zIndex: 11000,
-                        perspective: '1200px'
-                    }}
-                    className={`bg-[#0a0b10]/95 rounded-[2.75rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] border border-white/10 overflow-hidden origin-${openUpwards ? 'bottom' : 'top'} backdrop-blur-[120px] ring-2 ring-white/5`}
-                >
-                    {searchable && (
-                        <div className="p-5 border-b border-white/[0.04] bg-white/[0.01]">
-                            <div className="relative group/search">
-                                <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/10 group-focus-within/search:text-primary transition-all duration-500" />
-                                <input
-                                    ref={searchInputRef}
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        setActiveIndex(0);
-                                    }}
-                                    placeholder="Registry Node Filtering..."
-                                    className="w-full h-14 pl-14 pr-6 text-[11px] rounded-[1.5rem] bg-black/40 border border-white/5 focus:border-primary/40 focus:ring-12 focus:ring-primary/5 outline-none text-white placeholder:text-white/10 font-black uppercase tracking-[0.25em] transition-all"
-                                />
-                            </div>
-                        </div>
-                    )}
+        <>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10999] pointer-events-none"
+                    />
+                )}
+            </AnimatePresence>
 
-                    <div className="max-h-[320px] overflow-auto p-4 custom-scrollbar space-y-2">
-                        {filteredOptions.length > 0 ? (
-                            filteredOptions.map((option, index) => (
-                                <motion.button
-                                    ref={el => optionsRef.current[index] = el}
-                                    whileHover={{ x: 8, backgroundColor: "rgba(255,255,255,0.02)" }}
-                                    whileTap={{ scale: 0.97 }}
-                                    key={option.value}
-                                    type="button"
-                                    onMouseEnter={() => setActiveIndex(index)}
-                                    onClick={() => handleSelect(option.value)}
-                                    className={`
-                                        w-full flex items-center gap-6 px-7 py-5 text-[11px] font-black uppercase tracking-[0.2em] rounded-[1.85rem] transition-all duration-500 group/item select-none cursor-pointer border relative overflow-hidden
-                                        ${value === option.value
-                                            ? 'bg-primary text-white border-primary shadow-[0_20px_40px_-10px_rgba(var(--primary),0.6)] z-10'
-                                            : activeIndex === index
-                                                ? 'bg-white/[0.05] text-white border-white/10'
-                                                : 'text-white/20 border-transparent hover:text-white/60'
-                                        }
-                                    `}
-                                >
-                                    <div className="relative flex items-center justify-center w-4 h-4">
-                                        <div className={`w-2 h-2 rounded-full transition-all duration-700 ${value === option.value ? 'bg-white shadow-[0_0_20px_rgba(255,255,255,1)] scale-125' : 'bg-white/10'}`} />
-                                        {activeIndex === index && value !== option.value && (
-                                            <motion.div layoutId="hoverIndicator" className="absolute inset-0 bg-primary/20 rounded-full blur-md" />
-                                        )}
-                                    </div>
-                                    <span className="flex-grow text-left truncate leading-none relative z-10">{option.label}</span>
-                                    {value === option.value && (
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.5 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className="px-4 py-1.5 rounded-full bg-black/30 text-[9px] font-black text-white/60 tracking-[0.2em] shadow-lg"
-                                        >
-                                            IDENTIFIED
-                                        </motion.div>
-                                    )}
-                                </motion.button>
-                            ))
-                        ) : (
-                            <div className="py-24 text-center space-y-8 opacity-20 group">
-                                <SearchIcon className="w-12 h-12 mx-auto transition-transform group-hover:scale-110 duration-700" />
-                                <p className="text-[11px] font-black uppercase tracking-[0.4em] italic leading-relaxed">No Authorized Data Found</p>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        id="custom-select-portal-panel"
+                        initial={{ opacity: 0, scale: 0.95, y: openUpwards ? 15 : -15 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: openUpwards ? 15 : -15 }}
+                        transition={{ type: "spring", damping: 30, stiffness: 450 }}
+                        style={{
+                            position: 'fixed',
+                            top: openUpwards ? 'auto' : coords.top + coords.height + 12,
+                            bottom: openUpwards ? window.innerHeight - coords.top + 12 : 'auto',
+                            left: coords.left,
+                            width: coords.width,
+                            zIndex: 11000,
+                            perspective: '1200px'
+                        }}
+                        className={`bg-[#0d0e14] rounded-[2.75rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] border border-white/10 overflow-hidden origin-${openUpwards ? 'bottom' : 'top'} backdrop-blur-[120px] ring-2 ring-white/10`}
+                    >
+                        {searchable && (
+                            <div className="p-6 border-b border-white/[0.05] bg-white/[0.02]">
+                                <div className="relative group/search w-full">
+                                    <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/10 group-focus-within/search:text-primary transition-all duration-500" />
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(e) => {
+                                            setSearchTerm(e.target.value);
+                                            setActiveIndex(0);
+                                        }}
+                                        placeholder="SEARCH REGISTRY..."
+                                        className="w-full h-16 pl-16 pr-8 text-[11px] rounded-[1.75rem] bg-black/80 border border-white/5 focus:border-primary/40 focus:ring-12 focus:ring-primary/5 outline-none text-white placeholder:text-white/10 font-black uppercase tracking-[0.3em] transition-all"
+                                    />
+                                </div>
                             </div>
                         )}
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+
+                        <div className="max-h-[350px] overflow-auto p-4 custom-scrollbar space-y-2">
+                            {filteredOptions.length > 0 ? (
+                                filteredOptions.map((option, index) => (
+                                    <motion.button
+                                        ref={el => optionsRef.current[index] = el}
+                                        whileHover={{ x: 8, backgroundColor: "rgba(255,255,255,0.03)" }}
+                                        whileTap={{ scale: 0.97 }}
+                                        key={option.value}
+                                        type="button"
+                                        onMouseEnter={() => setActiveIndex(index)}
+                                        onClick={() => handleSelect(option.value)}
+                                        className={`
+                                            w-full flex items-center gap-6 px-8 py-6 text-[11px] font-black uppercase tracking-[0.2em] rounded-[1.85rem] transition-all duration-500 group/item select-none cursor-pointer border relative overflow-hidden
+                                            ${value === option.value
+                                                ? 'bg-primary text-white border-primary shadow-[0_20px_40px_-10px_rgba(var(--primary),0.6)] z-10'
+                                                : activeIndex === index
+                                                    ? 'bg-white/[0.05] text-white border-white/10'
+                                                    : 'text-white/20 border-transparent hover:text-white/80'
+                                            }
+                                        `}
+                                    >
+                                        <div className="relative flex items-center justify-center w-4 h-4">
+                                            <div className={`w-2 h-2 rounded-full transition-all duration-700 ${value === option.value ? 'bg-white shadow-[0_0_20px_rgba(255,255,255,1)] scale-125' : 'bg-white/10'}`} />
+                                            {activeIndex === index && value !== option.value && (
+                                                <motion.div layoutId="hoverIndicator" className="absolute inset-0 bg-primary/20 rounded-full blur-md" />
+                                            )}
+                                        </div>
+                                        <span className="flex-grow text-left truncate leading-none relative z-10">{option.label}</span>
+                                        {value === option.value && (
+                                            <motion.div
+                                                initial={{ opacity: 0, scale: 0.5 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className="px-4 py-1.5 rounded-full bg-black/30 text-[9px] font-black text-white/60 tracking-[0.2em] shadow-lg"
+                                            >
+                                                SELECTED
+                                            </motion.div>
+                                        )}
+                                    </motion.button>
+                                ))
+                            ) : (
+                                <div className="py-24 text-center space-y-8 opacity-20 group">
+                                    <SearchIcon className="w-14 h-14 mx-auto transition-transform group-hover:scale-110 duration-700" />
+                                    <p className="text-[12px] font-black uppercase tracking-[0.5em] italic leading-relaxed">No Matches Synchronized</p>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
     );
 
     return (
@@ -277,7 +291,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                         flex items-center px-10 border backdrop-blur-3xl
                         ${icon ? 'pl-20' : 'pl-10'}
                         ${isOpen
-                            ? 'bg-primary/5 border-primary shadow-[0_0_80px_-20px_rgba(var(--primary),0.2)] ring-12 ring-primary/5'
+                            ? 'bg-primary/10 border-primary shadow-[0_0_80px_-20px_rgba(var(--primary),0.2)] ring-12 ring-primary/5'
                             : 'bg-black/60 border-white/5 hover:border-white/20 hover:bg-black/80 shadow-[inset_0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[inset_0_4px_30px_rgba(var(--primary),0.05)]'
                         }
                     `}
