@@ -248,43 +248,50 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
             animate={{ opacity: 1, x: 0 }}
             className="space-y-12"
         >
-            <div className="flex items-center justify-between gap-8 p-10 rounded-[2.5rem] bg-indigo-500/[0.03] border border-indigo-500/10 relative overflow-hidden group/loc shadow-2xl">
-                {/* Decorative background pulse */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-[80px] group-hover/loc:scale-150 transition-transform duration-1000" />
+            <div className="flex items-center justify-between gap-10 p-12 rounded-[3.5rem] bg-indigo-500/[0.04] border border-indigo-500/20 relative overflow-hidden group/loc shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-3xl">
+                {/* Advanced Telemetry Background */}
+                <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-[120px] group-hover/loc:scale-150 transition-transform duration-1000 animate-pulse" />
+                <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-blue-500/5 rounded-full blur-[100px]" />
 
-                <div className="flex items-center gap-8 relative z-10 font-['Outfit']">
-                    <div className="p-5 bg-indigo-500/10 rounded-[1.5rem] text-indigo-400 border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.1)]">
-                        <HomeIcon className="w-7 h-7" />
+                <div className="flex items-center gap-10 relative z-10">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-indigo-500/20 rounded-[2rem] blur-xl animate-pulse" />
+                        <div className="relative p-6 bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 rounded-[2rem] text-indigo-400 border border-indigo-500/30 shadow-2xl">
+                            <HomeIcon className="w-8 h-8" />
+                        </div>
                     </div>
                     <div>
-                        <h3 className="text-[13px] font-black text-white tracking-[0.3em] uppercase mb-1">Residency & Node</h3>
-                        <p className="text-[11px] text-white/30 font-bold tracking-widest min-h-[1.5em] flex items-center">
+                        <h3 className="text-[15px] font-black text-white tracking-[0.4em] uppercase mb-2 glow-text">Registry Synchronization</h3>
+                        <p className="text-[12px] text-white/40 font-bold tracking-[0.05em] min-h-[1.5em] flex items-center max-w-md leading-relaxed">
                             {syncStatus ? (
-                                <span className="text-indigo-400 animate-pulse font-black">{syncStatus}</span>
-                            ) : 'Primary contact & telemetry synchronization.'}
+                                <span className="text-indigo-400 animate-pulse font-black drop-shadow-[0_0_10px_rgba(129,140,248,0.5)]">{syncStatus}</span>
+                            ) : 'Establish a high-fidelity satellite uplink to auto-populate residency nodes.'}
                         </p>
                     </div>
                 </div>
 
                 <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02, boxShadow: '0 0 40px rgba(99,102,241,0.2)' }}
+                    whileTap={{ scale: 0.98 }}
                     type="button"
                     onClick={handleAutoLocate}
                     disabled={isLocating}
-                    className={`h-[56px] px-10 rounded-2xl font-black text-[12px] uppercase tracking-[0.25em] transition-all duration-700 border relative z-10 overflow-hidden
+                    className={`h-[72px] px-12 rounded-[2rem] font-black text-[13px] uppercase tracking-[0.3em] transition-all duration-700 border-2 relative z-10 overflow-hidden flex items-center justify-center
                         ${isLocating
-                            ? 'bg-indigo-500/20 text-indigo-100 border-indigo-400/40 animate-pulse'
-                            : 'bg-white/5 text-white/50 border-white/10 hover:border-indigo-400 hover:text-white hover:bg-indigo-500/10 hover:shadow-[0_0_30px_rgba(99,102,241,0.3)]'
+                            ? 'bg-indigo-500/20 text-indigo-100 border-indigo-400/40'
+                            : 'bg-white/5 text-white/70 border-white/10 hover:border-indigo-400/50 hover:text-white hover:bg-indigo-600/10'
                         }
                     `}
                 >
                     {isLocating ? (
-                        <Spinner size="sm" className="text-indigo-100" />
-                    ) : (
                         <div className="flex items-center gap-4">
-                            <LocateFixedIcon className="w-5 h-5 transition-transform group-hover/loc:rotate-90" />
-                            Sync Registry
+                            <Spinner size="sm" className="text-indigo-100" />
+                            <span className="animate-pulse">Locking Signal...</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-5">
+                            <LocateFixedIcon className="w-6 h-6 transition-transform group-hover/loc:rotate-180 duration-1000" />
+                            Initialize Sync
                         </div>
                     )}
                 </motion.button>
@@ -339,9 +346,9 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     />
                 </div>
 
-                {/* Optimized Registry Grid: State (2), City (2), PIN Code (2) for enhanced field width */}
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-10 items-end">
-                    <div className="md:col-span-2">
+                {/* Ultra-Wide Institutional Registry Grid: Optimized for maximum field visibility */}
+                <div className="grid grid-cols-1 md:grid-cols-10 gap-10 items-end">
+                    <div className="md:col-span-3">
                         <CustomSelect
                             label="State Protocol"
                             value={formData.state || ''}
@@ -353,7 +360,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             isSynced={syncedFields.has('state')}
                         />
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="md:col-span-3">
                         <CustomSelect
                             label="City Module"
                             value={formData.city || ''}
@@ -365,14 +372,15 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             isSynced={syncedFields.has('city')}
                         />
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="md:col-span-4">
                         <PremiumFloatingInput
-                            label="PIN Code"
+                            label="PIN Code Node"
                             name="pin_code"
                             value={formData.pin_code}
                             onChange={handleChange}
                             isSynced={syncedFields.has('pin_code')}
                             icon={<LocationIcon />}
+                            className="ring-1 ring-white/5 hover:ring-primary/20 transition-all duration-500"
                         />
                     </div>
                 </div>
@@ -380,16 +388,22 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
 
             {syncError && (
                 <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`p-8 rounded-[2rem] border flex items-start gap-6 transition-all duration-500 shadow-2xl ${syncError.isWarning ? 'bg-amber-500/[0.03] border-amber-500/20 text-amber-200 shadow-amber-500/5' : 'bg-red-500/[0.03] border-red-500/20 text-red-200 shadow-red-500/5'}`}
+                    initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className={`p-10 rounded-[3rem] border-2 flex items-start gap-8 transition-all duration-700 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)] backdrop-blur-3xl relative overflow-hidden
+                        ${syncError.isWarning
+                            ? 'bg-amber-500/[0.05] border-amber-500/20 text-amber-100'
+                            : 'bg-red-500/[0.05] border-red-500/20 text-red-100'
+                        }`}
                 >
-                    <div className={`p-3 rounded-xl ${syncError.isWarning ? 'bg-amber-500/10' : 'bg-red-500/10'}`}>
-                        {syncError.isWarning ? <AlertTriangleIcon className="w-6 h-6" /> : <XCircleIcon className="w-6 h-6" />}
+                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] ${syncError.isWarning ? 'bg-amber-500/10' : 'bg-red-500/10'}`} />
+
+                    <div className={`p-5 rounded-2xl flex-shrink-0 border ${syncError.isWarning ? 'bg-amber-500/20 border-amber-500/30 text-amber-400' : 'bg-red-500/20 border-red-500/30 text-red-400'}`}>
+                        {syncError.isWarning ? <AlertTriangleIcon className="w-8 h-8" /> : <XCircleIcon className="w-8 h-8" />}
                     </div>
-                    <div className="space-y-1">
-                        <h4 className="text-[12px] font-black uppercase tracking-[0.2em]">{syncError.message}</h4>
-                        <p className="text-[10px] opacity-60 font-bold leading-relaxed tracking-wider">{syncError.detail}</p>
+                    <div className="space-y-3 relative z-10">
+                        <h4 className="text-[14px] font-black uppercase tracking-[0.3em] font-serif">{syncError.message}</h4>
+                        <p className="text-[12px] opacity-70 font-medium leading-relaxed tracking-wide max-w-2xl">{syncError.detail}</p>
                     </div>
                 </motion.div>
             )}
