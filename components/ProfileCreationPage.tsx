@@ -172,97 +172,112 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="relative bg-slate-900/60 backdrop-blur-3xl rounded-[2.5rem] overflow-hidden border border-white/5 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] group"
+                className="relative bg-[#0f111a]/80 backdrop-blur-3xl rounded-[3rem] overflow-hidden border border-white/5 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] group"
             >
                 {/* Decorative Pattern Layer */}
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+                <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
 
-                <div className="p-10 md:p-12 flex flex-col items-center relative z-10">
+                {/* Profile Header Block */}
+                <div className="p-12 pb-8 flex flex-col items-center relative z-10">
                     <motion.div
                         whileHover={{ scale: 1.05 }}
                         className="relative mb-8"
                     >
-                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse-slow" />
-                        <div className="w-28 h-28 rounded-full bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center text-4xl font-bold text-white shadow-2xl relative z-10 group/avatar overflow-hidden">
-                            <span className="relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">
+                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse-slow" />
+                        <div className="w-32 h-32 rounded-full bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center text-5xl font-black text-white shadow-2xl relative z-10 group/avatar overflow-hidden">
+                            <span className="relative z-10 drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]">
                                 {(formData.display_name || 'U').charAt(0).toUpperCase()}
                             </span>
                             <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-500" />
-                            {/* Subtle Shimmer Effect */}
                             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover/avatar:translate-x-full transition-transform duration-1000" />
                         </div>
                     </motion.div>
 
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
-                        {formData.display_name || 'New Identity'}
+                    <h2 className="text-4xl font-extrabold text-white tracking-tight text-center bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 mb-4">
+                        {formData.display_name || 'Registry Entry'}
                     </h2>
 
-                    <div className="flex items-center gap-3 px-4 py-1.5 bg-primary/10 rounded-full border border-primary/20 mt-5 backdrop-blur-md shadow-lg shadow-primary/5 transition-all hover:bg-primary/20 cursor-default">
-                        <ShieldCheckIcon className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-primary text-[10px] font-black uppercase tracking-[0.25em]">
-                            {role}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3 px-5 py-2 bg-primary/10 rounded-full border border-primary/20 backdrop-blur-md shadow-xl shadow-primary/5 transition-all hover:bg-primary/20 cursor-default">
+                            <ShieldCheckIcon className="w-4 h-4 text-primary" />
+                            <span className="text-primary text-[10px] font-black uppercase tracking-[0.3em]">
+                                {role}
+                            </span>
+                        </div>
+                        <div className="h-1 w-1 bg-white/20 rounded-full" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+                            ID: {profile.id.slice(0, 8).toUpperCase()}
                         </span>
                     </div>
                 </div>
 
-                <div className="px-10 border-t border-white/5 flex justify-center gap-12 bg-black/40 backdrop-blur-md">
-                    <button
-                        onClick={() => setActiveTab('details')}
-                        className={`py-5 text-[11px] font-bold uppercase tracking-widest relative transition-all duration-300 group/tab ${activeTab === 'details' ? 'text-primary' : 'text-white/20 hover:text-white/50'}`}
-                    >
-                        <span className="relative z-10">Core Registry</span>
-                        {activeTab === 'details' && (
-                            <motion.div
-                                layoutId="activeTab"
-                                className="absolute bottom-0 left-0 w-full h-[3px] bg-primary rounded-t-full shadow-[0_0_20px_rgba(var(--primary),0.8)]"
-                            />
-                        )}
-                        <div className="absolute bottom-0 left-0 w-full h-0 bg-primary/10 group-hover/tab:h-full transition-all duration-300 rounded-lg -z-10" />
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('contact')}
-                        className={`py-5 text-[11px] font-bold uppercase tracking-widest relative transition-all duration-300 group/tab ${activeTab === 'contact' ? 'text-primary' : 'text-white/20 hover:text-white/50'}`}
-                    >
-                        <span className="relative z-10">Contact & Node</span>
-                        {activeTab === 'contact' && (
-                            <motion.div
-                                layoutId="activeTab"
-                                className="absolute bottom-0 left-0 w-full h-[3px] bg-primary rounded-t-full shadow-[0_0_20px_rgba(var(--primary),0.8)]"
-                            />
-                        )}
-                        <div className="absolute bottom-0 left-0 w-full h-0 bg-primary/10 group-hover/tab:h-full transition-all duration-300 rounded-lg -z-10" />
-                    </button>
+                {/* Vertical Navigation Nodes */}
+                <div className="px-12 border-t border-white/5 flex items-center justify-between bg-black/40 backdrop-blur-xl relative">
+                    <div className="flex gap-10">
+                        <button
+                            onClick={() => setActiveTab('details')}
+                            className={`py-8 text-[11px] font-black uppercase tracking-[0.25em] relative transition-all duration-500 group/tab ${activeTab === 'details' ? 'text-primary' : 'text-white/20 hover:text-white/50'}`}
+                        >
+                            <span className="relative z-10">Core Registry</span>
+                            {activeTab === 'details' && (
+                                <motion.div
+                                    layoutId="activeTab"
+                                    className="absolute bottom-0 left-0 w-full h-[4px] bg-primary rounded-t-full shadow-[0_0_30px_rgba(var(--primary),1)]"
+                                />
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('contact')}
+                            className={`py-8 text-[11px] font-black uppercase tracking-[0.25em] relative transition-all duration-500 group/tab ${activeTab === 'contact' ? 'text-primary' : 'text-white/20 hover:text-white/50'}`}
+                        >
+                            <span className="relative z-10">Contact & Node</span>
+                            {activeTab === 'contact' && (
+                                <motion.div
+                                    layoutId="activeTab"
+                                    className="absolute bottom-0 left-0 w-full h-[4px] bg-primary rounded-t-full shadow-[0_0_30px_rgba(var(--primary),1)]"
+                                />
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Simple Step Indicator */}
+                    <div className="flex gap-2">
+                        {[1, 2, 3].map((s) => (
+                            <div key={s} className={`h-1 rounded-full transition-all duration-700 ${s === (activeTab === 'details' ? 1 : 2) ? 'w-8 bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]' : 'w-2 bg-white/10'}`} />
+                        ))}
+                    </div>
                 </div>
             </motion.div>
 
             {error && (
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-red-500/10 border border-red-500/20 text-red-500 p-6 rounded-3xl flex items-center gap-5 shadow-2xl backdrop-blur-xl"
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    className="bg-red-500/10 border border-red-400/20 text-red-100 p-8 rounded-[2.5rem] flex items-center gap-6 shadow-3xl backdrop-blur-2xl ring-1 ring-red-500/20"
                 >
-                    <div className="p-2 bg-red-500/20 rounded-full">
-                        <XIcon className="w-5 h-5 shrink-0" />
+                    <div className="p-4 bg-red-500/20 rounded-2xl">
+                        <XIcon className="w-6 h-6 shrink-0 text-red-500" />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">Configuration Error</p>
-                        <span className="text-xs font-bold">{error}</span>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-red-500/60 mb-1">Configuration Exception</p>
+                        <span className="text-sm font-bold opacity-90 leading-relaxed">{error}</span>
                     </div>
                 </motion.div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-12">
+            <form onSubmit={handleSubmit} className="relative">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.4, ease: "easeInOut" }}
-                        className="bg-slate-900/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-10 md:p-12 shadow-[0_40px_80px_-32px_rgba(0,0,0,0.5)] space-y-10 relative"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                        className="bg-[#0f111a]/60 backdrop-blur-3xl border border-white/5 rounded-[3rem] p-12 shadow-[0_60px_100px_-30px_rgba(0,0,0,0.6)] space-y-12 relative overflow-hidden"
                     >
-                        {/* Internal Form Mesh Gradient */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+                        {/* Internal Form Ambient Glow */}
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
 
                         {role === BuiltInRoles.PARENT_GUARDIAN ? (
                             <ParentForm formData={formData} handleChange={handleFormChange} activeTab={activeTab} />
@@ -271,7 +286,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                         ) : role === BuiltInRoles.SCHOOL_ADMINISTRATION ? (
                             <SchoolAdminForm formData={formData} handleChange={handleFormChange} isInitialCreation={false} />
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                 <FloatingPremiumInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleFormChange} icon={<UserIcon className="w-4 h-4" />} />
                                 <FloatingPremiumInput label="Contact Number" name="phone" value={formData.phone} onChange={handleFormChange} icon={<PhoneIcon className="w-4 h-4" />} />
                             </div>
@@ -279,55 +294,71 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     </motion.div>
                 </AnimatePresence>
 
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-10 mt-12 px-4">
-                    {showBackButton ? (
-                        <button
-                            type="button"
-                            onClick={onBack}
-                            className="group text-[11px] font-black text-white/20 hover:text-primary transition-all uppercase tracking-[0.3em] flex items-center gap-4 py-2"
-                        >
-                            <div className="p-2 bg-white/5 rounded-full group-hover:bg-primary/10 transition-colors">
-                                <ChevronLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                            </div>
-                            Return to Selection
-                        </button>
-                    ) : <div />}
-
-                    <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        type="submit"
-                        disabled={loading || !isFormValid}
-                        className={`h-[60px] px-12 rounded-2xl font-black text-[13px] uppercase tracking-[0.2em] transition-all flex items-center gap-4 group relative overflow-hidden ${!isFormValid || loading
-                            ? 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5'
-                            : 'bg-primary text-primary-foreground shadow-[0_20px_40px_-12px_rgba(var(--primary),0.5)]'
-                            }`}
+                {/* REDESIGNED ACTION ZONE: Fixed Desktop Action Bar */}
+                <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-2xl z-[200]">
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.5, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                        className="p-3 bg-[#0a0b10]/80 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] ring-1 ring-white/10 flex items-center justify-between"
                     >
-                        {loading ? (
-                            <Spinner size="sm" className="text-white" />
-                        ) : (
-                            <>
-                                <CheckCircleIcon className="w-5 h-5 transition-transform group-hover:scale-110" />
-                                <span className="relative z-10">Complete Setup</span>
-                                {!loading && isFormValid && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                                )}
-                            </>
-                        )}
-                    </motion.button>
+                        <div className="flex items-center">
+                            {showBackButton ? (
+                                <button
+                                    type="button"
+                                    onClick={onBack}
+                                    className="group h-[64px] px-8 rounded-[1.75rem] text-[11px] font-black text-white/30 hover:text-white hover:bg-white/5 transition-all uppercase tracking-[0.3em] flex items-center gap-4"
+                                >
+                                    <ChevronLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                                    <span className="hidden sm:inline">Return</span>
+                                </button>
+                            ) : <div className="ml-6" />}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1 px-4 text-right">
+                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20">Confirmation Required</span>
+                            <span className="text-[10px] font-bold text-white/40 tracking-wide italic">You can edit these parameters later</span>
+                        </div>
+
+                        <motion.button
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="submit"
+                            disabled={loading || !isFormValid}
+                            className={`h-[68px] px-12 rounded-[1.75rem] font-black text-[14px] uppercase tracking-[0.25em] transition-all flex items-center gap-5 group relative overflow-hidden ${!isFormValid || loading
+                                ? 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5'
+                                : 'bg-primary text-white shadow-[0_25px_50px_-12px_rgba(var(--primary),0.6)] hover:shadow-[0_30px_60px_-12px_rgba(var(--primary),0.8)]'
+                                }`}
+                        >
+                            {loading ? (
+                                <Spinner size="sm" className="text-white" />
+                            ) : (
+                                <>
+                                    <span className="relative z-10">Complete Setup</span>
+                                    <CheckCircleIcon className="w-5 h-5 transition-all group-hover:scale-110 group-hover:rotate-6 relative z-10" />
+                                    {!loading && isFormValid && (
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                                    )}
+                                </>
+                            )}
+                        </motion.button>
+                    </motion.div>
                 </div>
             </form>
 
+            {/* Bottom Footer Spacer - Essential for dropdown clearance */}
+            <div className="h-80" />
+
             <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
-                transition={{ delay: 1 }}
-                className="text-center py-8"
+                animate={{ opacity: 0.4 }}
+                transition={{ delay: 1.5 }}
+                className="text-center pb-12"
             >
-                <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-white/5 border border-white/5">
-                    <ShieldCheckIcon className="w-4 h-4 text-emerald-500" />
-                    <p className="text-[11px] font-bold tracking-widest text-white/60 uppercase">
-                        End-to-End Encrypted Verification Node
+                <div className="inline-flex items-center gap-4 px-8 py-3 rounded-2xl bg-[#0a0b10]/40 border border-white/5 shadow-inner">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+                    <p className="text-[11px] font-black tracking-[0.3em] text-white/40 uppercase">
+                        Protocol Secured Node • 256-bit AES
                     </p>
                 </div>
             </motion.div>

@@ -26,39 +26,39 @@ const LocateFixedIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const PremiumFloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string; icon?: React.ReactNode; isTextArea?: boolean; isSynced?: boolean; action?: React.ReactNode }> = ({ label, icon, isTextArea, isSynced, action, className, ...props }) => (
     <div className="relative group w-full">
         {label && (
-            <label className={`absolute left-11 top-0 -translate-y-1/2 bg-slate-900/90 px-1.5 text-[10px] font-bold uppercase tracking-widest z-20 transition-all duration-300 pointer-events-none
-                ${isSynced ? 'text-primary' : 'text-white/30 group-focus-within:text-primary'}`}>
+            <label className={`absolute left-10 top-0 -translate-y-1/2 bg-[#0f111a] px-2 text-[10px] font-black uppercase tracking-[0.25em] z-20 transition-all duration-300 pointer-events-none rounded
+                ${isSynced ? 'text-primary' : 'text-white/20 group-focus-within:text-primary'}`}>
                 {label}
             </label>
         )}
-        <div className={`absolute ${isTextArea ? 'top-5' : 'top-1/2 -translate-y-1/2'} left-4 text-white/10 group-focus-within:text-primary transition-all duration-300 z-10 pointer-events-none ${isSynced ? 'text-primary/60' : ''}`}>
-            {icon}
+        <div className={`absolute ${isTextArea ? 'top-6' : 'top-1/2 -translate-y-1/2'} left-5 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none ${isSynced ? 'text-primary/60' : ''}`}>
+            {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5 transition-transform group-focus-within:scale-110' })}
         </div>
         {isTextArea ? (
             <textarea
                 {...(props as any)}
                 placeholder=" "
-                className={`peer block w-full h-24 rounded-xl border transition-all duration-300 px-5 pl-12 pr-12 pt-5 pb-2 text-[15px] text-white font-medium outline-none placeholder-transparent
-                    ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_15px_rgba(var(--primary),0.05)]' : 'border-white/10 bg-black/30 hover:border-white/20 focus:border-primary/40 focus:ring-4 focus:ring-primary/5'} 
+                className={`peer block w-full h-32 rounded-2xl border transition-all duration-500 px-6 pl-14 pr-14 pt-6 pb-2 text-[15px] text-white font-bold outline-none placeholder-transparent
+                    ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.05)]' : 'border-white/5 bg-black/40 hover:border-white/10 focus:border-primary/30 focus:bg-black/60 focus:ring-8 focus:ring-primary/5'} 
                     ${className}`}
             />
         ) : (
             <input
                 {...props}
                 placeholder=" "
-                className={`peer block w-full h-[48px] rounded-xl border transition-all duration-300 px-5 pl-12 pt-4 pb-1 text-[15px] text-white font-medium outline-none placeholder-transparent
-                    ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_15px_rgba(var(--primary),0.05)]' : 'border-white/10 bg-black/30 hover:border-white/20 focus:border-primary/40 focus:ring-4 focus:ring-primary/5'} 
+                className={`peer block w-full h-[60px] rounded-2xl border transition-all duration-500 px-6 pl-14 pt-4 pb-1 text-[16px] text-white font-bold outline-none placeholder-transparent
+                    ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.05)]' : 'border-white/5 bg-black/40 hover:border-white/10 focus:border-primary/30 focus:bg-black/60 focus:ring-8 focus:ring-primary/5'} 
                     ${className}`}
             />
         )}
         {action && (
-            <div className="absolute right-3 top-3 z-30">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30">
                 {action}
             </div>
         )}
         {isSynced && !action && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 animate-in zoom-in-95 duration-500">
-                <CheckCircleIcon className="w-4 h-4 text-primary shadow-[0_0_10px_rgba(var(--primary),0.4)]" />
+            <div className="absolute right-5 top-1/2 -translate-y-1/2 animate-in zoom-in-95 duration-500">
+                <CheckCircleIcon className="w-5 h-5 text-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]" />
             </div>
         )}
     </div>
@@ -111,7 +111,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
     const handleResolveAddress = async () => {
         if (!formData.address?.trim()) return;
         setIsResolving(true);
-        setSyncStatus('Resolving Address...');
+        setSyncStatus('Mapping Geocodes...');
         setSyncError(null);
 
         try {
@@ -150,7 +150,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
 
     const handleAutoLocate = async () => {
         setIsLocating(true);
-        setSyncStatus('Resolving Telemetry...');
+        setSyncStatus('Synchronizing Telemetry...');
         setSyncError(null);
         setSyncedFields(new Set());
 
@@ -169,7 +169,6 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                 Country must be full name. Use official registry names.`;
 
                 const response = await ai.models.generateContent({
-                    // FIX: Maps grounding is strictly supported on Gemini 2.5 series models only per GenAI guidelines
                     model: 'gemini-2.5-flash',
                     contents: prompt,
                     config: {
@@ -210,27 +209,29 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
             <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="space-y-10"
+                className="space-y-12"
             >
-                <div className="flex items-center gap-6 mb-8 group/header">
-                    <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.15)] group-hover/header:shadow-[0_0_30px_rgba(var(--primary),0.3)] transition-all duration-500">
-                        <UsersIcon className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <h3 className="text-base font-black text-white tracking-[0.2em] uppercase glow-text">Guardian Identity</h3>
-                        <p className="text-xs text-white/40 font-medium tracking-widest mt-1">Institutional verification & relationship nodes.</p>
+                <div className="flex items-center justify-between mb-4 group/header">
+                    <div className="flex items-center gap-6">
+                        <div className="p-5 bg-primary/10 rounded-[1.5rem] text-primary border border-primary/20 shadow-[0_0_30px_rgba(var(--primary),0.1)] group-hover/header:shadow-[0_0_40px_rgba(var(--primary),0.25)] transition-all duration-700">
+                            <UsersIcon className="w-7 h-7" />
+                        </div>
+                        <div>
+                            <h3 className="text-[13px] font-black text-white tracking-[0.3em] uppercase glow-text mb-1">Guardian Identity</h3>
+                            <p className="text-[11px] text-white/30 font-bold tracking-widest">Institutional verification & relationship nodes.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12 bg-white/[0.02] p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
+                    <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon />} />
 
                     <CustomSelect
                         label="Relationship Status"
                         value={formData.relationship_to_student || ''}
                         onChange={handleSelectChange('relationship_to_student')}
                         options={[{ value: 'Father', label: 'Father' }, { value: 'Mother', label: 'Mother' }, { value: 'Guardian', label: 'Legal Guardian' }, { value: 'Other', label: 'Authorized Affiliate' }]}
-                        icon={<UsersIcon className="w-4 h-4" />}
+                        icon={<UsersIcon />}
                     />
 
                     <CustomSelect
@@ -238,7 +239,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                         value={formData.gender || ''}
                         onChange={handleSelectChange('gender')}
                         options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Diverse' }, { value: 'Prefer not to say', label: 'Prefer not to say' }]}
-                        icon={<UserIcon className="w-4 h-4" />}
+                        icon={<UserIcon />}
                     />
 
                     <CustomSelect
@@ -246,7 +247,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                         value={String(formData.number_of_children || '1')}
                         onChange={handleSelectChange('number_of_children')}
                         options={[{ value: '1', label: 'Single Child' }, { value: '2', label: '2 Children' }, { value: '3', label: '3 Children' }, { value: '4', label: '4+ Children' }]}
-                        icon={<UsersIcon className="w-4 h-4" />}
+                        icon={<UsersIcon />}
                     />
                 </div>
             </motion.div>
@@ -257,21 +258,21 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
         <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="space-y-10"
+            className="space-y-12"
         >
-            <div className="flex items-center justify-between gap-8 p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 relative overflow-hidden group/loc">
+            <div className="flex items-center justify-between gap-8 p-10 rounded-[2.5rem] bg-indigo-500/[0.03] border border-indigo-500/10 relative overflow-hidden group/loc shadow-2xl">
                 {/* Decorative background pulse */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover/loc:scale-150 transition-transform duration-700" />
+                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-[80px] group-hover/loc:scale-150 transition-transform duration-1000" />
 
-                <div className="flex items-center gap-6 relative z-10">
-                    <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-xl">
-                        <HomeIcon className="w-6 h-6" />
+                <div className="flex items-center gap-8 relative z-10">
+                    <div className="p-5 bg-indigo-500/10 rounded-[1.5rem] text-indigo-400 border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.1)]">
+                        <HomeIcon className="w-7 h-7" />
                     </div>
                     <div>
-                        <h3 className="text-base font-black text-white tracking-[0.2em] uppercase">Residency & Contact</h3>
-                        <p className="text-xs text-white/40 font-medium tracking-widest mt-1">
+                        <h3 className="text-[13px] font-black text-white tracking-[0.3em] uppercase mb-1">Residency & Node</h3>
+                        <p className="text-[11px] text-white/30 font-bold tracking-widest min-h-[1.5em] flex items-center">
                             {syncStatus ? (
-                                <span className="text-indigo-400 animate-pulse font-bold">{syncStatus}</span>
+                                <span className="text-indigo-400 animate-pulse font-black">{syncStatus}</span>
                             ) : 'Primary contact & telemetry synchronization.'}
                         </p>
                     </div>
@@ -283,26 +284,26 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     type="button"
                     onClick={handleAutoLocate}
                     disabled={isLocating}
-                    className={`h-[48px] px-8 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-500 border relative z-10 overflow-hidden
+                    className={`h-[56px] px-10 rounded-2xl font-black text-[12px] uppercase tracking-[0.25em] transition-all duration-700 border relative z-10 overflow-hidden
                         ${isLocating
-                            ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40 animate-pulse'
-                            : 'bg-white/5 text-white/50 border-white/5 hover:border-indigo-400 hover:text-white hover:shadow-[0_0_20px_rgba(99,102,241,0.2)]'
+                            ? 'bg-indigo-500/20 text-indigo-100 border-indigo-400/40 animate-pulse'
+                            : 'bg-white/5 text-white/50 border-white/10 hover:border-indigo-400 hover:text-white hover:bg-indigo-500/10 hover:shadow-[0_0_30px_rgba(99,102,241,0.3)]'
                         }
                     `}
                 >
                     {isLocating ? (
-                        <Spinner size="sm" className="text-indigo-400" />
+                        <Spinner size="sm" className="text-indigo-100" />
                     ) : (
-                        <div className="flex items-center gap-3">
-                            <LocateFixedIcon className="w-4 h-4" />
-                            Locate Node
+                        <div className="flex items-center gap-4">
+                            <LocateFixedIcon className="w-5 h-5 transition-transform group-hover/loc:rotate-90" />
+                            Sync Registry
                         </div>
                     )}
                 </motion.button>
             </div>
 
-            <div className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="space-y-12 bg-white/[0.01] p-10 rounded-[3rem] border border-white/[0.03]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <PremiumFloatingInput
                         label="Primary Mobile"
                         name="phone"
@@ -310,7 +311,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                         value={formData.phone}
                         onChange={handleChange}
                         required
-                        icon={<PhoneIcon className="w-4 h-4" />}
+                        icon={<PhoneIcon />}
                     />
 
                     <CustomSelect
@@ -318,7 +319,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                         value={formData.country || ''}
                         onChange={handleSelectChange('country')}
                         options={countries.map(c => ({ value: c, label: c }))}
-                        icon={<GlobeIcon className="w-4 h-4" />}
+                        icon={<GlobeIcon />}
                         placeholder="Select Region..."
                         searchable
                         isSynced={syncedFields.has('country')}
@@ -333,7 +334,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                         onChange={handleChange as any}
                         isTextArea
                         isSynced={syncedFields.has('address')}
-                        icon={<LocationIcon className="w-4 h-4" />}
+                        icon={<LocationIcon />}
                         action={
                             <motion.button
                                 whileHover={{ scale: 1.1, rotate: 15 }}
@@ -341,7 +342,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                                 type="button"
                                 onClick={handleResolveAddress}
                                 disabled={isResolving || !formData.address?.trim()}
-                                className="p-3 bg-primary/10 text-primary rounded-xl transition-all shadow-lg shadow-primary/10 hover:shadow-primary/20 border border-primary/20"
+                                className="p-4 bg-primary/10 text-primary rounded-2xl transition-all shadow-xl shadow-primary/10 hover:shadow-primary/30 border border-primary/20 backdrop-blur-md"
                                 title="Auto-fill city, state, country"
                             >
                                 {isResolving ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5" />}
@@ -350,13 +351,13 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                     <CustomSelect
                         label="State"
                         value={formData.state || ''}
                         onChange={handleSelectChange('state')}
                         options={availableStates.map(s => ({ value: s, label: s }))}
-                        icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
+                        icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon />}
                         disabled={!formData.country}
                         searchable
                         isSynced={syncedFields.has('state')}
@@ -366,7 +367,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                         value={formData.city || ''}
                         onChange={handleSelectChange('city')}
                         options={availableCities.map(c => ({ value: c, label: c }))}
-                        icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
+                        icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon />}
                         disabled={!formData.state}
                         searchable
                         isSynced={syncedFields.has('city')}
@@ -377,10 +378,20 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                         value={formData.pin_code}
                         onChange={handleChange}
                         isSynced={syncedFields.has('pin_code')}
-                        icon={<LocationIcon className="w-4 h-4" />}
+                        icon={<LocationIcon />}
                     />
                 </div>
             </div>
+            {syncError && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-6 rounded-2xl border flex items-center gap-4 ${syncError.isWarning ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-red-500/10 border-red-500/20 text-red-200'}`}
+                >
+                    <AlertTriangleIcon className="w-5 h-5 shrink-0" />
+                    <span className="text-[11px] font-bold uppercase tracking-widest">{syncError.message}</span>
+                </motion.div>
+            )}
         </motion.div>
     );
 };
