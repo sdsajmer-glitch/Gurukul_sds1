@@ -259,7 +259,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ duration: 0.4, ease: "easeInOut" }}
-                        className="bg-slate-900/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-10 md:p-12 shadow-[0_40px_80px_-32px_rgba(0,0,0,0.5)] space-y-10 relative overflow-hidden"
+                        className="bg-slate-900/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-10 md:p-12 shadow-[0_40px_80px_-32px_rgba(0,0,0,0.5)] space-y-10 relative"
                     >
                         {/* Internal Form Mesh Gradient */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
