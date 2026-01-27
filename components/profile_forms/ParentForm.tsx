@@ -76,16 +76,25 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
         setSyncError(null);
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const prompt = `System: You are an address normalization node.
-            Extract details from: "${formData.address}".
-            Constraint: Country MUST match one of: ${countries.join(', ')}.
-            Format: JSON only: {"city": string, "state": string, "country": string, "pin": string}.`;
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+            const prompt = `System: You are an advanced geospatial address normalization node.
+            Task: Extract structured residency data from the following address string.
+            Address: "${formData.address}"
+            
+            Strict Requirements:
+            1. Country MUST be one of: ${countries.join(', ')}.
+            2. State MUST be a valid administrative department/state in that country.
+            3. City MUST be a major urban center in that state.
+            4. PIN Code must be the numeric postal code identified.
+            
+            Output strictly as a valid JSON object with the following keys: "city", "state", "country", "pin".
+            Example: {"city": "New York", "state": "New York", "country": "United States", "pin": "10001"}
+            
+            JSON Output:`;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: { tools: [{ googleMaps: {} }] }
+                model: 'gemini-1.5-flash',
+                contents: prompt
             });
 
             const text = response.text || '';
@@ -112,10 +121,10 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                 }
 
                 setSyncedFields(prev => new Set([...Array.from(prev), ...foundFields]));
-                setSyncStatus(`Sync Success: ${foundFields.length} Node(s) Updated.`);
+                setSyncStatus(`Registry Updated: ${foundFields.length} Nodes Synchronized.`);
                 setTimeout(() => setSyncStatus(''), 4000);
             } else {
-                throw new Error("Invalid telemetry response.");
+                throw new Error("Geospatial parse failure.");
             }
         } catch (err) {
             console.error("Resolve failed", err);
@@ -144,17 +153,16 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
         navigator.geolocation.getCurrentPosition(async (position) => {
             const { latitude, longitude } = position.coords;
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
                 const prompt = `Identify official address for coordinates: ${latitude}, ${longitude}. 
-                Output JSON: {"address": string, "city": string, "state": string, "country": string, "pin_code": string}.`;
+                Output strictly as a valid JSON object with the following keys: "address", "city", "state", "country", "pin_code".
+                Example: {"address": "1600 Amphitheatre Parkway", "city": "Mountain View", "state": "California", "country": "United States", "pin_code": "94043"}
+                
+                JSON Output:`;
 
                 const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                    config: {
-                        tools: [{ googleMaps: {} }],
-                        toolConfig: { retrievalConfig: { latLng: { latitude, longitude } } }
-                    }
+                    model: 'gemini-1.5-flash',
+                    contents: prompt
                 });
 
                 const text = response.text || '';
@@ -170,7 +178,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     if (data.address) handleChange({ target: { name: 'address', value: data.address } } as any);
                     if (data.pin_code) handleChange({ target: { name: 'pin_code', value: data.pin_code } } as any);
 
-                    setSyncStatus('Registry Synchronized.');
+                    setSyncStatus('Terminal Registry Synchronized.');
                     setTimeout(() => setSyncStatus(''), 4000);
                 }
             } catch (err: any) {
@@ -331,8 +339,8 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     />
                 </div>
 
-                {/* Refined 5-column grid for State (2), City (2), PIN Code (1) */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-end">
+                {/* Optimized Registry Grid: State (2), City (2), PIN Code (2) for enhanced field width */}
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-10 items-end">
                     <div className="md:col-span-2">
                         <CustomSelect
                             label="State Protocol"
@@ -357,7 +365,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                             isSynced={syncedFields.has('city')}
                         />
                     </div>
-                    <div className="md:col-span-1">
+                    <div className="md:col-span-2">
                         <PremiumFloatingInput
                             label="PIN Code"
                             name="pin_code"

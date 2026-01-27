@@ -35,6 +35,12 @@ DROP FUNCTION IF EXISTS public.switch_active_role(TEXT) CASCADE;
 DROP FUNCTION IF EXISTS public.upsert_teacher_profile(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INT, DATE) CASCADE;
 DROP FUNCTION IF EXISTS public.generate_admission_share_code(UUID, TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS public.revoke_my_share_code(BIGINT) CASCADE;
+DROP FUNCTION IF EXISTS public.initialize_school_admin() CASCADE;
+DROP FUNCTION IF EXISTS public.create_school_branch(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.update_school_branch(BIGINT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.delete_school_branch(BIGINT) CASCADE;
+DROP FUNCTION IF EXISTS public.complete_branch_step() CASCADE;
+DROP FUNCTION IF EXISTS public.verify_and_link_branch_admin(TEXT) CASCADE;
 
 -- Drop Tables (Order matters: Child tables first, or just use CASCADE)
 DROP TABLE IF EXISTS public.audit_logs CASCADE;
@@ -96,7 +102,9 @@ CREATE TABLE public.school_branches (
     country TEXT,
     is_main_branch BOOLEAN DEFAULT false,
     admin_email TEXT,
+    access_key TEXT UNIQUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
     status TEXT DEFAULT 'Active',
     base_currency TEXT DEFAULT 'INR'
 );
@@ -1345,6 +1353,148 @@ BEGIN
         'student_id', v_student_id, 
         'student_id_number', v_student_id_number
     );
+END;
+$$;
+
+-- ===============================================================================================
+-- INSTITUTIONAL SETUP & BRANCH HYPER-PROTOCOL
+-- ===============================================================================================
+
+-- RPC: Initialize School Admin
+CREATE OR REPLACE FUNCTION public.initialize_school_admin()
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    -- Identity provisioning for the global node
+    UPDATE public.profiles 
+    SET role = 'School Administration', profile_completed = false
+    WHERE id = auth.uid();
+
+    -- Context metadata initialization
+    INSERT INTO public.school_admin_profiles (user_id, onboarding_step)
+    VALUES (auth.uid(), 'profile')
+    ON CONFLICT (user_id) DO NOTHING;
+END;
+$$;
+
+-- RPC: Create School Branch
+CREATE OR REPLACE FUNCTION public.create_school_branch(
+    p_name TEXT,
+    p_address TEXT,
+    p_city TEXT,
+    p_state TEXT,
+    p_country TEXT,
+    p_contact_number TEXT,
+    p_is_main BOOLEAN,
+    p_email TEXT,
+    p_admin_name TEXT,
+    p_admin_phone TEXT,
+    p_admin_email TEXT
+) RETURNS SETOF public.school_branches LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_branch_id BIGINT;
+BEGIN
+    -- Global Singleton Check for Main Branch
+    IF p_is_main THEN
+        UPDATE public.school_branches SET is_main_branch = false;
+    END IF;
+
+    INSERT INTO public.school_branches (
+        name, address, city, state, country, is_main_branch, admin_email, access_key
+    ) VALUES (
+        p_name, p_address, p_city, p_state, p_country, p_is_main, p_admin_email, 
+        upper(substr(md5(random()::text), 1, 8))
+    ) RETURNING id INTO v_branch_id;
+
+    RETURN QUERY SELECT * FROM public.school_branches WHERE id = v_branch_id;
+END;
+$$;
+
+-- RPC: Update School Branch
+CREATE OR REPLACE FUNCTION public.update_school_branch(
+    p_branch_id BIGINT,
+    p_name TEXT,
+    p_address TEXT,
+    p_city TEXT,
+    p_state TEXT,
+    p_country TEXT,
+    p_contact_number TEXT,
+    p_is_main BOOLEAN,
+    p_email TEXT,
+    p_admin_name TEXT,
+    p_admin_phone TEXT,
+    p_admin_email TEXT
+) RETURNS SETOF public.school_branches LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    -- Synchronization protocol for singleton main branch
+    IF p_is_main THEN
+        UPDATE public.school_branches SET is_main_branch = false WHERE id <> p_branch_id;
+    END IF;
+
+    UPDATE public.school_branches SET
+        name = p_name,
+        address = p_address,
+        city = p_city,
+        state = p_state,
+        country = p_country,
+        is_main_branch = p_is_main,
+        admin_email = p_admin_email,
+        updated_at = NOW()
+    WHERE id = p_branch_id;
+
+    RETURN QUERY SELECT * FROM public.school_branches WHERE id = p_branch_id;
+END;
+$$;
+
+-- RPC: Delete School Branch
+CREATE OR REPLACE FUNCTION public.delete_school_branch(p_branch_id BIGINT)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    DELETE FROM public.school_branches WHERE id = p_branch_id;
+END;
+$$;
+
+-- RPC: Complete Branch Onboarding Step
+CREATE OR REPLACE FUNCTION public.complete_branch_step()
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    -- Finalize institutional identity
+    UPDATE public.school_admin_profiles 
+    SET onboarding_step = 'completed'
+    WHERE user_id = auth.uid();
+    
+    UPDATE public.profiles
+    SET profile_completed = true
+    WHERE id = auth.uid();
+END;
+$$;
+
+-- RPC: Verify and Link Branch Admin
+CREATE OR REPLACE FUNCTION public.verify_and_link_branch_admin(p_invitation_code TEXT)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_branch_id BIGINT;
+BEGIN
+    SELECT id INTO v_branch_id 
+    FROM public.school_branches 
+    WHERE access_key = p_invitation_code 
+      AND status = 'Active';
+
+    IF v_branch_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'The Access Key provided is invalid, expired, or not authorized for this identity.');
+    END IF;
+
+    UPDATE public.profiles SET
+        branch_id = v_branch_id,
+        role = 'School Administration',
+        profile_completed = true
+    WHERE id = auth.uid();
+
+    -- Ensure specialized profile exists
+    INSERT INTO public.school_admin_profiles (user_id, onboarding_step)
+    VALUES (auth.uid(), 'completed')
+    ON CONFLICT (user_id) DO UPDATE SET onboarding_step = 'completed';
+
+    RETURN jsonb_build_object('success', true, 'branch_id', v_branch_id);
 END;
 $$;
 
