@@ -330,38 +330,67 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 )}
             </div>
 
-            {/* Ghost Hero Section */}
-            <div className="text-center mb-20">
-                <h1 className="text-[6rem] md:text-[8rem] font-serif font-black text-white tracking-tighter leading-[0.8] mb-0">
-                    BRANCH
-                </h1>
-                <h1 className="text-[6rem] md:text-[8rem] font-serif font-black text-ghost tracking-tighter leading-[0.8] mb-12">
-                    REGISTRY.
-                </h1>
-                <p className="text-white/40 text-[14px] font-serif italic max-w-lg mx-auto leading-relaxed">
-                    Start by defining your <strong className="text-white/80">Head Office Node</strong>, then synchronize additional satellite campuses to the global network.
-                </p>
+            {/* Cinematic Hero Section */}
+            <div className="relative text-center mb-32 group">
+                {/* Ambient Backdrop Logic */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] hero-spotlight opacity-50 blur-[100px] pointer-events-none" />
+
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    className="relative z-10"
+                >
+                    <h1 className="text-[6rem] md:text-[9rem] font-serif font-black text-white tracking-tighter leading-[0.75] mb-0 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                        BRANCH
+                    </h1>
+                    <h1 className="text-[6rem] md:text-[9rem] font-serif font-black text-ghost tracking-tighter leading-[0.75] mb-12">
+                        REGISTRY.
+                    </h1>
+
+                    <div className="max-w-xl mx-auto space-y-6">
+                        <p className="text-white/40 text-[16px] font-serif italic leading-relaxed">
+                            Start by defining your <strong className="text-white/70">Head Office Node</strong>, then synchronize additional satellite campuses to the global network.
+                        </p>
+
+                        <div className="flex items-center justify-center gap-4">
+                            <div className="h-px w-12 bg-white/5" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.6em] text-white/20">Institutional Matrix v2.0</span>
+                            <div className="h-px w-12 bg-white/5" />
+                        </div>
+                    </div>
+                </motion.div>
             </div>
 
-            {/* Institutional Command Pill */}
-            <div className="max-w-xl mx-auto mb-24 p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] flex items-center justify-center gap-6 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)]">
-                <button
-                    onClick={() => handleOpenCreate()}
-                    disabled={loading}
-                    className="flex-1 py-5 px-8 border border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-[0.4em] text-white/40 hover:text-white hover:bg-white/5 transition-all"
-                >
-                    New Institutional Node
-                </button>
+            {/* Institutional Command Pill: Precision Glass */}
+            <div className="relative max-w-2xl mx-auto mb-32 p-1 bg-white/[0.02] border border-white/[0.05] rounded-[3.5rem] shadow-[0_64px_128px_-32px_rgba(0,0,0,0.6)] backdrop-blur-xl group/pill">
+                <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary/40">Network Integrity: Active</span>
+                </div>
 
-                {onNext && branches.length > 0 && (
+                <div className="flex items-center p-6 gap-6">
                     <button
-                        onClick={handleFinish}
-                        disabled={isFinishing}
-                        className="flex-1 py-5 px-8 bg-primary text-primary-foreground rounded-2xl text-[9px] font-black uppercase tracking-[0.4em] shadow-[0_16px_32px_-8px_rgba(var(--primary),0.5)] flex items-center justify-center gap-3 hover:scale-[1.02] transition-all"
+                        onClick={() => handleOpenCreate()}
+                        disabled={loading}
+                        className="flex-1 py-6 px-10 glass-stroke rounded-3xl text-[10px] font-black uppercase tracking-[0.4em] text-white/30 hover:text-white hover:bg-white/5 hover:border-white/20 transition-all duration-500 shadow-xl"
                     >
-                        {isFinishing ? <Spinner size="sm" /> : <>Synchronize Registry &rarr;</>}
+                        New Institutional Node
                     </button>
-                )}
+
+                    {onNext && branches.length > 0 && (
+                        <button
+                            onClick={handleFinish}
+                            disabled={isFinishing}
+                            className="flex-1 py-6 px-10 bg-primary text-primary-foreground rounded-3xl text-[10px] font-black uppercase tracking-[0.4em] shadow-[0_24px_48px_-12px_rgba(var(--primary),0.4)] flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all duration-500"
+                        >
+                            {isFinishing ? <Spinner size="sm" /> : <>Synchronize Registry &rarr;</>}
+                        </button>
+                    )}
+                </div>
+
+                {/* Subtle Scanline Overlay for the initial state */}
+                {branches.length === 0 && !loading && <div className="scanline opacity-20" />}
             </div>
 
             {loading ? (
