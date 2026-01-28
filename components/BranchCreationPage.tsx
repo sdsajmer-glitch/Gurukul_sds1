@@ -319,7 +319,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const availableCities = useMemo(() => formData.state ? citiesByState[formData.state] || [] : [], [formData.state]);
 
     return (
-        <div className="w-full max-w-[1240px] mx-auto px-6 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+        <div className="w-full max-w-[1440px] mx-auto px-6 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             {/* Image Header Style */}
             <div className="flex items-center justify-between py-8 mb-20 border-b border-white/[0.03]">
                 <span className="text-[11px] font-black uppercase tracking-[0.5em] text-white/80">Configure Node</span>
@@ -403,7 +403,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             ) : error ? (
                 <DiagnosticErrorConsole message={error} onClear={() => setError(null)} />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 px-10 pb-40">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-16 px-10 pb-40">
                     {branches.map((branch, idx) => (
                         <motion.div
                             key={branch.id}
@@ -411,7 +411,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1, duration: 0.8 }}
                             whileHover={{ y: -8 }}
-                            className="group relative bg-[#0a0b0f] glass-stroke node-shadow hover:node-glow rounded-[4rem] p-12 flex flex-col items-center text-center min-h-[520px] transition-all duration-700"
+                            className="group relative bg-[#0a0b0f] glass-stroke node-shadow hover:node-glow rounded-[4rem] p-14 flex flex-col items-center text-center min-h-[580px] w-full transition-all duration-700"
                         >
                             {/* Header Zone: Anchored Shield */}
                             <div className="relative w-full flex flex-col items-center mb-12">
@@ -454,29 +454,29 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                             </div>
 
                             {/* Infrastructure Zone: The Vault Strip */}
-                            <div className="w-full space-y-8">
-                                <div className="w-full py-8 px-6 bg-black/50 rounded-[2.5rem] border border-white/[0.04] relative overflow-hidden group/vault transition-all duration-700 hover:bg-black/80 hover:border-primary/40 shadow-2xl">
-                                    <div className="flex flex-col gap-4 relative z-10 text-center items-center">
+                            <div className="w-full space-y-8 px-2">
+                                <div className="w-full py-10 px-8 bg-black/60 rounded-[2.5rem] border border-white/[0.05] relative overflow-hidden group/vault transition-all duration-700 hover:bg-black/80 hover:border-primary/40 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
+                                    <div className="flex flex-col gap-6 relative z-10 text-center items-center">
                                         <div className="flex items-center gap-4">
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.6em]">Node Protocol Key</p>
+                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.8em]">Node Identity Protocol</p>
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     navigator.clipboard.writeText(branch.access_key || '');
                                                 }}
-                                                className="px-3 py-1 bg-primary/10 rounded-lg text-primary text-[8px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
+                                                className="px-4 py-1.5 bg-primary/10 rounded-xl text-primary text-[9px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-lg active:scale-90"
                                             >
-                                                Copy
+                                                Copy Key
                                             </button>
                                         </div>
-                                        <code className="text-4xl font-mono font-black text-primary tracking-[0.4em] block transition-colors duration-700 group-hover/vault:text-white select-all">
+                                        <code className="text-6xl font-mono font-black text-primary tracking-[0.4em] block transition-colors duration-700 group-hover/vault:text-white select-all drop-shadow-[0_0_30px_rgba(var(--primary),0.5)]">
                                             {branch.access_key || 'NODATA'}
                                         </code>
                                     </div>
-                                    <div className="absolute top-0 right-0 p-6 opacity-5">
-                                        <HashIcon className="w-10 h-10" />
+                                    <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
+                                        <HashIcon className="w-16 h-16" />
                                     </div>
-                                    <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover/vault:opacity-100 transition-opacity" />
+                                    <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover/vault:opacity-100 transition-opacity" />
                                 </div>
 
                                 {/* Control Surface */}
@@ -503,16 +503,16 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                     <motion.button
                         whileHover={{ scale: 0.98, y: -4 }}
                         onClick={() => handleOpenCreate()}
-                        className="flex flex-col items-center justify-center p-12 rounded-[4rem] border-2 border-dashed border-white/5 bg-white/[0.01] hover:border-primary/20 hover:bg-white/[0.02] transition-all min-h-[520px] group relative overflow-hidden"
+                        className="flex flex-col items-center justify-center p-14 rounded-[4rem] border-2 border-dashed border-white/5 bg-white/[0.01] hover:border-primary/20 hover:bg-white/[0.02] transition-all min-h-[580px] w-full group relative overflow-hidden"
                     >
-                        <div className="absolute inset-0 bg-primary/[0.01] opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="relative z-10 space-y-12 text-center items-center flex flex-col">
-                            <div className="w-24 h-24 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mx-auto group-hover:scale-110 group-hover:bg-primary/5 group-hover:border-primary/20 transition-all duration-700 shadow-2xl">
-                                <PlusIcon className="w-10 h-10 text-white/5 group-hover:text-primary transition-colors" />
+                        <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative z-10 space-y-14 text-center items-center flex flex-col">
+                            <div className="w-32 h-32 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mx-auto group-hover:scale-110 group-hover:bg-primary/5 group-hover:border-primary/20 transition-all duration-700 shadow-[0_0_60px_-15px_rgba(0,0,0,0.5)]">
+                                <PlusIcon className="w-14 h-14 text-white/5 group-hover:text-primary transition-colors" />
                             </div>
-                            <div className="space-y-4">
-                                <p className="text-xl font-serif italic text-white/10 group-hover:text-white/40 transition-colors uppercase tracking-widest">Topology Expansion</p>
-                                <p className="text-[10px] font-black uppercase tracking-[1em] text-white/5">Initialize Node</p>
+                            <div className="space-y-6">
+                                <p className="text-2xl font-serif italic text-white/10 group-hover:text-white/40 transition-colors uppercase tracking-[0.3em]">Topology Expansion</p>
+                                <p className="text-[11px] font-black uppercase tracking-[1.2em] text-white/5">Initialize Next Node</p>
                             </div>
                         </div>
                     </motion.button>
