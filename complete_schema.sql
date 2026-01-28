@@ -128,6 +128,8 @@ CREATE TABLE public.school_branches (
     country TEXT,
     is_main_branch BOOLEAN DEFAULT false,
     admin_email TEXT,
+    admin_name TEXT,
+    admin_phone TEXT,
     access_key TEXT UNIQUE,
     school_id UUID REFERENCES public.school_admin_profiles(user_id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -1413,9 +1415,9 @@ BEGIN
     END IF;
 
     INSERT INTO public.school_branches (
-        name, address, city, state, country, is_main_branch, admin_email, access_key, school_id, status
+        name, address, city, state, country, is_main_branch, admin_email, admin_name, admin_phone, access_key, school_id, status
     ) VALUES (
-        p_name, p_address, p_city, p_state, p_country, p_is_main, p_admin_email, 
+        p_name, p_address, p_city, p_state, p_country, p_is_main, p_admin_email, p_admin_name, p_admin_phone, 
         upper(substr(md5(random()::text), 1, 8)), auth.uid(), 'Pending'
     ) RETURNING id INTO v_branch_id;
 
@@ -1463,6 +1465,8 @@ BEGIN
         country = p_country,
         is_main_branch = p_is_main,
         admin_email = p_admin_email,
+        admin_name = p_admin_name,
+        admin_phone = p_admin_phone,
         updated_at = NOW()
     WHERE id = p_branch_id;
 
