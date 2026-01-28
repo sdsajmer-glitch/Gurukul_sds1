@@ -6,17 +6,18 @@
 
 :root {
   --primary: 262.1 83.3% 58.8%;
-  --primary-glow: 262.1 83.3% 58.8% / 0.4;
-  --surface: 222 47% 4%;
-  --card: 222 47% 6%;
+  --primary-glow: 262.1 83.3% 58.8% / 0.2;
+  --surface: 222 47% 3%;
+  --card: 222 47% 5%;
+  --border: 217 19% 27% / 0.1;
 }
 
 @layer base {
   body {
-    @apply bg-[#030407] text-slate-200 antialiased selection:bg-primary/30 selection:text-white font-['Outfit', sans-serif];
+    @apply bg-[#08090b] text-slate-300 antialiased selection:bg-primary/20 selection:text-white font-['Outfit', sans-serif];
     background-image:
-      radial-gradient(at 0% 0%, hsla(262, 83%, 58%, 0.05) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(262, 83%, 58%, 0.05) 0px, transparent 50%);
+      radial-gradient(at 50% 0%, hsla(262, 83%, 58%, 0.03) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(262, 83%, 58%, 0.02) 0px, transparent 50%);
   }
 }
 
@@ -65,23 +66,25 @@
   }
 }
 
-/* Custom Scrollbar */
+/* Signature Purple Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, transparent, hsla(var(--primary), 0.4), transparent);
+  background: linear-gradient(to bottom, transparent, #8b5cf6, transparent);
   border-radius: 10px;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsla(var(--primary), 0.6);
+/* Ghost Text Effect */
+.text-ghost {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
+  color: transparent;
 }
 
 .text-gradient {
