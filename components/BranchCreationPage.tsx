@@ -455,17 +455,28 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
 
                             {/* Infrastructure Zone: The Vault Strip */}
                             <div className="w-full space-y-8">
-                                <div className="w-full py-8 px-6 bg-black/40 rounded-[2.5rem] border border-white/[0.02] relative overflow-hidden group/vault transition-all duration-700 hover:bg-black/80 hover:border-primary/20">
+                                <div className="w-full py-8 px-6 bg-black/50 rounded-[2.5rem] border border-white/[0.04] relative overflow-hidden group/vault transition-all duration-700 hover:bg-black/80 hover:border-primary/40 shadow-2xl">
                                     <div className="flex flex-col gap-4 relative z-10 text-center items-center">
-                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">Primary Protocol Key</p>
-                                        <code className="text-4xl font-mono font-black text-primary tracking-[0.3em] block transition-colors duration-700 group-hover/vault:text-white">
-                                            {branch.access_key?.slice(0, 4) || 'ED7B'}
+                                        <div className="flex items-center gap-4">
+                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.6em]">Node Protocol Key</p>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigator.clipboard.writeText(branch.access_key || '');
+                                                }}
+                                                className="px-3 py-1 bg-primary/10 rounded-lg text-primary text-[8px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all"
+                                            >
+                                                Copy
+                                            </button>
+                                        </div>
+                                        <code className="text-4xl font-mono font-black text-primary tracking-[0.4em] block transition-colors duration-700 group-hover/vault:text-white select-all">
+                                            {branch.access_key || 'NODATA'}
                                         </code>
                                     </div>
-                                    <div className="absolute top-0 right-0 p-6 opacity-10">
-                                        <HashIcon className="w-6 h-6" />
+                                    <div className="absolute top-0 right-0 p-6 opacity-5">
+                                        <HashIcon className="w-10 h-10" />
                                     </div>
-                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover/vault:opacity-100 transition-opacity" />
+                                    <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover/vault:opacity-100 transition-opacity" />
                                 </div>
 
                                 {/* Control Surface */}
@@ -542,8 +553,8 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSave} className="flex flex-col flex-grow overflow-hidden">
-                                <div className="flex-grow overflow-y-auto px-14 py-14 space-y-20 custom-scrollbar select-text">
+                            <form onSubmit={handleSave} className="flex flex-col flex-grow overflow-hidden bg-[#050608]">
+                                <div className="flex-grow overflow-y-auto px-10 md:px-14 py-10 md:py-12 space-y-12 custom-scrollbar select-text">
                                     <AnimatePresence>
                                         {modalError && <DiagnosticErrorConsole message={modalError} onClear={() => setModalError(null)} />}
                                     </AnimatePresence>
