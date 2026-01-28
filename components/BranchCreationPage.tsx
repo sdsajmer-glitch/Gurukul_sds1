@@ -319,7 +319,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const availableCities = useMemo(() => formData.state ? citiesByState[formData.state] || [] : [], [formData.state]);
 
     return (
-        <div className="w-full max-w-[1440px] mx-auto px-6 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+        <div className="w-full max-w-[1600px] mx-auto px-10 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             {/* Image Header Style */}
             <div className="flex items-center justify-between py-8 mb-20 border-b border-white/[0.03]">
                 <span className="text-[11px] font-black uppercase tracking-[0.5em] text-white/80">Configure Node</span>
@@ -403,15 +403,15 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             ) : error ? (
                 <DiagnosticErrorConsole message={error} onClear={() => setError(null)} />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-16 px-10 pb-40">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 px-10 pb-40">
                     {branches.map((branch, idx) => (
                         <motion.div
                             key={branch.id}
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1, duration: 0.8 }}
-                            whileHover={{ y: -8 }}
-                            className="group relative bg-[#0a0b0f] glass-stroke node-shadow hover:node-glow rounded-[4rem] p-14 flex flex-col items-center text-center min-h-[580px] w-full transition-all duration-700"
+                            whileHover={{ y: -12 }}
+                            className="group relative bg-[#0a0b0f] glass-stroke node-shadow hover:node-glow rounded-[5rem] p-16 flex flex-col items-center text-center min-h-[520px] w-full transition-all duration-700"
                         >
                             {/* Header Zone: Anchored Shield */}
                             <div className="relative w-full flex flex-col items-center mb-12">
@@ -469,7 +469,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                                 Copy Key
                                             </button>
                                         </div>
-                                        <code className="text-6xl font-mono font-black text-primary tracking-[0.4em] block transition-colors duration-700 group-hover/vault:text-white select-all drop-shadow-[0_0_30px_rgba(var(--primary),0.5)]">
+                                        <code className="text-7xl font-mono font-black text-primary tracking-[0.5em] block transition-colors duration-700 group-hover/vault:text-white select-all drop-shadow-[0_0_40px_rgba(var(--primary),0.6)]">
                                             {branch.access_key || 'NODATA'}
                                         </code>
                                     </div>
@@ -503,7 +503,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                     <motion.button
                         whileHover={{ scale: 0.98, y: -4 }}
                         onClick={() => handleOpenCreate()}
-                        className="flex flex-col items-center justify-center p-14 rounded-[4rem] border-2 border-dashed border-white/5 bg-white/[0.01] hover:border-primary/20 hover:bg-white/[0.02] transition-all min-h-[580px] w-full group relative overflow-hidden"
+                        className="flex flex-col items-center justify-center p-16 rounded-[5rem] border-2 border-dashed border-white/5 bg-white/[0.01] hover:border-primary/20 hover:bg-white/[0.02] transition-all min-h-[520px] w-full group relative overflow-hidden"
                     >
                         <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="relative z-10 space-y-14 text-center items-center flex flex-col">
