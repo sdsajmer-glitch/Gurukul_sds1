@@ -323,42 +323,47 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     return (
         <div className="w-full max-w-[1600px] mx-auto px-10 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             {/* Image Header Style */}
-            <div className="flex items-center justify-between py-8 mb-20 border-b border-white/[0.03]">
-                <span className="text-[11px] font-black uppercase tracking-[0.5em] text-white/80">Configure Node</span>
+            <div className="flex items-center justify-between py-12 mb-10 border-b border-white/[0.03]">
+                <div className="space-y-1">
+                    <span className="text-[12px] font-black uppercase tracking-[0.6em] text-white/90">Configure Node</span>
+                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-primary/60">Topological Registry Configuration</p>
+                </div>
                 {onBack && (
-                    <button onClick={onBack} className="text-white/20 hover:text-white transition-all transform hover:-translate-x-2 duration-500 flex items-center gap-4">
-                        <ChevronLeftIcon className="w-5 h-5" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Return</span>
+                    <button onClick={onBack} className="group flex items-center gap-6 px-8 py-3 rounded-full border border-white/5 hover:border-white/20 hover:bg-white/5 transition-all duration-500">
+                        <ChevronLeftIcon className="w-4 h-4 text-white/20 group-hover:text-white transition-all transform group-hover:-translate-x-1" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 group-hover:text-white transition-all">Protocol Return</span>
                     </button>
                 )}
             </div>
 
             {/* Cinematic Hero Section */}
-            <div className="relative text-center mb-32 group">
+            <div className="relative text-center mb-32 group pt-20">
                 {/* Ambient Backdrop Logic */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] hero-spotlight opacity-50 blur-[100px] pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/5 blur-[120px] pointer-events-none" />
 
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
                     className="relative z-10"
                 >
-                    <h1 className="text-[6rem] md:text-[9rem] font-serif font-black text-white tracking-tighter leading-[0.75] mb-0 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                        BRANCH
-                    </h1>
-                    <h1 className="text-[6rem] md:text-[9rem] font-serif font-black text-ghost tracking-tighter leading-[0.75] mb-12">
-                        REGISTRY.
-                    </h1>
+                    <div className="relative inline-block">
+                        <h1 className="text-[6rem] md:text-[10rem] font-serif font-black text-white tracking-tighter leading-[0.8] mb-0 relative z-10">
+                            BRANCH
+                        </h1>
+                        <h1 className="text-[6rem] md:text-[10rem] font-serif font-black text-transparent stroke-white/10 tracking-tighter leading-[0.8] absolute top-12 left-0 w-full select-none pointer-events-none" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.1)' }}>
+                            REGISTRY.
+                        </h1>
+                    </div>
 
-                    <div className="max-w-xl mx-auto space-y-6">
-                        <p className="text-white/40 text-[16px] font-serif italic leading-relaxed">
+                    <div className="max-w-xl mx-auto space-y-8 mt-16">
+                        <p className="text-white/40 text-lg font-serif italic leading-relaxed">
                             Start by defining your <strong className="text-white/70">Head Office Node</strong>, then synchronize additional satellite campuses to the global network.
                         </p>
 
                         <div className="flex items-center justify-center gap-4">
                             <div className="h-px w-12 bg-white/5" />
-                            <span className="text-[9px] font-black uppercase tracking-[0.6em] text-white/20">Institutional Matrix v2.0</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.6em] text-white/20">Institutional Matrix v2.4</span>
                             <div className="h-px w-12 bg-white/5" />
                         </div>
                     </div>
@@ -366,236 +371,181 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             </div>
 
             {/* Institutional Command Pill: Precision Glass */}
-            <div className="relative max-w-2xl mx-auto mb-32 p-1 bg-white/[0.02] border border-white/[0.05] rounded-[3.5rem] shadow-[0_64px_128px_-32px_rgba(0,0,0,0.6)] backdrop-blur-xl group/pill">
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-primary/40">Network Integrity: Active</span>
+            <div className="relative max-w-2xl mx-auto mb-40">
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.5em] text-primary/40">Network Intensity: Active</span>
                 </div>
 
-                <div className="flex items-center p-6 gap-6">
+                <div className="p-1.5 bg-[#0d0f14] border border-white/5 rounded-[3rem] shadow-[0_64px_128px_-32px_rgba(0,0,0,0.8)] backdrop-blur-3xl flex items-center gap-4">
                     <button
                         onClick={() => handleOpenCreate()}
                         disabled={loading}
-                        className="flex-1 py-6 px-10 glass-stroke rounded-3xl text-[10px] font-black uppercase tracking-[0.4em] text-white/30 hover:text-white hover:bg-white/5 hover:border-white/20 transition-all duration-500 shadow-xl"
+                        className="flex-1 py-5 px-8 bg-transparent border border-white/5 hover:border-white/20 rounded-[2.2rem] text-[10px] font-black uppercase tracking-[0.4em] text-white/30 hover:text-white transition-all duration-500"
                     >
                         New Institutional Node
                     </button>
 
-                    {onNext && branches.length > 0 && (
-                        <button
-                            onClick={handleFinish}
-                            disabled={isFinishing}
-                            className="flex-1 py-6 px-10 bg-primary text-primary-foreground rounded-3xl text-[10px] font-black uppercase tracking-[0.4em] shadow-[0_24px_48px_-12px_rgba(var(--primary),0.4)] flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all duration-500"
-                        >
-                            {isFinishing ? <Spinner size="sm" /> : <>Synchronize Registry &rarr;</>}
-                        </button>
-                    )}
+                    <button
+                        onClick={handleFinish}
+                        disabled={isFinishing || branches.length === 0}
+                        className="flex-1 py-5 px-8 bg-primary text-white rounded-[2.2rem] text-[10px] font-black uppercase tracking-[0.4em] shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all duration-500 disabled:opacity-20"
+                    >
+                        {isFinishing ? <Spinner size="sm" /> : <>Synchronize Registry</>}
+                    </button>
                 </div>
-
-                {/* Subtle Scanline Overlay for the initial state */}
-                {branches.length === 0 && !loading && <div className="scanline opacity-20" />}
             </div>
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center min-h-[600px] space-y-12">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full animate-pulse" />
-                        <Spinner size="xl" className="text-primary relative z-10" />
-                    </div>
-                    <div className="text-center space-y-4">
-                        <p className="text-[12px] font-black uppercase text-primary tracking-[0.8em] animate-pulse">Establishing Connection</p>
-                        <p className="text-[10px] font-serif italic text-white/10 tracking-widest">Synchronizing with institutional headquarters...</p>
-                    </div>
+                <div className="flex flex-col items-center justify-center min-h-[400px] space-y-12">
+                    <Spinner size="xl" className="text-primary" />
+                    <p className="text-[12px] font-black uppercase text-primary/40 tracking-[0.8em] animate-pulse">Synchronizing Core Registry...</p>
                 </div>
             ) : error ? (
                 <DiagnosticErrorConsole message={error} onClear={() => setError(null)} />
             ) : (
-                <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 px-10 pb-32">
-                        {branches.map((branch, idx) => (
-                            <motion.div
-                                key={branch.id}
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.1, duration: 0.8 }}
-                                whileHover={{ y: -12 }}
-                                className="group relative bg-[#0a0b0f] glass-stroke node-shadow hover:node-glow rounded-[5rem] p-16 flex flex-col items-center text-center min-h-[580px] w-full transition-all duration-700 border border-white/[0.02]"
-                            >
-                                {/* Header Zone: Anchored Shield */}
-                                <div className="relative w-full flex flex-col items-center mb-16">
-                                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                                    <div className="w-24 h-32 bg-primary/[0.04] border border-primary/20 rounded-full flex items-center justify-center text-primary mt-6 mb-12 shadow-[inset_0_0_40px_rgba(var(--primary),0.1)]">
-                                        <SchoolIcon className="w-12 h-12 group-hover:scale-110 transition-transform duration-700" />
-                                    </div>
-
-                                    <h3 className="text-5xl font-serif font-black text-white tracking-tighter mb-6 group-hover:text-primary transition-colors duration-500 uppercase leading-none">
-                                        {branch.name}
-                                    </h3>
-
-                                    <div className="flex items-center gap-3 px-6 py-2 rounded-full border border-white/[0.04] bg-white/[0.02]">
-                                        <LocationIcon className="w-4 h-4 text-white/20" />
-                                        <span className="text-[11px] font-mono font-bold text-white/40 uppercase tracking-[0.3em]">
-                                            {branch.city} • {branch.state}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Telemetry Zone: Intentional Space */}
-                                <div className="flex-grow flex flex-col items-center justify-center space-y-10 mb-16">
-                                    {branch.is_main_branch ? (
-                                        <div className="px-10 py-4 rounded-full border border-emerald-500/40 bg-emerald-500/5 flex items-center gap-5 shadow-[0_0_50px_rgba(16,185,129,0.1)]">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,1)]" />
-                                            <span className="text-[12px] font-black text-emerald-500 uppercase tracking-[0.5em]">Central Command</span>
-                                        </div>
-                                    ) : (
-                                        <div className="px-10 py-4 rounded-full border border-white/10 bg-white/[0.03] flex items-center gap-5">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-white/30" />
-                                            <span className="text-[12px] font-black text-white/40 uppercase tracking-[0.5em]">Satellite Node</span>
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center gap-4 text-white/10 font-mono text-[10px] uppercase tracking-[0.4em]">
-                                        <span>Sync Sequence</span>
-                                        <span className="w-16 h-px bg-white/10" />
-                                        <span>{new Date(branch.created_at).getFullYear()}</span>
-                                    </div>
-                                </div>
-
-                                {/* Infrastructure Zone: The Vault Strip */}
-                                <div className="w-full space-y-12">
-                                    <div className="w-full py-12 px-10 bg-black/80 rounded-[3rem] border border-white/[0.05] relative overflow-hidden group/vault transition-all duration-700 hover:border-primary/40 shadow-2xl">
-                                        <div className="flex flex-col gap-6 relative z-10 text-center items-center">
-                                            <div className="flex items-center gap-6">
-                                                <p className="text-[11px] font-black text-white/20 uppercase tracking-[0.8em]">Registry Hash</p>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigator.clipboard.writeText(branch.access_key || '');
-                                                        setCopiedBranchId(branch.id);
-                                                        setTimeout(() => setCopiedBranchId(null), 2000);
-                                                    }}
-                                                    className="px-5 py-2 bg-primary/10 rounded-xl text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-xl active:scale-95"
-                                                >
-                                                    {copiedBranchId === branch.id ? 'Copied!' : 'Secure Copy'}
-                                                </button>
-                                            </div>
-                                            <code className="text-7xl font-mono font-black text-primary tracking-[0.5em] block transition-colors duration-700 group-hover/vault:text-white select-all drop-shadow-[0_0_40px_rgba(139,92,246,0.6)]">
-                                                {branch.access_key || 'NODATA'}
-                                            </code>
-                                        </div>
-                                        <div className="absolute top-0 right-0 p-10 opacity-[0.03]">
-                                            <HashIcon className="w-20 h-20" />
-                                        </div>
-                                        <div className="absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover/vault:opacity-100 transition-opacity" />
-                                    </div>
-
-                                    {/* Control Surface */}
-                                    <div className="flex justify-center gap-8 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-y-6 group-hover:translate-y-0">
-                                        <button
-                                            onClick={() => handleOpenEdit(branch)}
-                                            className="w-16 h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:text-white hover:bg-primary/20 hover:border-primary/40 transform active:scale-90 transition-all duration-500"
-                                        >
-                                            <EditIcon className="w-6 h-6" />
-                                        </button>
-                                        {!branch.is_main_branch && (
-                                            <button
-                                                onClick={() => setDeletingBranch(branch)}
-                                                className="w-16 h-16 rounded-3xl bg-red-500/5 border border-red-500/10 flex items-center justify-center text-red-500/40 hover:text-white hover:bg-red-500 hover:border-red-500 transform active:scale-90 transition-all duration-500"
-                                            >
-                                                <XIcon className="w-6 h-6" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-
-                        <motion.button
-                            whileHover={{ scale: 0.98, y: -4 }}
-                            onClick={() => handleOpenCreate()}
-                            className="flex flex-col items-center justify-center p-20 rounded-[5rem] border-2 border-dashed border-white/5 bg-white/[0.01] hover:border-primary/30 hover:bg-white/[0.02] transition-all min-h-[580px] w-full group relative overflow-hidden"
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12 px-6">
+                    {branches.map((branch, idx) => (
+                        <motion.div
+                            key={branch.id}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1, duration: 0.8 }}
+                            className="group relative bg-[#0d0f14] border border-white/5 rounded-[3.5rem] p-10 flex flex-col items-center text-center transition-all duration-700 hover:border-primary/40 hover:bg-[#11141b] shadow-2xl"
                         >
-                            <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="relative z-10 space-y-16 text-center items-center flex flex-col">
-                                <div className="w-36 h-36 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mx-auto group-hover:scale-110 group-hover:bg-primary/5 group-hover:border-primary/20 transition-all duration-700 shadow-3xl">
-                                    <PlusIcon className="w-16 h-16 text-white/5 group-hover:text-primary transition-colors" />
-                                </div>
-                                <div className="space-y-6">
-                                    <p className="text-3xl font-serif italic text-white/10 group-hover:text-white/40 transition-colors uppercase tracking-[0.4em]">Topology Expansion</p>
-                                    <p className="text-[12px] font-black uppercase tracking-[1.5em] text-white/5">Initialize Next Node</p>
-                                </div>
+                            {/* Branch Icon Node */}
+                            <div className="w-20 h-20 rounded-[2rem] bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-10 shadow-[inset_0_0_30px_rgba(var(--primary),0.1)] group-hover:scale-110 transition-transform duration-700">
+                                <SchoolIcon className="w-10 h-10" />
                             </div>
-                        </motion.button>
-                    </div>
 
-                    {/* Protocol Vault Section */}
-                    <div className="mt-40 px-10">
-                        <div className="flex items-center justify-between mb-16 border-b border-white/[0.03] pb-10">
-                            <div className="space-y-4">
-                                <h2 className="text-4xl font-serif font-black text-white tracking-tighter uppercase">Protocol Vault</h2>
-                                <p className="text-sm font-serif italic text-white/20">Registered institutional security & synchronization configurations.</p>
-                            </div>
-                            <div className="flex items-center gap-6">
-                                <div className="flex -space-x-4">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="w-10 h-10 rounded-full border-2 border-black bg-white/[0.05] flex items-center justify-center">
-                                            <div className="w-2 h-2 rounded-full bg-primary/40" />
-                                        </div>
-                                    ))}
+                            <div className="space-y-4 mb-10">
+                                <h3 className="text-3xl font-serif font-black text-white tracking-tighter uppercase leading-none">{branch.name}</h3>
+                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
+                                    <LocationIcon className="w-3 h-3 text-white/20" />
+                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">{branch.city}, {branch.state}</span>
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">3 Active Configurations</span>
                             </div>
+
+                            {/* Status Badge */}
+                            {branch.is_main_branch ? (
+                                <div className="mb-12 px-6 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 flex items-center gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,1)]" />
+                                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em]">Central Command</span>
+                                </div>
+                            ) : (
+                                <div className="mb-12 px-6 py-2 rounded-full border border-white/10 bg-white/5 flex items-center gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Satellite Node</span>
+                                </div>
+                            )}
+
+                            {/* Alphanumeric ID Display */}
+                            <div className="w-full mt-auto space-y-6">
+                                <div className="flex items-center gap-4 text-white/10 font-black text-[9px] uppercase tracking-[0.5em]">
+                                    <span className="flex-grow h-px bg-white/5" />
+                                    <span>Sync Hash</span>
+                                    <span className="flex-grow h-px bg-white/5" />
+                                </div>
+
+                                <div className="bg-black/60 rounded-[2rem] p-8 border border-white/5 relative overflow-hidden group/hash">
+                                    <code className="text-4xl font-mono font-black text-primary tracking-widest group-hover:text-white transition-colors duration-500">
+                                        {branch.access_key}
+                                    </code>
+                                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/hash:opacity-100 transition-opacity pointer-events-none" />
+                                </div>
+                            </div>
+
+                            {/* Hover Actions */}
+                            <div className="absolute top-8 right-8 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+                                <button onClick={() => handleOpenEdit(branch)} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/20 hover:text-white transition-all"><EditIcon className="w-4 h-4" /></button>
+                                {!branch.is_main_branch && <button onClick={() => setDeletingBranch(branch)} className="w-10 h-10 rounded-xl bg-red-500/5 hover:bg-red-500/20 border border-red-500/10 flex items-center justify-center text-red-500/40 hover:text-red-500 transition-all"><XIcon className="w-4 h-4" /></button>}
+                            </div>
+                        </motion.div>
+                    ))}
+
+                    {/* Topology Expansion Placeholder */}
+                    <motion.button
+                        whileHover={{ scale: 0.98, y: -4 }}
+                        onClick={() => handleOpenCreate()}
+                        className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[3.5rem] p-16 min-h-[500px] group hover:border-primary/40 hover:bg-primary/[0.02] transition-all duration-700"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-white/5 border border-white/5 flex items-center justify-center mb-10 group-hover:scale-110 group-hover:border-primary/20 transition-all duration-700">
+                            <PlusIcon className="w-10 h-10 text-white/10 group-hover:text-primary transition-colors" />
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                            <div className="p-10 rounded-[3rem] bg-white/[0.01] border border-white/5 space-y-8 group hover:bg-white/[0.02] transition-all">
-                                <div className="flex items-center justify-between">
-                                    <ShieldIcon className="w-8 h-8 text-primary/40 group-hover:text-primary transition-colors" />
-                                    <span className="text-[10px] font-black uppercase text-emerald-500 bg-emerald-500/10 px-4 py-1.5 rounded-full">Secure</span>
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Identity Layer</p>
-                                    <p className="text-xl font-serif text-white/80">Geo-Identity v2.4</p>
-                                </div>
-                                <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono text-white/10">
-                                    <CheckCircleIcon className="w-4 h-4 text-emerald-500/40" />
-                                    <span>Hash: 8A72-F92C</span>
-                                </div>
-                            </div>
-
-                            <div className="p-10 rounded-[3rem] bg-white/[0.01] border border-white/5 space-y-8 group hover:bg-white/[0.02] transition-all">
-                                <div className="flex items-center justify-between">
-                                    <GlobeIcon className="w-8 h-8 text-primary/40 group-hover:text-primary transition-colors" />
-                                    <span className="text-[10px] font-black uppercase text-primary bg-primary/10 px-4 py-1.5 rounded-full">Global</span>
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Network Mesh</p>
-                                    <p className="text-xl font-serif text-white/80">Satellite Sync Alpha</p>
-                                </div>
-                                <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono text-white/10">
-                                    <CheckCircleIcon className="w-4 h-4 text-primary/40" />
-                                    <span>Latency: 24ms</span>
-                                </div>
-                            </div>
-
-                            <div className="p-10 rounded-[3rem] bg-white/[0.01] border border-white/5 space-y-8 group hover:bg-white/[0.02] transition-all">
-                                <div className="flex items-center justify-between">
-                                    <HashIcon className="w-8 h-8 text-primary/40 group-hover:text-primary transition-colors" />
-                                    <span className="text-[10px] font-black uppercase text-white/20 bg-white/5 px-4 py-1.5 rounded-full">Default</span>
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Data Integrity</p>
-                                    <p className="text-xl font-serif text-white/80">Checksum Protocol</p>
-                                </div>
-                                <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono text-white/10">
-                                    <CheckCircleIcon className="w-4 h-4 text-white/10" />
-                                    <span>Status: Verified</span>
-                                </div>
-                            </div>
+                        <div className="space-y-4">
+                            <h4 className="text-2xl font-serif italic text-white/5 group-hover:text-white/20 transition-colors uppercase tracking-[0.3em]">Topology Expansion</h4>
+                            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/5">Initialize Next Node</p>
                         </div>
-                    </div>
-                </>
+                    </motion.button>
+                </div>
             )}
+
+            {/* Protocol Vault Section */}
+            <div className="mt-40 px-10">
+                <div className="flex items-center justify-between mb-16 border-b border-white/[0.03] pb-10">
+                    <div className="space-y-4">
+                        <h2 className="text-4xl font-serif font-black text-white tracking-tighter uppercase">Protocol Vault</h2>
+                        <p className="text-sm font-serif italic text-white/20">Registered institutional security & synchronization configurations.</p>
+                    </div>
+                    <div className="flex items-center gap-6">
+                        <div className="flex -space-x-4">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="w-10 h-10 rounded-full border-2 border-black bg-white/[0.05] flex items-center justify-center">
+                                    <div className="w-2 h-2 rounded-full bg-primary/40" />
+                                </div>
+                            ))}
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">3 Active Configurations</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div className="p-10 rounded-[3rem] bg-white/[0.01] border border-white/5 space-y-8 group hover:bg-white/[0.02] transition-all">
+                        <div className="flex items-center justify-between">
+                            <ShieldIcon className="w-8 h-8 text-primary/40 group-hover:text-primary transition-colors" />
+                            <span className="text-[10px] font-black uppercase text-emerald-500 bg-emerald-500/10 px-4 py-1.5 rounded-full">Secure</span>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Identity Layer</p>
+                            <p className="text-xl font-serif text-white/80">Geo-Identity v2.4</p>
+                        </div>
+                        <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono text-white/10">
+                            <CheckCircleIcon className="w-4 h-4 text-emerald-500/40" />
+                            <span>Hash: 8A72-F92C</span>
+                        </div>
+                    </div>
+
+                    <div className="p-10 rounded-[3rem] bg-white/[0.01] border border-white/5 space-y-8 group hover:bg-white/[0.02] transition-all">
+                        <div className="flex items-center justify-between">
+                            <GlobeIcon className="w-8 h-8 text-primary/40 group-hover:text-primary transition-colors" />
+                            <span className="text-[10px] font-black uppercase text-primary bg-primary/10 px-4 py-1.5 rounded-full">Global</span>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Network Mesh</p>
+                            <p className="text-xl font-serif text-white/80">Satellite Sync Alpha</p>
+                        </div>
+                        <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono text-white/10">
+                            <CheckCircleIcon className="w-4 h-4 text-primary/40" />
+                            <span>Latency: 24ms</span>
+                        </div>
+                    </div>
+
+                    <div className="p-10 rounded-[3rem] bg-white/[0.01] border border-white/5 space-y-8 group hover:bg-white/[0.02] transition-all">
+                        <div className="flex items-center justify-between">
+                            <HashIcon className="w-8 h-8 text-primary/40 group-hover:text-primary transition-colors" />
+                            <span className="text-[10px] font-black uppercase text-white/20 bg-white/5 px-4 py-1.5 rounded-full">Default</span>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Data Integrity</p>
+                            <p className="text-xl font-serif text-white/80">Checksum Protocol</p>
+                        </div>
+                        <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono text-white/10">
+                            <CheckCircleIcon className="w-4 h-4 text-white/10" />
+                            <span>Status: Verified</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <AnimatePresence>
                 {isModalOpen && (
@@ -775,6 +725,6 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 confirmText="Terminate Node"
                 loading={isDeleting}
             />
-        </div>
+        </div >
     );
 };
