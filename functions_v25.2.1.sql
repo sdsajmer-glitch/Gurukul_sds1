@@ -834,42 +834,190 @@ BEGIN
 END;
 $$;
 
--- RPC: Verify and Link Branch Admin (v2 - Hyphen Insensitive)
+-- ===============================================================================================
+-- 7. SECURE INSTITUTIONAL HANDSHAKE PROTOCOL (v9.5)
+-- ===============================================================================================
+
+-- Ensure Schema Extensions for Handshake Governance
+DO $$ 
+BEGIN
+    -- Add Sync & Identity Metadata to Branches
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'school_branches' AND column_name = 'last_sync_at') THEN
+        ALTER TABLE public.school_branches ADD COLUMN last_sync_at TIMESTAMPTZ;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'school_branches' AND column_name = 'protocol_version') THEN
+        ALTER TABLE public.school_branches ADD COLUMN protocol_version TEXT DEFAULT 'v9.5';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'school_branches' AND column_name = 'admin_user_id') THEN
+        ALTER TABLE public.school_branches ADD COLUMN admin_user_id UUID REFERENCES public.profiles(id);
+    END IF;
+
+    -- Governance: Set status to 'Pending' by default for new branches if not specified
+    ALTER TABLE public.school_branches ALTER COLUMN status SET DEFAULT 'Pending';
+END $$;
+
+-- Handshake Audit Log for Compliance & Governance
+CREATE TABLE IF NOT EXISTS public.handshake_audit_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    branch_id BIGINT,
+    admin_user_id UUID REFERENCES public.profiles(id),
+    target_email TEXT,
+    event_type TEXT NOT NULL, -- 'HANDSHAKE_INIT', 'HANDSHAKE_SUCCESS', 'HANDSHAKE_FAILURE', 'IDENTITY_MISMATCH'
+    details JSONB DEFAULT '{}',
+    ip_address TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Active Handshake Sessions (Real-time telemetry)
+CREATE TABLE IF NOT EXISTS public.branch_handshake_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    branch_id BIGINT REFERENCES public.school_branches(id) ON DELETE CASCADE,
+    admin_user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    session_start TIMESTAMPTZ DEFAULT NOW(),
+    last_ping TIMESTAMPTZ DEFAULT NOW(),
+    status TEXT DEFAULT 'Online', -- 'Online', 'Offline', 'Terminated'
+    UNIQUE(branch_id, admin_user_id)
+);
+
+-- RPC: Verify and Link Branch Admin (v3 - Secure Handshake)
 DROP FUNCTION IF EXISTS public.verify_and_link_branch_admin(TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.verify_and_link_branch_admin(p_invitation_code TEXT)
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
     v_branch_id BIGINT;
+    v_admin_email TEXT;
     v_clean_code TEXT;
+    v_user_email TEXT;
+    v_existing_admin UUID;
 BEGIN
-    -- Strip all non-alphanumeric characters from input
+    -- 1. Sanitation
     v_clean_code := UPPER(REGEXP_REPLACE(p_invitation_code, '[^A-Z0-9]', '', 'g'));
+    v_user_email := (SELECT email FROM auth.users WHERE id = auth.uid());
 
-    SELECT id INTO v_branch_id 
+    -- 2. Validate Branch Registry
+    SELECT id, admin_email, admin_user_id INTO v_branch_id, v_admin_email, v_existing_admin
     FROM public.school_branches 
-    WHERE UPPER(REGEXP_REPLACE(access_key, '[^A-Z0-9]', '', 'g')) = v_clean_code 
-      AND (status = 'Active' OR status = 'Pending');
+    WHERE UPPER(REGEXP_REPLACE(access_key, '[^A-Z0-9]', '', 'g')) = v_clean_code;
 
     IF v_branch_id IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', 'The Access Key provided is invalid, expired, or not authorized for this identity.');
+        INSERT INTO public.handshake_audit_logs (target_email, event_type, details)
+        VALUES (v_user_email, 'HANDSHAKE_FAILURE', jsonb_build_object('reason', 'Invalid Access Key', 'code', p_invitation_code));
+        RETURN jsonb_build_object('success', false, 'message', 'HANDSHAKE FAILED: Access Key not found in institutional registry.');
     END IF;
 
-    -- Update branch status to Active (Linked)
-    UPDATE public.school_branches SET status = 'Active' WHERE id = v_branch_id;
+    -- 3. Security Check: Email Identity Verification
+    -- Both email and User must match the record to prevent hijacking
+    IF LOWER(v_admin_email) != LOWER(v_user_email) THEN
+        INSERT INTO public.handshake_audit_logs (branch_id, target_email, event_type, details)
+        VALUES (v_branch_id, v_user_email, 'IDENTITY_MISMATCH', jsonb_build_object('expected', v_admin_email, 'provided', v_user_email));
+        RETURN jsonb_build_object('success', false, 'message', 'IDENTITY MISMATCH: This node is registered to ' || v_admin_email || '. Please login with authorized credentials.');
+    END IF;
 
-    -- Link current profile to the branch
+    -- 4. Governance: One-to-One Mapping Check
+    IF v_existing_admin IS NOT NULL AND v_existing_admin != auth.uid() THEN
+        RETURN jsonb_build_object('success', false, 'message', 'SECURITY ALERT: This branch is already linked to another identity matrix.');
+    END IF;
+
+    -- 5. Successful Handshake Establishment
+    -- Update branch status and link identity
+    UPDATE public.school_branches SET 
+        status = 'Verified',
+        admin_user_id = auth.uid(),
+        last_sync_at = NOW(),
+        updated_at = NOW()
+    WHERE id = v_branch_id;
+
+    -- Update profile
     UPDATE public.profiles SET
         branch_id = v_branch_id,
         role = 'School Administration',
         profile_completed = true
     WHERE id = auth.uid();
 
-    -- Ensure specialized profile exists and set to completed
+    -- Create/Update specialized profile
     INSERT INTO public.school_admin_profiles (user_id, onboarding_step)
     VALUES (auth.uid(), 'completed')
     ON CONFLICT (user_id) DO UPDATE SET onboarding_step = 'completed';
 
-    RETURN jsonb_build_object('success', true, 'branch_id', v_branch_id);
+    -- Establish Initial Handshake Session
+    INSERT INTO public.branch_handshake_sessions (branch_id, admin_user_id, status)
+    VALUES (v_branch_id, auth.uid(), 'Online')
+    ON CONFLICT (branch_id, admin_user_id) DO UPDATE SET 
+        last_ping = NOW(),
+        status = 'Online';
+
+    -- Audit Log
+    INSERT INTO public.handshake_audit_logs (branch_id, admin_user_id, target_email, event_type)
+    VALUES (v_branch_id, auth.uid(), v_user_email, 'HANDSHAKE_SUCCESS');
+
+    RETURN jsonb_build_object(
+        'success', true, 
+        'branch_id', v_branch_id, 
+        'message', 'Handshake Secured. Welcome to the Institutional Network.'
+    );
+END;
+$$;
+
+-- RPC: Auto Handshake on Login (Stealth Sync)
+DROP FUNCTION IF EXISTS public.auto_handshake_on_login() CASCADE;
+CREATE OR REPLACE FUNCTION public.auto_handshake_on_login()
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_branch_id BIGINT;
+BEGIN
+    -- Detect if current user is an authorized branch admin
+    SELECT id INTO v_branch_id FROM public.school_branches WHERE admin_user_id = auth.uid();
+
+    IF v_branch_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'No associated node found.');
+    END IF;
+
+    -- Auto-Sync Handshake Session
+    INSERT INTO public.branch_handshake_sessions (branch_id, admin_user_id, status)
+    VALUES (v_branch_id, auth.uid(), 'Online')
+    ON CONFLICT (branch_id, admin_user_id) DO UPDATE SET 
+        last_ping = NOW(),
+        status = 'Online';
+
+    UPDATE public.school_branches SET 
+        status = 'Online',
+        last_sync_at = NOW()
+    WHERE id = v_branch_id;
+
+    RETURN jsonb_build_object('success', true, 'branch_id', v_branch_id, 'status', 'Online');
+END;
+$$;
+
+-- RPC: Get Network Registry Metrics (Telemetry)
+DROP FUNCTION IF EXISTS public.get_network_registry_metrics() CASCADE;
+CREATE OR REPLACE FUNCTION public.get_network_registry_metrics()
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_total_nodes INT;
+    v_verified_links INT;
+    v_online_nodes INT;
+    v_protocol_health INT;
+BEGIN
+    SELECT COUNT(*) INTO v_total_nodes FROM public.school_branches;
+    SELECT COUNT(*) INTO v_verified_links FROM public.school_branches WHERE status IN ('Verified', 'Online', 'Synced');
+    SELECT COUNT(*) INTO v_online_nodes FROM public.branch_handshake_sessions WHERE status = 'Online' AND last_ping > NOW() - INTERVAL '5 minutes';
+    
+    -- Health calc: Online / Total ratio
+    IF v_total_nodes > 0 THEN
+        v_protocol_health := (v_online_nodes * 100) / v_total_nodes;
+    ELSE
+        v_protocol_health := 100;
+    END IF;
+
+    RETURN jsonb_build_object(
+        'total_nodes', v_total_nodes,
+        'verified_links', v_verified_links,
+        'online_nodes', v_online_nodes,
+        'protocol_health', v_protocol_health,
+        'version', 'v9.5'
+    );
 END;
 $$;
 

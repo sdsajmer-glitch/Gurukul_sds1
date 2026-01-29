@@ -1408,17 +1408,27 @@ CREATE OR REPLACE FUNCTION public.create_school_branch(
 ) RETURNS SETOF public.school_branches LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
     v_branch_id BIGINT;
+    v_access_key TEXT;
 BEGIN
-    -- Global Singleton Check for Main Branch
-    IF p_is_main THEN
-        UPDATE public.school_branches SET is_main_branch = false WHERE id IN (SELECT id FROM public.school_branches WHERE is_main_branch = true);
+    -- 1. Governance: Prevent duplicate admin email registrations
+    IF EXISTS (SELECT 1 FROM public.school_branches WHERE LOWER(admin_email) = LOWER(p_admin_email)) THEN
+        RAISE EXCEPTION 'GOVERNANCE ERROR: Admin email % is already registered to another node in the institutional matrix.', p_admin_email;
     END IF;
 
+    -- 2. Global Singleton Check for Main Branch
+    IF p_is_main THEN
+        UPDATE public.school_branches SET is_main_branch = false WHERE is_main_branch = true AND school_id = auth.uid();
+    END IF;
+
+    -- 3. Generate Secure Access Key (Format: XXXX-XXXX)
+    v_access_key := UPPER(SUBSTR(MD5(RANDOM()::TEXT), 1, 4) || '-' || SUBSTR(MD5(RANDOM()::TEXT), 5, 4));
+
+    -- 4. Registry Insertion
     INSERT INTO public.school_branches (
         name, address, city, state, country, is_main_branch, admin_email, admin_name, admin_phone, access_key, school_id, status
     ) VALUES (
-        p_name, p_address, p_city, p_state, p_country, p_is_main, p_admin_email, p_admin_name, p_admin_phone, 
-        upper(substr(md5(random()::text), 1, 8)), auth.uid(), 'Pending'
+        p_name, p_address, p_city, p_state, p_country, COALESCE(p_is_main, false), p_admin_email, p_admin_name, p_admin_phone, 
+        v_access_key, auth.uid(), 'Pending'
     ) RETURNING id INTO v_branch_id;
 
     RETURN QUERY SELECT * FROM public.school_branches WHERE id = v_branch_id;

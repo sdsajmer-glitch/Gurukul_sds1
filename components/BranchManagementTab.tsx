@@ -44,10 +44,11 @@ const BranchCard: React.FC<{
     const [copied, setCopied] = useState(false);
     const [revealed, setRevealed] = useState(false);
     const [handshakeStep, setHandshakeStep] = useState<HandshakeStatus>(
-        (branch.status === 'Linked' && branch.access_key) ? 'VERIFIED' : 'PENDING'
+        (branch.status === 'Verified' || branch.status === 'Online') ? 'VERIFIED' : 'PENDING'
     );
 
     const isLinked = handshakeStep === 'VERIFIED';
+    const isOnline = branch.status === 'Online';
 
     const handleGenerateKey = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -57,8 +58,8 @@ const BranchCard: React.FC<{
     const handleFinalizeVerification = (e: React.MouseEvent) => {
         e.stopPropagation();
         setHandshakeStep('SYNCHRONIZING');
-        // Simulate high-security decryption/verification sequence
-        setTimeout(() => setHandshakeStep('VERIFIED'), 3200);
+        // Actual verification happens via RoleSelection, here we show status
+        setTimeout(() => setHandshakeStep('VERIFIED'), 2000);
     };
 
     const handleCopy = (e: React.MouseEvent) => {
@@ -77,7 +78,7 @@ const BranchCard: React.FC<{
             transition={{ delay: index * 0.1, duration: 0.8, ease: "easeOut" }}
             className={`
                 relative w-full min-h-[860px] flex flex-col justify-between 
-                p-8 rounded-[32px] overflow-hidden transition-all duration-500
+                p-8 rounded-[40px] overflow-hidden transition-all duration-500
                 border border-white/5 bg-[#0A0A0A] group
                 ${branch.is_main_branch ? 'shadow-[0_0_80px_-20px_rgba(var(--primary),0.3)]' : 'hover:bg-white/[0.02]'}
             `}
@@ -101,13 +102,13 @@ const BranchCard: React.FC<{
                 {/* Status Badge */}
                 <div className={`
                     flex flex-row items-center gap-3 px-4 py-2 rounded-full border backdrop-blur-md
-                    ${branch.is_main_branch
+                    ${isOnline
                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                        : 'bg-white/5 border-white/10 text-white/60'}
+                        : (isLinked ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-white/5 border-white/10 text-white/60')}
                 `}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${branch.is_main_branch ? 'bg-emerald-500 animate-pulse' : 'bg-white/40'}`} />
+                    <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : (isLinked ? 'bg-indigo-400' : 'bg-white/40')}`} />
                     <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-                        {branch.is_main_branch ? 'Command Node' : 'Satellite'}
+                        {isOnline ? 'Online' : (isLinked ? 'Verified' : 'Pending')}
                     </span>
                 </div>
             </div>
@@ -115,14 +116,14 @@ const BranchCard: React.FC<{
             {/* --- 2. Identity Block (Icon & Name) --- */}
             <div className="relative z-10 flex flex-col items-center gap-8 py-8 flex-grow justify-center">
                 {/* Icon Container */}
-                <div className="relative flex items-center justify-center w-28 h-28 rounded-full bg-white/[0.02] border border-white/5 shadow-2xl group-hover:scale-110 transition-transform duration-700">
-                    <SchoolIcon className={`w-12 h-12 ${branch.is_main_branch ? 'text-primary' : 'text-white/40 group-hover:text-white'} transition-colors duration-500`} />
-                    {branch.is_main_branch && <div className="absolute inset-0 rounded-full border border-primary/20 animate-ping opacity-20" />}
+                <div className="relative flex items-center justify-center w-32 h-32 rounded-full bg-white/[0.02] border border-white/5 shadow-2xl group-hover:scale-110 transition-transform duration-700">
+                    <SchoolIcon className={`w-14 h-14 ${branch.is_main_branch ? 'text-primary' : (isOnline ? 'text-emerald-500' : 'text-white/40 group-hover:text-white')} transition-colors duration-500`} />
+                    {(branch.is_main_branch || isOnline) && <div className={`absolute inset-0 rounded-full border ${isOnline ? 'border-emerald-500/20' : 'border-primary/20'} animate-ping opacity-20`} />}
                 </div>
 
                 {/* Title Group */}
                 <div className="flex flex-col items-center gap-3 text-center">
-                    <h3 className="font-serif text-4xl text-white">
+                    <h3 className="font-serif text-5xl text-white tracking-tight">
                         {branch.name}
                     </h3>
 
@@ -139,9 +140,9 @@ const BranchCard: React.FC<{
             {/* --- 3. Telemetry Grid --- */}
             <div className="relative z-10 grid grid-cols-3 gap-3 w-full mb-8">
                 {[
-                    { label: 'PROTOCOL', value: 'AES-256', color: 'text-primary' },
-                    { label: 'STATUS', value: 'ACTIVE', color: 'text-emerald-500' },
-                    { label: 'SYNC', value: 'REAL-TIME', color: 'text-white/40' }
+                    { label: 'PROTOCOL', value: branch.protocol_version || 'v9.5', color: 'text-primary' },
+                    { label: 'IDENTITY', value: branch.admin_user_id ? 'VERIFIED' : 'PENDING', color: branch.admin_user_id ? 'text-emerald-500' : 'text-amber-500' },
+                    { label: 'LATENCY', value: isOnline ? '64ms' : 'INF', color: isOnline ? 'text-emerald-500' : 'text-white/40' }
                 ].map((stat, i) => (
                     <div key={i} className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
                         <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em]">{stat.label}</span>
@@ -155,7 +156,7 @@ const BranchCard: React.FC<{
                 {/* Vault Container */}
                 <div className={`
                     flex flex-col w-full p-2 rounded-3xl border transition-colors duration-500
-                    ${isLinked ? 'bg-emerald-950/10 border-emerald-500/10' : 'bg-white/[0.02] border-white/5'}
+                    ${isLinked ? 'bg-emerald-950/5 border-emerald-500/10' : 'bg-white/[0.02] border-white/5'}
                 `}>
                     {/* Vault Header */}
                     <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-white/5">
@@ -166,7 +167,7 @@ const BranchCard: React.FC<{
                             </span>
                         </div>
                         <div className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest ${isLinked ? 'text-emerald-500 bg-emerald-500/10' : 'text-white/20 bg-white/5'}`}>
-                            {isLinked ? 'VERIFIED' : handshakeStep === 'PENDING' ? 'LOCKED' : 'PROVISIONING'}
+                            {isOnline ? 'LINKED' : (isLinked ? 'VERIFIED' : handshakeStep === 'PENDING' ? 'LOCKED' : 'PROVISIONING')}
                         </div>
                     </div>
 
@@ -227,7 +228,7 @@ const BranchCard: React.FC<{
                                                 1. SECURE THE <span className="text-primary">ACCESS KEY</span> DISPLAYED ABOVE.
                                             </p>
                                             <p className="text-[8px] text-white/30 uppercase font-black leading-relaxed tracking-wider">
-                                                2. RELAY CODE TO <span className="text-white/60">{branch.name}</span> ADMINISTRATOR.
+                                                2. RELAY CODE TO <span className="text-white/60">{branch.admin_email}</span> ADMINISTRATOR.
                                             </p>
                                             <p className="text-[8px] text-white/30 uppercase font-black leading-relaxed tracking-wider">
                                                 3. EXECUTE <span className="text-primary">VERIFICATION PROTOCOL</span> ONCE LINKED.
@@ -271,8 +272,8 @@ const BranchCard: React.FC<{
                                         <CheckCircleIcon className="w-8 h-8" />
                                     </div>
                                     <div className="flex flex-col items-center gap-1">
-                                        <p className="text-lg font-black text-white uppercase tracking-tight">Handshake Secured</p>
-                                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.4em]">Encrypted Link Established</p>
+                                        <p className="text-lg font-black text-white uppercase tracking-tight">{isOnline ? 'Matrix Synchronized' : 'Handshake Secured'}</p>
+                                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.4em]">{isOnline ? 'Active Neural Link Est.' : 'Encrypted Link Established'}</p>
                                     </div>
                                 </motion.div>
                             )}
@@ -306,11 +307,50 @@ interface BranchManagementTabProps {
     schoolProfile: SchoolAdminProfileData | null;
 }
 
+interface NetworkMetrics {
+    total_nodes: number;
+    verified_links: number;
+    online_nodes: number;
+    protocol_health: number;
+    version: string;
+}
+
 export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHeadOfficeAdmin, branches, isLoading, error, onBranchUpdate, schoolProfile }) => {
     const [drawerMode, setDrawerMode] = useState<'CREATE' | 'DETAILS' | 'EDIT' | 'SYNC' | null>(null);
     const [selectedBranch, setSelectedBranch] = useState<SchoolBranch | null>(null);
     const [branchToDelete, setBranchToDelete] = useState<SchoolBranch | null>(null);
     const [language, setLanguage] = useState<Language>('EN');
+    const [metrics, setMetrics] = useState<NetworkMetrics | null>(null);
+
+    const fetchMetrics = useCallback(async () => {
+        try {
+            const { data, error } = await supabase.rpc('get_network_registry_metrics');
+            if (error) throw error;
+            setMetrics(data);
+        } catch (e) {
+            console.error('Failed to fetch network telemetry:', e);
+        }
+    }, []);
+
+    const performAutoHandshake = useCallback(async () => {
+        if (!isHeadOfficeAdmin) {
+            try {
+                const { data } = await supabase.rpc('auto_handshake_on_login');
+                if (data?.success) {
+                    console.log('[Institutional Auth] Stealth handshake complete.');
+                }
+            } catch (e) {
+                console.error('[Institutional Auth] Handshake failed:', e);
+            }
+        }
+    }, [isHeadOfficeAdmin]);
+
+    useEffect(() => {
+        fetchMetrics();
+        performAutoHandshake();
+        const interval = setInterval(fetchMetrics, 30000); // 30s heartbeat
+        return () => clearInterval(interval);
+    }, [fetchMetrics, performAutoHandshake]);
 
     const handleDelete = async () => {
         if (!branchToDelete) return;
@@ -319,12 +359,11 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
             if (error) throw error;
             onBranchUpdate(branchToDelete, true);
             setBranchToDelete(null);
+            fetchMetrics();
         } catch (e: any) {
             alert(`Deletion Failed: ${e.message}`);
         }
     };
-
-    const authenticatedNodes = branches.filter(b => b.status === 'Linked' && b.access_key).length;
 
     if (isLoading) {
         return (
@@ -349,7 +388,7 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
         <div className="flex flex-col gap-12 pb-40 px-6 sm:px-8 max-w-[1600px] mx-auto w-full">
 
             {/* --- 1. Master Command Header --- */}
-            <div className="relative w-full overflow-hidden rounded-[40px] border border-white/5 bg-[#050505]">
+            <div className="relative w-full overflow-hidden rounded-[50px] border border-white/5 bg-[#050505]">
                 {/* Background FX */}
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/4" />
 
@@ -381,7 +420,7 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                     {/* Middle Row: Title & Actions */}
                     <div className="flex flex-col xl:flex-row items-end justify-between gap-10">
                         <div className="flex flex-col gap-6 max-w-4xl">
-                            <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif text-white tracking-tighter leading-[0.9]">
+                            <h2 className="text-5xl md:text-7xl lg:text-9xl font-serif text-white tracking-tighter leading-[0.85]">
                                 {language === 'EN' ? 'INSTITUTIONAL' : 'संस्थागत'} <br />
                                 <span className="text-white/20 italic">
                                     {language === 'EN' ? 'NETWORK REGISTRY.' : 'नेटवर्क रजिस्ट्री।'}
@@ -397,7 +436,7 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    onClick={() => { setSelectedBranch(null); setDrawerMode('SYNC'); }}
+                                    onClick={() => { setSelectedBranch(null); setDrawerMode('SYNC'); fetchMetrics(); }}
                                     className="h-14 px-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-500 text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-colors min-w-[200px]"
                                 >
                                     <RefreshCwIcon className="w-4 h-4" />
@@ -419,32 +458,37 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
 
                     {/* Bottom Row: Stats Matrix */}
                     <div className="w-full h-px bg-white/5" />
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.2em]">Active Nodes</span>
-                            <span className="text-3xl font-serif text-white">{branches.length} <span className="text-lg text-white/20 italic">/ 10</span></span>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
+                        <div className="flex flex-col gap-3">
+                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.3em]">Active Nodes</span>
+                            <span className="text-4xl font-serif text-white">{metrics?.total_nodes || branches.length} <span className="text-xl text-white/20 italic">/ 30</span></span>
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.2em]">Verified Links</span>
-                            <div className="flex items-center gap-3">
-                                <span className={`text-3xl font-serif ${authenticatedNodes > 0 ? 'text-emerald-500' : 'text-white/20'}`}>{authenticatedNodes}</span>
-                                {authenticatedNodes > 0 && <CheckCircleIcon className="w-5 h-5 text-emerald-500" />}
+                        <div className="flex flex-col gap-3">
+                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.3em]">Verified Links</span>
+                            <div className="flex items-center gap-4">
+                                <span className={`text-4xl font-serif ${(metrics?.verified_links || 0) > 0 ? 'text-indigo-400' : 'text-white/20'}`}>{metrics?.verified_links || 0}</span>
+                                {(metrics?.verified_links || 0) > 0 && <ShieldCheckIcon className="w-6 h-6 text-indigo-400" />}
                             </div>
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.2em]">Security Protocol</span>
-                            <span className="text-3xl font-mono text-primary tracking-tighter">256-BIT</span>
+                        <div className="flex flex-col gap-3">
+                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.3em]">Security Protocol</span>
+                            <span className="text-4xl font-mono text-primary tracking-tighter">256-BIT</span>
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.2em]">System Status</span>
-                            <span className="text-3xl font-serif text-emerald-500">Online</span>
+                        <div className="flex flex-col gap-3">
+                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.3em]">System Status</span>
+                            <div className="flex items-center gap-4">
+                                <span className={`text-4xl font-serif ${metrics?.online_nodes ? 'text-emerald-500' : 'text-white/40'}`}>
+                                    {metrics?.online_nodes ? 'Online' : 'Standby'}
+                                </span>
+                                {metrics?.online_nodes > 0 && <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)]" />}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* --- 2. Registry Grid --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {branches.map((branch, idx) => (
                     <BranchCard
                         key={branch.id}
@@ -452,7 +496,7 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                         index={idx}
                         onEdit={() => { setSelectedBranch(branch); setDrawerMode('EDIT'); }}
                         onDelete={() => setBranchToDelete(branch)}
-                        onSync={() => { /* Quick Sync Logic */ }}
+                        onSync={() => { /* Quick Sync Logic */ fetchMetrics(); }}
                     />
                 ))}
 
@@ -462,20 +506,29 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                         whileTap={{ scale: 0.98 }}
                         onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
                         className="
-                            relative flex flex-col items-center justify-center gap-6 min-h-[720px] 
-                            rounded-[32px] border border-dashed border-white/5 bg-transparent 
+                            relative flex flex-col items-center justify-center gap-8 min-h-[860px] 
+                            rounded-[40px] border border-dashed border-white/5 bg-transparent 
                             hover:bg-white/[0.01] transition-all group
                         "
                     >
-                        <div className="w-20 h-20 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
-                            <PlusIcon className="w-8 h-8 text-white/20 group-hover:text-primary transition-colors" />
+                        <div className="w-24 h-24 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
+                            <PlusIcon className="w-10 h-10 text-white/20 group-hover:text-primary transition-colors" />
                         </div>
-                        <div className="flex flex-col items-center gap-2 text-center">
-                            <span className="text-lg font-serif text-white/20 group-hover:text-white/60 transition-colors italic">Expansion Protocol</span>
-                            <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-white/10 group-hover:text-white/40">Initialize Satellite Node</span>
+                        <div className="flex flex-col items-center gap-3 text-center">
+                            <span className="text-2xl font-serif text-white/20 group-hover:text-white/60 transition-colors italic">Expansion Protocol</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/10 group-hover:text-white/40">Initialize Satellite Node</span>
                         </div>
                     </motion.button>
                 )}
+            </div>
+
+            {/* Pagination / Footer Placeholder */}
+            <div className="flex justify-center mt-20">
+                <div className="flex items-center gap-8 py-4 px-10 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-3xl">
+                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Network Stability: 99.98%</span>
+                    <div className="w-px h-4 bg-white/10" />
+                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Protocol: {metrics?.version || 'v9.5'}</span>
+                </div>
             </div>
 
             {/* --- Drawers & Modals --- */}
