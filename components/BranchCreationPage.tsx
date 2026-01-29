@@ -411,54 +411,74 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1, duration: 0.8 }}
-                            className="group relative bg-[#0d0f14] border border-white/5 rounded-[3.5rem] p-10 flex flex-col items-center text-center transition-all duration-700 hover:border-primary/40 hover:bg-[#11141b] shadow-2xl"
+                            className="group relative bg-[#0a0b0f] border border-white/5 rounded-[4rem] p-12 flex flex-col items-center text-center transition-all duration-700 hover:border-primary/40 hover:bg-[#0e1016] shadow-2xl min-h-[720px] w-full"
                         >
                             {/* Branch Icon Node */}
-                            <div className="w-20 h-20 rounded-[2rem] bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-10 shadow-[inset_0_0_30px_rgba(var(--primary),0.1)] group-hover:scale-110 transition-transform duration-700">
-                                <SchoolIcon className="w-10 h-10" />
+                            <div className="w-24 h-24 rounded-full bg-primary/[0.03] border border-white/5 flex items-center justify-center text-primary mb-12 shadow-[inset_0_0_40px_rgba(var(--primary),0.05)] group-hover:scale-110 group-hover:border-primary/20 transition-all duration-700">
+                                <SchoolIcon className="w-12 h-12" />
                             </div>
 
-                            <div className="space-y-4 mb-10">
-                                <h3 className="text-3xl font-serif font-black text-white tracking-tighter uppercase leading-none">{branch.name}</h3>
-                                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
-                                    <LocationIcon className="w-3 h-3 text-white/20" />
-                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">{branch.city}, {branch.state}</span>
+                            <div className="space-y-4 mb-12">
+                                <h3 className="text-4xl font-serif font-black text-white tracking-tighter uppercase leading-none drop-shadow-sm">{branch.name}</h3>
+                                <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white/[0.02] border border-white/5">
+                                    <LocationIcon className="w-3.5 h-3.5 text-white/20" />
+                                    <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{branch.city} • {branch.state}</span>
                                 </div>
                             </div>
 
                             {/* Status Badge */}
-                            {branch.is_main_branch ? (
-                                <div className="mb-12 px-6 py-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 flex items-center gap-3">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,1)]" />
-                                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em]">Central Command</span>
-                                </div>
-                            ) : (
-                                <div className="mb-12 px-6 py-2 rounded-full border border-white/10 bg-white/5 flex items-center gap-3">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Satellite Node</span>
-                                </div>
-                            )}
+                            <div className="mb-16 w-full px-4">
+                                {branch.is_main_branch ? (
+                                    <div className="py-4 rounded-full border border-emerald-500/30 bg-emerald-500/5 flex items-center justify-center gap-4 shadow-[0_0_40px_rgba(16,185,129,0.05)]">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)]" />
+                                        <span className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.5em]">Central Command</span>
+                                    </div>
+                                ) : (
+                                    <div className="py-4 rounded-full border border-white/10 bg-white/5 flex items-center justify-center gap-4">
+                                        <div className="w-2 h-2 rounded-full bg-white/20" />
+                                        <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.5em]">Satellite Node</span>
+                                    </div>
+                                )}
+                            </div>
 
-                            {/* Alphanumeric ID Display */}
-                            <div className="w-full mt-auto space-y-6">
-                                <div className="flex items-center gap-4 text-white/10 font-black text-[9px] uppercase tracking-[0.5em]">
-                                    <span className="flex-grow h-px bg-white/5" />
-                                    <span>Sync Hash</span>
-                                    <span className="flex-grow h-px bg-white/5" />
-                                </div>
+                            {/* Telemetry Strip */}
+                            <div className="flex items-center gap-6 text-white/10 mb-16 w-full px-6">
+                                <span className="text-[9px] font-black uppercase tracking-widest whitespace-nowrap">Sync Sequence</span>
+                                <div className="h-px flex-grow bg-white/5" />
+                                <span className="text-[9px] font-mono font-bold tracking-widest">{new Date(branch.created_at).getFullYear()}</span>
+                            </div>
 
-                                <div className="bg-black/60 rounded-[2rem] p-8 border border-white/5 relative overflow-hidden group/hash">
-                                    <code className="text-4xl font-mono font-black text-primary tracking-widest group-hover:text-white transition-colors duration-500">
-                                        {branch.access_key}
-                                    </code>
-                                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/hash:opacity-100 transition-opacity pointer-events-none" />
+                            {/* Alphanumeric ID Display: Formatted Code Card */}
+                            <div className="w-full mt-auto">
+                                <div className="bg-[#050608] rounded-[3rem] p-4 border border-white/5 relative overflow-hidden group/hash hover:border-primary/30 transition-all duration-500 shadow-[inset_0_20px_40px_rgba(0,0,0,0.4)]">
+                                    <div className="p-10 flex flex-col items-center gap-8">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-white/10 text-[50px] font-black font-mono leading-none">#</span>
+                                            <code className="text-[50px] font-mono font-black text-primary tracking-[0.2em] group-hover:text-white transition-colors duration-700 drop-shadow-[0_0_30px_rgba(var(--primary),0.3)]">
+                                                {branch.access_key}
+                                            </code>
+                                        </div>
+
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigator.clipboard.writeText(branch.access_key || '');
+                                                setCopiedBranchId(branch.id);
+                                                setTimeout(() => setCopiedBranchId(null), 2000);
+                                            }}
+                                            className="px-8 py-3 bg-primary/10 border border-primary/20 rounded-2xl text-primary text-[9px] font-black uppercase tracking-[0.4em] hover:bg-primary hover:text-white hover:border-primary transition-all duration-500 active:scale-95 shadow-xl"
+                                        >
+                                            {copiedBranchId === branch.id ? 'Hash Captured' : 'Secure Copy'}
+                                        </button>
+                                    </div>
+                                    <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover/hash:opacity-100 transition-opacity pointer-events-none" />
                                 </div>
                             </div>
 
                             {/* Hover Actions */}
-                            <div className="absolute top-8 right-8 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                                <button onClick={() => handleOpenEdit(branch)} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/20 hover:text-white transition-all"><EditIcon className="w-4 h-4" /></button>
-                                {!branch.is_main_branch && <button onClick={() => setDeletingBranch(branch)} className="w-10 h-10 rounded-xl bg-red-500/5 hover:bg-red-500/20 border border-red-500/10 flex items-center justify-center text-red-500/40 hover:text-red-500 transition-all"><XIcon className="w-4 h-4" /></button>}
+                            <div className="absolute top-10 right-10 flex flex-col gap-4 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-6 group-hover:translate-x-0">
+                                <button onClick={() => handleOpenEdit(branch)} className="w-12 h-12 rounded-[1.2rem] bg-white/5 hover:bg-primary/20 hover:text-primary border border-white/10 flex items-center justify-center text-white/20 transition-all shadow-xl"><EditIcon className="w-5 h-5" /></button>
+                                {!branch.is_main_branch && <button onClick={() => setDeletingBranch(branch)} className="w-12 h-12 rounded-[1.2rem] bg-red-500/5 hover:bg-red-500 hover:text-white border border-red-500/10 flex items-center justify-center text-red-500/40 transition-all shadow-xl"><XIcon className="w-5 h-5" /></button>}
                             </div>
                         </motion.div>
                     ))}
@@ -467,14 +487,14 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                     <motion.button
                         whileHover={{ scale: 0.98, y: -4 }}
                         onClick={() => handleOpenCreate()}
-                        className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[3.5rem] p-16 min-h-[500px] group hover:border-primary/40 hover:bg-primary/[0.02] transition-all duration-700"
+                        className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[4.5rem] p-20 min-h-[720px] w-full group hover:border-primary/40 hover:bg-primary/[0.01] transition-all duration-700"
                     >
-                        <div className="w-24 h-24 rounded-full bg-white/5 border border-white/5 flex items-center justify-center mb-10 group-hover:scale-110 group-hover:border-primary/20 transition-all duration-700">
-                            <PlusIcon className="w-10 h-10 text-white/10 group-hover:text-primary transition-colors" />
+                        <div className="w-32 h-32 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mb-12 group-hover:scale-110 group-hover:border-primary/20 transition-all duration-700 shadow-inner">
+                            <PlusIcon className="w-12 h-12 text-white/5 group-hover:text-primary transition-colors" />
                         </div>
-                        <div className="space-y-4">
-                            <h4 className="text-2xl font-serif italic text-white/5 group-hover:text-white/20 transition-colors uppercase tracking-[0.3em]">Topology Expansion</h4>
-                            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/5">Initialize Next Node</p>
+                        <div className="space-y-6">
+                            <h4 className="text-4xl font-serif italic text-white/5 group-hover:text-white/20 transition-colors uppercase tracking-[0.2em] leading-tight">Topology<br />Expansion</h4>
+                            <p className="text-[11px] font-black uppercase tracking-[1em] text-white/[0.03]">Initialize Next Node</p>
                         </div>
                     </motion.button>
                 </div>
@@ -500,47 +520,53 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div className="p-10 rounded-[3rem] bg-white/[0.01] border border-white/5 space-y-8 group hover:bg-white/[0.02] transition-all">
-                        <div className="flex items-center justify-between">
-                            <ShieldIcon className="w-8 h-8 text-primary/40 group-hover:text-primary transition-colors" />
-                            <span className="text-[10px] font-black uppercase text-emerald-500 bg-emerald-500/10 px-4 py-1.5 rounded-full">Secure</span>
+                    <div className="p-12 rounded-[4rem] bg-[#0a0b0f] border border-white/5 space-y-10 group hover:bg-[#0e1016] hover:border-primary/40 transition-all min-h-[420px] flex flex-col justify-between shadow-xl">
+                        <div className="space-y-10">
+                            <div className="flex items-center justify-between">
+                                <ShieldIcon className="w-10 h-10 text-primary/40 group-hover:text-primary transition-colors" />
+                                <span className="text-[10px] font-black uppercase text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-6 py-2 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.1)]">Secure</span>
+                            </div>
+                            <div className="space-y-4">
+                                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Identity Layer</p>
+                                <p className="text-3xl font-serif font-black text-white/80 group-hover:text-white transition-colors uppercase leading-none">Geo-Identity v2.4</p>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Identity Layer</p>
-                            <p className="text-xl font-serif text-white/80">Geo-Identity v2.4</p>
-                        </div>
-                        <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono text-white/10">
-                            <CheckCircleIcon className="w-4 h-4 text-emerald-500/40" />
+                        <div className="pt-8 border-t border-white/[0.03] flex items-center gap-4 text-[10px] font-mono font-bold text-white/10 uppercase tracking-widest">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500/30 group-hover:bg-emerald-500 transition-colors" />
                             <span>Hash: 8A72-F92C</span>
                         </div>
                     </div>
 
-                    <div className="p-10 rounded-[3rem] bg-white/[0.01] border border-white/5 space-y-8 group hover:bg-white/[0.02] transition-all">
-                        <div className="flex items-center justify-between">
-                            <GlobeIcon className="w-8 h-8 text-primary/40 group-hover:text-primary transition-colors" />
-                            <span className="text-[10px] font-black uppercase text-primary bg-primary/10 px-4 py-1.5 rounded-full">Global</span>
+                    <div className="p-12 rounded-[4rem] bg-[#0a0b0f] border border-white/5 space-y-10 group hover:bg-[#0e1016] hover:border-primary/40 transition-all min-h-[420px] flex flex-col justify-between shadow-xl">
+                        <div className="space-y-10">
+                            <div className="flex items-center justify-between">
+                                <GlobeIcon className="w-10 h-10 text-primary/40 group-hover:text-primary transition-colors" />
+                                <span className="text-[10px] font-black uppercase text-primary bg-primary/10 border border-primary/20 px-6 py-2 rounded-full shadow-[0_0_20px_rgba(var(--primary),0.1)]">Global</span>
+                            </div>
+                            <div className="space-y-4">
+                                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Network Mesh</p>
+                                <p className="text-3xl font-serif font-black text-white/80 group-hover:text-white transition-colors uppercase leading-none">Satellite Sync Alpha</p>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Network Mesh</p>
-                            <p className="text-xl font-serif text-white/80">Satellite Sync Alpha</p>
-                        </div>
-                        <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono text-white/10">
-                            <CheckCircleIcon className="w-4 h-4 text-primary/40" />
+                        <div className="pt-8 border-t border-white/[0.03] flex items-center gap-4 text-[10px] font-mono font-bold text-white/10 uppercase tracking-widest">
+                            <div className="w-2 h-2 rounded-full bg-primary/30 group-hover:bg-primary transition-colors" />
                             <span>Latency: 24ms</span>
                         </div>
                     </div>
 
-                    <div className="p-10 rounded-[3rem] bg-white/[0.01] border border-white/5 space-y-8 group hover:bg-white/[0.02] transition-all">
-                        <div className="flex items-center justify-between">
-                            <HashIcon className="w-8 h-8 text-primary/40 group-hover:text-primary transition-colors" />
-                            <span className="text-[10px] font-black uppercase text-white/20 bg-white/5 px-4 py-1.5 rounded-full">Default</span>
+                    <div className="p-12 rounded-[4rem] bg-[#0a0b0f] border border-white/5 space-y-10 group hover:bg-[#0e1016] hover:border-primary/40 transition-all min-h-[420px] flex flex-col justify-between shadow-xl">
+                        <div className="space-y-10">
+                            <div className="flex items-center justify-between">
+                                <HashIcon className="w-10 h-10 text-primary/40 group-hover:text-primary transition-colors" />
+                                <span className="text-[10px] font-black uppercase text-white/20 bg-white/10 border border-white/10 px-6 py-2 rounded-full uppercase tracking-widest">Default</span>
+                            </div>
+                            <div className="space-y-4">
+                                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Data Integrity</p>
+                                <p className="text-3xl font-serif font-black text-white/80 group-hover:text-white transition-colors uppercase leading-none">Checksum Protocol</p>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Data Integrity</p>
-                            <p className="text-xl font-serif text-white/80">Checksum Protocol</p>
-                        </div>
-                        <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono text-white/10">
-                            <CheckCircleIcon className="w-4 h-4 text-white/10" />
+                        <div className="pt-8 border-t border-white/[0.03] flex items-center gap-4 text-[10px] font-mono font-bold text-white/10 uppercase tracking-widest">
+                            <div className="w-2 h-2 rounded-full bg-white/10 group-hover:bg-white/30 transition-colors" />
                             <span>Status: Verified</span>
                         </div>
                     </div>
