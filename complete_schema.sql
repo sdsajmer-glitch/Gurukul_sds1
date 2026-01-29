@@ -1442,7 +1442,7 @@ RETURNS SETOF public.school_branches LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
     v_user_email TEXT;
 BEGIN
-    v_user_email := (SELECT email FROM auth.users WHERE id = auth.uid());
+    v_user_email := auth.jwt() ->> 'email';
 
     -- Audit Governance: Log every registry access attempt
     -- This provides an immutable trail for institutional monitoring

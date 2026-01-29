@@ -877,7 +877,7 @@ DROP POLICY IF EXISTS "Branch Admin Isolation" ON public.school_branches;
 CREATE POLICY "Branch Admin Isolation" ON public.school_branches
 FOR SELECT USING (
     admin_user_id = auth.uid() 
-    OR LOWER(admin_email) = (SELECT LOWER(email) FROM auth.users WHERE id = auth.uid())
+    OR LOWER(admin_email) = LOWER(auth.jwt() ->> 'email')
 );
 
 -- Handshake Audit Log for Compliance & Governance
@@ -916,7 +916,7 @@ DECLARE
 BEGIN
     -- 1. Sanitation
     v_clean_code := UPPER(REGEXP_REPLACE(p_invitation_code, '[^A-Z0-9]', '', 'g'));
-    v_user_email := (SELECT email FROM auth.users WHERE id = auth.uid());
+    v_user_email := auth.jwt() ->> 'email';
 
     -- 2. Validate Branch Registry
     SELECT id, admin_email, admin_user_id INTO v_branch_id, v_admin_email, v_existing_admin
@@ -1024,7 +1024,7 @@ DECLARE
     v_is_head_office BOOLEAN;
     v_user_email TEXT;
 BEGIN
-    v_user_email := (SELECT email FROM auth.users WHERE id = auth.uid());
+    v_user_email := auth.jwt() ->> 'email';
     
     -- Detect Authority Level
     -- Head Office admins own the school record. Branch admins are associated via status/admin_user_id.
