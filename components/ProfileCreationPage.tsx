@@ -83,6 +83,12 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
     const isFormValid = useMemo(() => {
         if (!formData.display_name?.trim()) return false;
+
+        if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+            if (!formData.school_name?.trim()) return false;
+            // Add other mandatory school admin fields here if needed
+        }
+
         if (role === BuiltInRoles.PARENT_GUARDIAN && !formData.relationship_to_student) return false;
         return true;
     }, [formData, role]);

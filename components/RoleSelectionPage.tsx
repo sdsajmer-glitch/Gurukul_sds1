@@ -327,6 +327,11 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                                 type="text"
                                                 value={invitationCode}
                                                 onChange={e => setInvitationCode(e.target.value.toUpperCase())}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter' && invitationCode.trim().length >= 8 && !joinLoading) {
+                                                        handleJoinBranch(e as any);
+                                                    }
+                                                }}
                                                 disabled={joinLoading}
                                                 placeholder="NODE ACCESS KEY"
                                                 className="w-full h-16 bg-[#050608] border-2 border-white/5 rounded-2xl text-center font-mono font-black tracking-[0.3em] text-white focus:border-primary/50 focus:ring-8 focus:ring-primary/5 outline-none transition-all disabled:opacity-40 placeholder:text-white/10 placeholder:tracking-normal placeholder:font-sans placeholder:text-[10px]"
@@ -338,7 +343,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                             whileHover={{ scale: 1.02, y: -2 }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={handleJoinBranch}
-                                            disabled={joinLoading || invitationCode.length < 8}
+                                            disabled={joinLoading || invitationCode.trim().length < 8}
                                             className="w-full h-16 bg-white/[0.05] hover:bg-white/10 text-white/40 hover:text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 disabled:opacity-20 active:scale-95 group/joinbtn border border-white/5"
                                         >
                                             {joinLoading ? <Spinner size="sm" className="text-white" /> : (

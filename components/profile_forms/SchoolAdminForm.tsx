@@ -91,19 +91,44 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
         }
     };
 
+    // Sync admin_contact_phone when parts change
+    React.useEffect(() => {
+        const countryCode = formData.admin_contact_phone_country_code || '+91';
+        const local = formData.admin_contact_phone_local || '';
+        const combined = local ? `${countryCode}${local}` : '';
+
+        if (combined !== formData.admin_contact_phone) {
+            handleChange({ target: { name: 'admin_contact_phone', value: combined } } as any);
+        }
+    }, [formData.admin_contact_phone_country_code, formData.admin_contact_phone_local, formData.admin_contact_phone, handleChange]);
+
     const handleResolveAddress = async () => {
         if (!formData.address?.trim()) return;
         setIsResolving(true);
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const prompt = `From the street address "${formData.address}", extract city, state, country. Output JSON: {"city": "string", "state": "string", "country": "string"}.`;
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+            const prompt = `Based on the street address "${formData.address}", identify the city, state, and country.
+            Output ONLY strictly as a valid JSON object: {"city": "string", "state": "string", "country": "string"}.
+            Important: The "country" must match one of these: ${countries.join(', ')}. The "state" must match a valid state in that country.`;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-1.5-flash',
+                contents: prompt
+            });
+
             const text = response.text || '';
-            const data = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] || '{}');
-            if (data.city) handleChange({ target: { name: 'city', value: data.city } } as any);
-            if (data.state) handleChange({ target: { name: 'state', value: data.state } } as any);
-            if (data.country) handleChange({ target: { name: 'country', value: data.country } } as any);
-        } catch (err) { console.error(err); } finally { setIsResolving(false); }
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const data = JSON.parse(jsonMatch[0]);
+                if (data.city) handleChange({ target: { name: 'city', value: data.city } } as any);
+                if (data.state) handleChange({ target: { name: 'state', value: data.state } } as any);
+                if (data.country) handleChange({ target: { name: 'country', value: data.country } } as any);
+            }
+        } catch (err) {
+            console.error("Address resolution failed:", err);
+        } finally {
+            setIsResolving(false);
+        }
     };
 
     return (

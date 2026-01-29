@@ -81,18 +81,32 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
 
             if (onStepChange) await onStepChange();
 
-            setSelectedRole(role);
+            if (isMounted.current) {
+                setSelectedRole(role);
 
-            // AUTO-SKIP: If the profile was already established, finalize immediately
-            if (data?.profile_restored) {
-                onComplete();
-            } else {
                 const nextStep = (data as any)?.onboarding_step;
-                if (nextStep && ['profile', 'pricing', 'branches'].includes(nextStep)) {
-                    setStep(nextStep as any);
+
+                // If the user is a School Admin, we allow them to review the flow 
+                // even if the profile was restored, unless they are already at the 'completed' stage
+                // and we want to auto-redirect them. But for "review" purposes, let's be more lenient.
+                if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+                    if (nextStep && ['profile', 'pricing', 'branches'].includes(nextStep)) {
+                        setStep(nextStep as any);
+                    } else if (nextStep === 'completed' || data?.profile_restored) {
+                        // Even if restored, if they are coming from Role Selection, 
+                        // let's take them to the profile step so they can "review".
+                        setStep('profile');
+                    } else {
+                        setStep('profile');
+                    }
                 } else {
-                    setStep('profile');
+                    if (data?.profile_restored) {
+                        onComplete();
+                    } else {
+                        setStep('profile');
+                    }
                 }
+
                 setLoading(false);
                 setIsTransitioning(false);
             }
