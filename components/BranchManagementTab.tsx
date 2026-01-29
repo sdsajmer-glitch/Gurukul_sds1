@@ -77,8 +77,8 @@ const BranchCard: React.FC<{
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.8, ease: "easeOut" }}
             className={`
-                relative w-full min-h-[720px] flex flex-col justify-between 
-                p-7 rounded-[32px] overflow-hidden transition-all duration-500
+                relative w-full min-h-[640px] flex flex-col justify-between 
+                p-6 rounded-[32px] overflow-hidden transition-all duration-500
                 border border-white/5 bg-[#0A0A0A] group
                 ${branch.is_main_branch ? 'shadow-[0_0_60px_-15px_rgba(var(--primary),0.3)]' : 'hover:bg-white/[0.02]'}
             `}
@@ -99,25 +99,48 @@ const BranchCard: React.FC<{
                     </span>
                 </div>
 
-                {/* Status Badge */}
-                <div className={`
-                    flex flex-row items-center gap-3 px-4 py-2 rounded-full border backdrop-blur-md
-                    ${isOnline
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                        : (isLinked ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-white/5 border-white/10 text-white/60')}
-                `}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : (isLinked ? 'bg-indigo-400' : 'bg-white/40')}`} />
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-                        {isOnline ? 'Online' : (isLinked ? 'Verified' : 'Pending')}
-                    </span>
+                {/* Status & Actions Group */}
+                <div className="flex items-center gap-3">
+                    {/* Hover Actions */}
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                            className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
+                            title="Edit Configuration"
+                        >
+                            <EditIcon className="w-4 h-4" />
+                        </button>
+                        {!branch.is_main_branch && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                                className="w-9 h-9 rounded-full bg-red-500/5 border border-red-500/10 flex items-center justify-center text-red-500/40 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all"
+                                title="Decommission Node"
+                            >
+                                <TrashIcon className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className={`
+                        flex flex-row items-center gap-3 px-4 py-2 rounded-full border backdrop-blur-md
+                        ${isOnline
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                            : (isLinked ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-white/5 border-white/10 text-white/60')}
+                    `}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : (isLinked ? 'bg-indigo-400' : 'bg-white/40')}`} />
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+                            {isOnline ? 'Online' : (isLinked ? 'Verified' : 'Pending')}
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            {/* --- 2. Identity Block (Icon & Name) --- */}
-            <div className="relative z-10 flex flex-col items-center gap-8 py-8 flex-grow justify-center">
+            {/* --- 2. Identity Block --- */}
+            <div className="relative z-10 flex flex-col items-center gap-6 py-4 flex-grow justify-center">
                 {/* Icon Container */}
-                <div className="relative flex items-center justify-center w-28 h-28 rounded-full bg-white/[0.02] border border-white/5 shadow-2xl group-hover:scale-110 transition-transform duration-700">
-                    <SchoolIcon className={`w-12 h-12 ${branch.is_main_branch ? 'text-primary' : (isOnline ? 'text-emerald-500' : 'text-white/40 group-hover:text-white')} transition-colors duration-500`} />
+                <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-white/[0.02] border border-white/5 shadow-2xl group-hover:scale-110 transition-transform duration-700">
+                    <SchoolIcon className={`w-10 h-10 ${branch.is_main_branch ? 'text-primary' : (isOnline ? 'text-emerald-500' : 'text-white/40 group-hover:text-white')} transition-colors duration-500`} />
                     {(branch.is_main_branch || isOnline) && <div className={`absolute inset-0 rounded-full border ${isOnline ? 'border-emerald-500/20' : 'border-primary/20'} animate-ping opacity-20`} />}
                 </div>
 
@@ -138,7 +161,7 @@ const BranchCard: React.FC<{
             </div>
 
             {/* --- 3. Telemetry Grid --- */}
-            <div className="relative z-10 grid grid-cols-3 gap-3 w-full mb-8">
+            <div className="relative z-10 grid grid-cols-3 gap-2 w-full mb-6">
                 {[
                     { label: 'PROTOCOL', value: branch.protocol_version || 'v9.5', color: 'text-primary' },
                     { label: 'IDENTITY', value: branch.admin_user_id ? 'VERIFIED' : 'PENDING', color: branch.admin_user_id ? 'text-emerald-500' : 'text-amber-500' },
@@ -172,7 +195,7 @@ const BranchCard: React.FC<{
                     </div>
 
                     {/* Vault Content Swapper */}
-                    <div className="p-6 min-h-[160px] flex items-center justify-center">
+                    <div className="p-4 min-h-[140px] flex items-center justify-center">
                         <AnimatePresence mode="wait">
                             {handshakeStep === 'PENDING' && (
                                 <motion.div
@@ -282,17 +305,6 @@ const BranchCard: React.FC<{
                 </div>
             </div>
 
-            {/* --- 5. Hover Actions (Floating) --- */}
-            <div className="absolute top-6 right-6 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
-                <button onClick={onEdit} className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all">
-                    <EditIcon className="w-4 h-4" />
-                </button>
-                {!branch.is_main_branch && (
-                    <button onClick={onDelete} className="w-10 h-10 rounded-full bg-red-500/10 backdrop-blur-md flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-all">
-                        <TrashIcon className="w-4 h-4" />
-                    </button>
-                )}
-            </div>
         </motion.div>
     );
 };
@@ -506,17 +518,17 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                         whileTap={{ scale: 0.98 }}
                         onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
                         className="
-                            relative flex flex-col items-center justify-center gap-6 min-h-[720px] 
+                            relative flex flex-col items-center justify-center gap-4 min-h-[640px] 
                             rounded-[32px] border border-dashed border-white/5 bg-transparent 
                             hover:bg-white/[0.01] transition-all group
                         "
                     >
-                        <div className="w-20 h-20 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
-                            <PlusIcon className="w-8 h-8 text-white/20 group-hover:text-primary transition-colors" />
+                        <div className="w-16 h-16 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
+                            <PlusIcon className="w-6 h-6 text-white/20 group-hover:text-primary transition-colors" />
                         </div>
                         <div className="flex flex-col items-center gap-2 text-center">
-                            <span className="text-xl font-serif text-white/20 group-hover:text-white/60 transition-colors italic">Expansion Protocol</span>
-                            <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-white/10 group-hover:text-white/40">Initialize Satellite Node</span>
+                            <span className="text-lg font-serif text-white/20 group-hover:text-white/60 transition-colors italic">Expansion Protocol</span>
+                            <span className="text-[8px] font-bold uppercase tracking-[0.4em] text-white/10 group-hover:text-white/40">Initialize Satellite Node</span>
                         </div>
                     </motion.button>
                 )}
