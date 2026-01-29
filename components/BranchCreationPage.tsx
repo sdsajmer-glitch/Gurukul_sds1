@@ -339,21 +339,21 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             <div className="section-divider opacity-50" />
 
             {/* --- HERO SECTION: EDITORIAL STYLE --- */}
-            <div className="text-center space-y-12 mb-24 relative py-12">
+            <div className="text-center space-y-8 mb-16 relative py-8">
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-white/[0.03]" />
                 <div className="relative space-y-4">
-                    <h1 className="premium-headline text-8xl md:text-[10rem] text-white leading-none tracking-[-0.04em] relative inline-block">
+                    <h1 className="premium-headline text-6xl md:text-8xl text-white leading-none tracking-[-0.04em] relative inline-block">
                         Branch
-                        <span className="absolute -inset-x-12 top-1/2 -translate-y-1/2 text-ghost text-[12rem] whitespace-nowrap pointer-events-none opacity-20">Registry.</span>
+                        <span className="absolute -inset-x-8 top-1/2 -translate-y-1/2 text-ghost text-[6rem] md:text-[9rem] whitespace-nowrap pointer-events-none opacity-20">Registry.</span>
                     </h1>
-                    <div className="max-w-2xl mx-auto space-y-6">
-                        <p className="text-[13px] font-medium text-white/40 leading-relaxed tracking-wider uppercase">
-                            Start by defining your <span className="text-white">Head Office Node</span>, then synchronize additional satellite campuses to the global network.
+                    <div className="max-w-xl mx-auto space-y-4">
+                        <p className="text-[12px] font-medium text-white/40 leading-relaxed tracking-wider uppercase">
+                            Start by defining your <span className="text-white">Head Office Node</span>, then synchronize additional satellite campuses.
                         </p>
-                        <div className="flex items-center justify-center gap-4 py-4">
-                            <div className="h-px w-16 bg-white/5" />
-                            <span className="text-[10px] font-black uppercase tracking-[1em] text-white/10">Institutional Matrix v2.4</span>
-                            <div className="h-px w-16 bg-white/5" />
+                        <div className="flex items-center justify-center gap-4 py-2">
+                            <div className="h-px w-12 bg-white/5" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.5em] text-white/10">Institutional Matrix v2.4</span>
+                            <div className="h-px w-12 bg-white/5" />
                         </div>
                     </div>
                 </div>
@@ -365,14 +365,14 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                         <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/80">Network Intensity: Active</span>
                     </div>
 
-                    <div className="inline-flex p-2 rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-xl gap-2 h-[80px]">
+                    <div className="inline-flex p-1.5 rounded-[1.5rem] border border-white/5 bg-white/[0.02] backdrop-blur-xl gap-1.5 h-[64px]">
                         <button
                             onClick={() => handleOpenCreate()}
-                            className="btn-secondary-premium border-none bg-transparent hover:bg-white/[0.05] h-full"
+                            className="btn-secondary-premium border-none bg-transparent hover:bg-white/[0.05] h-full px-8"
                         >
                             New Institutional Node
                         </button>
-                        <button className="btn-primary-premium h-full px-12">
+                        <button className="btn-primary-premium h-full px-10">
                             Synchronize Registry
                         </button>
                     </div>
@@ -390,35 +390,35 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             ) : error ? (
                 <DiagnosticErrorConsole message={error} onClear={() => setError(null)} />
             ) : (
-                <div className="space-y-40 mb-40">
+                <div className="space-y-20 mb-20">
                     {/* --- NODE GRID: MONOLITHIC --- */}
-                    <div className="grid grid-cols-1 gap-32">
+                    <div className="grid grid-cols-1 gap-16">
                         {branches.map((branch, idx) => (
                             <motion.div
                                 key={branch.id}
-                                initial={{ opacity: 0, y: 60 }}
+                                initial={{ opacity: 0, y: 40 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.1, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                                className={`enterprise-glass rounded-[5rem] p-16 md:p-24 flex flex-col items-center text-center transition-all duration-1000 min-h-[960px] w-full relative overflow-hidden ${branch.is_main_branch ? 'glow-card-active' : ''}`}
+                                className={`enterprise-glass rounded-[4rem] p-12 md:p-16 flex flex-col items-center text-center transition-all duration-1000 min-h-[700px] w-full relative overflow-hidden ${branch.is_main_branch ? 'glow-card-active' : ''}`}
                             >
                                 <div className="scanline-subtle" />
 
                                 {/* Status Header Pill */}
-                                <div className="mb-20">
+                                <div className="mb-12">
                                     {branch.is_main_branch ? (
-                                        <div className="py-6 px-12 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-3xl flex items-center justify-center gap-6 shadow-[inset_0_0_40px_rgba(16,185,129,0.05)]">
-                                            <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_20px_rgba(16,185,129,1)]" />
+                                        <div className="py-3 px-8 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-3xl flex items-center justify-center gap-4 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
+                                            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]" />
                                             <div className="text-left">
-                                                <p className="text-[14px] font-black text-emerald-500 uppercase tracking-[0.6em] leading-none">Central Command</p>
-                                                <p className="text-[9px] font-black text-emerald-500/40 uppercase tracking-[0.2em] mt-1.5">Global Master Hub</p>
+                                                <p className="text-[12px] font-black text-emerald-500 uppercase tracking-[0.4em] leading-none">Central Command</p>
+                                                <p className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.1em] mt-1">Global Master Hub</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="py-6 px-12 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl flex items-center justify-center gap-6">
-                                            <div className="w-4 h-4 rounded-full bg-white/20" />
+                                        <div className="py-3 px-8 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl flex items-center justify-center gap-4">
+                                            <div className="w-3 h-3 rounded-full bg-white/20" />
                                             <div className="text-left">
-                                                <p className="text-[14px] font-black text-white/30 uppercase tracking-[0.6em] leading-none">Satellite Node</p>
-                                                <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.2em] mt-1.5">Active Campus Registry</p>
+                                                <p className="text-[12px] font-black text-white/30 uppercase tracking-[0.4em] leading-none">Satellite Node</p>
+                                                <p className="text-[8px] font-black text-white/10 uppercase tracking-[0.1em] mt-1">Active Campus Registry</p>
                                             </div>
                                         </div>
                                     )}
@@ -432,14 +432,14 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                     </div>
                                 </div>
 
-                                <div className="space-y-10 mb-24 relative z-10">
-                                    <h3 className="premium-headline text-8xl md:text-[10rem] text-white leading-none drop-shadow-2xl">{branch.name}</h3>
-                                    <div className="flex items-center justify-center gap-6 p-1 rounded-full bg-white/[0.02] border border-white/5 pr-8 pl-4 py-3 backdrop-blur-xl mx-auto w-fit">
-                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
-                                            <LocationIcon className="w-4 h-4 text-white/40" />
+                                <div className="space-y-6 mb-16 relative z-10">
+                                    <h3 className="premium-headline text-5xl md:text-7xl text-white leading-none drop-shadow-2xl">{branch.name}</h3>
+                                    <div className="flex items-center justify-center gap-3 p-1 rounded-full bg-white/[0.02] border border-white/5 pr-4 pl-2 py-1.5 backdrop-blur-xl mx-auto w-fit">
+                                        <div className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center">
+                                            <LocationIcon className="w-2.5 h-2.5 text-white/40" />
                                         </div>
-                                        <span className="text-[13px] font-black text-white/40 uppercase tracking-[0.4em] font-mono">
-                                            {branch.city} + {branch.state} + India
+                                        <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-mono">
+                                            {branch.city} + {branch.state}
                                         </span>
                                     </div>
                                 </div>
@@ -460,9 +460,9 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                             <span>Encryption: AES-256-XPN</span>
                                             <span>Protocol: Institutional_V4</span>
                                         </div>
-                                        <div className="flex items-center justify-center gap-12 mb-16 scale-110 md:scale-125">
-                                            <span className="text-white/5 text-[100px] font-black font-mono leading-none">#</span>
-                                            <code className="text-[80px] md:text-[120px] font-mono font-black text-primary tracking-[0.2em] group-hover:text-white transition-colors duration-1000 drop-shadow-[0_0_60px_rgba(var(--primary),0.6)]">
+                                        <div className="flex items-center justify-center gap-8 mb-12 scale-100 md:scale-110">
+                                            <span className="text-white/5 text-[60px] font-black font-mono leading-none">#</span>
+                                            <code className="text-[50px] md:text-[70px] font-mono font-black text-primary tracking-[0.1em] group-hover:text-white transition-colors duration-1000 drop-shadow-[0_0_40px_rgba(var(--primary),0.6)]">
                                                 {branch.access_key}
                                             </code>
                                         </div>
@@ -474,7 +474,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                                 setCopiedBranchId(branch.id);
                                                 setTimeout(() => setCopiedBranchId(null), 2000);
                                             }}
-                                            className="btn-primary-premium h-[80px] px-20 text-[13px] tracking-[0.5em] w-full max-w-xl mx-auto block group-hover:scale-105"
+                                            className="btn-primary-premium h-[64px] px-12 text-[12px] tracking-[0.4em] w-full max-w-lg mx-auto block group-hover:scale-105"
                                         >
                                             {copiedBranchId === branch.id ? 'Core Captured' : 'Secure Protocol Capture'}
                                         </button>
@@ -502,20 +502,20 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
 
                         {/* --- TOPOLOGY EXPANSION: MONOLITHIC --- */}
                         <motion.button
-                            whileHover={{ scale: 0.99, y: -12 }}
+                            whileHover={{ scale: 0.99, y: -8 }}
                             onClick={() => handleOpenCreate()}
-                            className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[6rem] p-32 min-h-[960px] w-full group hover:border-primary/40 hover:bg-white/[0.01] transition-all duration-1000 relative overflow-hidden"
+                            className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[4rem] p-16 min-h-[700px] w-full group hover:border-primary/40 hover:bg-white/[0.01] transition-all duration-1000 relative overflow-hidden"
                         >
                             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-                            <div className="w-48 h-48 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mb-16 group-hover:scale-110 group-hover:border-primary/20 transition-all duration-1000 shadow-inner relative z-10">
-                                <PlusIcon className="w-20 h-20 text-white/5 group-hover:text-primary transition-colors" />
+                            <div className="w-32 h-32 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mb-12 group-hover:scale-110 group-hover:border-primary/20 transition-all duration-1000 shadow-inner relative z-10">
+                                <PlusIcon className="w-12 h-12 text-white/5 group-hover:text-primary transition-colors" />
                             </div>
-                            <div className="space-y-12 relative z-10 w-full text-center">
-                                <h4 className="premium-headline text-8xl md:text-[8rem] italic text-white/5 group-hover:text-white/20 transition-all tracking-[-0.02em] leading-tight">Topology<br />Expansion</h4>
-                                <div className="flex items-center justify-center gap-8 opacity-20 group-hover:opacity-40 transition-all">
-                                    <div className="h-px flex-grow bg-white/20" />
-                                    <p className="text-[14px] font-black uppercase tracking-[1.5em] text-white whitespace-nowrap">Initialize Next Node</p>
-                                    <div className="h-px flex-grow bg-white/20" />
+                            <div className="space-y-8 relative z-10 w-full text-center">
+                                <h4 className="premium-headline text-6xl md:text-7xl italic text-white/5 group-hover:text-white/20 transition-all tracking-[-0.02em] leading-tight">Topology<br />Expansion</h4>
+                                <div className="flex items-center justify-center gap-6 opacity-20 group-hover:opacity-40 transition-all">
+                                    <div className="h-px w-20 bg-white/20" />
+                                    <p className="text-[12px] font-black uppercase tracking-[1em] text-white whitespace-nowrap">Initialize Next Node</p>
+                                    <div className="h-px w-20 bg-white/20" />
                                 </div>
                             </div>
                         </motion.button>
@@ -535,19 +535,19 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 { icon: GlobeIcon, label: 'Network Mesh', title: 'Satellite Sync', badge: 'Global', color: 'primary' },
                                 { icon: HashIcon, label: 'Data Integrity', title: 'Checksum Protocol', badge: 'Verified', color: 'white' }
                             ].map((item, i) => (
-                                <div key={i} className="enterprise-glass rounded-[4rem] p-16 space-y-12 transition-all hover:scale-[1.02] hover:border-primary/40 group relative overflow-hidden min-h-[480px] flex flex-col justify-between">
-                                    <div className="space-y-12">
+                                <div key={i} className="enterprise-glass rounded-[3rem] p-8 md:p-10 space-y-8 transition-all hover:scale-[1.02] hover:border-primary/40 group relative overflow-hidden min-h-[320px] flex flex-col justify-between">
+                                    <div className="space-y-8">
                                         <div className="flex items-center justify-between">
-                                            <item.icon className="w-14 h-14 text-white/10 group-hover:text-primary transition-colors" />
-                                            <span className={`text-[11px] font-black uppercase px-6 py-2 rounded-full border border-white/5 bg-white/5 text-white/40 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-colors`}>{item.badge}</span>
+                                            <item.icon className="w-10 h-10 text-white/10 group-hover:text-primary transition-colors" />
+                                            <span className={`text-[10px] font-black uppercase px-4 py-1.5 rounded-full border border-white/5 bg-white/5 text-white/40 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-colors`}>{item.badge}</span>
                                         </div>
-                                        <div className="space-y-4">
-                                            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-white/20">{item.label}</p>
-                                            <p className="premium-headline text-4xl text-white group-hover:text-primary transition-colors">{item.title}</p>
+                                        <div className="space-y-2">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">{item.label}</p>
+                                            <p className="premium-headline text-3xl text-white group-hover:text-primary transition-colors">{item.title}</p>
                                         </div>
                                     </div>
-                                    <div className="pt-10 border-t border-white/[0.03] flex items-center gap-5 text-[10px] font-mono font-bold text-white/10 uppercase tracking-[0.3em]">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-white/10 group-hover:bg-primary group-hover:animate-pulse transition-all" />
+                                    <div className="pt-6 border-t border-white/[0.03] flex items-center gap-4 text-[9px] font-mono font-bold text-white/10 uppercase tracking-[0.2em]">
+                                        <div className="w-2 h-2 rounded-full bg-white/10 group-hover:bg-primary group-hover:animate-pulse transition-all" />
                                         <span>Matrix ID: {Math.random().toString(36).substring(7).toUpperCase()}</span>
                                     </div>
                                 </div>
@@ -575,21 +575,21 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                             <div className="scanline-subtle opacity-5" />
 
                             {/* Modal Header */}
-                            <div className="p-16 border-b border-white/[0.05] flex items-center justify-between bg-white/[0.01] relative z-10 shrink-0">
-                                <div className="space-y-2">
-                                    <h2 className="premium-headline text-5xl text-white uppercase">{editingBranch ? 'Sync Protocol' : 'Initialize Node'}</h2>
-                                    <p className="text-[12px] font-black uppercase tracking-[0.4em] text-white/20">Institutional Matrix Configuration Registry</p>
+                            <div className="p-8 md:p-12 border-b border-white/[0.05] flex items-center justify-between bg-white/[0.01] relative z-10 shrink-0">
+                                <div className="space-y-1">
+                                    <h2 className="premium-headline text-3xl md:text-5xl text-white uppercase">{editingBranch ? 'Sync Protocol' : 'Initialize Node'}</h2>
+                                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/20">Institutional Matrix Configuration Registry</p>
                                 </div>
                                 <button
                                     onClick={() => setIsModalOpen(false)}
-                                    className="w-20 h-20 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/20 hover:text-white hover:border-white/20 transition-all hover:bg-white/10"
+                                    className="w-14 h-14 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/20 hover:text-white hover:border-white/20 transition-all hover:bg-white/10"
                                 >
-                                    <XIcon className="w-8 h-8" />
+                                    <XIcon className="w-6 h-6" />
                                 </button>
                             </div>
 
                             <form onSubmit={handleSave} className="flex-grow overflow-hidden flex flex-col relative z-10">
-                                <div className="flex-grow overflow-y-auto custom-scrollbar p-16 md:p-24 space-y-20">
+                                <div className="flex-grow overflow-y-auto custom-scrollbar p-10 md:p-14 space-y-16">
                                     {modalError && (
                                         <div className="p-10 rounded-[2rem] border border-red-500/20 bg-red-500/5 text-red-500 text-[12px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 animate-in fade-in slide-in-from-top-4">
                                             <AlertTriangleIcon className="w-5 h-5 shrink-0" />
