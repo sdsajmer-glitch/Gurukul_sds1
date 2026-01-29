@@ -83,17 +83,17 @@ const BranchCard: React.FC<{
             <div className="flex justify-between items-start mb-10 relative z-10">
                 <div className="flex items-center gap-6">
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-700 ${isLinked ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
-                            'bg-white/5 text-white/40 border border-white/10'
+                        'bg-white/5 text-white/40 border border-white/10'
                         }`}>
                         <SchoolIcon className={`w-8 h-8 ${isLinked ? 'animate-pulse' : ''}`} />
                     </div>
                     <div>
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-2xl font-black text-white tracking-tighter uppercase font-serif">{branch.name}</h3>
+                        <div className="flex items-center gap-4">
+                            <h3 className="text-3xl font-black text-white tracking-tighter uppercase font-serif drop-shadow-2xl">{branch.name}</h3>
                             {isLinked && (
-                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Live Node</span>
+                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]" />
+                                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Live Node Cluster</span>
                                 </motion.div>
                             )}
                         </div>
@@ -130,8 +130,8 @@ const BranchCard: React.FC<{
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -10 }}
                             className={`text-[9px] font-black px-3 py-1 rounded-full border uppercase tracking-widest ${handshakeStep === 'VERIFIED' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' :
-                                    handshakeStep === 'PENDING' ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' :
-                                        'text-primary bg-primary/10 border-primary/20'
+                                handshakeStep === 'PENDING' ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' :
+                                    'text-primary bg-primary/10 border-primary/20'
                                 }`}
                         >
                             {handshakeStep === 'VERIFIED' ? 'Handshake Verified' :
@@ -262,11 +262,11 @@ const BranchCard: React.FC<{
                             <React.Fragment key={item.step}>
                                 <div className="flex flex-col items-center gap-2 relative z-10 flex-1">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all duration-700 ${isActive ? 'bg-primary border-primary/40 text-white shadow-[0_0_20px_rgba(var(--primary),0.3)]' :
-                                            'bg-white/5 border-white/10 text-white/20'
+                                        'bg-white/5 border-white/10 text-white/20'
                                         } ${isCurrent && handshakeStep !== 'VERIFIED' ? 'animate-pulse' : ''}`}>
                                         {item.icon}
                                     </div>
-                                    <span className={`text-[7px] font-black uppercase tracking-widest transition-colors ${isActive ? 'text-primary' : 'text-white/10'}`}>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${isActive ? 'text-primary' : 'text-white/20'}`}>
                                         {item.label}
                                     </span>
                                 </div>
@@ -426,19 +426,23 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="px-14 py-12 border-b border-white/5 bg-white/[0.02] flex justify-between items-center relative z-10">
-                                <div className="space-y-2">
-                                    <h3 className="text-3xl font-serif font-black text-white tracking-tighter uppercase">{branchToEdit ? 'Configure Node' : 'Initialize Node'}</h3>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-primary/60">Topological Registry Configuration</p>
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(var(--primary),1)]" />
+                                        <h3 className="text-sm font-black text-white/40 tracking-[0.4em] uppercase">Security Module Active</h3>
+                                    </div>
                                 </div>
-                                <button onClick={() => setIsCreateModalOpen(false)} className="w-14 h-14 rounded-full bg-white/5 text-white/20 hover:text-white hover:bg-red-500/20 hover:rotate-90 transition-all flex items-center justify-center border border-white/5">
-                                    <XIcon className="w-8 h-8" />
+                                <button onClick={() => setIsCreateModalOpen(false)} className="w-12 h-12 rounded-full bg-white/5 text-white/20 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center border border-white/5">
+                                    <XIcon className="w-6 h-6" />
                                 </button>
                             </div>
-                            <div className="overflow-y-auto flex-grow p-10 md:p-14 custom-scrollbar">
-                                <BranchCreationPage
-                                    profile={branchToEdit ? undefined : (schoolProfile?.user_id ? { id: schoolProfile.user_id } as any : undefined)}
-                                    onNext={() => { setIsCreateModalOpen(false); onBranchUpdate(); }}
-                                />
+                            <div className="overflow-y-auto flex-grow custom-scrollbar">
+                                <div className="p-4 md:p-8">
+                                    <BranchCreationPage
+                                        profile={branchToEdit ? undefined : (schoolProfile?.user_id ? { id: schoolProfile.user_id } as any : undefined)}
+                                        onNext={() => { setIsCreateModalOpen(false); onBranchUpdate(); }}
+                                    />
+                                </div>
                             </div>
                         </motion.div>
                     </div>

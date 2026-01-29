@@ -323,7 +323,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     return (
         <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12 py-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 relative">
             {/* --- REGISTRY TIMELINE: STEP INDICATOR --- */}
-            <div className="flex items-center justify-center gap-12 mb-20">
+            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-16 mb-24">
                 {[
                     { label: 'Identity Discovery', status: 'complete' },
                     { label: 'Node Registration', status: 'active' },
@@ -334,16 +334,16 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.2, duration: 0.8 }}
-                        className="flex items-center gap-4 group/step"
+                        className="flex items-center gap-5 group/step"
                     >
                         <div className="relative">
-                            <div className={`w-3 h-3 rounded-full transition-all duration-700 ${step.status === 'active' ? 'bg-primary shadow-[0_0_20px_rgba(var(--primary),1)] scale-125' : step.status === 'complete' ? 'bg-emerald-500' : 'bg-white/10'}`} />
-                            {step.status === 'active' && <div className="absolute inset-0 bg-primary animate-ping rounded-full opacity-40" />}
+                            <div className={`w-4 h-4 rounded-full transition-all duration-700 ${step.status === 'active' ? 'bg-primary shadow-[0_0_25px_rgba(var(--primary),1)] scale-125' : step.status === 'complete' ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'bg-white/10'}`} />
+                            {step.status === 'active' && <div className="absolute inset-0 bg-primary animate-ping rounded-full opacity-30" />}
                         </div>
-                        <span className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors duration-500 ${step.status === 'active' ? 'text-white' : 'text-white/20'}`}>{step.label}</span>
+                        <span className={`text-[13px] md:text-[14px] font-black uppercase tracking-[0.2em] transition-all duration-500 whitespace-nowrap ${step.status === 'active' ? 'text-white' : 'text-white/20'}`}>{step.label}</span>
                         {i < 2 && (
-                            <div className="flex items-center ml-2">
-                                <div className="w-8 h-px bg-white/5 mx-2" />
+                            <div className="hidden md:flex items-center ml-4">
+                                <div className="w-16 h-px bg-white/5" />
                             </div>
                         )}
                     </motion.div>
@@ -357,10 +357,10 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-white/[0.02]" />
                 <div className="relative">
                     <div className="space-y-2 mb-10">
-                        <h1 className="premium-headline text-7xl md:text-9xl text-white leading-none tracking-tight">
+                        <h1 className="premium-headline text-6xl md:text-8xl text-white leading-none tracking-tight">
                             Institutional <span className="text-primary italic">Branch</span>
                         </h1>
-                        <p className="premium-headline text-ghost text-[5rem] md:text-[10rem] opacity-10 leading-none tracking-[-0.05em] -mt-12 select-none">Registry Console</p>
+                        <p className="premium-headline text-ghost text-[4rem] md:text-[8rem] opacity-[0.07] leading-none tracking-[-0.05em] -mt-4 md:-mt-8 select-none">Registry Console</p>
                     </div>
                     <div className="max-w-xl mx-auto space-y-4">
                         <p className="text-[14px] font-medium text-white/40 leading-relaxed tracking-wider uppercase">
@@ -425,33 +425,33 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 {/* Status Header Pill */}
                                 <div className="mb-10 w-full flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-px bg-white/10" />
-                                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">Node #{idx + 1}</span>
+                                        <div className="w-12 h-px bg-white/10" />
+                                        <span className="text-[11px] font-black uppercase tracking-[0.4em] text-white/40">Node Registry #{idx + 1}</span>
                                     </div>
                                     {branch.is_main_branch ? (
-                                        <div className="py-2.5 px-8 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-3xl flex items-center justify-center gap-4 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,1)]" />
+                                        <div className="py-3 px-10 rounded-full border border-emerald-500/40 bg-emerald-500/10 backdrop-blur-3xl flex items-center justify-center gap-5 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                                            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_20px_rgba(16,185,129,1)]" />
                                             <div className="text-left">
-                                                <p className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.4em] leading-none">Central Command</p>
-                                                <p className="text-[7px] font-black text-emerald-500/30 uppercase tracking-[0.1em] mt-1">Master Mesh Sync: Active</p>
+                                                <p className="text-[13px] font-black text-emerald-400 uppercase tracking-[0.3em] leading-none">Central Command</p>
+                                                <p className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.2em] mt-1.5 whitespace-nowrap">Global Master Hub Registry</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="py-2.5 px-8 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl flex items-center justify-center gap-4">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                                        <div className="py-3 px-10 rounded-full border border-white/20 bg-white/5 backdrop-blur-2xl flex items-center justify-center gap-5">
+                                            <div className="w-3 h-3 rounded-full bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]" />
                                             <div className="text-left">
-                                                <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.4em] leading-none">Satellite Node</p>
-                                                <p className="text-[7px] font-black text-white/10 uppercase tracking-[0.1em] mt-1">Local Registry Peer</p>
+                                                <p className="text-[13px] font-black text-white uppercase tracking-[0.3em] leading-none">Satellite Node</p>
+                                                <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mt-1.5 whitespace-nowrap">Active Institutional Peer</p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Campus Icon Node */}
-                                <div className="relative mb-20 group/icon">
-                                    <div className="absolute inset-0 bg-primary/20 blur-[50px] rounded-full scale-150 opacity-0 group-hover/icon:opacity-100 transition-opacity duration-1000" />
-                                    <div className="w-48 h-48 rounded-full bg-primary/[0.05] border border-white/5 flex items-center justify-center text-primary shadow-[inset_0_0_80px_rgba(var(--primary),0.1)] group-hover/icon:scale-110 group-hover/icon:border-primary/20 transition-all duration-1000 relative z-10">
-                                        <SchoolIcon className="w-24 h-24" />
+                                <div className="relative mb-16 group/icon">
+                                    <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full scale-150 opacity-0 group-hover/icon:opacity-100 transition-opacity duration-1000" />
+                                    <div className="w-40 h-40 rounded-full bg-primary/[0.05] border border-white/5 flex items-center justify-center text-primary shadow-[inset_0_0_80px_rgba(var(--primary),0.1)] group-hover/icon:scale-110 group-hover/icon:border-primary/20 transition-all duration-1000 relative z-10">
+                                        <SchoolIcon className="w-20 h-20" />
                                     </div>
                                 </div>
 
@@ -468,12 +468,12 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 </div>
 
                                 {/* Sync Telemetry Strip */}
-                                <div className="w-full max-w-4xl px-12 flex items-center justify-center gap-12 mb-24 opacity-30">
-                                    <span className="text-[11px] font-black uppercase tracking-[1em] whitespace-nowrap">Registry Sequence</span>
-                                    <div className="h-[2px] flex-grow bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                                    <span className="text-[14px] font-mono font-black tracking-[0.4em] text-primary">{new Date(branch.created_at).getFullYear()}</span>
-                                    <div className="h-[2px] flex-grow bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                                    <span className="text-[11px] font-black uppercase tracking-[1em] whitespace-nowrap">Active Matrix</span>
+                                <div className="w-full max-w-4xl px-12 flex items-center justify-center gap-12 mb-20 opacity-60">
+                                    <span className="text-[11px] font-black uppercase tracking-[0.8em] text-white/40 whitespace-nowrap">Registry Sequence</span>
+                                    <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                                    <span className="text-[16px] font-mono font-black tracking-[0.4em] text-primary drop-shadow-[0_0_10px_rgba(var(--primary),0.5)]">{new Date(branch.created_at).getFullYear()}</span>
+                                    <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                                    <span className="text-[11px] font-black uppercase tracking-[0.8em] text-white/40 whitespace-nowrap">Active Matrix</span>
                                 </div>
 
                                 {/* Access Ledger: Monolithic Readout */}
@@ -600,7 +600,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                             initial={{ scale: 0.95, y: 40, opacity: 0 }}
                             animate={{ scale: 1, y: 0, opacity: 1 }}
                             exit={{ scale: 0.95, y: 40, opacity: 0 }}
-                            className="bg-[#0a0b0f] border border-white/10 rounded-[5rem] w-full max-w-7xl h-full max-h-[900px] overflow-hidden flex flex-col shadow-[0_100px_200px_-50px_rgba(0,0,0,1)] relative"
+                            className="bg-[#0a0b0f] border border-white/10 rounded-3xl md:rounded-[5rem] w-full max-w-7xl h-full max-h-[900px] overflow-hidden flex flex-col shadow-[0_100px_200px_-50px_rgba(0,0,0,1)] relative"
                         >
                             <div className="scanline-subtle opacity-5" />
 

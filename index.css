@@ -26,6 +26,7 @@
 .premium-headline {
   @apply font-serif font-black uppercase tracking-tighter;
   font-family: 'Playfair Display', serif;
+  text-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .enterprise-glass {
@@ -95,8 +96,8 @@
 }
 
 .scanline-subtle {
-  @apply absolute inset-0 pointer-events-none opacity-[0.02];
-  background: linear-gradient(to bottom, transparent, rgba(139, 92, 246, 0.2) 50%, transparent);
+  @apply absolute inset-0 pointer-events-none opacity-[0.015];
+  background: linear-gradient(to bottom, transparent, rgba(139, 92, 246, 0.1) 50%, transparent);
   background-size: 100% 4px;
   animation: scan-subtle 10s linear infinite;
 }
