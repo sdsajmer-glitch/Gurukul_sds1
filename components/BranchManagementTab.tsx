@@ -43,19 +43,11 @@ const BranchCard: React.FC<{
 }> = ({ branch, onEdit, onDelete, onSync, index }) => {
     const [copied, setCopied] = useState(false);
     const [revealed, setRevealed] = useState(false);
-    // Logic Fix: Default state is PENDING.
-    // VERIFIED only if status is Linked AND we have an access_key.
     const [handshakeStep, setHandshakeStep] = useState<HandshakeStatus>(
         (branch.status === 'Linked' && branch.access_key) ? 'VERIFIED' : 'PENDING'
     );
 
     const isLinked = handshakeStep === 'VERIFIED';
-
-    const handleGenerateKey = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setHandshakeStep('PENDING');
-        setTimeout(() => setHandshakeStep('KEY_READY'), 800);
-    };
 
     const handleInitiateSync = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -63,166 +55,160 @@ const BranchCard: React.FC<{
         setTimeout(() => setHandshakeStep('VERIFIED'), 2500);
     };
 
-    const handleCopy = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!branch.access_key) return;
-        navigator.clipboard.writeText(branch.access_key);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
     return (
         <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className={`enterprise-glass rounded-[3rem] p-10 flex flex-col items-center text-center transition-all duration-1000 min-h-[700px] w-full relative overflow-hidden group ${branch.is_main_branch ? 'glow-card-active' : ''}`}
+            transition={{ delay: index * 0.1, duration: 0.8, ease: "easeOut" }}
+            className={`
+                relative w-full min-h-[720px] flex flex-col justify-between 
+                p-8 rounded-[32px] overflow-hidden transition-all duration-500
+                border border-white/5 bg-[#0A0A0A] group
+                ${branch.is_main_branch ? 'shadow-[0_0_80px_-20px_rgba(var(--primary),0.3)]' : 'hover:bg-white/[0.02]'}
+            `}
         >
-            <div className="scanline-subtle" />
-
-            {/* Status Header Pill */}
-            <div className="mb-10 w-full flex items-center justify-between relative z-10">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-[1px] bg-white/10" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Node Registry #{index + 1}</span>
-                </div>
-                {branch.is_main_branch ? (
-                    <div className="py-2 px-6 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-3xl flex items-center justify-center gap-4 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,1)]" />
-                        <div className="text-left">
-                            <p className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em] leading-none">Central Command</p>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="py-2 px-6 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl flex items-center justify-center gap-4">
-                        <div className="w-2 h-2 rounded-full bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]" />
-                        <div className="text-left">
-                            <p className="text-[11px] font-black text-white uppercase tracking-[0.3em] leading-none">Satellite Node</p>
-                        </div>
-                    </div>
-                )}
+            {/* --- Background Ambience --- */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className={`absolute -top-32 -left-32 w-96 h-96 rounded-full blur-[128px] transition-opacity duration-1000 ${branch.is_main_branch ? 'bg-primary/20 opacity-100' : 'bg-white/5 opacity-0 group-hover:opacity-100'}`} />
+                <div className="absolute top-0 right-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50" />
             </div>
 
-            {/* Campus Icon Node */}
-            <div className="relative mb-12 group/icon relative z-10">
-                <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full scale-150 opacity-0 group-hover/icon:opacity-100 transition-opacity duration-1000" />
-                <div className="w-32 h-32 rounded-full bg-primary/[0.05] border border-white/5 flex items-center justify-center text-primary shadow-[inset_0_0_60px_rgba(var(--primary),0.1)] group-hover/icon:scale-110 group-hover/icon:border-primary/20 transition-all duration-1000 relative z-10">
-                    <SchoolIcon className="w-16 h-16" />
+            {/* --- 1. Header: Meta & Status --- */}
+            <div className="relative z-10 flex flex-row items-center justify-between w-full h-12">
+                {/* ID Tag */}
+                <div className="flex flex-row items-center gap-3">
+                    <div className="w-8 h-[1px] bg-white/20" />
+                    <span className="text-[10px] font-bold tracking-[0.25em] text-white/40 uppercase">
+                        NODE 0{index + 1}
+                    </span>
                 </div>
-            </div>
 
-            <div className="space-y-4 mb-12 relative z-10">
-                <h3 className="premium-headline text-4xl md:text-5xl text-white leading-none drop-shadow-2xl">{branch.name}</h3>
-                <div className="flex items-center justify-center gap-3 p-1 rounded-full bg-white/[0.04] border border-white/10 pr-5 pl-2 py-1.5 backdrop-blur-3xl mx-auto w-fit shadow-xl">
-                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                        <LocationIcon className="w-2.5 h-2.5 text-primary" />
-                    </div>
-                    <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.25em] font-mono">
-                        {branch.city}, {branch.state}
+                {/* Status Badge */}
+                <div className={`
+                    flex flex-row items-center gap-3 px-4 py-2 rounded-full border backdrop-blur-md
+                    ${branch.is_main_branch
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                        : 'bg-white/5 border-white/10 text-white/60'}
+                `}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${branch.is_main_branch ? 'bg-emerald-500 animate-pulse' : 'bg-white/40'}`} />
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+                        {branch.is_main_branch ? 'Command Node' : 'Satellite'}
                     </span>
                 </div>
             </div>
 
-            {/* Process Management Keys - High Visibility Matrix */}
-            <div className="w-full grid grid-cols-3 gap-4 mb-10 relative z-10 px-4">
-                <div className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-white/[0.02] border border-white/5 group-hover:bg-white/[0.04] transition-all">
-                    <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.2em]">Protocol Binding</span>
-                    <span className="text-[9px] font-black text-primary uppercase tracking-widest">AES-256</span>
+            {/* --- 2. Identity Block (Icon & Name) --- */}
+            <div className="relative z-10 flex flex-col items-center gap-8 py-8 flex-grow justify-center">
+                {/* Icon Container */}
+                <div className="relative flex items-center justify-center w-28 h-28 rounded-full bg-white/[0.02] border border-white/5 shadow-2xl group-hover:scale-110 transition-transform duration-700">
+                    <SchoolIcon className={`w-12 h-12 ${branch.is_main_branch ? 'text-primary' : 'text-white/40 group-hover:text-white'} transition-colors duration-500`} />
+                    {branch.is_main_branch && <div className="absolute inset-0 rounded-full border border-primary/20 animate-ping opacity-20" />}
                 </div>
-                <div className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-white/[0.02] border border-white/5 group-hover:bg-white/[0.04] transition-all">
-                    <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.2em]">Security Layer</span>
-                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active</span>
-                </div>
-                <div className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-white/[0.02] border border-white/5 group-hover:bg-white/[0.04] transition-all">
-                    <span className="text-[7px] font-black text-white/20 uppercase tracking-[0.2em]">Sync Type</span>
-                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Real-time</span>
+
+                {/* Title Group */}
+                <div className="flex flex-col items-center gap-3 text-center">
+                    <h3 className="font-serif text-4xl text-white">
+                        {branch.name}
+                    </h3>
+
+                    {/* Location Badge */}
+                    <div className="flex flex-row items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
+                        <LocationIcon className="w-3 h-3 text-white/40" />
+                        <span className="text-[10px] font-medium text-white/40 uppercase tracking-widest">
+                            {branch.city}, {branch.country}
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            {/* Access Protocol Vault - High Visibility Telemetry */}
-            <div className="w-full mt-auto relative z-10 mb-10">
-                <div className={`rounded-[2rem] p-8 border transition-all duration-1000 overflow-hidden flex flex-col relative ${isLinked ? 'bg-emerald-500/[0.02] border-emerald-500/10' : 'bg-white/[0.01] border-white/5'}`}>
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="flex items-center gap-3">
-                            <ShieldCheckIcon className={`w-3.5 h-3.5 ${isLinked ? 'text-emerald-500' : 'text-white/20'}`} />
-                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em] font-mono">Access Protocol Vault</span>
+            {/* --- 3. Telemetry Grid --- */}
+            <div className="relative z-10 grid grid-cols-3 gap-3 w-full mb-8">
+                {[
+                    { label: 'PROTOCOL', value: 'AES-256', color: 'text-primary' },
+                    { label: 'STATUS', value: 'ACTIVE', color: 'text-emerald-500' },
+                    { label: 'SYNC', value: 'REAL-TIME', color: 'text-white/40' }
+                ].map((stat, i) => (
+                    <div key={i} className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                        <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em]">{stat.label}</span>
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${stat.color}`}>{stat.value}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* --- 4. Security Vault (Footer) --- */}
+            <div className="relative z-10 w-full flex flex-col gap-4">
+                {/* Vault Container */}
+                <div className={`
+                    flex flex-col w-full p-2 rounded-3xl border transition-colors duration-500
+                    ${isLinked ? 'bg-emerald-950/10 border-emerald-500/10' : 'bg-white/[0.02] border-white/5'}
+                `}>
+                    {/* Vault Header */}
+                    <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-white/5">
+                        <div className="flex flex-row items-center gap-3">
+                            <ShieldCheckIcon className={`w-4 h-4 ${isLinked ? 'text-emerald-500' : 'text-white/20'}`} />
+                            <span className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em]">
+                                ACCESS VAULT
+                            </span>
                         </div>
-                        <div className={`px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest ${isLinked ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-white/5 border-white/10 text-white/20'}`}>
-                            {isLinked ? 'Handshake Verified' : 'Handshake Pending'}
-                        </div>
+                        {isLinked && (
+                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded">
+                                VERIFIED
+                            </span>
+                        )}
                     </div>
 
-                    <div className="flex flex-col items-center justify-center text-center py-6 min-h-[140px]">
+                    {/* Vault Content Swapper */}
+                    <div className="p-4 min-h-[120px] flex items-center justify-center">
                         <AnimatePresence mode="wait">
                             {handshakeStep === 'PENDING' && (
-                                <motion.div key="pending" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
-                                    <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mx-auto border border-white/10 text-white/10">
-                                        <LockIcon className="w-5 h-5 opacity-40" />
-                                    </div>
-                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] leading-relaxed text-center">
-                                        Complete branch <br /> authentication to <br /> activate handshake
-                                    </p>
+                                <motion.div
+                                    key="pending"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="flex flex-col items-center gap-3"
+                                >
+                                    <button
+                                        onClick={handleInitiateSync}
+                                        className="w-full flex items-center justify-center gap-3 px-8 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest border border-white/5"
+                                    >
+                                        <KeyIcon className="w-4 h-4" />
+                                        Initialize Handshake
+                                    </button>
                                 </motion.div>
                             )}
 
                             {(handshakeStep === 'KEY_READY' || handshakeStep === 'SYNCHRONIZING') && (
-                                <motion.div key="ready" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-center gap-4 py-4 bg-black/40 rounded-2xl border border-white/5 px-6">
-                                            <code className="text-2xl font-mono font-black text-primary tracking-widest overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px]">
-                                                {revealed ? branch.access_key : '••••-••••-••••'}
-                                            </code>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <button
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(branch.access_key || '');
-                                                        setCopied(true);
-                                                        setTimeout(() => setCopied(false), 2000);
-                                                    }}
-                                                    className="p-2.5 rounded-xl bg-white/5 text-white/30 hover:bg-white/10 hover:text-white transition-all relative group/copy"
-                                                >
-                                                    <CopyIcon className="w-4 h-4" />
-                                                    <AnimatePresence>
-                                                        {copied && (
-                                                            <motion.span
-                                                                initial={{ opacity: 0, y: 10 }}
-                                                                animate={{ opacity: 1, y: 0 }}
-                                                                exit={{ opacity: 0 }}
-                                                                className="absolute -top-10 left-1/2 -translate-x-1/2 text-[8px] bg-emerald-500 text-white px-3 py-1 rounded-lg font-black uppercase tracking-widest whitespace-nowrap shadow-lg z-50"
-                                                            >
-                                                                Key Copied
-                                                            </motion.span>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </button>
-                                                <button
-                                                    onClick={() => setRevealed(!revealed)}
-                                                    className="p-2.5 rounded-xl bg-white/5 text-white/30 hover:bg-white/10 hover:text-white transition-all"
-                                                >
-                                                    {revealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={handleInitiateSync}
-                                            disabled={handshakeStep === 'SYNCHRONIZING'}
-                                            className="w-full h-14 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:shadow-[0_0_30px_rgba(var(--primary),0.3)] transition-all flex items-center justify-center gap-4"
-                                        >
-                                            {handshakeStep === 'SYNCHRONIZING' ? <Spinner size="sm" /> : 'Initiate Handshake Sync'}
+                                <motion.div
+                                    key="sync"
+                                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                    className="flex flex-col w-full gap-4"
+                                >
+                                    <div className="flex flex-row items-center gap-2 p-3 rounded-xl bg-black/40 border border-white/10 w-full">
+                                        <code className="flex-grow text-center font-mono text-sm text-primary tracking-[0.2em]">
+                                            {revealed ? branch.access_key : '••••-••••'}
+                                        </code>
+                                        <button onClick={() => setRevealed(!revealed)} className="p-2 text-white/20 hover:text-white transition-colors">
+                                            {revealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
                                         </button>
                                     </div>
+                                    <button
+                                        onClick={handleInitiateSync}
+                                        disabled={handshakeStep === 'SYNCHRONIZING'}
+                                        className="w-full py-3 rounded-xl bg-primary text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-all flex justify-center items-center gap-2"
+                                    >
+                                        {handshakeStep === 'SYNCHRONIZING' && <Spinner size="sm" />}
+                                        {handshakeStep === 'SYNCHRONIZING' ? 'SYNCING...' : 'VERIFY CONNECTION'}
+                                    </button>
                                 </motion.div>
                             )}
 
                             {handshakeStep === 'VERIFIED' && (
-                                <motion.div key="verified" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
-                                    <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]">
-                                        <ShieldCheckIcon className="w-8 h-8 animate-bounce" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-xl font-bold text-white uppercase tracking-tight">Handshake Secured</p>
-                                        <p className="text-[9px] text-emerald-500 font-mono uppercase tracking-[0.3em]">{branch.admin_email}</p>
-                                    </div>
+                                <motion.div
+                                    key="verified"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="flex flex-col items-center gap-2"
+                                >
+                                    <CheckCircleIcon className="w-8 h-8 text-emerald-500 mb-2" />
+                                    <p className="text-[10px] font-medium text-emerald-500/60 uppercase tracking-widest">Secure Link Established</p>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -230,61 +216,17 @@ const BranchCard: React.FC<{
                 </div>
             </div>
 
-            {/* Identity Handshake Protocol - High Transparency Matrix */}
-            <div className="w-full space-y-6 mb-4 relative z-10">
-                <div className="flex justify-between items-center px-1">
-                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em]">Identity Handshake Protocol</span>
-                    <span className={`text-[8px] font-bold uppercase tracking-widest ${isLinked ? 'text-emerald-500' : 'text-primary'}`}>
-                        {handshakeStep}
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    {[
-                        { step: 'PENDING', icon: <PlusIcon className="w-3 h-3" />, label: 'PROVISION' },
-                        { step: 'KEY_READY', icon: <EditIcon className="w-3 h-3" />, label: 'INIT GEN' },
-                        { step: 'SYNCHRONIZING', icon: <RefreshCwIcon className="w-3 h-3" />, label: 'HANDSHAKE' },
-                        { step: 'VERIFIED', icon: <CheckCircleIcon className="w-3 h-3" />, label: 'CERTIFIED' }
-                    ].map((item, idx, arr) => {
-                        const statusWeights = { PENDING: 0, KEY_READY: 1, SYNCHRONIZING: 2, VERIFIED: 3, FAILED: 2 };
-                        const currentWeight = statusWeights[handshakeStep];
-                        const isActive = idx <= currentWeight;
-                        const isCurrent = idx === currentWeight;
-
-                        return (
-                            <React.Fragment key={item.step}>
-                                <div className="flex flex-col items-center gap-2 flex-1">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-700 ${isActive ? 'bg-primary border-primary text-white shadow-[0_0_20px_rgba(var(--primary),0.3)]' : 'bg-white/5 border-white/10 text-white/10'}`}>
-                                        {item.icon}
-                                    </div>
-                                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] ${isActive ? 'text-primary' : 'text-white/20'}`}>{item.label}</span>
-                                </div>
-                                {idx < arr.length - 1 && (
-                                    <div className="flex-[0.5] h-px bg-white/5 mt-[-18px]" />
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Floating Action Nodes */}
-            <div className="absolute top-10 right-10 flex flex-col gap-4 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-10 group-hover:translate-x-0 z-20">
-                <button onClick={onEdit} title="Edit Configuration" className="w-12 h-12 rounded-2xl bg-white/[0.03] hover:bg-primary hover:text-white border border-white/5 flex items-center justify-center text-white/30 transition-all shadow-xl backdrop-blur-3xl transform-gpu hover:scale-110">
-                    <EditIcon className="w-5 h-5" />
-                </button>
-                <button onClick={onSync} title="Refresh Telemetry" className="w-12 h-12 rounded-2xl bg-white/[0.03] hover:bg-white/20 hover:text-white border border-white/5 flex items-center justify-center text-white/30 transition-all shadow-xl backdrop-blur-3xl transform-gpu hover:scale-110">
-                    <RefreshCwIcon className="w-5 h-5" />
+            {/* --- 5. Hover Actions (Floating) --- */}
+            <div className="absolute top-6 right-6 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+                <button onClick={onEdit} className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all">
+                    <EditIcon className="w-4 h-4" />
                 </button>
                 {!branch.is_main_branch && (
-                    <button onClick={onDelete} title="Decommission Node" className="w-12 h-12 rounded-2xl bg-red-500/[0.03] hover:bg-red-500 hover:text-white border border-red-500/10 flex items-center justify-center text-red-500/40 transition-all shadow-xl backdrop-blur-3xl transform-gpu hover:scale-110">
-                        <TrashIcon className="w-5 h-5" />
+                    <button onClick={onDelete} className="w-10 h-10 rounded-full bg-red-500/10 backdrop-blur-md flex items-center justify-center text-red-400 hover:bg-red-500/20 transition-all">
+                        <TrashIcon className="w-4 h-4" />
                     </button>
                 )}
             </div>
-
-            {/* Ambient Gradients */}
-            <div className="absolute -top-32 -left-32 w-80 h-80 bg-primary/10 rounded-full blur-[100px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-            <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
         </motion.div>
     );
 };
@@ -339,103 +281,105 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
     }
 
     return (
-        <div className="space-y-16 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-40 px-4 md:px-0">
-            {/* Enterprise Command Header - Top Level Telemetry */}
-            <div className="relative bg-[#0d0f14] border border-white/5 p-10 md:p-14 rounded-[4rem] shadow-[0_64px_128px_-32px_rgba(0,0,0,0.8)] overflow-hidden">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="flex flex-col gap-12 pb-40 px-6 sm:px-8 max-w-[1600px] mx-auto w-full">
 
-                {/* Language Toggle */}
-                <div className="absolute top-10 right-10 flex items-center gap-1 p-1 bg-black/40 border border-white/10 rounded-xl z-20">
-                    {(['EN', 'HI'] as Language[]).map((lang) => (
-                        <button
-                            key={lang}
-                            onClick={() => setLanguage(lang)}
-                            className={`px-4 py-1.5 rounded-lg text-[9px] font-black tracking-widest uppercase transition-all ${language === lang ? 'bg-primary text-white shadow-lg' : 'text-white/20 hover:text-white/40'}`}
-                        >
-                            {lang === 'EN' ? 'English' : 'हिंदी'}
-                        </button>
-                    ))}
-                </div>
+            {/* --- 1. Master Command Header --- */}
+            <div className="relative w-full overflow-hidden rounded-[40px] border border-white/5 bg-[#050505]">
+                {/* Background FX */}
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/4" />
 
-                <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-14">
-                    <div className="space-y-8 flex-grow">
-                        <div className="space-y-4">
-                            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.3em]">
-                                <ShieldCheckIcon className="w-4 h-4" />
-                                {language === 'EN' ? 'Institutional Governance Layer' : 'संस्थागत शासन परत'}
-                            </div>
-                            <h2 className="text-5xl md:text-8xl font-serif font-black text-white tracking-tighter uppercase leading-[0.85]">
-                                {language === 'EN' ? (
-                                    <>Institutional <br /> <span className="text-white/20 italic">Network Registry.</span></>
-                                ) : (
-                                    <>संस्थागत <br /> <span className="text-white/20 italic">नेटवर्क रजिस्ट्री।</span></>
-                                )}
-                            </h2>
-                            <p className="text-white/30 text-[20px] font-serif italic max-w-xl leading-relaxed">
-                                {language === 'EN'
-                                    ? 'Managed telemetry and encrypted protocol synchronization for distributed satellite campus nodes.'
-                                    : 'वितरित सैटेलाइट कैंपस नोड्स के लिए प्रबंधित टेलीमेट्री और एन्क्रिप्टेड प्रोटोकॉल सिंक्रोनाइज़ेशन।'}
-                            </p>
+                <div className="relative z-10 flex flex-col p-10 md:p-14 gap-12">
+                    {/* Top Row: Meta & Lang */}
+                    <div className="flex flex-row items-start justify-between w-full">
+                        <div className="flex flex-row items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-primary text-[10px] font-bold uppercase tracking-[0.3em] backdrop-blur-md">
+                            <ShieldCheckIcon className="w-4 h-4" />
+                            <span>Institutional Governance Layer</span>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-12 pt-4 border-t border-white/5">
-                            <div className="flex flex-col gap-2">
-                                <span className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Connected Nodes</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-black text-white">{branches.length}</span>
-                                    <span className="text-[10px] font-bold text-white/10 uppercase tracking-widest">/ {branches.length} Cap.</span>
-                                </div>
-                            </div>
-                            <div className="w-px h-12 bg-white/5 hidden sm:block" />
-                            <div className="flex flex-col gap-2">
-                                <span className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Identity Authentication</span>
-                                <div className="flex items-center gap-4">
-                                    <span className={`text-4xl font-black ${authenticatedNodes > 0 ? 'text-emerald-500' : 'text-white/20'}`}>{authenticatedNodes}</span>
-                                    <div className={`px-3 py-1 rounded-full border ${authenticatedNodes > 0 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-white/5 border-white/10 text-white/10'}`}>
-                                        <span className="text-[8px] font-black uppercase tracking-widest">{authenticatedNodes > 0 ? 'Verified' : 'Unverified'}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="w-px h-12 bg-white/5 hidden sm:block" />
-                            <div className="flex flex-col gap-2">
-                                <span className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Encryption Cipher</span>
-                                <div className="flex items-baseline gap-3">
-                                    <span className="text-4xl font-black text-white">256-BIT</span>
-                                    <span className="text-[9px] font-black text-primary uppercase tracking-[0.3em] glow-text">Zero-Trust Active</span>
-                                </div>
-                            </div>
+                        {/* Language Switcher */}
+                        <div className="flex flex-row items-center p-1 rounded-xl bg-black/40 border border-white/10">
+                            {(['EN', 'HI'] as Language[]).map((lang) => (
+                                <button
+                                    key={lang}
+                                    onClick={() => setLanguage(lang)}
+                                    className={`
+                                        px-4 py-1.5 rounded-lg text-[10px] font-bold tracking-widest uppercase transition-all
+                                        ${language === lang ? 'bg-primary text-white shadow-lg' : 'text-white/20 hover:text-white/40'}
+                                    `}
+                                >
+                                    {lang === 'EN' ? 'ENG' : 'HIN'}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    {isHeadOfficeAdmin && (
-                        <div className="flex flex-col xl:flex-row items-center gap-6">
-                            <motion.button
-                                whileHover={{ scale: 1.02, y: -4 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => { setSelectedBranch(null); setDrawerMode('SYNC'); }}
-                                className="w-full xl:w-auto px-10 py-8 bg-emerald-500/5 text-emerald-500 font-black text-[11px] uppercase tracking-[0.4em] rounded-[2rem] border border-emerald-500/10 hover:bg-emerald-500/10 transition-all flex items-center justify-center gap-5 group"
-                            >
-                                <RefreshCwIcon className="w-5 h-5 group-hover:rotate-180 transition-transform duration-700" />
-                                {language === 'EN' ? 'Synchronize Branch' : 'शाखा सिंक्रोनाइज़ करें'}
-                            </motion.button>
-
-                            <motion.button
-                                whileHover={{ scale: 1.02, y: -4 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
-                                className="w-full xl:w-auto px-12 py-8 bg-primary text-white font-black text-[14px] uppercase tracking-[0.4em] rounded-[2rem] shadow-[0_40px_80px_-20px_rgba(var(--primary),0.6)] hover:shadow-[0_50px_100px_-20px_rgba(var(--primary),0.8)] transition-all flex items-center justify-center gap-5 group border border-white/10"
-                            >
-                                <PlusIcon className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" />
-                                {language === 'EN' ? 'Initialize Node' : 'नोड प्रारंभ करें'}
-                            </motion.button>
+                    {/* Middle Row: Title & Actions */}
+                    <div className="flex flex-col xl:flex-row items-end justify-between gap-10">
+                        <div className="flex flex-col gap-6 max-w-4xl">
+                            <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif text-white tracking-tighter leading-[0.9]">
+                                {language === 'EN' ? 'INSTITUTIONAL' : 'संस्थागत'} <br />
+                                <span className="text-white/20 italic">
+                                    {language === 'EN' ? 'NETWORK REGISTRY.' : 'नेटवर्क रजिस्ट्री।'}
+                                </span>
+                            </h2>
+                            <p className="text-lg md:text-xl text-white/30 max-w-2xl leading-relaxed font-light">
+                                Managed telemetry and encrypted protocol synchronization for distributed satellite campus nodes.
+                            </p>
                         </div>
-                    )}
+
+                        {isHeadOfficeAdmin && (
+                            <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => { setSelectedBranch(null); setDrawerMode('SYNC'); }}
+                                    className="h-14 px-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-500 text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-colors min-w-[200px]"
+                                >
+                                    <RefreshCwIcon className="w-4 h-4" />
+                                    <span>Sync Status</span>
+                                </motion.button>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
+                                    className="h-14 px-10 rounded-2xl bg-white text-black hover:bg-white/90 text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] min-w-[240px]"
+                                >
+                                    <PlusIcon className="w-4 h-4" />
+                                    <span>Init New Node</span>
+                                </motion.button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Bottom Row: Stats Matrix */}
+                    <div className="w-full h-px bg-white/5" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.2em]">Active Nodes</span>
+                            <span className="text-3xl font-serif text-white">{branches.length} <span className="text-lg text-white/20 italic">/ 10</span></span>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.2em]">Verified Links</span>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-3xl font-serif ${authenticatedNodes > 0 ? 'text-emerald-500' : 'text-white/20'}`}>{authenticatedNodes}</span>
+                                {authenticatedNodes > 0 && <CheckCircleIcon className="w-5 h-5 text-emerald-500" />}
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.2em]">Security Protocol</span>
+                            <span className="text-3xl font-mono text-primary tracking-tighter">256-BIT</span>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.2em]">System Status</span>
+                            <span className="text-3xl font-serif text-emerald-500">Online</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Registry Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            {/* --- 2. Registry Grid --- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 {branches.map((branch, idx) => (
                     <BranchCard
                         key={branch.id}
@@ -447,38 +391,39 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                     />
                 ))}
 
-                {isHeadOfficeAdmin && branches.length < 3 && (
+                {isHeadOfficeAdmin && (
                     <motion.button
-                        whileHover={{ scale: 0.98 }}
+                        whileHover={{ scale: 0.99, borderColor: 'rgba(255,255,255,0.1)' }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
-                        className="flex flex-col items-center justify-center p-16 rounded-[2.5rem] border border-dashed border-white/5 bg-white/[0.01] hover:bg-white/[0.03] hover:border-primary/40 transition-all min-h-[520px] group gap-8"
+                        className="
+                            relative flex flex-col items-center justify-center gap-6 min-h-[720px] 
+                            rounded-[32px] border border-dashed border-white/5 bg-transparent 
+                            hover:bg-white/[0.01] transition-all group
+                        "
                     >
-                        <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/5 transition-all duration-700">
+                        <div className="w-20 h-20 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
                             <PlusIcon className="w-8 h-8 text-white/20 group-hover:text-primary transition-colors" />
                         </div>
-                        <div className="text-center space-y-3">
-                            <p className="text-xl font-serif italic text-white/10 group-hover:text-white/30 transition-colors uppercase tracking-widest">Expansion Protocol</p>
-                            <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/5">Initialize Satellite Node</p>
+                        <div className="flex flex-col items-center gap-2 text-center">
+                            <span className="text-lg font-serif text-white/20 group-hover:text-white/60 transition-colors italic">Expansion Protocol</span>
+                            <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-white/10 group-hover:text-white/40">Initialize Satellite Node</span>
                         </div>
                     </motion.button>
                 )}
             </div>
 
-            {/* Side Drawer for Branch Actions */}
+            {/* --- Drawers & Modals --- */}
             <BranchSideDrawer
                 isOpen={!!drawerMode}
                 onClose={() => { setDrawerMode(null); setSelectedBranch(null); }}
                 title={
-                    drawerMode === 'CREATE' ? (language === 'EN' ? 'Initialize Node' : 'नोड प्रारंभ करें') :
-                        drawerMode === 'SYNC' ? (language === 'EN' ? 'Branch Sync Protocol' : 'शाखा सिंक्रोनाइज़ेशन प्रोटोकॉल') :
-                            drawerMode === 'EDIT' ? (language === 'EN' ? 'Edit Branch Configuration' : 'शाखा कॉन्फ़िगरेशन संपादित करें') :
-                                (language === 'EN' ? 'Node Configuration' : 'नोड कॉन्फ़िगरेशन')
+                    drawerMode === 'CREATE' ? 'Initialize Node' :
+                        drawerMode === 'SYNC' ? 'Handshake Protocol' :
+                            drawerMode === 'EDIT' ? 'Edit Configuration' :
+                                'Node Details'
                 }
-                subtitle={
-                    drawerMode === 'SYNC' ? (language === 'EN' ? 'ESTABLISHING SECURE HANDSHAKE' : 'सुरक्षित हैंडशेक स्थापित करना') :
-                        drawerMode === 'DETAILS' ? (language === 'EN' ? 'READ-ONLY ACCESS MODE' : 'केवल पढ़ने के लिए पहुंच मोड') :
-                            (language === 'EN' ? 'INSTITUTIONAL REGISTRY V4.0' : 'संस्थागत रजिस्ट्री V4.0')
-                }
+                subtitle="INSTITUTIONAL REGISTRY V4.0"
             >
                 <div className="space-y-12">
                     {drawerMode === 'SYNC' && (
@@ -493,7 +438,7 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                     )}
 
                     {drawerMode === 'DETAILS' && selectedBranch && (
-                        <div className="p-8 rounded-[2rem] border border-primary/20 bg-primary/5 flex flex-col gap-6 animate-in fade-in slide-in-from-top-4">
+                        <div className="p-8 rounded-[2rem] border border-primary/20 bg-primary/5 flex flex-col gap-6">
                             <div className="flex justify-between items-start">
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Identity Integrity</p>
@@ -501,17 +446,6 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                                 </div>
                                 <div className="px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest">
                                     Encrypted & Live
-                                </div>
-                            </div>
-                            <div className="h-px bg-white/5" />
-                            <div className="grid grid-cols-2 gap-8">
-                                <div className="space-y-1">
-                                    <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Last Synced</p>
-                                    <p className="text-[11px] text-white/60 font-medium">{new Date().toLocaleDateString()}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Protocol Type</p>
-                                    <p className="text-[11px] text-white/60 font-medium">AES-256-XPN</p>
                                 </div>
                             </div>
                         </div>

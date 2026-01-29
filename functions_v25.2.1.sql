@@ -674,3 +674,164 @@ END;
 $$;
 
 COMMIT;
+
+-- 6. BRANCH MANAGEMENT & ONBOARDING
+-- ===============================================================================================
+
+-- Ensure Schema Compatibility
+-- (Add required columns if they don't exist)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'school_branches' AND column_name = 'admin_name') THEN
+        ALTER TABLE public.school_branches ADD COLUMN admin_name TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'school_branches' AND column_name = 'admin_phone') THEN
+        ALTER TABLE public.school_branches ADD COLUMN admin_phone TEXT;
+    END IF;
+END $$;
+
+-- RPC: Initialize School Admin
+DROP FUNCTION IF EXISTS public.initialize_school_admin() CASCADE;
+CREATE OR REPLACE FUNCTION public.initialize_school_admin()
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    -- Update Profile Role
+    UPDATE public.profiles 
+    SET role = 'School Administration',
+        profile_completed = false
+    WHERE id = auth.uid();
+
+    -- Create/Update School Admin Profile
+    INSERT INTO public.school_admin_profiles (user_id, onboarding_step)
+    VALUES (auth.uid(), 'profile')
+    ON CONFLICT (user_id) DO UPDATE SET onboarding_step = 'profile';
+END;
+$$;
+
+-- RPC: Complete Branch Step
+DROP FUNCTION IF EXISTS public.complete_branch_step() CASCADE;
+CREATE OR REPLACE FUNCTION public.complete_branch_step()
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    UPDATE public.school_admin_profiles 
+    SET onboarding_step = 'completed'
+    WHERE user_id = auth.uid();
+    
+    UPDATE public.profiles
+    SET profile_completed = true
+    WHERE id = auth.uid();
+END;
+$$;
+
+-- RPC: Create School Branch
+DROP FUNCTION IF EXISTS public.create_school_branch(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, TEXT, TEXT) CASCADE;
+CREATE OR REPLACE FUNCTION public.create_school_branch(
+    p_name TEXT,
+    p_address TEXT,
+    p_city TEXT,
+    p_state TEXT,
+    p_country TEXT,
+    p_contact_number TEXT,
+    p_is_main BOOLEAN,
+    p_email TEXT,
+    p_admin_name TEXT,
+    p_admin_phone TEXT,
+    p_admin_email TEXT
+) RETURNS TABLE (
+    id BIGINT,
+    name TEXT,
+    address TEXT,
+    city TEXT,
+    state TEXT,
+    country TEXT,
+    is_main_branch BOOLEAN,
+    admin_name TEXT,
+    admin_phone TEXT,
+    admin_email TEXT,
+    access_key TEXT
+) LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_branch_id BIGINT;
+    v_access_key TEXT;
+BEGIN
+    -- Generate Access Key (ABCD-1234 format)
+    v_access_key := UPPER(SUBSTRING(MD5(RANDOM()::TEXT), 1, 4) || '-' || SUBSTRING(MD5(RANDOM()::TEXT), 5, 4));
+
+    INSERT INTO public.school_branches (
+        name, address, city, state, country, 
+        is_main_branch, 
+        admin_name, admin_phone, admin_email,
+        access_key, school_id
+    ) VALUES (
+        p_name, p_address, p_city, p_state, p_country,
+        p_is_main,
+        p_admin_name, p_admin_phone, p_admin_email,
+        v_access_key, auth.uid()
+    ) RETURNING school_branches.id INTO v_branch_id;
+
+    RETURN QUERY SELECT 
+        sb.id, sb.name, sb.address, sb.city, sb.state, sb.country, 
+        sb.is_main_branch, sb.admin_name, sb.admin_phone, sb.admin_email, sb.access_key
+    FROM public.school_branches sb WHERE sb.id = v_branch_id;
+END;
+$$;
+
+-- RPC: Update School Branch
+DROP FUNCTION IF EXISTS public.update_school_branch(BIGINT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, TEXT, TEXT) CASCADE;
+CREATE OR REPLACE FUNCTION public.update_school_branch(
+    p_branch_id BIGINT,
+    p_name TEXT,
+    p_address TEXT,
+    p_city TEXT,
+    p_state TEXT,
+    p_country TEXT,
+    p_contact_number TEXT,
+    p_is_main BOOLEAN,
+    p_email TEXT,
+    p_admin_name TEXT,
+    p_admin_phone TEXT,
+    p_admin_email TEXT
+) RETURNS TABLE (
+    id BIGINT,
+    name TEXT,
+    address TEXT,
+    city TEXT,
+    state TEXT,
+    country TEXT,
+    is_main_branch BOOLEAN,
+    admin_name TEXT,
+    admin_phone TEXT,
+    admin_email TEXT
+) LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    UPDATE public.school_branches SET
+        name = p_name,
+        address = p_address,
+        city = p_city,
+        state = p_state,
+        country = p_country,
+        is_main_branch = p_is_main,
+        admin_name = p_admin_name,
+        admin_phone = p_admin_phone,
+        admin_email = p_admin_email,
+        updated_at = NOW()
+    WHERE school_branches.id = p_branch_id;  -- EXPLICIT TABLE REFERENCE FIXED
+
+    RETURN QUERY SELECT 
+        sb.id, sb.name, sb.address, sb.city, sb.state, sb.country, 
+        sb.is_main_branch, sb.admin_name, sb.admin_phone, sb.admin_email
+    FROM public.school_branches sb WHERE sb.id = p_branch_id;
+END;
+$$;
+
+-- RPC: Delete School Branch
+DROP FUNCTION IF EXISTS public.delete_school_branch(BIGINT) CASCADE;
+CREATE OR REPLACE FUNCTION public.delete_school_branch(p_branch_id BIGINT)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    DELETE FROM public.school_branches WHERE id = p_branch_id;
+END;
+$$;
+
+COMMIT;
