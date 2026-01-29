@@ -26,6 +26,7 @@ import { BranchForm } from './BranchForm';
 import { RefreshCwIcon } from './icons/RefreshCwIcon';
 import { LocationIcon } from './icons/LocationIcon';
 import { LockIcon } from './icons/LockIcon';
+import { BranchSyncProtocol } from './BranchSyncProtocol';
 
 // --- Types ---
 type Language = 'EN' | 'HI';
@@ -167,13 +168,40 @@ const BranchCard: React.FC<{
                             {(handshakeStep === 'KEY_READY' || handshakeStep === 'SYNCHRONIZING') && (
                                 <motion.div key="ready" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full space-y-6">
                                     <div className="space-y-4">
-                                        <div className="flex items-center justify-center gap-4 py-4 bg-black/40 rounded-2xl border border-white/5">
-                                            <code className="text-2xl font-mono font-black text-primary tracking-widest">
+                                        <div className="flex items-center justify-center gap-4 py-4 bg-black/40 rounded-2xl border border-white/5 px-6">
+                                            <code className="text-2xl font-mono font-black text-primary tracking-widest overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px]">
                                                 {revealed ? branch.access_key : '••••-••••-••••'}
                                             </code>
-                                            <button onClick={() => setRevealed(!revealed)} className="p-2 text-white/20 hover:text-white transition-colors">
-                                                {revealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-                                            </button>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(branch.access_key || '');
+                                                        setCopied(true);
+                                                        setTimeout(() => setCopied(false), 2000);
+                                                    }}
+                                                    className="p-2.5 rounded-xl bg-white/5 text-white/30 hover:bg-white/10 hover:text-white transition-all relative group/copy"
+                                                >
+                                                    <CopyIcon className="w-4 h-4" />
+                                                    <AnimatePresence>
+                                                        {copied && (
+                                                            <motion.span
+                                                                initial={{ opacity: 0, y: 10 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                exit={{ opacity: 0 }}
+                                                                className="absolute -top-10 left-1/2 -translate-x-1/2 text-[8px] bg-emerald-500 text-white px-3 py-1 rounded-lg font-black uppercase tracking-widest whitespace-nowrap shadow-lg z-50"
+                                                            >
+                                                                Key Copied
+                                                            </motion.span>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </button>
+                                                <button
+                                                    onClick={() => setRevealed(!revealed)}
+                                                    className="p-2.5 rounded-xl bg-white/5 text-white/30 hover:bg-white/10 hover:text-white transition-all"
+                                                >
+                                                    {revealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <button
                                             onClick={handleInitiateSync}
@@ -272,7 +300,7 @@ interface BranchManagementTabProps {
 }
 
 export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHeadOfficeAdmin, branches, isLoading, error, onBranchUpdate, schoolProfile }) => {
-    const [drawerMode, setDrawerMode] = useState<'CREATE' | 'DETAILS' | 'EDIT' | null>(null);
+    const [drawerMode, setDrawerMode] = useState<'CREATE' | 'DETAILS' | 'EDIT' | 'SYNC' | null>(null);
     const [selectedBranch, setSelectedBranch] = useState<SchoolBranch | null>(null);
     const [branchToDelete, setBranchToDelete] = useState<SchoolBranch | null>(null);
     const [language, setLanguage] = useState<Language>('EN');
@@ -381,15 +409,27 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                     </div>
 
                     {isHeadOfficeAdmin && (
-                        <motion.button
-                            whileHover={{ scale: 1.02, y: -4 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
-                            className="w-full xl:w-auto px-12 py-8 bg-primary text-white font-black text-[14px] uppercase tracking-[0.4em] rounded-[2rem] shadow-[0_40px_80px_-20px_rgba(var(--primary),0.6)] hover:shadow-[0_50px_100px_-20px_rgba(var(--primary),0.8)] transition-all flex items-center justify-center gap-5 group border border-white/10"
-                        >
-                            <PlusIcon className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" />
-                            {language === 'EN' ? 'Initialize Node' : 'नोड प्रारंभ करें'}
-                        </motion.button>
+                        <div className="flex flex-col xl:flex-row items-center gap-6">
+                            <motion.button
+                                whileHover={{ scale: 1.02, y: -4 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => { setSelectedBranch(null); setDrawerMode('SYNC'); }}
+                                className="w-full xl:w-auto px-10 py-8 bg-emerald-500/5 text-emerald-500 font-black text-[11px] uppercase tracking-[0.4em] rounded-[2rem] border border-emerald-500/10 hover:bg-emerald-500/10 transition-all flex items-center justify-center gap-5 group"
+                            >
+                                <RefreshCwIcon className="w-5 h-5 group-hover:rotate-180 transition-transform duration-700" />
+                                {language === 'EN' ? 'Synchronize Branch' : 'शाखा सिंक्रोनाइज़ करें'}
+                            </motion.button>
+
+                            <motion.button
+                                whileHover={{ scale: 1.02, y: -4 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
+                                className="w-full xl:w-auto px-12 py-8 bg-primary text-white font-black text-[14px] uppercase tracking-[0.4em] rounded-[2rem] shadow-[0_40px_80px_-20px_rgba(var(--primary),0.6)] hover:shadow-[0_50px_100px_-20px_rgba(var(--primary),0.8)] transition-all flex items-center justify-center gap-5 group border border-white/10"
+                            >
+                                <PlusIcon className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" />
+                                {language === 'EN' ? 'Initialize Node' : 'नोड प्रारंभ करें'}
+                            </motion.button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -430,15 +470,28 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                 onClose={() => { setDrawerMode(null); setSelectedBranch(null); }}
                 title={
                     drawerMode === 'CREATE' ? (language === 'EN' ? 'Initialize Node' : 'नोड प्रारंभ करें') :
-                        drawerMode === 'EDIT' ? (language === 'EN' ? 'Edit Branch Configuration' : 'शाखा कॉन्फ़िगरेशन संपादित करें') :
-                            (language === 'EN' ? 'Node Configuration' : 'नोड कॉन्फ़िगरेशन')
+                        drawerMode === 'SYNC' ? (language === 'EN' ? 'Branch Sync Protocol' : 'शाखा सिंक्रोनाइज़ेशन प्रोटोकॉल') :
+                            drawerMode === 'EDIT' ? (language === 'EN' ? 'Edit Branch Configuration' : 'शाखा कॉन्फ़िगरेशन संपादित करें') :
+                                (language === 'EN' ? 'Node Configuration' : 'नोड कॉन्फ़िगरेशन')
                 }
                 subtitle={
-                    drawerMode === 'DETAILS' ? (language === 'EN' ? 'READ-ONLY ACCESS MODE' : 'केवल पढ़ने के लिए पहुंच मोड') :
-                        (language === 'EN' ? 'INSTITUTIONAL REGISTRY V4.0' : 'संस्थागत रजिस्ट्री V4.0')
+                    drawerMode === 'SYNC' ? (language === 'EN' ? 'ESTABLISHING SECURE HANDSHAKE' : 'सुरक्षित हैंडशेक स्थापित करना') :
+                        drawerMode === 'DETAILS' ? (language === 'EN' ? 'READ-ONLY ACCESS MODE' : 'केवल पढ़ने के लिए पहुंच मोड') :
+                            (language === 'EN' ? 'INSTITUTIONAL REGISTRY V4.0' : 'संस्थागत रजिस्ट्री V4.0')
                 }
             >
                 <div className="space-y-12">
+                    {drawerMode === 'SYNC' && (
+                        <BranchSyncProtocol
+                            language={language}
+                            onSyncComplete={(branch) => {
+                                onBranchUpdate(branch);
+                                setDrawerMode(null);
+                            }}
+                            onCancel={() => setDrawerMode(null)}
+                        />
+                    )}
+
                     {drawerMode === 'DETAILS' && selectedBranch && (
                         <div className="p-8 rounded-[2rem] border border-primary/20 bg-primary/5 flex flex-col gap-6 animate-in fade-in slide-in-from-top-4">
                             <div className="flex justify-between items-start">
