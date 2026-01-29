@@ -131,11 +131,15 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
         }
     }
 
-    const handleJoinBranch = async (e: React.MouseEvent) => {
+    const handleJoinBranch = async (e: React.MouseEvent | React.KeyboardEvent) => {
         e.preventDefault();
-        const code = invitationCode.trim().toUpperCase();
+        // Sanitation: Remove spaces and uppercase
+        const rawInput = invitationCode.trim().toUpperCase();
+        // Allow for formatted inputs (e.g. ABCD-1234) or raw (ABCD1234)
+        // We strip spaces to be safe. We keep hyphens.
+        const code = rawInput.replace(/\s/g, '');
 
-        if (code.length < 8 || joinLoading) return;
+        if (code.length < 6 || joinLoading) return;
 
         setJoinLoading(true);
         setJoinError(null);
@@ -147,17 +151,18 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
 
             if (error) throw error;
 
-            if (data.success) {
+            if (data && data.success) {
                 setJoinSuccess(true);
                 setInvitationCode('');
                 setTimeout(() => {
                     onComplete();
                 }, 1500);
             } else {
-                setJoinError(data.message || 'The Access Key provided is invalid, expired, or not authorized for this identity.');
+                setJoinError(data?.message || 'The Access Key provided is invalid, expired, or not authorized for this identity.');
                 setJoinLoading(false);
             }
         } catch (err: any) {
+            console.error(err);
             setJoinError(err.message || "An unexpected error occurred during institutional verification.");
             setJoinLoading(false);
         }
@@ -328,8 +333,8 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                                 value={invitationCode}
                                                 onChange={e => setInvitationCode(e.target.value.toUpperCase())}
                                                 onKeyDown={e => {
-                                                    if (e.key === 'Enter' && invitationCode.trim().length >= 8 && !joinLoading) {
-                                                        handleJoinBranch(e as any);
+                                                    if (e.key === 'Enter' && invitationCode.replace(/\s/g, '').length >= 6 && !joinLoading) {
+                                                        handleJoinBranch(e);
                                                     }
                                                 }}
                                                 disabled={joinLoading}
@@ -343,7 +348,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                             whileHover={{ scale: 1.02, y: -2 }}
                                             whileTap={{ scale: 0.98 }}
                                             onClick={handleJoinBranch}
-                                            disabled={joinLoading || invitationCode.trim().length < 8}
+                                            disabled={joinLoading || invitationCode.replace(/\s/g, '').length < 6}
                                             className="w-full h-16 bg-white/[0.05] hover:bg-white/10 text-white/40 hover:text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 disabled:opacity-20 active:scale-95 group/joinbtn border border-white/5"
                                         >
                                             {joinLoading ? <Spinner size="sm" className="text-white" /> : (
