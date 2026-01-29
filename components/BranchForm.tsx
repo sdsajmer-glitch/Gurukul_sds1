@@ -20,22 +20,37 @@ interface BranchFormProps {
     onEditMode?: () => void;
 }
 
-const FloatingLabelInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string, icon?: React.ReactNode, action?: React.ReactNode, readOnly?: boolean }> = ({ label, icon, action, className, readOnly, ...props }) => (
+const FloatingLabelInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string, icon?: React.ReactNode, action?: React.ReactNode, readOnly?: boolean, syncStatus?: 'synced' | 'pending' | 'syncing' }> = ({ label, icon, action, className, readOnly, syncStatus, ...props }) => (
     <div className="relative group w-full">
         {label && (
-            <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#050608] px-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/30 group-focus-within:text-primary transition-all duration-300 z-20">
-                {label}
-            </label>
+            <div className="absolute left-10 top-0 -translate-y-1/2 flex items-center gap-2 bg-[#050608] px-2 z-20 transition-all duration-300">
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 group-focus-within:text-primary">
+                    {label}
+                </span>
+                {syncStatus && !readOnly && (
+                    <div className="flex items-center gap-1.5 ml-1">
+                        <div className={`w-1 h-1 rounded-full animate-pulse ${syncStatus === 'synced' ? 'bg-emerald-500' : syncStatus === 'syncing' ? 'bg-amber-500' : 'bg-white/20'}`} />
+                        <span className={`text-[7px] font-bold uppercase tracking-widest ${syncStatus === 'synced' ? 'text-emerald-500/50' : syncStatus === 'syncing' ? 'text-amber-500/50' : 'text-white/10'}`}>
+                            {syncStatus === 'synced' ? 'Synced' : syncStatus === 'syncing' ? 'Syncing' : 'Pending'}
+                        </span>
+                    </div>
+                )}
+            </div>
         )}
         <div className="absolute top-1/2 -translate-y-1/2 left-6 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none">
             {icon}
         </div>
-        <input
-            {...props}
-            disabled={readOnly}
-            placeholder=" "
-            className={`peer block w-full h-[64px] rounded-[1.5rem] border border-white/5 ${readOnly ? 'bg-transparent border-transparent' : 'bg-white/[0.01]'} px-6 pl-14 ${action ? 'pr-16' : ''} text-sm text-white font-medium shadow-inner transition-all duration-500 hover:border-white/10 focus:border-primary/50 focus:ring-8 focus:ring-primary/5 focus:outline-none placeholder-transparent ${className}`}
-        />
+        {readOnly ? (
+            <div className={`peer flex items-center w-full min-h-[64px] rounded-[1.5rem] border border-white/5 bg-white/[0.01] px-6 pl-14 text-sm text-white/60 font-medium transition-all duration-500 ${className}`}>
+                {props.value || <span className="text-white/10 italic">Not Provisioned</span>}
+            </div>
+        ) : (
+            <input
+                {...props}
+                placeholder=" "
+                className={`peer block w-full h-[64px] rounded-[1.5rem] border border-white/5 bg-white/[0.01] px-6 pl-14 ${action ? 'pr-16' : ''} text-sm text-white font-medium shadow-inner transition-all duration-500 hover:border-white/10 focus:border-primary/50 focus:ring-8 focus:ring-primary/5 focus:outline-none placeholder-transparent ${className}`}
+            />
+        )}
         {action && !readOnly && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
                 {action}
@@ -54,17 +69,22 @@ const StyledSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement> & { l
         <div className="absolute top-1/2 -translate-y-1/2 left-6 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none">
             {icon}
         </div>
-        <select
-            {...props}
-            disabled={readOnly}
-            className={`peer block w-full h-[64px] appearance-none rounded-[1.5rem] border border-white/5 ${readOnly ? 'bg-transparent border-transparent cursor-default' : 'bg-white/[0.01] hover:border-white/10 focus:border-primary/50 focus:ring-8 focus:ring-primary/5 cursor-pointer'} px-6 pl-14 text-sm text-white font-medium shadow-inner transition-all duration-500 focus:outline-none ${className}`}
-        >
-            {children}
-        </select>
-        {!readOnly && (
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-white/10 group-focus-within:text-primary transition-colors">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+        {readOnly ? (
+            <div className={`peer flex items-center w-full h-[64px] rounded-[1.5rem] border border-white/5 bg-white/[0.01] px-6 pl-14 text-sm text-white/60 font-medium transition-all duration-500 ${className}`}>
+                {props.value || <span className="text-white/10 italic">Not Selected</span>}
             </div>
+        ) : (
+            <>
+                <select
+                    {...props}
+                    className={`peer block w-full h-[64px] appearance-none rounded-[1.5rem] border border-white/5 bg-white/[0.01] hover:border-white/10 focus:border-primary/50 focus:ring-8 focus:ring-primary/5 cursor-pointer px-6 pl-14 text-sm text-white font-medium shadow-inner transition-all duration-500 focus:outline-none ${className}`}
+                >
+                    {children}
+                </select>
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-white/10 group-focus-within:text-primary transition-colors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                </div>
+            </>
         )}
     </div>
 );
@@ -79,15 +99,18 @@ export const BranchForm: React.FC<BranchFormProps> = ({ branch, schoolProfile, o
         adminName: '', adminPhone: '', adminEmail: '', isMain: false
     });
 
+    const [lastSaved, setLastSaved] = useState<typeof formData | null>(null);
+
     useEffect(() => {
         if (branch) {
-            setFormData({
+            const data = {
                 name: branch.name, address: branch.address, country: branch.country || 'India', state: branch.state || '', city: branch.city || '',
                 adminName: branch.admin_name || '', adminPhone: branch.admin_phone || '', adminEmail: branch.admin_email || '', isMain: branch.is_main_branch
-            });
+            };
+            setFormData(data);
+            setLastSaved(data);
         } else if (schoolProfile) {
-            // New branch defaults for head office
-            setFormData({
+            const defaults = {
                 name: schoolProfile.school_name || '',
                 address: schoolProfile.address || '',
                 country: schoolProfile.country || 'India',
@@ -97,9 +120,17 @@ export const BranchForm: React.FC<BranchFormProps> = ({ branch, schoolProfile, o
                 adminPhone: schoolProfile.admin_contact_phone || '',
                 adminEmail: schoolProfile.admin_contact_email || '',
                 isMain: false
-            });
+            };
+            setFormData(defaults);
+            setLastSaved(null);
         }
     }, [branch, schoolProfile]);
+
+    const getSyncStatus = (field: keyof typeof formData) => {
+        if (!branch) return 'pending';
+        if (isSaving) return 'syncing';
+        return formData[field] === lastSaved?.[field] ? 'synced' : 'pending';
+    };
 
     const handleResolveAddress = async () => {
         if (!formData.address.trim()) return;
@@ -138,6 +169,13 @@ export const BranchForm: React.FC<BranchFormProps> = ({ branch, schoolProfile, o
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (readOnly) return;
+
+        // Overwrite Confirmation Logic
+        if (branch && lastSaved?.adminName && formData.adminName !== lastSaved.adminName) {
+            const confirmOverwrite = window.confirm(`Identity Conflict: You are about to replace the existing Admin (${lastSaved.adminName}) with ${formData.adminName}. Proceed with Protocol Update?`);
+            if (!confirmOverwrite) return;
+        }
+
         setIsSaving(true);
         setError(null);
         try {
@@ -158,11 +196,25 @@ export const BranchForm: React.FC<BranchFormProps> = ({ branch, schoolProfile, o
             if (branch) {
                 const { data, error } = await supabase.rpc('update_school_branch', { ...payload, p_branch_id: branch.id });
                 if (error) throw error;
-                onSave(data[0]);
+                const updatedBranch = data[0];
+                const updatedData = {
+                    name: updatedBranch.name, address: updatedBranch.address, country: updatedBranch.country || 'India', state: updatedBranch.state || '', city: updatedBranch.city || '',
+                    adminName: updatedBranch.admin_name || '', adminPhone: updatedBranch.admin_phone || '', adminEmail: updatedBranch.admin_email || '', isMain: updatedBranch.is_main_branch
+                };
+                setFormData(updatedData);
+                setLastSaved(updatedData);
+                onSave(updatedBranch);
             } else {
                 const { data, error } = await supabase.rpc('create_school_branch', payload);
                 if (error) throw error;
-                onSave(data[0]);
+                const newBranch = data[0];
+                const newData = {
+                    name: newBranch.name, address: newBranch.address, country: newBranch.country || 'India', state: newBranch.state || '', city: newBranch.city || '',
+                    adminName: newBranch.admin_name || '', adminPhone: newBranch.admin_phone || '', adminEmail: newBranch.admin_email || '', isMain: newBranch.is_main_branch
+                };
+                setFormData(newData);
+                setLastSaved(newData);
+                onSave(newBranch);
             }
         } catch (err: any) {
             setError(formatError(err));
@@ -175,7 +227,21 @@ export const BranchForm: React.FC<BranchFormProps> = ({ branch, schoolProfile, o
     const availableCities = useMemo(() => formData.state ? citiesByState[formData.state] || [] : [], [formData.state]);
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-16">
+        <form onSubmit={handleSubmit} className="relative space-y-16">
+            {readOnly && (
+                <div className="absolute -top-10 right-0 flex items-center gap-2 px-4 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
+                    <ShieldIcon className="w-3 h-3 text-blue-500" />
+                    <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Read-Only Protocol Active</span>
+                </div>
+            )}
+
+            {isSaving && (
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-[3rem] transition-all animate-in fade-in">
+                    <Spinner size="lg" className="text-primary mb-6" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40 animate-pulse">Synchronizing Neural Matrix...</p>
+                </div>
+            )}
+
             {error && (
                 <div className="p-8 rounded-[2rem] border border-red-500/20 bg-red-500/5 text-red-500 text-[11px] font-black uppercase tracking-[0.3em] flex items-center gap-4">
                     <AlertTriangleIcon className="w-5 h-5 shrink-0" />
@@ -249,10 +315,35 @@ export const BranchForm: React.FC<BranchFormProps> = ({ branch, schoolProfile, o
                         <div className="w-8 h-[1px] bg-primary/40" />
                         <p className="text-[11px] font-black uppercase tracking-[0.6em] text-primary">03. Node Administrator</p>
                     </div>
-                    <FloatingLabelInput label="Admin Protocol Name" icon={<ShieldIcon className="w-5 h-5" />} value={formData.adminName} onChange={(e) => setFormData({ ...formData, adminName: e.target.value })} required readOnly={readOnly} />
+                    <FloatingLabelInput
+                        label="Admin Protocol Name"
+                        icon={<ShieldIcon className="w-5 h-5" />}
+                        value={formData.adminName}
+                        onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
+                        required
+                        readOnly={readOnly}
+                        syncStatus={getSyncStatus('adminName')}
+                    />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                        <FloatingLabelInput label="Comms Channel (Phone)" icon={<div className="font-mono text-[10px] text-white opacity-20">+91</div>} value={formData.adminPhone} onChange={(e) => setFormData({ ...formData, adminPhone: e.target.value })} required readOnly={readOnly} />
-                        <FloatingLabelInput label="Secure Signal (Email)" icon={<GlobeIcon className="w-5 h-5 opacity-20" />} value={formData.adminEmail} onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })} type="email" required readOnly={readOnly} />
+                        <FloatingLabelInput
+                            label="Comms Channel (Phone)"
+                            icon={<div className="font-mono text-[10px] text-white opacity-20">+91</div>}
+                            value={formData.adminPhone}
+                            onChange={(e) => setFormData({ ...formData, adminPhone: e.target.value })}
+                            required
+                            readOnly={readOnly}
+                            syncStatus={getSyncStatus('adminPhone')}
+                        />
+                        <FloatingLabelInput
+                            label="Secure Signal (Email)"
+                            icon={<GlobeIcon className="w-5 h-5 opacity-20" />}
+                            value={formData.adminEmail}
+                            onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
+                            type="email"
+                            required
+                            readOnly={readOnly}
+                            syncStatus={getSyncStatus('adminEmail')}
+                        />
                     </div>
                 </div>
 
