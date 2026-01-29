@@ -131,7 +131,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
         }
     }
 
-    const handleJoinBranch = async (e: React.MouseEvent | React.KeyboardEvent) => {
+    const handleJoinBranch = async (e?: React.SyntheticEvent) => {
         if (e && e.preventDefault) e.preventDefault();
 
         // Sanitation: Remove spaces, hyphens, and any non-alphanumeric chars
@@ -322,6 +322,11 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                 </motion.div>
                             ) : (
                                 <>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-1px bg-indigo-500/30" />
+                                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em]">Satellite Node Protocol</span>
+                                        <div className="w-10 h-1px bg-indigo-500/30" />
+                                    </div>
                                     <p className="text-white/30 max-w-xs mx-auto text-sm font-medium leading-relaxed mb-10">
                                         Enter your unique <strong className="text-primary/60 italic">Branch Access Key</strong> to synchronize with an established network.
                                     </p>
@@ -387,7 +392,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                                 <span className="text-[9px] font-black uppercase tracking-[0.5em]">Identity Handshake Protocol</span>
                                             </div>
                                         </div>
-                                    </div>
+                                    </form>
                                 </>
                             )}
                         </div>
