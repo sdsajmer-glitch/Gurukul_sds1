@@ -49,10 +49,25 @@ const BranchCard: React.FC<{
 
     const isLinked = handshakeStep === 'VERIFIED';
 
-    const handleInitiateSync = (e: React.MouseEvent) => {
+    const handleGenerateKey = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setHandshakeStep('KEY_READY');
+    };
+
+    const handleFinalizeVerification = (e: React.MouseEvent) => {
         e.stopPropagation();
         setHandshakeStep('SYNCHRONIZING');
-        setTimeout(() => setHandshakeStep('VERIFIED'), 2500);
+        // Simulate high-security decryption/verification sequence
+        setTimeout(() => setHandshakeStep('VERIFIED'), 3200);
+    };
+
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (branch.access_key) {
+            navigator.clipboard.writeText(branch.access_key);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     return (
@@ -61,7 +76,7 @@ const BranchCard: React.FC<{
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.8, ease: "easeOut" }}
             className={`
-                relative w-full min-h-[720px] flex flex-col justify-between 
+                relative w-full min-h-[860px] flex flex-col justify-between 
                 p-8 rounded-[32px] overflow-hidden transition-all duration-500
                 border border-white/5 bg-[#0A0A0A] group
                 ${branch.is_main_branch ? 'shadow-[0_0_80px_-20px_rgba(var(--primary),0.3)]' : 'hover:bg-white/[0.02]'}
@@ -145,70 +160,120 @@ const BranchCard: React.FC<{
                     {/* Vault Header */}
                     <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-white/5">
                         <div className="flex flex-row items-center gap-3">
-                            <ShieldCheckIcon className={`w-4 h-4 ${isLinked ? 'text-emerald-500' : 'text-white/20'}`} />
-                            <span className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em]">
-                                ACCESS VAULT
+                            <ShieldCheckIcon className={`w-4 h-4 ${isLinked ? 'text-emerald-500' : 'text-primary animate-pulse'}`} />
+                            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">
+                                ACCESS PROTOCOL VAULT
                             </span>
                         </div>
-                        {isLinked && (
-                            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded">
-                                VERIFIED
-                            </span>
-                        )}
+                        <div className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest ${isLinked ? 'text-emerald-500 bg-emerald-500/10' : 'text-white/20 bg-white/5'}`}>
+                            {isLinked ? 'VERIFIED' : handshakeStep === 'PENDING' ? 'LOCKED' : 'PROVISIONING'}
+                        </div>
                     </div>
 
                     {/* Vault Content Swapper */}
-                    <div className="p-4 min-h-[120px] flex items-center justify-center">
+                    <div className="p-6 min-h-[160px] flex items-center justify-center">
                         <AnimatePresence mode="wait">
                             {handshakeStep === 'PENDING' && (
                                 <motion.div
                                     key="pending"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    className="flex flex-col items-center gap-3"
+                                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
+                                    className="flex flex-col items-center w-full"
                                 >
                                     <button
-                                        onClick={handleInitiateSync}
-                                        className="w-full flex items-center justify-center gap-3 px-8 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest border border-white/5"
+                                        onClick={handleGenerateKey}
+                                        className="h-16 px-8 rounded-2xl bg-primary text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-[0_20px_40px_-10px_rgba(var(--primary),0.3)] hover:shadow-[0_25px_50px_-10px_rgba(var(--primary),0.4)] transition-all w-full flex items-center justify-center gap-3"
                                     >
-                                        <KeyIcon className="w-4 h-4" />
+                                        <KeyIcon className="w-5 h-5" />
                                         Initialize Handshake
                                     </button>
                                 </motion.div>
                             )}
 
-                            {(handshakeStep === 'KEY_READY' || handshakeStep === 'SYNCHRONIZING') && (
+                            {handshakeStep === 'KEY_READY' && (
                                 <motion.div
-                                    key="sync"
+                                    key="key-ready"
                                     initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                                    className="flex flex-col w-full gap-4"
+                                    className="flex flex-col w-full gap-6"
                                 >
-                                    <div className="flex flex-row items-center gap-2 p-3 rounded-xl bg-black/40 border border-white/10 w-full">
-                                        <code className="flex-grow text-center font-mono text-sm text-primary tracking-[0.2em]">
-                                            {revealed ? branch.access_key : '••••-••••'}
-                                        </code>
-                                        <button onClick={() => setRevealed(!revealed)} className="p-2 text-white/20 hover:text-white transition-colors">
-                                            {revealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-                                        </button>
+                                    {/* Key Display Block */}
+                                    <div className="space-y-3">
+                                        <span className="text-[8px] font-black text-white/20 uppercase tracking-widest block text-center">Encrypted Node Access Code</span>
+                                        <div className="flex flex-row items-center gap-2 p-4 rounded-2xl bg-black/60 border border-white/10 w-full shadow-inner ring-1 ring-white/5">
+                                            <code className="flex-grow text-center font-mono text-lg text-primary tracking-[0.4em] font-black">
+                                                {revealed ? branch.access_key : '••••-••••-••••'}
+                                            </code>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={handleCopy} className="p-3 rounded-xl bg-white/5 text-white/40 hover:text-white transition-all relative">
+                                                    <CopyIcon className="w-4 h-4" />
+                                                    {copied && (
+                                                        <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[7px] font-black px-2 py-1 rounded-lg uppercase tracking-widest whitespace-nowrap">COPIED</span>
+                                                    )}
+                                                </button>
+                                                <button onClick={() => setRevealed(!revealed)} className="p-3 rounded-xl bg-white/5 text-white/40 hover:text-white transition-all">
+                                                    {revealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    {/* Operator Guidelines (User Guide) */}
+                                    <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white/[0.03] border border-white/5 text-left">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                            <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">Operator Directive</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="text-[8px] text-white/30 uppercase font-black leading-relaxed tracking-wider">
+                                                1. SECURE THE <span className="text-primary">ACCESS KEY</span> DISPLAYED ABOVE.
+                                            </p>
+                                            <p className="text-[8px] text-white/30 uppercase font-black leading-relaxed tracking-wider">
+                                                2. RELAY CODE TO <span className="text-white/60">{branch.name}</span> ADMINISTRATOR.
+                                            </p>
+                                            <p className="text-[8px] text-white/30 uppercase font-black leading-relaxed tracking-wider">
+                                                3. EXECUTE <span className="text-primary">VERIFICATION PROTOCOL</span> ONCE LINKED.
+                                            </p>
+                                        </div>
+                                    </div>
+
                                     <button
-                                        onClick={handleInitiateSync}
-                                        disabled={handshakeStep === 'SYNCHRONIZING'}
-                                        className="w-full py-3 rounded-xl bg-primary text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-all flex justify-center items-center gap-2"
+                                        onClick={handleFinalizeVerification}
+                                        className="h-14 rounded-2xl bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] hover:bg-white/90 transition-all flex justify-center items-center gap-3 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)]"
                                     >
-                                        {handshakeStep === 'SYNCHRONIZING' && <Spinner size="sm" />}
-                                        {handshakeStep === 'SYNCHRONIZING' ? 'SYNCING...' : 'VERIFY CONNECTION'}
+                                        Verify Node Connection
                                     </button>
+                                </motion.div>
+                            )}
+
+                            {handshakeStep === 'SYNCHRONIZING' && (
+                                <motion.div
+                                    key="syncing"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="flex flex-col items-center gap-6 w-full py-4"
+                                >
+                                    <div className="relative w-24 h-24 flex items-center justify-center">
+                                        <Spinner size="lg" className="text-primary" />
+                                        <ShieldCheckIcon className="absolute w-8 h-8 text-primary opacity-40 animate-pulse" />
+                                    </div>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <span className="text-[12px] font-black text-white uppercase tracking-[0.5em] animate-pulse">Synchronizing Matrix</span>
+                                        <span className="text-[8px] font-mono text-primary uppercase">Validating Handshake Protocol...</span>
+                                    </div>
                                 </motion.div>
                             )}
 
                             {handshakeStep === 'VERIFIED' && (
                                 <motion.div
                                     key="verified"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    className="flex flex-col items-center gap-2"
+                                    initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 1, scale: 1 }}
+                                    className="flex flex-col items-center gap-4 py-4"
                                 >
-                                    <CheckCircleIcon className="w-8 h-8 text-emerald-500 mb-2" />
-                                    <p className="text-[10px] font-medium text-emerald-500/60 uppercase tracking-widest">Secure Link Established</p>
+                                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.3)]">
+                                        <CheckCircleIcon className="w-8 h-8" />
+                                    </div>
+                                    <div className="flex flex-col items-center gap-1">
+                                        <p className="text-lg font-black text-white uppercase tracking-tight">Handshake Secured</p>
+                                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.4em]">Encrypted Link Established</p>
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
