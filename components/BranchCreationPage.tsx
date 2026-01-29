@@ -321,59 +321,78 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const availableCities = useMemo(() => formData.state ? citiesByState[formData.state] || [] : [], [formData.state]);
 
     return (
-        <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12 py-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            {/* --- CUSTOM MODULE HEADER --- */}
-            <div className="flex items-center justify-between mb-16 px-4">
-                <div className="space-y-1">
-                    <h2 className="text-[13px] font-black uppercase tracking-[0.5em] text-white">Configure Node</h2>
-                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-primary/60">Topological Registry Configuration</p>
-                </div>
-                <button
-                    onClick={onBack}
-                    className="w-12 h-12 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/20 hover:text-white hover:border-white/20 transition-all active:scale-95"
-                >
-                    <XIcon className="w-5 h-5" />
-                </button>
+        <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12 py-10 animate-in fade-in slide-in-from-bottom-8 duration-1000 relative">
+            {/* --- REGISTRY TIMELINE: STEP INDICATOR --- */}
+            <div className="flex items-center justify-center gap-12 mb-20">
+                {[
+                    { label: 'Identity Discovery', status: 'complete' },
+                    { label: 'Node Registration', status: 'active' },
+                    { label: 'Network Synchronization', status: 'pending' }
+                ].map((step, i) => (
+                    <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.2, duration: 0.8 }}
+                        className="flex items-center gap-4 group/step"
+                    >
+                        <div className="relative">
+                            <div className={`w-3 h-3 rounded-full transition-all duration-700 ${step.status === 'active' ? 'bg-primary shadow-[0_0_20px_rgba(var(--primary),1)] scale-125' : step.status === 'complete' ? 'bg-emerald-500' : 'bg-white/10'}`} />
+                            {step.status === 'active' && <div className="absolute inset-0 bg-primary animate-ping rounded-full opacity-40" />}
+                        </div>
+                        <span className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors duration-500 ${step.status === 'active' ? 'text-white' : 'text-white/20'}`}>{step.label}</span>
+                        {i < 2 && (
+                            <div className="flex items-center ml-2">
+                                <div className="w-8 h-px bg-white/5 mx-2" />
+                            </div>
+                        )}
+                    </motion.div>
+                ))}
             </div>
 
-            <div className="section-divider opacity-50" />
+            <div className="section-divider opacity-30 !my-10" />
 
             {/* --- HERO SECTION: EDITORIAL STYLE --- */}
-            <div className="text-center space-y-8 mb-16 relative py-8">
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-white/[0.03]" />
-                <div className="relative space-y-4">
-                    <h1 className="premium-headline text-6xl md:text-8xl text-white leading-none tracking-[-0.04em] relative inline-block">
-                        Branch
-                        <span className="absolute -inset-x-8 top-1/2 -translate-y-1/2 text-ghost text-[6rem] md:text-[9rem] whitespace-nowrap pointer-events-none opacity-20">Registry.</span>
-                    </h1>
+            <div className="text-center space-y-12 mb-20 relative py-12">
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-white/[0.02]" />
+                <div className="relative">
+                    <div className="space-y-2 mb-10">
+                        <h1 className="premium-headline text-7xl md:text-9xl text-white leading-none tracking-tight">
+                            Institutional <span className="text-primary italic">Branch</span>
+                        </h1>
+                        <p className="premium-headline text-ghost text-[5rem] md:text-[10rem] opacity-10 leading-none tracking-[-0.05em] -mt-12 select-none">Registry Console</p>
+                    </div>
                     <div className="max-w-xl mx-auto space-y-4">
-                        <p className="text-[12px] font-medium text-white/40 leading-relaxed tracking-wider uppercase">
-                            Start by defining your <span className="text-white">Head Office Node</span>, then synchronize additional satellite campuses.
+                        <p className="text-[14px] font-medium text-white/40 leading-relaxed tracking-wider uppercase">
+                            Define your <span className="text-primary/80">Central Command Node</span> and synchronize global satellite assets to the core institutional matrix.
                         </p>
-                        <div className="flex items-center justify-center gap-4 py-2">
-                            <div className="h-px w-12 bg-white/5" />
-                            <span className="text-[9px] font-black uppercase tracking-[0.5em] text-white/10">Institutional Matrix v2.4</span>
-                            <div className="h-px w-12 bg-white/5" />
+                        <div className="flex items-center justify-center gap-6 py-4">
+                            <div className="h-px flex-grow bg-gradient-to-r from-transparent to-white/5" />
+                            <span className="text-[9px] font-black uppercase tracking-[1em] text-white/10 whitespace-nowrap">Encryption: AES-256-XPN</span>
+                            <div className="h-px flex-grow bg-gradient-to-l from-transparent to-white/5" />
                         </div>
                     </div>
                 </div>
 
                 {/* --- COMMAND PILL --- */}
-                <div className="flex flex-col items-center gap-10">
-                    <div className="flex items-center gap-3 px-6 py-2 rounded-full border border-primary/20 bg-primary/5 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(139,92,246,1)]" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/80">Network Intensity: Active</span>
+                <div className="flex flex-col items-center gap-12">
+                    <div className="flex items-center gap-3 px-6 py-2.5 rounded-full border border-primary/20 bg-primary/5 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
+                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_15px_rgba(var(--primary),1)]" />
+                        <span className="text-[11px] font-black uppercase tracking-[0.4em] text-primary">Global Mesh Status: Operational</span>
                     </div>
 
-                    <div className="inline-flex p-1.5 rounded-[1.5rem] border border-white/5 bg-white/[0.02] backdrop-blur-xl gap-1.5 h-[64px]">
+                    <div className="inline-flex p-1.5 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-3xl gap-1.5 h-[72px] shadow-2xl">
                         <button
                             onClick={() => handleOpenCreate()}
-                            className="btn-secondary-premium border-none bg-transparent hover:bg-white/[0.05] h-full px-8"
+                            className="btn-secondary-premium border-none bg-transparent hover:bg-white/[0.05] h-full px-10 transition-all font-bold opacity-60 hover:opacity-100"
                         >
-                            New Institutional Node
+                            Initialize New Node
                         </button>
-                        <button className="btn-primary-premium h-full px-10">
-                            Synchronize Registry
+                        <button className="btn-primary-premium h-full px-12 group transition-all">
+                            <div className="flex items-center gap-4">
+                                <span>Synchronize Mesh</span>
+                                <SparklesIcon className="w-4 h-4 opacity-50 group-hover:rotate-12 transition-transform" />
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -404,21 +423,25 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 <div className="scanline-subtle" />
 
                                 {/* Status Header Pill */}
-                                <div className="mb-12">
+                                <div className="mb-10 w-full flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-px bg-white/10" />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20">Node #{idx + 1}</span>
+                                    </div>
                                     {branch.is_main_branch ? (
-                                        <div className="py-3 px-8 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-3xl flex items-center justify-center gap-4 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
-                                            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]" />
+                                        <div className="py-2.5 px-8 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-3xl flex items-center justify-center gap-4 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,1)]" />
                                             <div className="text-left">
-                                                <p className="text-[12px] font-black text-emerald-500 uppercase tracking-[0.4em] leading-none">Central Command</p>
-                                                <p className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.1em] mt-1">Global Master Hub</p>
+                                                <p className="text-[11px] font-black text-emerald-500 uppercase tracking-[0.4em] leading-none">Central Command</p>
+                                                <p className="text-[7px] font-black text-emerald-500/30 uppercase tracking-[0.1em] mt-1">Master Mesh Sync: Active</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="py-3 px-8 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl flex items-center justify-center gap-4">
-                                            <div className="w-3 h-3 rounded-full bg-white/20" />
+                                        <div className="py-2.5 px-8 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl flex items-center justify-center gap-4">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-white/20" />
                                             <div className="text-left">
-                                                <p className="text-[12px] font-black text-white/30 uppercase tracking-[0.4em] leading-none">Satellite Node</p>
-                                                <p className="text-[8px] font-black text-white/10 uppercase tracking-[0.1em] mt-1">Active Campus Registry</p>
+                                                <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.4em] leading-none">Satellite Node</p>
+                                                <p className="text-[7px] font-black text-white/10 uppercase tracking-[0.1em] mt-1">Local Registry Peer</p>
                                             </div>
                                         </div>
                                     )}
@@ -453,32 +476,39 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                     <span className="text-[11px] font-black uppercase tracking-[1em] whitespace-nowrap">Active Matrix</span>
                                 </div>
 
-                                {/* Monolithic Hash Vault */}
-                                <div className="w-full max-w-4xl mt-auto py-10">
-                                    <div className="bg-[#050608]/80 rounded-[5rem] border border-white/5 p-16 relative overflow-hidden group/vault hover:border-primary/40 transition-all duration-700 shadow-[inset_0_40px_100px_rgba(0,0,0,1)]">
-                                        <div className="absolute top-10 left-10 text-[8px] font-mono text-white/5 uppercase tracking-[0.5em] flex flex-col gap-1.5 opacity-40">
-                                            <span>Encryption: AES-256-XPN</span>
-                                            <span>Protocol: Institutional_V4</span>
-                                        </div>
-                                        <div className="flex items-center justify-center gap-8 mb-12 scale-100 md:scale-110">
-                                            <span className="text-white/5 text-[60px] font-black font-mono leading-none">#</span>
-                                            <code className="text-[50px] md:text-[70px] font-mono font-black text-primary tracking-[0.1em] group-hover:text-white transition-colors duration-1000 drop-shadow-[0_0_40px_rgba(var(--primary),0.6)]">
-                                                {branch.access_key}
-                                            </code>
+                                {/* Access Ledger: Monolithic Readout */}
+                                <div className="w-full max-w-4xl mt-auto py-8">
+                                    <div className="enterprise-glass rounded-3xl p-12 relative overflow-hidden group/vault hover:border-primary/40 transition-all duration-700 shadow-2xl bg-[#000000]/60">
+                                        <div className="absolute top-8 left-8 flex items-center gap-4 opacity-20">
+                                            <ShieldIcon className="w-4 h-4 text-primary" />
+                                            <span className="text-[8px] font-mono text-white uppercase tracking-[0.3em]">SECURE ACCESS LEDGER // PROTOCOL V4</span>
                                         </div>
 
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigator.clipboard.writeText(branch.access_key || '');
-                                                setCopiedBranchId(branch.id);
-                                                setTimeout(() => setCopiedBranchId(null), 2000);
-                                            }}
-                                            className="btn-primary-premium h-[64px] px-12 text-[12px] tracking-[0.4em] w-full max-w-lg mx-auto block group-hover:scale-105"
-                                        >
-                                            {copiedBranchId === branch.id ? 'Core Captured' : 'Secure Protocol Capture'}
-                                        </button>
-                                        <div className="absolute inset-0 scanline-subtle opacity-[0.05]" />
+                                        <div className="flex flex-col items-center justify-center py-6">
+                                            <div className="flex items-center justify-center gap-8 mb-10 group-hover:scale-105 transition-transform duration-1000">
+                                                <span className="text-primary/20 text-[40px] md:text-[60px] font-black font-mono leading-none">#</span>
+                                                <code className="text-[40px] md:text-[80px] font-mono font-black text-white tracking-[0.1em] drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                                                    {branch.access_key}
+                                                </code>
+                                            </div>
+
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigator.clipboard.writeText(branch.access_key || '');
+                                                    setCopiedBranchId(branch.id);
+                                                    setTimeout(() => setCopiedBranchId(null), 2000);
+                                                }}
+                                                className="w-full max-w-sm h-14 rounded-2xl bg-white/5 border border-white/10 hover:bg-primary hover:border-primary hover:text-white transition-all text-[#8B5CF6] text-[10px] font-black uppercase tracking-[0.4em] flex items-center justify-center gap-4 group/btn"
+                                            >
+                                                {copiedBranchId === branch.id ? (
+                                                    <><CheckCircleIcon className="w-4 h-4" /> LEDGER CAPTURED</>
+                                                ) : (
+                                                    <><HashIcon className="w-4 h-4 opacity-40 group-hover/btn:rotate-12 transition-transform" /> EXTRACT ACCESS TOKEN</>
+                                                )}
+                                            </button>
+                                        </div>
+                                        <div className="scanline-subtle opacity-5" />
                                     </div>
                                 </div>
 
