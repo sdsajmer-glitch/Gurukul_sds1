@@ -360,7 +360,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                         <h1 className="premium-headline text-6xl md:text-8xl text-white leading-none tracking-tight">
                             Institutional <span className="text-primary italic">Branch</span>
                         </h1>
-                        <p className="premium-headline text-ghost text-[4rem] md:text-[10rem] opacity-[0.05] leading-none tracking-[-0.05em] -mt-6 md:-mt-12 select-none uppercase">Registry Console</p>
+                        <p className="premium-headline text-ghost text-[2.5rem] md:text-[6.5rem] opacity-[0.03] leading-none tracking-[-0.05em] -mt-4 md:-mt-8 select-none uppercase">Registry Console</p>
                     </div>
                     <div className="max-w-2xl mx-auto space-y-6">
                         <p className="text-[14px] md:text-[18px] font-medium text-white/40 leading-relaxed tracking-[0.1em] uppercase">
@@ -485,9 +485,9 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                         </div>
 
                                         <div className="flex flex-col items-center justify-center py-6">
-                                            <div className="flex items-center justify-center gap-8 mb-8 group-hover:scale-105 transition-transform duration-1000">
-                                                <span className="text-primary/20 text-[40px] md:text-[60px] font-black font-mono leading-none">#</span>
-                                                <code className="text-[40px] md:text-[80px] font-mono font-black text-white tracking-[0.1em] drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                                            <div className="flex items-center justify-center gap-6 mb-8 group-hover:scale-110 transition-transform duration-1000">
+                                                <span className="text-primary/20 text-[32px] md:text-[48px] font-black font-mono leading-none">#</span>
+                                                <code className="text-[30px] md:text-[56px] font-mono font-black text-white tracking-[0.15em] drop-shadow-[0_0_20px_rgba(255,255,255,0.03)] selection:bg-white/10 selection:text-primary">
                                                     {branch.access_key}
                                                 </code>
                                             </div>
@@ -541,7 +541,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 <PlusIcon className="w-12 h-12 text-white/5 group-hover:text-primary transition-colors" />
                             </div>
                             <div className="space-y-8 relative z-10 w-full text-center">
-                                <h4 className="premium-headline text-6xl md:text-7xl italic text-white/5 group-hover:text-white/20 transition-all tracking-[-0.02em] leading-tight">Topology<br />Expansion</h4>
+                                <h4 className="premium-headline text-4xl md:text-5xl italic text-white/5 group-hover:text-white/20 transition-all tracking-[-0.02em] leading-tight">Topology<br />Expansion</h4>
                                 <div className="flex items-center justify-center gap-6 opacity-20 group-hover:opacity-40 transition-all">
                                     <div className="h-px w-20 bg-white/20" />
                                     <p className="text-[12px] font-black uppercase tracking-[1em] text-white whitespace-nowrap">Initialize Next Node</p>
@@ -568,8 +568,10 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 <div key={i} className="enterprise-glass rounded-[3rem] p-8 md:p-10 space-y-8 transition-all hover:scale-[1.02] hover:border-primary/40 group relative overflow-hidden min-h-[320px] flex flex-col justify-between">
                                     <div className="space-y-8">
                                         <div className="flex items-center justify-between">
-                                            <item.icon className="w-10 h-10 text-white/10 group-hover:text-primary transition-colors" />
-                                            <span className={`text-[10px] font-black uppercase px-4 py-1.5 rounded-full border border-white/5 bg-white/5 text-white/40 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-colors`}>{item.badge}</span>
+                                            <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+                                                <item.icon className="w-8 h-8 text-white/10 group-hover:text-primary transition-colors" />
+                                            </div>
+                                            <span className={`text-[9px] font-black uppercase px-4 py-1.5 rounded-full border border-white/5 bg-white/5 text-white/40 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-colors`}>{item.badge}</span>
                                         </div>
                                         <div className="space-y-2">
                                             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">{item.label}</p>
