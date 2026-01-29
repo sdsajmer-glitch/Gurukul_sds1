@@ -326,18 +326,14 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                         Enter your unique <strong className="text-primary/60 italic">Branch Access Key</strong> to synchronize with an established network.
                                     </p>
 
-                                    <div className="w-full max-w-xs space-y-6">
+                                    <form onSubmit={handleJoinBranch} className="w-full max-w-xs space-y-6 relative z-[600]">
                                         <div className="relative group/input">
                                             <input
                                                 type="text"
                                                 value={invitationCode}
                                                 onChange={e => setInvitationCode(e.target.value.toUpperCase())}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter' && invitationCode.replace(/[\s-]/g, '').length >= 6 && !joinLoading) {
-                                                        handleJoinBranch(e);
-                                                    }
-                                                }}
                                                 disabled={joinLoading}
+                                                autoFocus
                                                 placeholder="NODE ACCESS KEY (Format: XXXX-XXXX)"
                                                 className="w-full h-20 bg-[#050608] border-2 border-white/5 rounded-2xl text-center font-mono font-black tracking-[0.4em] text-white focus:border-primary/50 focus:ring-8 focus:ring-primary/5 outline-none transition-all disabled:opacity-40 placeholder:text-white/10 placeholder:tracking-normal placeholder:font-sans placeholder:text-[10px]"
                                             />
@@ -345,23 +341,28 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                         </div>
 
                                         <motion.button
-                                            whileHover={!(joinLoading || invitationCode.replace(/[\s-]/g, '').length < 6) ? { scale: 1.02, y: -2 } : {}}
-                                            whileTap={!(joinLoading || invitationCode.replace(/[\s-]/g, '').length < 6) ? { scale: 0.98 } : {}}
-                                            onClick={(e) => handleJoinBranch(e)}
-                                            disabled={joinLoading || invitationCode.replace(/[\s-]/g, '').length < 6}
+                                            type="submit"
+                                            whileHover={!(joinLoading || invitationCode.replace(/[^A-Z0-9]/g, '').length < 6) ? { scale: 1.02, y: -2 } : {}}
+                                            whileTap={!(joinLoading || invitationCode.replace(/[^A-Z0-9]/g, '').length < 6) ? { scale: 0.98 } : {}}
+                                            disabled={joinLoading || invitationCode.replace(/[^A-Z0-9]/g, '').length < 6}
                                             className={`
-                                                w-full h-18 rounded-2xl font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 border shadow-2xl
-                                                ${(joinLoading || invitationCode.replace(/[\s-]/g, '').length < 6)
+                                                        w-full h-20 rounded-2xl font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 border shadow-2xl relative z-20
+                                                        ${(joinLoading || invitationCode.replace(/[^A-Z0-9]/g, '').length < 6)
                                                     ? 'bg-white/[0.02] border-white/5 text-white/10 cursor-not-allowed opacity-40'
-                                                    : 'bg-primary border-primary/20 text-white cursor-pointer hover:shadow-primary/20 hover:bg-primary/90'
+                                                    : 'bg-primary border-primary/20 text-white cursor-pointer hover:shadow-primary/30 hover:bg-primary/90 shadow-[0_20px_40px_-10px_rgba(var(--primary),0.3)]'
                                                 }
-                                            `}
+                                                    `}
                                         >
-                                            {joinLoading ? <Spinner size="sm" className="text-white" /> : (
+                                            {joinLoading ? (
+                                                <div className="flex items-center gap-3">
+                                                    <Spinner size="sm" className="text-white" />
+                                                    <span className="animate-pulse">Syncing...</span>
+                                                </div>
+                                            ) : (
                                                 <>
                                                     Verify & Access Node
-                                                    <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
-                                                        <ChevronRightIcon className="w-3 h-3" />
+                                                    <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all">
+                                                        <ChevronRightIcon className="w-4 h-4" />
                                                     </div>
                                                 </>
                                             )}
