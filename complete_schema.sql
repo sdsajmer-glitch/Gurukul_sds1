@@ -1436,12 +1436,29 @@ END;
 $$;
 
 
--- RPC: Get School Branches
+-- RPC: Get School Branches (Secure Isolation v9.6)
 CREATE OR REPLACE FUNCTION public.get_school_branches()
 RETURNS SETOF public.school_branches LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_user_email TEXT;
 BEGIN
+    v_user_email := (SELECT email FROM auth.users WHERE id = auth.uid());
+
+    -- Audit Governance: Log every registry access attempt
+    -- This provides an immutable trail for institutional monitoring
+    INSERT INTO public.handshake_audit_logs (admin_user_id, target_email, event_type, details)
+    VALUES (auth.uid(), v_user_email, 'REGISTRY_VIEW', jsonb_build_object('context', 'Network Registry Tab'));
+
     RETURN QUERY SELECT * FROM public.school_branches 
-    WHERE school_id = auth.uid()
+    WHERE 
+        -- 1. Head Office Access: See all nodes they created
+        school_id = auth.uid() 
+        OR 
+        -- 2. Branch Admin Access: See ONLY the node assigned to them
+        admin_user_id = auth.uid() 
+        OR 
+        -- 3. Identity Match (Strict): See node where email matches (Fallback for new links)
+        LOWER(admin_email) = LOWER(v_user_email)
     ORDER BY is_main_branch DESC, created_at ASC;
 END;
 $$;

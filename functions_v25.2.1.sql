@@ -689,6 +689,14 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'school_branches' AND column_name = 'admin_phone') THEN
         ALTER TABLE public.school_branches ADD COLUMN admin_phone TEXT;
     END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'school_branches' AND column_name = 'admin_email') THEN
+        ALTER TABLE public.school_branches ADD COLUMN admin_email TEXT;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'school_branches' AND column_name = 'school_id') THEN
+        ALTER TABLE public.school_branches ADD COLUMN school_id UUID REFERENCES public.school_admin_profiles(user_id) ON DELETE CASCADE;
+    END IF;
 END $$;
 
 -- RPC: Initialize School Admin
@@ -858,6 +866,20 @@ BEGIN
     ALTER TABLE public.school_branches ALTER COLUMN status SET DEFAULT 'Pending';
 END $$;
 
+-- Node Isolation Policies (v9.6)
+ALTER TABLE public.school_branches ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Head Office Master Access" ON public.school_branches;
+CREATE POLICY "Head Office Master Access" ON public.school_branches
+FOR ALL USING (school_id = auth.uid());
+
+DROP POLICY IF EXISTS "Branch Admin Isolation" ON public.school_branches;
+CREATE POLICY "Branch Admin Isolation" ON public.school_branches
+FOR SELECT USING (
+    admin_user_id = auth.uid() 
+    OR LOWER(admin_email) = (SELECT LOWER(email) FROM auth.users WHERE id = auth.uid())
+);
+
 -- Handshake Audit Log for Compliance & Governance
 CREATE TABLE IF NOT EXISTS public.handshake_audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -990,7 +1012,7 @@ BEGIN
 END;
 $$;
 
--- RPC: Get Network Registry Metrics (Telemetry)
+-- RPC: Get Network Registry Metrics (Telemetry Isolation v9.6)
 DROP FUNCTION IF EXISTS public.get_network_registry_metrics() CASCADE;
 CREATE OR REPLACE FUNCTION public.get_network_registry_metrics()
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -999,12 +1021,36 @@ DECLARE
     v_verified_links INT;
     v_online_nodes INT;
     v_protocol_health INT;
+    v_is_head_office BOOLEAN;
+    v_user_email TEXT;
 BEGIN
-    SELECT COUNT(*) INTO v_total_nodes FROM public.school_branches;
-    SELECT COUNT(*) INTO v_verified_links FROM public.school_branches WHERE status IN ('Verified', 'Online', 'Synced');
-    SELECT COUNT(*) INTO v_online_nodes FROM public.branch_handshake_sessions WHERE status = 'Online' AND last_ping > NOW() - INTERVAL '5 minutes';
+    v_user_email := (SELECT email FROM auth.users WHERE id = auth.uid());
     
-    -- Health calc: Online / Total ratio
+    -- Detect Authority Level
+    -- Head Office admins own the school record. Branch admins are associated via status/admin_user_id.
+    SELECT EXISTS (
+        SELECT 1 FROM public.school_admin_profiles WHERE user_id = auth.uid()
+    ) INTO v_is_head_office;
+
+    IF v_is_head_office THEN
+        -- Master View: Reflect Global Network State
+        SELECT COUNT(*) INTO v_total_nodes FROM public.school_branches;
+        SELECT COUNT(*) INTO v_verified_links FROM public.school_branches WHERE status IN ('Verified', 'Online', 'Synced');
+        SELECT COUNT(*) INTO v_online_nodes FROM public.branch_handshake_sessions WHERE status = 'Online' AND last_ping > NOW() - INTERVAL '5 minutes';
+    ELSE
+        -- Isolated View: Reflect strictly the branch's local state
+        SELECT COUNT(*) INTO v_total_nodes FROM public.school_branches 
+        WHERE admin_user_id = auth.uid() OR LOWER(admin_email) = LOWER(v_user_email);
+        
+        SELECT COUNT(*) INTO v_verified_links FROM public.school_branches 
+        WHERE (admin_user_id = auth.uid() OR LOWER(admin_email) = LOWER(v_user_email)) 
+        AND status IN ('Verified', 'Online', 'Synced');
+        
+        SELECT COUNT(*) INTO v_online_nodes FROM public.branch_handshake_sessions 
+        WHERE admin_user_id = auth.uid() AND status = 'Online' AND last_ping > NOW() - INTERVAL '5 minutes';
+    END IF;
+    
+    -- Health calc: Online / Total ratio (Scoped to the view)
     IF v_total_nodes > 0 THEN
         v_protocol_health := (v_online_nodes * 100) / v_total_nodes;
     ELSE
@@ -1016,7 +1062,8 @@ BEGIN
         'verified_links', v_verified_links,
         'online_nodes', v_online_nodes,
         'protocol_health', v_protocol_health,
-        'version', 'v9.5'
+        'version', 'v9.6',
+        'isolation_active', NOT v_is_head_office
     );
 END;
 $$;

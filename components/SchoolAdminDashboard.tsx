@@ -38,7 +38,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
     const [activeComponent, setActiveComponent] = useState('Dashboard');
     const [schoolData, setSchoolData] = useState<SchoolAdminProfileData | null>(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    
+
     const [branches, setBranches] = useState<SchoolBranch[]>([]);
     const [currentBranchId, setCurrentBranchId] = useState<number | null>(null);
     const [loadingData, setLoadingData] = useState(true);
@@ -81,29 +81,18 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
             if (branchRes.error) throw branchRes.error;
 
             setSchoolData(schoolRes.data);
-            let rawBranches = (branchRes.data || []) as SchoolBranch[];
+            const rawBranches = (branchRes.data || []) as SchoolBranch[];
             const profileBranchId = latestProfileRes.data?.branch_id;
 
-            if (isBranchAdmin) {
-                const { data: identityMatch } = await supabase
-                    .from('school_branches')
-                    .select('*')
-                    .or(`admin_email.ilike.${profile.email},id.eq.${profileBranchId || -1}`)
-                    .maybeSingle();
-                
-                if (identityMatch && !rawBranches.some(b => b.id === identityMatch.id)) {
-                    rawBranches = [identityMatch, ...rawBranches];
-                }
-            }
-
-            const sortedBranches = [...rawBranches].sort((a, b) => 
+            const sortedBranches = [...rawBranches].sort((a, b) =>
                 (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0)
             );
-            
+
             setBranches(sortedBranches);
 
             let targetId: number | null = null;
             if (isBranchAdmin) {
+                // For branch admins, the RPC already filtered to strictly their branch
                 targetId = profileBranchId || sortedBranches[0]?.id || null;
             } else if (sortedBranches.length > 0) {
                 const mainBranch = sortedBranches.find(b => b.is_main_branch);

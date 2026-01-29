@@ -512,6 +512,23 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                     />
                 ))}
 
+                {!isHeadOfficeAdmin && branches.length === 0 && (
+                    <div className="col-span-full py-32 flex flex-col items-center justify-center gap-8 rounded-[40px] border border-white/5 bg-white/[0.01] backdrop-blur-sm">
+                        <div className="w-24 h-24 rounded-full bg-amber-500/5 border border-amber-500/10 flex items-center justify-center">
+                            <ShieldCheckIcon className="w-10 h-10 text-amber-500/20" />
+                        </div>
+                        <div className="flex flex-col items-center gap-3 text-center">
+                            <p className="text-2xl font-serif text-white/40 italic tracking-tight">No branch registered for this account.</p>
+                            <div className="flex flex-col gap-1">
+                                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/10">Identity Match Failed</p>
+                                <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-white/5 leading-relaxed max-w-md">
+                                    Please contact Head Office to initialize your node access and establish a secure neural link with the registry.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {isHeadOfficeAdmin && (
                     <motion.button
                         whileHover={{ scale: 0.99, borderColor: 'rgba(255,255,255,0.1)' }}
