@@ -404,116 +404,134 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             ) : error ? (
                 <DiagnosticErrorConsole message={error} onClear={() => setError(null)} />
             ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-20 px-10 mb-32">
+                <div className="grid grid-cols-1 gap-24 px-10 mb-40 max-w-[1400px] mx-auto">
                     {branches.map((branch, idx) => (
                         <motion.div
                             key={branch.id}
-                            initial={{ opacity: 0, y: 30 }}
+                            initial={{ opacity: 0, y: 40 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.1, duration: 0.8 }}
-                            className="group relative bg-[#0a0b0f] border border-white/5 rounded-[5rem] p-16 flex flex-col items-center text-center transition-all duration-700 hover:border-primary/40 hover:bg-[#0e1016] shadow-[0_64px_128px_-32px_rgba(0,0,0,0.6)] min-h-[840px] w-full relative overflow-hidden"
+                            transition={{ delay: idx * 0.1, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                            className="group relative bg-[#0a0b0f] border border-white/5 rounded-[6rem] p-24 md:p-32 flex flex-col items-center text-center transition-all duration-1000 hover:border-primary/40 hover:bg-[#0e1016] shadow-[0_80px_160px_-40px_rgba(0,0,0,0.8)] min-h-[900px] w-full overflow-hidden"
                         >
-                            {/* Ambient Glow Artifacts */}
-                            <div className="absolute -top-24 -left-24 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none group-hover:bg-primary/10 transition-all duration-700" />
-                            <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-700" />
+                            {/* Massive Atmospheric Background Artifacts */}
+                            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/[0.03] rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2 pointer-events-none group-hover:bg-primary/5 transition-all duration-1000" />
+                            <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-emerald-500/[0.02] rounded-full blur-[150px] translate-x-1/2 translate-y-1/2 pointer-events-none group-hover:bg-emerald-500/[0.05] transition-all duration-1000" />
 
-                            {/* Branch Icon Node */}
-                            <div className="relative mb-16">
-                                <div className="absolute inset-0 bg-primary/20 blur-[30px] rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                                <div className="w-32 h-32 rounded-full bg-primary/[0.05] border border-white/5 flex items-center justify-center text-primary shadow-[inset_0_0_60px_rgba(var(--primary),0.1)] group-hover:scale-110 group-hover:border-primary/20 transition-all duration-700 relative z-10">
-                                    <SchoolIcon className="w-14 h-14" />
+                            {/* Ultra-Large Icon Node */}
+                            <div className="relative mb-20 mt-10">
+                                <div className="absolute inset-0 bg-primary/30 blur-[60px] rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                                <div className="w-40 h-40 rounded-full bg-primary/[0.05] border border-white/10 flex items-center justify-center text-primary shadow-[inset_0_0_80px_rgba(var(--primary),0.1)] group-hover:scale-110 group-hover:border-primary/30 transition-all duration-1000 relative z-10 ring-1 ring-white/5">
+                                    <SchoolIcon className="w-20 h-20" />
                                 </div>
                             </div>
 
-                            <div className="space-y-6 mb-16 relative z-10">
-                                <h3 className="text-6xl font-serif font-black text-white tracking-tighter uppercase leading-none drop-shadow-2xl">{branch.name}</h3>
-                                <div className="inline-flex items-center gap-4 px-8 py-3 rounded-full bg-white/[0.03] border border-white/5 backdrop-blur-md">
-                                    <LocationIcon className="w-4 h-4 text-white/30" />
-                                    <span className="text-[12px] font-black text-white/40 uppercase tracking-[0.3em] font-mono">{branch.city} + {branch.state}</span>
+                            <div className="space-y-8 mb-20 relative z-10 w-full">
+                                <h3 className="text-7xl md:text-8xl font-serif font-black text-white tracking-tighter uppercase leading-none drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">{branch.name}</h3>
+                                <div className="inline-flex items-center gap-6 px-12 py-4 rounded-full bg-white/[0.02] border border-white/5 backdrop-blur-2xl shadow-2xl">
+                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                    <LocationIcon className="w-5 h-5 text-white/40" />
+                                    <span className="text-[14px] font-black text-white/50 uppercase tracking-[0.5em] font-mono">{branch.city} · {branch.state} · {branch.country}</span>
                                 </div>
                             </div>
 
-                            {/* Status Badge: Enhanced UX */}
-                            <div className="mb-20 w-full max-w-sm">
+                            {/* Monolithic Status Architecture */}
+                            <div className="mb-24 w-full max-w-2xl px-10">
                                 {branch.is_main_branch ? (
                                     <div className="relative group/badge">
-                                        <div className="absolute inset-0 bg-emerald-500/20 blur-[20px] rounded-full opacity-0 group-hover/badge:opacity-100 transition-opacity" />
-                                        <div className="relative py-6 px-10 rounded-[3rem] border border-emerald-500/30 bg-emerald-500/5 flex items-center justify-center gap-6 shadow-[inset_0_0_30px_rgba(16,185,129,0.1)] overflow-hidden">
-                                            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_20px_rgba(16,185,129,1)]" />
+                                        <div className="absolute inset-0 bg-emerald-500/20 blur-[40px] rounded-full opacity-0 group-hover/badge:opacity-100 transition-opacity duration-1000" />
+                                        <div className="relative py-8 px-16 rounded-[4rem] border border-emerald-500/30 bg-emerald-500/[0.03] flex items-center justify-center gap-10 shadow-[inset_0_0_60px_rgba(16,185,129,0.05)] overflow-hidden backdrop-blur-3xl">
+                                            <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_30px_rgba(16,185,129,1)]" />
                                             <div className="flex flex-col items-center">
-                                                <span className="text-[13px] font-black text-emerald-500 uppercase tracking-[0.6em]">Central Command</span>
-                                                <span className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.2em] mt-1">Master Synchronization Hub</span>
+                                                <span className="text-[18px] font-black text-emerald-500 uppercase tracking-[0.8em] leading-none">Central Command</span>
+                                                <span className="text-[9px] font-black text-emerald-500/40 uppercase tracking-[0.4em] mt-3">Global Matrix Synchronization Root</span>
                                             </div>
-                                            <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+                                            <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="py-6 px-10 rounded-[3rem] border border-white/10 bg-white/5 flex items-center justify-center gap-6">
-                                        <div className="w-3 h-3 rounded-full bg-white/20" />
-                                        <span className="text-[13px] font-black text-white/30 uppercase tracking-[0.6em]">Satellite Node</span>
+                                    <div className="py-8 px-16 rounded-[4rem] border border-white/10 bg-white/[0.02] flex items-center justify-center gap-10 backdrop-blur-xl">
+                                        <div className="w-4 h-4 rounded-full bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)]" />
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-[18px] font-black text-white/30 uppercase tracking-[0.8em]">Satellite Node</span>
+                                            <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em] mt-3">Active Topological Sub-Registry</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Telemetry Strip */}
-                            <div className="flex items-center justify-center gap-10 text-white/10 mb-20 w-full px-12">
-                                <span className="text-[10px] font-black uppercase tracking-[0.5em] whitespace-nowrap">Sync Sequence</span>
-                                <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-                                <span className="text-[11px] font-mono font-black tracking-[0.3em] text-white/20">{new Date(branch.created_at).getFullYear()}</span>
+                            {/* Deep Telemetry Sequence */}
+                            <div className="flex items-center justify-center gap-12 text-white/10 mb-24 w-full max-w-4xl px-20">
+                                <span className="text-[11px] font-black uppercase tracking-[0.8em] text-white/20 whitespace-nowrap">Registry Sequence</span>
+                                <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                                <div className="flex items-center gap-4">
+                                    <div className="w-2 h-2 rounded-full bg-primary/40 animate-ping" />
+                                    <span className="text-[12px] font-mono font-black tracking-[0.5em] text-primary/60">{new Date(branch.created_at).getFullYear()}</span>
+                                </div>
+                                <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                                <span className="text-[11px] font-black uppercase tracking-[0.8em] text-white/20 whitespace-nowrap">Active Matrix</span>
                             </div>
 
-                            {/* Alphanumeric ID Display: Cinematic Code Vault */}
-                            <div className="w-full mt-auto mb-10 group/vault">
-                                <div className="bg-[#050608] rounded-[4rem] border border-white/5 relative overflow-hidden hover:border-primary/40 transition-all duration-700 shadow-[inset_0_40px_80px_rgba(0,0,0,0.8)] flex flex-col items-center py-16 px-10">
-                                    <div className="flex items-center gap-6 mb-12">
-                                        <span className="text-white/10 text-[64px] font-black font-mono leading-none">#</span>
-                                        <code className="text-[64px] font-mono font-black text-primary tracking-[0.2em] group-hover:text-white transition-colors duration-700 drop-shadow-[0_0_40px_rgba(var(--primary),0.4)]">
+                            {/* Expansive Alphanumeric Vault */}
+                            <div className="w-full mt-auto mb-10 group/vault max-w-3xl">
+                                <div className="bg-[#050608] rounded-[5rem] border border-white/5 relative overflow-hidden hover:border-primary/40 transition-all duration-1000 shadow-[inset_0_60px_120px_rgba(0,0,0,0.9)] flex flex-col items-center py-20 px-12">
+                                    <div className="absolute inset-0 bg-primary/[0.01] pointer-events-none" />
+                                    <div className="flex items-center gap-10 mb-16 scale-110 md:scale-125">
+                                        <span className="text-white/5 text-[90px] font-black font-mono leading-none flex items-center">
+                                            <span className="text-primary/20">#</span>
+                                        </span>
+                                        <code className="text-[80px] md:text-[100px] font-mono font-black text-primary tracking-[0.2em] group-hover:text-white transition-colors duration-1000 drop-shadow-[0_0_60px_rgba(var(--primary),0.5)]">
                                             {branch.access_key}
                                         </code>
                                     </div>
 
-                                    <button
+                                    <motion.button
+                                        whileHover={{ scale: 1.05, boxShadow: "0 0 80px rgba(139, 92, 246, 0.4)" }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             navigator.clipboard.writeText(branch.access_key || '');
                                             setCopiedBranchId(branch.id);
                                             setTimeout(() => setCopiedBranchId(null), 2000);
                                         }}
-                                        className="relative overflow-hidden group/copy px-12 py-5 bg-primary overflow-hidden rounded-[2rem] text-white text-[10px] font-black uppercase tracking-[0.5em] hover:scale-[1.05] active:scale-95 transition-all duration-500 shadow-[0_24px_48px_-12px_rgba(var(--primary),0.6)]"
+                                        className="relative overflow-hidden group/copy px-16 py-7 bg-primary rounded-[2.5rem] text-white text-[12px] font-black uppercase tracking-[0.6em] transition-all duration-700 shadow-[0_32px_64px_-16px_rgba(var(--primary),0.6)]"
                                     >
-                                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/copy:translate-y-0 transition-transform duration-500" />
-                                        <span className="relative z-10">{copiedBranchId === branch.id ? 'Access Key Synchronized' : 'Secure Protocol Copy'}</span>
-                                    </button>
+                                        <div className="absolute inset-x-0 bottom-0 h-full bg-white/20 translate-y-full group-hover/copy:translate-y-0 transition-transform duration-700" />
+                                        <span className="relative z-10">{copiedBranchId === branch.id ? 'PROTOCOL SYNCHRONIZED' : 'SECURE REGISTRY CAPTURE'}</span>
+                                    </motion.button>
 
-                                    {/* Scanline Overlay */}
-                                    <div className="absolute inset-0 scanline opacity-[0.03] pointer-events-none" />
+                                    {/* Scanline & Ghost Telemetry Overlays */}
+                                    <div className="absolute inset-0 scanline opacity-[0.05] pointer-events-none" />
+                                    <div className="absolute top-10 left-10 text-[8px] font-mono text-white/5 uppercase tracking-[0.5em] flex flex-col items-start gap-1">
+                                        <span>ENC: AES-256</span>
+                                        <span>PROTOCOL: V2.4</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Hover Actions: Premium Surface */}
-                            <div className="absolute top-12 right-12 flex flex-col gap-6 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-10 group-hover:translate-x-0">
-                                <button onClick={() => handleOpenEdit(branch)} className="w-16 h-16 rounded-3xl bg-white/5 hover:bg-primary/20 hover:text-primary border border-white/10 flex items-center justify-center text-white/20 transition-all shadow-2xl backdrop-blur-xl transform-gpu"><EditIcon className="w-8 h-8" /></button>
-                                {!branch.is_main_branch && <button onClick={() => setDeletingBranch(branch)} className="w-16 h-16 rounded-3xl bg-red-500/5 hover:bg-red-500 hover:text-white border border-red-500/10 flex items-center justify-center text-red-500/40 transition-all shadow-2xl backdrop-blur-xl transform-gpu"><XIcon className="w-8 h-8" /></button>}
+                            {/* Global Action Overlays */}
+                            <div className="absolute top-16 right-16 flex flex-col gap-8 opacity-0 group-hover:opacity-100 transition-all duration-1000 translate-x-20 group-hover:translate-x-0">
+                                <button onClick={() => handleOpenEdit(branch)} className="w-20 h-20 rounded-[2.5rem] bg-white/[0.03] hover:bg-primary/20 hover:text-primary border border-white/10 flex items-center justify-center text-white/30 transition-all shadow-3xl backdrop-blur-3xl transform-gpu hover:scale-110"><EditIcon className="w-10 h-10" /></button>
+                                {!branch.is_main_branch && <button onClick={() => setDeletingBranch(branch)} className="w-20 h-20 rounded-[2.5rem] bg-red-500/[0.03] hover:bg-red-500 hover:text-white border border-red-500/10 flex items-center justify-center text-red-500/40 transition-all shadow-3xl backdrop-blur-3xl transform-gpu hover:scale-110 hover:rotate-90"><XIcon className="w-10 h-10" /></button>}
                             </div>
                         </motion.div>
                     ))}
 
-                    {/* Topology Expansion Placeholder: Expansive View */}
+                    {/* Topology Expansion: Monolithic Placeholder */}
                     <motion.button
-                        whileHover={{ scale: 0.98, y: -4 }}
+                        whileHover={{ scale: 0.99, y: -10 }}
                         onClick={() => handleOpenCreate()}
-                        className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[5rem] p-24 min-h-[840px] w-full group hover:border-primary/40 hover:bg-primary/[0.01] transition-all duration-700 relative overflow-hidden"
+                        className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[6rem] p-32 min-h-[900px] w-full group hover:border-primary/40 hover:bg-primary/[0.01] transition-all duration-1000 relative overflow-hidden"
                     >
-                        <div className="absolute inset-0 bg-primary/[0.01] opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="w-40 h-40 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mb-16 group-hover:scale-110 group-hover:border-primary/20 transition-all duration-700 shadow-inner relative z-10">
-                            <PlusIcon className="w-16 h-16 text-white/5 group-hover:text-primary transition-colors" />
+                        <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                        <div className="w-48 h-48 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mb-20 group-hover:scale-110 group-hover:border-primary/20 transition-all duration-1000 shadow-inner relative z-10 ring-1 ring-white/5">
+                            <PlusIcon className="w-20 h-20 text-white/5 group-hover:text-primary transition-colors" />
                         </div>
-                        <div className="space-y-8 relative z-10">
-                            <h4 className="text-6xl font-serif italic text-white/5 group-hover:text-white/20 transition-colors uppercase tracking-[0.2em] leading-tight">Topology<br />Expansion</h4>
-                            <div className="flex items-center justify-center gap-4 opacity-40">
-                                <div className="w-12 h-px bg-white/10" />
-                                <p className="text-[12px] font-black uppercase tracking-[1em] text-white/10">Initialize Next Node</p>
-                                <div className="w-12 h-px bg-white/10" />
+                        <div className="space-y-10 relative z-10 w-full">
+                            <h4 className="text-7xl md:text-8xl font-serif italic text-white/5 group-hover:text-white/20 transition-colors uppercase tracking-[0.1em] leading-tight">Topology<br />Expansion</h4>
+                            <div className="flex items-center justify-center gap-10 opacity-40 max-w-2xl mx-auto">
+                                <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                                <p className="text-[14px] font-black uppercase tracking-[1.5em] text-white/10 whitespace-nowrap">Initialize Next Node</p>
+                                <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                             </div>
                         </div>
                     </motion.button>
