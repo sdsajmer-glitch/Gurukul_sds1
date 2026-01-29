@@ -321,462 +321,384 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const availableCities = useMemo(() => formData.state ? citiesByState[formData.state] || [] : [], [formData.state]);
 
     return (
-        <div className="w-full max-w-[1600px] mx-auto px-10 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-            {/* Image Header Style */}
-            <div className="flex items-center justify-between py-12 mb-10 border-b border-white/[0.03]">
+        <div className="w-full max-w-[1400px] mx-auto px-6 md:px-12 py-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            {/* --- CUSTOM MODULE HEADER --- */}
+            <div className="flex items-center justify-between mb-16 px-4">
                 <div className="space-y-1">
-                    <span className="text-[12px] font-black uppercase tracking-[0.6em] text-white/90">Configure Node</span>
-                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-primary/60">Topological Registry Configuration</p>
+                    <h2 className="text-[13px] font-black uppercase tracking-[0.5em] text-white">Configure Node</h2>
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-primary/60">Topological Registry Configuration</p>
                 </div>
-                {onBack && (
-                    <button onClick={onBack} className="group flex items-center gap-6 px-8 py-3 rounded-full border border-white/5 hover:border-white/20 hover:bg-white/5 transition-all duration-500">
-                        <ChevronLeftIcon className="w-4 h-4 text-white/20 group-hover:text-white transition-all transform group-hover:-translate-x-1" />
-                        <span className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 group-hover:text-white transition-all">Protocol Return</span>
-                    </button>
-                )}
+                <button
+                    onClick={onBack}
+                    className="w-12 h-12 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/20 hover:text-white hover:border-white/20 transition-all active:scale-95"
+                >
+                    <XIcon className="w-5 h-5" />
+                </button>
             </div>
 
-            {/* Cinematic Hero Section */}
-            <div className="relative text-center mb-32 group pt-20">
-                {/* Ambient Backdrop Logic */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/5 blur-[120px] pointer-events-none" />
+            <div className="section-divider opacity-50" />
 
-                <motion.div
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="relative z-10"
-                >
-                    <div className="relative inline-block">
-                        <h1 className="text-[6rem] md:text-[10rem] font-serif font-black text-white tracking-tighter leading-[0.8] mb-0 relative z-10">
-                            BRANCH
-                        </h1>
-                        <h1 className="text-[6rem] md:text-[10rem] font-serif font-black text-transparent stroke-white/10 tracking-tighter leading-[0.8] absolute top-12 left-0 w-full select-none pointer-events-none" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.1)' }}>
-                            REGISTRY.
-                        </h1>
-                    </div>
-
-                    <div className="max-w-xl mx-auto space-y-8 mt-16">
-                        <p className="text-white/40 text-lg font-serif italic leading-relaxed">
-                            Start by defining your <strong className="text-white/70">Head Office Node</strong>, then synchronize additional satellite campuses to the global network.
+            {/* --- HERO SECTION: EDITORIAL STYLE --- */}
+            <div className="text-center space-y-12 mb-24 relative py-12">
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-white/[0.03]" />
+                <div className="relative space-y-4">
+                    <h1 className="premium-headline text-8xl md:text-[10rem] text-white leading-none tracking-[-0.04em] relative inline-block">
+                        Branch
+                        <span className="absolute -inset-x-12 top-1/2 -translate-y-1/2 text-ghost text-[12rem] whitespace-nowrap pointer-events-none opacity-20">Registry.</span>
+                    </h1>
+                    <div className="max-w-2xl mx-auto space-y-6">
+                        <p className="text-[13px] font-medium text-white/40 leading-relaxed tracking-wider uppercase">
+                            Start by defining your <span className="text-white">Head Office Node</span>, then synchronize additional satellite campuses to the global network.
                         </p>
-
-                        <div className="flex items-center justify-center gap-4">
-                            <div className="h-px w-12 bg-white/5" />
-                            <span className="text-[9px] font-black uppercase tracking-[0.6em] text-white/20">Institutional Matrix v2.4</span>
-                            <div className="h-px w-12 bg-white/5" />
+                        <div className="flex items-center justify-center gap-4 py-4">
+                            <div className="h-px w-16 bg-white/5" />
+                            <span className="text-[10px] font-black uppercase tracking-[1em] text-white/10">Institutional Matrix v2.4</span>
+                            <div className="h-px w-16 bg-white/5" />
                         </div>
                     </div>
-                </motion.div>
-            </div>
-
-            {/* Institutional Command Pill: Precision Glass */}
-            <div className="relative max-w-2xl mx-auto mb-40">
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.5em] text-primary/40">Network Intensity: Active</span>
                 </div>
 
-                <div className="p-1.5 bg-[#0d0f14] border border-white/5 rounded-[3rem] shadow-[0_64px_128px_-32px_rgba(0,0,0,0.8)] backdrop-blur-3xl flex items-center gap-4">
-                    <button
-                        onClick={() => handleOpenCreate()}
-                        disabled={loading}
-                        className="flex-1 py-5 px-8 bg-transparent border border-white/5 hover:border-white/20 rounded-[2.2rem] text-[10px] font-black uppercase tracking-[0.4em] text-white/30 hover:text-white transition-all duration-500"
-                    >
-                        New Institutional Node
-                    </button>
+                {/* --- COMMAND PILL --- */}
+                <div className="flex flex-col items-center gap-10">
+                    <div className="flex items-center gap-3 px-6 py-2 rounded-full border border-primary/20 bg-primary/5 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(139,92,246,1)]" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/80">Network Intensity: Active</span>
+                    </div>
 
-                    <button
-                        onClick={handleFinish}
-                        disabled={isFinishing || branches.length === 0}
-                        className="flex-1 py-5 px-8 bg-primary text-white rounded-[2.2rem] text-[10px] font-black uppercase tracking-[0.4em] shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all duration-500 disabled:opacity-20"
-                    >
-                        {isFinishing ? <Spinner size="sm" /> : <>Synchronize Registry</>}
-                    </button>
+                    <div className="inline-flex p-2 rounded-[2rem] border border-white/5 bg-white/[0.02] backdrop-blur-xl gap-2 h-[80px]">
+                        <button
+                            onClick={() => handleOpenCreate()}
+                            className="btn-secondary-premium border-none bg-transparent hover:bg-white/[0.05] h-full"
+                        >
+                            New Institutional Node
+                        </button>
+                        <button className="btn-primary-premium h-full px-12">
+                            Synchronize Registry
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center min-h-[400px] space-y-12">
-                    <Spinner size="xl" className="text-primary" />
-                    <p className="text-[12px] font-black uppercase text-primary/40 tracking-[0.8em] animate-pulse">Synchronizing Core Registry...</p>
+                <div className="flex flex-col items-center justify-center min-h-[600px] space-y-16">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/20 blur-3xl animate-pulse" />
+                        <Spinner size="xl" className="text-primary relative z-10" />
+                    </div>
+                    <p className="text-[13px] font-black uppercase text-primary/40 tracking-[0.8em] animate-pulse">Synchronizing Core Registry...</p>
                 </div>
             ) : error ? (
                 <DiagnosticErrorConsole message={error} onClear={() => setError(null)} />
             ) : (
-                <div className="grid grid-cols-1 gap-24 px-10 mb-40 max-w-[1400px] mx-auto">
-                    {branches.map((branch, idx) => (
-                        <motion.div
-                            key={branch.id}
-                            initial={{ opacity: 0, y: 40 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.1, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                            className="group relative bg-[#0a0b0f] border border-white/5 rounded-[6rem] p-24 md:p-32 flex flex-col items-center text-center transition-all duration-1000 hover:border-primary/40 hover:bg-[#0e1016] shadow-[0_80px_160px_-40px_rgba(0,0,0,0.8)] min-h-[900px] w-full overflow-hidden"
-                        >
-                            {/* Massive Atmospheric Background Artifacts */}
-                            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/[0.03] rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2 pointer-events-none group-hover:bg-primary/5 transition-all duration-1000" />
-                            <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-emerald-500/[0.02] rounded-full blur-[150px] translate-x-1/2 translate-y-1/2 pointer-events-none group-hover:bg-emerald-500/[0.05] transition-all duration-1000" />
+                <div className="space-y-40 mb-40">
+                    {/* --- NODE GRID: MONOLITHIC --- */}
+                    <div className="grid grid-cols-1 gap-32">
+                        {branches.map((branch, idx) => (
+                            <motion.div
+                                key={branch.id}
+                                initial={{ opacity: 0, y: 60 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                                className={`enterprise-glass rounded-[5rem] p-16 md:p-24 flex flex-col items-center text-center transition-all duration-1000 min-h-[960px] w-full relative overflow-hidden ${branch.is_main_branch ? 'glow-card-active' : ''}`}
+                            >
+                                <div className="scanline-subtle" />
 
-                            {/* Ultra-Large Icon Node */}
-                            <div className="relative mb-20 mt-10">
-                                <div className="absolute inset-0 bg-primary/30 blur-[60px] rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                                <div className="w-40 h-40 rounded-full bg-primary/[0.05] border border-white/10 flex items-center justify-center text-primary shadow-[inset_0_0_80px_rgba(var(--primary),0.1)] group-hover:scale-110 group-hover:border-primary/30 transition-all duration-1000 relative z-10 ring-1 ring-white/5">
-                                    <SchoolIcon className="w-20 h-20" />
-                                </div>
-                            </div>
-
-                            <div className="space-y-8 mb-20 relative z-10 w-full">
-                                <h3 className="text-7xl md:text-8xl font-serif font-black text-white tracking-tighter uppercase leading-none drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">{branch.name}</h3>
-                                <div className="inline-flex items-center gap-6 px-12 py-4 rounded-full bg-white/[0.02] border border-white/5 backdrop-blur-2xl shadow-2xl">
-                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                                    <LocationIcon className="w-5 h-5 text-white/40" />
-                                    <span className="text-[14px] font-black text-white/50 uppercase tracking-[0.5em] font-mono">{branch.city} · {branch.state} · {branch.country}</span>
-                                </div>
-                            </div>
-
-                            {/* Monolithic Status Architecture */}
-                            <div className="mb-24 w-full max-w-2xl px-10">
-                                {branch.is_main_branch ? (
-                                    <div className="relative group/badge">
-                                        <div className="absolute inset-0 bg-emerald-500/20 blur-[40px] rounded-full opacity-0 group-hover/badge:opacity-100 transition-opacity duration-1000" />
-                                        <div className="relative py-8 px-16 rounded-[4rem] border border-emerald-500/30 bg-emerald-500/[0.03] flex items-center justify-center gap-10 shadow-[inset_0_0_60px_rgba(16,185,129,0.05)] overflow-hidden backdrop-blur-3xl">
-                                            <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_30px_rgba(16,185,129,1)]" />
-                                            <div className="flex flex-col items-center">
-                                                <span className="text-[18px] font-black text-emerald-500 uppercase tracking-[0.8em] leading-none">Central Command</span>
-                                                <span className="text-[9px] font-black text-emerald-500/40 uppercase tracking-[0.4em] mt-3">Global Matrix Synchronization Root</span>
+                                {/* Status Header Pill */}
+                                <div className="mb-20">
+                                    {branch.is_main_branch ? (
+                                        <div className="py-6 px-12 rounded-full border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-3xl flex items-center justify-center gap-6 shadow-[inset_0_0_40px_rgba(16,185,129,0.05)]">
+                                            <div className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_20px_rgba(16,185,129,1)]" />
+                                            <div className="text-left">
+                                                <p className="text-[14px] font-black text-emerald-500 uppercase tracking-[0.6em] leading-none">Central Command</p>
+                                                <p className="text-[9px] font-black text-emerald-500/40 uppercase tracking-[0.2em] mt-1.5">Global Master Hub</p>
                                             </div>
-                                            <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="py-8 px-16 rounded-[4rem] border border-white/10 bg-white/[0.02] flex items-center justify-center gap-10 backdrop-blur-xl">
-                                        <div className="w-4 h-4 rounded-full bg-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)]" />
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-[18px] font-black text-white/30 uppercase tracking-[0.8em]">Satellite Node</span>
-                                            <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em] mt-3">Active Topological Sub-Registry</span>
+                                    ) : (
+                                        <div className="py-6 px-12 rounded-full border border-white/10 bg-white/5 backdrop-blur-2xl flex items-center justify-center gap-6">
+                                            <div className="w-4 h-4 rounded-full bg-white/20" />
+                                            <div className="text-left">
+                                                <p className="text-[14px] font-black text-white/30 uppercase tracking-[0.6em] leading-none">Satellite Node</p>
+                                                <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.2em] mt-1.5">Active Campus Registry</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Deep Telemetry Sequence */}
-                            <div className="flex items-center justify-center gap-12 text-white/10 mb-24 w-full max-w-4xl px-20">
-                                <span className="text-[11px] font-black uppercase tracking-[0.8em] text-white/20 whitespace-nowrap">Registry Sequence</span>
-                                <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                                <div className="flex items-center gap-4">
-                                    <div className="w-2 h-2 rounded-full bg-primary/40 animate-ping" />
-                                    <span className="text-[12px] font-mono font-black tracking-[0.5em] text-primary/60">{new Date(branch.created_at).getFullYear()}</span>
+                                    )}
                                 </div>
-                                <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                                <span className="text-[11px] font-black uppercase tracking-[0.8em] text-white/20 whitespace-nowrap">Active Matrix</span>
-                            </div>
 
-                            {/* Expansive Alphanumeric Vault */}
-                            <div className="w-full mt-auto mb-10 group/vault max-w-3xl">
-                                <div className="bg-[#050608] rounded-[5rem] border border-white/5 relative overflow-hidden hover:border-primary/40 transition-all duration-1000 shadow-[inset_0_60px_120px_rgba(0,0,0,0.9)] flex flex-col items-center py-20 px-12">
-                                    <div className="absolute inset-0 bg-primary/[0.01] pointer-events-none" />
-                                    <div className="flex items-center gap-10 mb-16 scale-110 md:scale-125">
-                                        <span className="text-white/5 text-[90px] font-black font-mono leading-none flex items-center">
-                                            <span className="text-primary/20">#</span>
+                                {/* Campus Icon Node */}
+                                <div className="relative mb-20 group/icon">
+                                    <div className="absolute inset-0 bg-primary/20 blur-[50px] rounded-full scale-150 opacity-0 group-hover/icon:opacity-100 transition-opacity duration-1000" />
+                                    <div className="w-48 h-48 rounded-full bg-primary/[0.05] border border-white/5 flex items-center justify-center text-primary shadow-[inset_0_0_80px_rgba(var(--primary),0.1)] group-hover/icon:scale-110 group-hover/icon:border-primary/20 transition-all duration-1000 relative z-10">
+                                        <SchoolIcon className="w-24 h-24" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-10 mb-24 relative z-10">
+                                    <h3 className="premium-headline text-8xl md:text-[10rem] text-white leading-none drop-shadow-2xl">{branch.name}</h3>
+                                    <div className="flex items-center justify-center gap-6 p-1 rounded-full bg-white/[0.02] border border-white/5 pr-8 pl-4 py-3 backdrop-blur-xl mx-auto w-fit">
+                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                                            <LocationIcon className="w-4 h-4 text-white/40" />
+                                        </div>
+                                        <span className="text-[13px] font-black text-white/40 uppercase tracking-[0.4em] font-mono">
+                                            {branch.city} + {branch.state} + India
                                         </span>
-                                        <code className="text-[80px] md:text-[100px] font-mono font-black text-primary tracking-[0.2em] group-hover:text-white transition-colors duration-1000 drop-shadow-[0_0_60px_rgba(var(--primary),0.5)]">
-                                            {branch.access_key}
-                                        </code>
-                                    </div>
-
-                                    <motion.button
-                                        whileHover={{ scale: 1.05, boxShadow: "0 0 80px rgba(139, 92, 246, 0.4)" }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigator.clipboard.writeText(branch.access_key || '');
-                                            setCopiedBranchId(branch.id);
-                                            setTimeout(() => setCopiedBranchId(null), 2000);
-                                        }}
-                                        className="relative overflow-hidden group/copy px-16 py-7 bg-primary rounded-[2.5rem] text-white text-[12px] font-black uppercase tracking-[0.6em] transition-all duration-700 shadow-[0_32px_64px_-16px_rgba(var(--primary),0.6)]"
-                                    >
-                                        <div className="absolute inset-x-0 bottom-0 h-full bg-white/20 translate-y-full group-hover/copy:translate-y-0 transition-transform duration-700" />
-                                        <span className="relative z-10">{copiedBranchId === branch.id ? 'PROTOCOL SYNCHRONIZED' : 'SECURE REGISTRY CAPTURE'}</span>
-                                    </motion.button>
-
-                                    {/* Scanline & Ghost Telemetry Overlays */}
-                                    <div className="absolute inset-0 scanline opacity-[0.05] pointer-events-none" />
-                                    <div className="absolute top-10 left-10 text-[8px] font-mono text-white/5 uppercase tracking-[0.5em] flex flex-col items-start gap-1">
-                                        <span>ENC: AES-256</span>
-                                        <span>PROTOCOL: V2.4</span>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Global Action Overlays */}
-                            <div className="absolute top-16 right-16 flex flex-col gap-8 opacity-0 group-hover:opacity-100 transition-all duration-1000 translate-x-20 group-hover:translate-x-0">
-                                <button onClick={() => handleOpenEdit(branch)} className="w-20 h-20 rounded-[2.5rem] bg-white/[0.03] hover:bg-primary/20 hover:text-primary border border-white/10 flex items-center justify-center text-white/30 transition-all shadow-3xl backdrop-blur-3xl transform-gpu hover:scale-110"><EditIcon className="w-10 h-10" /></button>
-                                {!branch.is_main_branch && <button onClick={() => setDeletingBranch(branch)} className="w-20 h-20 rounded-[2.5rem] bg-red-500/[0.03] hover:bg-red-500 hover:text-white border border-red-500/10 flex items-center justify-center text-red-500/40 transition-all shadow-3xl backdrop-blur-3xl transform-gpu hover:scale-110 hover:rotate-90"><XIcon className="w-10 h-10" /></button>}
-                            </div>
-                        </motion.div>
-                    ))}
+                                {/* Sync Telemetry Strip */}
+                                <div className="w-full max-w-4xl px-12 flex items-center justify-center gap-12 mb-24 opacity-30">
+                                    <span className="text-[11px] font-black uppercase tracking-[1em] whitespace-nowrap">Registry Sequence</span>
+                                    <div className="h-[2px] flex-grow bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                                    <span className="text-[14px] font-mono font-black tracking-[0.4em] text-primary">{new Date(branch.created_at).getFullYear()}</span>
+                                    <div className="h-[2px] flex-grow bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                                    <span className="text-[11px] font-black uppercase tracking-[1em] whitespace-nowrap">Active Matrix</span>
+                                </div>
 
-                    {/* Topology Expansion: Monolithic Placeholder */}
-                    <motion.button
-                        whileHover={{ scale: 0.99, y: -10 }}
-                        onClick={() => handleOpenCreate()}
-                        className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[6rem] p-32 min-h-[900px] w-full group hover:border-primary/40 hover:bg-primary/[0.01] transition-all duration-1000 relative overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                        <div className="w-48 h-48 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mb-20 group-hover:scale-110 group-hover:border-primary/20 transition-all duration-1000 shadow-inner relative z-10 ring-1 ring-white/5">
-                            <PlusIcon className="w-20 h-20 text-white/5 group-hover:text-primary transition-colors" />
-                        </div>
-                        <div className="space-y-10 relative z-10 w-full">
-                            <h4 className="text-7xl md:text-8xl font-serif italic text-white/5 group-hover:text-white/20 transition-colors uppercase tracking-[0.1em] leading-tight">Topology<br />Expansion</h4>
-                            <div className="flex items-center justify-center gap-10 opacity-40 max-w-2xl mx-auto">
-                                <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                                <p className="text-[14px] font-black uppercase tracking-[1.5em] text-white/10 whitespace-nowrap">Initialize Next Node</p>
-                                <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                            </div>
-                        </div>
-                    </motion.button>
-                </div>
-            )}
+                                {/* Monolithic Hash Vault */}
+                                <div className="w-full max-w-4xl mt-auto py-10">
+                                    <div className="bg-[#050608]/80 rounded-[5rem] border border-white/5 p-16 relative overflow-hidden group/vault hover:border-primary/40 transition-all duration-700 shadow-[inset_0_40px_100px_rgba(0,0,0,1)]">
+                                        <div className="absolute top-10 left-10 text-[8px] font-mono text-white/5 uppercase tracking-[0.5em] flex flex-col gap-1.5 opacity-40">
+                                            <span>Encryption: AES-256-XPN</span>
+                                            <span>Protocol: Institutional_V4</span>
+                                        </div>
+                                        <div className="flex items-center justify-center gap-12 mb-16 scale-110 md:scale-125">
+                                            <span className="text-white/5 text-[100px] font-black font-mono leading-none">#</span>
+                                            <code className="text-[80px] md:text-[120px] font-mono font-black text-primary tracking-[0.2em] group-hover:text-white transition-colors duration-1000 drop-shadow-[0_0_60px_rgba(var(--primary),0.6)]">
+                                                {branch.access_key}
+                                            </code>
+                                        </div>
 
-            {/* Protocol Vault Section */}
-            <div className="mt-40 px-10">
-                <div className="flex items-center justify-between mb-16 border-b border-white/[0.03] pb-10">
-                    <div className="space-y-4">
-                        <h2 className="text-4xl font-serif font-black text-white tracking-tighter uppercase">Protocol Vault</h2>
-                        <p className="text-sm font-serif italic text-white/20">Registered institutional security & synchronization configurations.</p>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigator.clipboard.writeText(branch.access_key || '');
+                                                setCopiedBranchId(branch.id);
+                                                setTimeout(() => setCopiedBranchId(null), 2000);
+                                            }}
+                                            className="btn-primary-premium h-[80px] px-20 text-[13px] tracking-[0.5em] w-full max-w-xl mx-auto block group-hover:scale-105"
+                                        >
+                                            {copiedBranchId === branch.id ? 'Core Captured' : 'Secure Protocol Capture'}
+                                        </button>
+                                        <div className="absolute inset-0 scanline-subtle opacity-[0.05]" />
+                                    </div>
+                                </div>
+
+                                {/* Floating Action Nodes */}
+                                <div className="absolute top-12 right-12 flex flex-col gap-6 opacity-0 group-hover:opacity-100 transition-all duration-1000 translate-x-10 group-hover:translate-x-0">
+                                    <button onClick={() => handleOpenEdit(branch)} className="w-16 h-16 rounded-[2rem] bg-white/[0.03] hover:bg-primary/20 hover:text-primary border border-white/5 flex items-center justify-center text-white/30 transition-all shadow-3xl backdrop-blur-3xl transform-gpu hover:scale-110">
+                                        <EditIcon className="w-6 h-6" />
+                                    </button>
+                                    {!branch.is_main_branch && (
+                                        <button onClick={() => setDeletingBranch(branch)} className="w-16 h-16 rounded-[2rem] bg-red-500/[0.03] hover:bg-red-500 hover:text-white border border-red-500/10 flex items-center justify-center text-red-500/40 transition-all shadow-3xl backdrop-blur-3xl transform-gpu hover:scale-110">
+                                            <XIcon className="w-6 h-6" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Ambient Decorative Gradients */}
+                                <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                                <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                            </motion.div>
+                        ))}
+
+                        {/* --- TOPOLOGY EXPANSION: MONOLITHIC --- */}
+                        <motion.button
+                            whileHover={{ scale: 0.99, y: -12 }}
+                            onClick={() => handleOpenCreate()}
+                            className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[6rem] p-32 min-h-[960px] w-full group hover:border-primary/40 hover:bg-white/[0.01] transition-all duration-1000 relative overflow-hidden"
+                        >
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                            <div className="w-48 h-48 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center mb-16 group-hover:scale-110 group-hover:border-primary/20 transition-all duration-1000 shadow-inner relative z-10">
+                                <PlusIcon className="w-20 h-20 text-white/5 group-hover:text-primary transition-colors" />
+                            </div>
+                            <div className="space-y-12 relative z-10 w-full text-center">
+                                <h4 className="premium-headline text-8xl md:text-[8rem] italic text-white/5 group-hover:text-white/20 transition-all tracking-[-0.02em] leading-tight">Topology<br />Expansion</h4>
+                                <div className="flex items-center justify-center gap-8 opacity-20 group-hover:opacity-40 transition-all">
+                                    <div className="h-px flex-grow bg-white/20" />
+                                    <p className="text-[14px] font-black uppercase tracking-[1.5em] text-white whitespace-nowrap">Initialize Next Node</p>
+                                    <div className="h-px flex-grow bg-white/20" />
+                                </div>
+                            </div>
+                        </motion.button>
                     </div>
-                    <div className="flex items-center gap-6">
-                        <div className="flex -space-x-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="w-10 h-10 rounded-full border-2 border-black bg-white/[0.05] flex items-center justify-center">
-                                    <div className="w-2 h-2 rounded-full bg-primary/40" />
+
+                    {/* --- PROTOCOL VAULT: REFINED --- */}
+                    <div className="space-y-20 py-20">
+                        <div className="flex items-center gap-10">
+                            <div className="w-16 h-[2px] bg-primary/40" />
+                            <h2 className="text-[16px] font-black uppercase tracking-[1em] text-white">Protocol Vault</h2>
+                            <div className="flex-grow h-px bg-white/[0.03]" />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                            {[
+                                { icon: ShieldIcon, label: 'Identity Layer', title: 'Geo-Identity v2.4', badge: 'Secure', color: 'emerald' },
+                                { icon: GlobeIcon, label: 'Network Mesh', title: 'Satellite Sync', badge: 'Global', color: 'primary' },
+                                { icon: HashIcon, label: 'Data Integrity', title: 'Checksum Protocol', badge: 'Verified', color: 'white' }
+                            ].map((item, i) => (
+                                <div key={i} className="enterprise-glass rounded-[4rem] p-16 space-y-12 transition-all hover:scale-[1.02] hover:border-primary/40 group relative overflow-hidden min-h-[480px] flex flex-col justify-between">
+                                    <div className="space-y-12">
+                                        <div className="flex items-center justify-between">
+                                            <item.icon className="w-14 h-14 text-white/10 group-hover:text-primary transition-colors" />
+                                            <span className={`text-[11px] font-black uppercase px-6 py-2 rounded-full border border-white/5 bg-white/5 text-white/40 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-colors`}>{item.badge}</span>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-white/20">{item.label}</p>
+                                            <p className="premium-headline text-4xl text-white group-hover:text-primary transition-colors">{item.title}</p>
+                                        </div>
+                                    </div>
+                                    <div className="pt-10 border-t border-white/[0.03] flex items-center gap-5 text-[10px] font-mono font-bold text-white/10 uppercase tracking-[0.3em]">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-white/10 group-hover:bg-primary group-hover:animate-pulse transition-all" />
+                                        <span>Matrix ID: {Math.random().toString(36).substring(7).toUpperCase()}</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">3 Active Configurations</span>
                     </div>
                 </div>
+            )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div className="p-12 rounded-[4rem] bg-[#0a0b0f] border border-white/5 space-y-10 group hover:bg-[#0e1016] hover:border-primary/40 transition-all min-h-[420px] flex flex-col justify-between shadow-xl">
-                        <div className="space-y-10">
-                            <div className="flex items-center justify-between">
-                                <ShieldIcon className="w-10 h-10 text-primary/40 group-hover:text-primary transition-colors" />
-                                <span className="text-[10px] font-black uppercase text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-6 py-2 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.1)]">Secure</span>
-                            </div>
-                            <div className="space-y-4">
-                                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Identity Layer</p>
-                                <p className="text-3xl font-serif font-black text-white/80 group-hover:text-white transition-colors uppercase leading-none">Geo-Identity v2.4</p>
-                            </div>
-                        </div>
-                        <div className="pt-8 border-t border-white/[0.03] flex items-center gap-4 text-[10px] font-mono font-bold text-white/10 uppercase tracking-widest">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500/30 group-hover:bg-emerald-500 transition-colors" />
-                            <span>Hash: 8A72-F92C</span>
-                        </div>
-                    </div>
-
-                    <div className="p-12 rounded-[4rem] bg-[#0a0b0f] border border-white/5 space-y-10 group hover:bg-[#0e1016] hover:border-primary/40 transition-all min-h-[420px] flex flex-col justify-between shadow-xl">
-                        <div className="space-y-10">
-                            <div className="flex items-center justify-between">
-                                <GlobeIcon className="w-10 h-10 text-primary/40 group-hover:text-primary transition-colors" />
-                                <span className="text-[10px] font-black uppercase text-primary bg-primary/10 border border-primary/20 px-6 py-2 rounded-full shadow-[0_0_20px_rgba(var(--primary),0.1)]">Global</span>
-                            </div>
-                            <div className="space-y-4">
-                                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Network Mesh</p>
-                                <p className="text-3xl font-serif font-black text-white/80 group-hover:text-white transition-colors uppercase leading-none">Satellite Sync Alpha</p>
-                            </div>
-                        </div>
-                        <div className="pt-8 border-t border-white/[0.03] flex items-center gap-4 text-[10px] font-mono font-bold text-white/10 uppercase tracking-widest">
-                            <div className="w-2 h-2 rounded-full bg-primary/30 group-hover:bg-primary transition-colors" />
-                            <span>Latency: 24ms</span>
-                        </div>
-                    </div>
-
-                    <div className="p-12 rounded-[4rem] bg-[#0a0b0f] border border-white/5 space-y-10 group hover:bg-[#0e1016] hover:border-primary/40 transition-all min-h-[420px] flex flex-col justify-between shadow-xl">
-                        <div className="space-y-10">
-                            <div className="flex items-center justify-between">
-                                <HashIcon className="w-10 h-10 text-primary/40 group-hover:text-primary transition-colors" />
-                                <span className="text-[10px] font-black uppercase text-white/20 bg-white/10 border border-white/10 px-6 py-2 rounded-full uppercase tracking-widest">Default</span>
-                            </div>
-                            <div className="space-y-4">
-                                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/20">Data Integrity</p>
-                                <p className="text-3xl font-serif font-black text-white/80 group-hover:text-white transition-colors uppercase leading-none">Checksum Protocol</p>
-                            </div>
-                        </div>
-                        <div className="pt-8 border-t border-white/[0.03] flex items-center gap-4 text-[10px] font-mono font-bold text-white/10 uppercase tracking-widest">
-                            <div className="w-2 h-2 rounded-full bg-white/10 group-hover:bg-white/30 transition-colors" />
-                            <span>Status: Verified</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            {/* --- MODAL DESIGN: PREMIUM OVERHAUL --- */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div className="fixed inset-0 bg-black/98 backdrop-blur-[100px] flex items-center justify-center z-[200] p-4 sm:p-8" onClick={() => setIsModalOpen(false)}>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 backdrop-blur-2xl bg-[#030406]/90"
+                    >
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 40 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 40 }}
-                            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                            className="bg-[#050608] w-full max-w-5xl rounded-[4rem] shadow-[0_0_120px_-20px_rgba(0,0,0,1)] border border-primary/20 flex flex-col max-h-[94vh] relative overflow-hidden"
-                            onClick={e => e.stopPropagation()}
+                            initial={{ scale: 0.95, y: 40, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.95, y: 40, opacity: 0 }}
+                            className="bg-[#0a0b0f] border border-white/10 rounded-[5rem] w-full max-w-7xl h-full max-h-[900px] overflow-hidden flex flex-col shadow-[0_100px_200px_-50px_rgba(0,0,0,1)] relative"
                         >
-                            <div className="absolute inset-0 bg-primary/[0.01] pointer-events-none" />
-                            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                            <div className="scanline-subtle opacity-5" />
 
-                            <div className="px-14 py-12 border-b border-white/[0.03] bg-white/[0.01] flex justify-between items-center shrink-0">
-                                <div className="flex items-center gap-10">
-                                    <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary shadow-[inset_0_0_30px_rgba(139,92,246,0.2)] border border-primary/20">
-                                        <PlusIcon className="w-10 h-10" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-4xl font-serif font-black text-white tracking-tighter uppercase leading-none">
-                                            {editingBranch ? 'Manage' : 'Initialize'} <span className="text-white/5 italic">{editingBranch ? 'Node.' : (branches.length === 0 ? 'Head Office.' : 'Satellite.')}</span>
-                                        </h3>
-                                        <div className="flex items-center gap-3 mt-3">
-                                            <div className="h-[2px] w-12 bg-primary/40" />
-                                            <p className="text-[10px] font-black tracking-[0.6em] text-primary/40 uppercase">Geographic Identity Registry</p>
-                                        </div>
-                                    </div>
+                            {/* Modal Header */}
+                            <div className="p-16 border-b border-white/[0.05] flex items-center justify-between bg-white/[0.01] relative z-10 shrink-0">
+                                <div className="space-y-2">
+                                    <h2 className="premium-headline text-5xl text-white uppercase">{editingBranch ? 'Sync Protocol' : 'Initialize Node'}</h2>
+                                    <p className="text-[12px] font-black uppercase tracking-[0.4em] text-white/20">Institutional Matrix Configuration Registry</p>
                                 </div>
-                                <button onClick={() => setIsModalOpen(false)} className="w-14 h-14 rounded-full bg-white/5 text-white/20 hover:text-white hover:bg-red-500/20 hover:rotate-90 transition-all flex items-center justify-center border border-white/5">
+                                <button
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="w-20 h-20 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/20 hover:text-white hover:border-white/20 transition-all hover:bg-white/10"
+                                >
                                     <XIcon className="w-8 h-8" />
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSave} className="flex flex-col flex-grow overflow-hidden bg-[#050608]">
-                                <div className="flex-grow overflow-y-auto px-10 md:px-14 py-10 md:py-12 space-y-12 custom-scrollbar select-text">
-                                    <AnimatePresence>
-                                        {modalError && <DiagnosticErrorConsole message={modalError} onClear={() => setModalError(null)} />}
-                                    </AnimatePresence>
-
-                                    <div className="space-y-12">
-                                        <div className="flex items-center gap-6 px-4">
-                                            <div className="h-8 w-[3px] bg-primary/60 rounded-full" />
-                                            <div className="space-y-1">
-                                                <h4 className="text-[12px] font-black uppercase text-white/40 tracking-[0.5em]">Identity & Infrastructure</h4>
-                                                <p className="text-[10px] font-serif italic text-white/10">Define the unique topological markers for this campus node.</p>
-                                            </div>
+                            <form onSubmit={handleSave} className="flex-grow overflow-hidden flex flex-col relative z-10">
+                                <div className="flex-grow overflow-y-auto custom-scrollbar p-16 md:p-24 space-y-20">
+                                    {modalError && (
+                                        <div className="p-10 rounded-[2rem] border border-red-500/20 bg-red-500/5 text-red-500 text-[12px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 animate-in fade-in slide-in-from-top-4">
+                                            <AlertTriangleIcon className="w-5 h-5 shrink-0" />
+                                            <span>{modalError}</span>
                                         </div>
+                                    )}
 
-                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-                                            <div className="md:col-span-12">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                        <div className="space-y-12">
+                                            <div className="space-y-8">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.6em] text-primary">01. Core Identity</p>
                                                 <FloatingLabelInput
-                                                    label="Formal Campus Designation"
+                                                    label="Institution Identity"
+                                                    icon={<SchoolIcon className="w-5 h-5" />}
                                                     value={formData.name}
-                                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                                     required
-                                                    icon={<SchoolIcon className="w-6 h-6" />}
                                                 />
                                             </div>
-                                            <div className="md:col-span-12">
+
+                                            <div className="space-y-8">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.6em] text-primary">02. Geo-Topical Registry</p>
                                                 <FloatingLabelInput
-                                                    label="Geospatial Street Address"
+                                                    label="Geographical Signature (Address)"
+                                                    icon={<LocationIcon className="w-5 h-5" />}
                                                     value={formData.address}
-                                                    onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                                    required
-                                                    icon={<LocationIcon className="w-6 h-6" />}
+                                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                                     action={
                                                         <button
                                                             type="button"
                                                             onClick={handleResolveAddress}
-                                                            disabled={isResolvingAddress || !formData.address.trim()}
-                                                            className="p-4 bg-primary/10 text-primary hover:bg-primary/20 rounded-2xl border border-primary/20 backdrop-blur-xl transition-all disabled:opacity-20 shadow-xl group/spark"
+                                                            disabled={isResolvingAddress}
+                                                            className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-lg active:scale-95"
                                                         >
-                                                            {isResolvingAddress ? <Spinner size="sm" /> : <SparklesIcon className="w-6 h-6 group-hover/spark:rotate-12 transition-transform" />}
+                                                            {isResolvingAddress ? <Spinner size="sm" className="text-primary" /> : <SparklesIcon className="w-5 h-5" />}
                                                         </button>
                                                     }
+                                                    required
                                                 />
-                                            </div>
-
-                                            <div className="md:col-span-6">
-                                                <StyledSelect label="National Domain" required value={formData.country} onChange={handleCountryChange} icon={<GlobeIcon className="w-6 h-6" />}>
-                                                    {countries.map(c => <option key={c} value={c}>{c}</option>)}
-                                                </StyledSelect>
-                                            </div>
-
-                                            <div className="md:col-span-6">
-                                                <StyledSelect label="Regional Protocol" required value={formData.state} onChange={handleStateChange} disabled={!formData.country} icon={<LocationIcon className="w-6 h-6" />}>
-                                                    <option value="">Select State</option>
-                                                    {availableStates.map(s => <option key={s} value={s}>{s}</option>)}
-                                                </StyledSelect>
-                                            </div>
-
-                                            <div className="md:col-span-12">
-                                                {availableCities.length > 0 ? (
-                                                    <StyledSelect label="Primary Municipality" required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} icon={<LocationIcon className="w-6 h-6" />}>
-                                                        <option value="">Select City</option>
-                                                        {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                                                    <StyledSelect label="Country" value={formData.country} onChange={handleCountryChange} icon={<GlobeIcon className="w-5 h-5" />}>
+                                                        {countries.map(c => <option key={c} value={c}>{c}</option>)}
                                                     </StyledSelect>
-                                                ) : (
-                                                    <FloatingLabelInput label="Municipality Node" required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} icon={<LocationIcon className="w-6 h-6" />} />
+                                                    <StyledSelect label="State" value={formData.state} onChange={handleStateChange} disabled={!formData.country} icon={<LocationIcon className="w-5 h-5" />}>
+                                                        <option value="">Select State</option>
+                                                        {availableStates.map(s => <option key={s} value={s}>{s}</option>)}
+                                                    </StyledSelect>
+                                                    {availableCities.length > 0 ? (
+                                                        <StyledSelect label="City" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} icon={<LocationIcon className="w-5 h-5" />}>
+                                                            <option value="">Select City</option>
+                                                            {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+                                                        </StyledSelect>
+                                                    ) : (
+                                                        <FloatingLabelInput label="City" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} icon={<LocationIcon className="w-5 h-5" />} />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-12">
+                                            <div className="space-y-8">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.6em] text-primary">03. Node Administrator</p>
+                                                <FloatingLabelInput label="Admin Protocol Name" icon={<ShieldIcon className="w-5 h-5" />} value={formData.adminName} onChange={(e) => setFormData({ ...formData, adminName: e.target.value })} required />
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                                    <FloatingLabelInput label="Comms Channel (Phone)" icon={<div className="font-mono text-[10px] text-white opacity-20">+91</div>} value={formData.adminPhone} onChange={(e) => setFormData({ ...formData, adminPhone: e.target.value })} required />
+                                                    <FloatingLabelInput label="Secure Signal (Email)" icon={<GlobeIcon className="w-5 h-5 opacity-20" />} value={formData.adminEmail} onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })} type="email" required />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-8">
+                                                <p className="text-[11px] font-black uppercase tracking-[0.6em] text-primary">04. Matrix Authority</p>
+                                                {isHeadOfficeAdmin && (
+                                                    <div
+                                                        onClick={() => setFormData({ ...formData, isMain: !formData.isMain })}
+                                                        className={`group relative p-10 rounded-[2.5rem] border transition-all cursor-pointer overflow-hidden ${formData.isMain ? 'bg-primary/5 border-primary/30' : 'bg-white/[0.01] border-white/5 hover:border-white/10'}`}
+                                                    >
+                                                        <div className="flex items-center gap-8 relative z-10">
+                                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${formData.isMain ? 'bg-primary text-white shadow-[0_0_30px_rgba(139,92,246,0.5)]' : 'bg-white/5 text-white/20'}`}>
+                                                                <ShieldIcon className="w-7 h-7" />
+                                                            </div>
+                                                            <div>
+                                                                <p className={`text-[13px] font-black uppercase tracking-[0.3em] ${formData.isMain ? 'text-primary' : 'text-white/40'}`}>Central Command Node</p>
+                                                                <p className="text-[10px] font-black text-white/10 uppercase tracking-widest mt-1">Designate this branch as the master network hub</p>
+                                                            </div>
+                                                        </div>
+                                                        {formData.isMain && <div className="absolute inset-0 bg-primary/10 blur-[60px]" />}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div className="space-y-12">
-                                        <div className="flex items-center gap-6 px-4">
-                                            <div className="h-8 w-[3px] bg-primary/40 rounded-full" />
-                                            <div className="space-y-1">
-                                                <h4 className="text-[12px] font-black uppercase text-white/40 tracking-[0.5em]">Security Custodian</h4>
-                                                <p className="text-[10px] font-serif italic text-white/10">Designate the primary administrator responsible for this node's integrity.</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                            <div className="md:col-span-1"><FloatingLabelInput label="Custodian Legal Name" value={formData.adminName} onChange={e => setFormData({ ...formData, adminName: e.target.value })} icon={<UsersIcon className="w-6 h-6" />} /></div>
-                                            <div className="md:col-span-1"><FloatingLabelInput label="Direct Telecom Telemetry" type="tel" value={formData.adminPhone} onChange={e => setFormData({ ...formData, adminPhone: e.target.value })} icon={<PhoneIcon className="w-6 h-6" />} /></div>
-                                            <div className="md:col-span-2"><FloatingLabelInput label="Institutional Email Node" type="email" required value={formData.adminEmail} onChange={e => setFormData({ ...formData, adminEmail: e.target.value })} icon={<MailIcon className="w-6 h-6" />} /></div>
-                                        </div>
-                                    </div>
-
-                                    {isHeadOfficeAdmin && (
-                                        <motion.div
-                                            whileHover={{ scale: 1.01 }}
-                                            className={`flex items-start gap-8 p-12 rounded-[3.5rem] border transition-all cursor-pointer relative overflow-hidden group/opt ${formData.isMain ? 'bg-primary/[0.05] border-primary/40 shadow-[0_32px_64px_-16px_rgba(139,92,246,0.2)]' : 'bg-white/[0.01] border-white/5 hover:border-primary/20'}`}
-                                            onClick={() => setFormData({ ...formData, isMain: !formData.isMain })}
-                                        >
-                                            <div className="absolute inset-x-0 h-px top-0 bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover/opt:opacity-100 transition-opacity" />
-                                            <div className={`mt-1 w-10 h-10 rounded-2xl border flex items-center justify-center transition-all duration-700 shrink-0 ${formData.isMain ? 'bg-primary border-primary rotate-0 scale-110 shadow-[0_0_20px_rgba(var(--primary),0.6)]' : 'bg-white/5 border-white/10 rotate-12'}`}>
-                                                {formData.isMain && <CheckCircleIcon className="w-6 h-6 text-primary-foreground" />}
-                                            </div>
-                                            <div className="relative z-10 space-y-2">
-                                                <p className="text-[16px] font-black uppercase text-white tracking-[0.2em] group-hover/opt:text-primary transition-colors">Authorize as Institutional Headquarters</p>
-                                                <p className="text-[14px] font-medium text-white/20 italic leading-relaxed font-serif">This node will be designated as the central synchronization headquarters for the entire registry network.</p>
-                                            </div>
-                                        </motion.div>
-                                    )}
                                 </div>
 
-                                <div className="px-14 py-12 border-t border-white/[0.03] bg-white/[0.01] flex flex-col md:flex-row justify-between items-center gap-10 shrink-0">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 hover:text-white transition-all order-2 md:order-1 flex items-center gap-4 group"
-                                    >
-                                        <div className="w-2 h-2 rounded-full bg-red-500/20 group-hover:bg-red-500 transition-colors" />
-                                        Abort Initialization
-                                    </button>
-                                    <motion.button
-                                        whileHover={{ scale: 1.02, boxShadow: "0 0 60px rgba(139, 92, 246, 0.4)" }}
-                                        whileTap={{ scale: 0.98 }}
-                                        type="submit"
-                                        disabled={isSaving}
-                                        className="w-full md:w-auto px-16 py-6 bg-primary text-primary-foreground rounded-2xl font-black text-[12px] uppercase tracking-[0.4em] shadow-[0_32px_64px_-16px_rgba(139,92,246,0.5)] hover:bg-primary/90 flex items-center justify-center gap-6 transition-all order-1 md:order-2"
-                                    >
+                                {/* Modal Footer */}
+                                <div className="p-16 border-t border-white/[0.05] bg-white/[0.02] flex items-center justify-between gap-10 shrink-0">
+                                    <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary-premium px-12 border-none">Abort Initialization</button>
+                                    <button type="submit" disabled={isSaving} className="btn-primary-premium flex items-center gap-6 px-16 text-[13px]">
                                         {isSaving ? <Spinner size="sm" className="text-white" /> : (
                                             <>
                                                 {editingBranch ? 'Sync Protocol' : 'Initialize Node'}
-                                                <CheckCircleIcon className="w-5 h-5 opacity-40" />
+                                                <div className="w-px h-6 bg-white/20 mx-2" />
+                                                <SparklesIcon className="w-6 h-6 opacity-40" />
                                             </>
                                         )}
-                                    </motion.button>
+                                    </button>
                                 </div>
                             </form>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
@@ -784,11 +706,12 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 isOpen={!!deletingBranch}
                 onClose={() => setDeletingBranch(null)}
                 onConfirm={handleDelete}
-                title="Deconstruct Node"
-                message={`Are you sure you want to permanently deconstruct the "${deletingBranch?.name}" branch node? This protocol cannot be reversed once initiated.`}
-                confirmText="Terminate Node"
+                title="Decommission Node"
+                message={`Are you certain you wish to permanently decommission "${deletingBranch?.name}" from the institutional matrix? This action cannot be reversed.`}
+                confirmText="Decommission"
+                isDestructive
                 loading={isDeleting}
             />
-        </div >
+        </div>
     );
 };
