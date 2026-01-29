@@ -77,10 +77,10 @@ const BranchCard: React.FC<{
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.8, ease: "easeOut" }}
             className={`
-                relative w-full min-h-[860px] flex flex-col justify-between 
-                p-8 rounded-[40px] overflow-hidden transition-all duration-500
+                relative w-full min-h-[720px] flex flex-col justify-between 
+                p-7 rounded-[32px] overflow-hidden transition-all duration-500
                 border border-white/5 bg-[#0A0A0A] group
-                ${branch.is_main_branch ? 'shadow-[0_0_80px_-20px_rgba(var(--primary),0.3)]' : 'hover:bg-white/[0.02]'}
+                ${branch.is_main_branch ? 'shadow-[0_0_60px_-15px_rgba(var(--primary),0.3)]' : 'hover:bg-white/[0.02]'}
             `}
         >
             {/* --- Background Ambience --- */}
@@ -116,14 +116,14 @@ const BranchCard: React.FC<{
             {/* --- 2. Identity Block (Icon & Name) --- */}
             <div className="relative z-10 flex flex-col items-center gap-8 py-8 flex-grow justify-center">
                 {/* Icon Container */}
-                <div className="relative flex items-center justify-center w-32 h-32 rounded-full bg-white/[0.02] border border-white/5 shadow-2xl group-hover:scale-110 transition-transform duration-700">
-                    <SchoolIcon className={`w-14 h-14 ${branch.is_main_branch ? 'text-primary' : (isOnline ? 'text-emerald-500' : 'text-white/40 group-hover:text-white')} transition-colors duration-500`} />
+                <div className="relative flex items-center justify-center w-28 h-28 rounded-full bg-white/[0.02] border border-white/5 shadow-2xl group-hover:scale-110 transition-transform duration-700">
+                    <SchoolIcon className={`w-12 h-12 ${branch.is_main_branch ? 'text-primary' : (isOnline ? 'text-emerald-500' : 'text-white/40 group-hover:text-white')} transition-colors duration-500`} />
                     {(branch.is_main_branch || isOnline) && <div className={`absolute inset-0 rounded-full border ${isOnline ? 'border-emerald-500/20' : 'border-primary/20'} animate-ping opacity-20`} />}
                 </div>
 
                 {/* Title Group */}
                 <div className="flex flex-col items-center gap-3 text-center">
-                    <h3 className="font-serif text-5xl text-white tracking-tight">
+                    <h3 className="font-serif text-4xl text-white tracking-tight">
                         {branch.name}
                     </h3>
 
@@ -385,14 +385,14 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
     }
 
     return (
-        <div className="flex flex-col gap-12 pb-40 px-6 sm:px-8 max-w-[1600px] mx-auto w-full">
+        <div className="flex flex-col gap-8 pb-32 px-6 sm:px-8 max-w-[1600px] mx-auto w-full">
 
             {/* --- 1. Master Command Header --- */}
-            <div className="relative w-full overflow-hidden rounded-[50px] border border-white/5 bg-[#050505]">
+            <div className="relative w-full overflow-hidden rounded-[40px] border border-white/5 bg-[#050505]">
                 {/* Background FX */}
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/4" />
 
-                <div className="relative z-10 flex flex-col p-10 md:p-14 gap-12">
+                <div className="relative z-10 flex flex-col p-8 md:p-10 gap-10">
                     {/* Top Row: Meta & Lang */}
                     <div className="flex flex-row items-start justify-between w-full">
                         <div className="flex flex-row items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-primary text-[10px] font-bold uppercase tracking-[0.3em] backdrop-blur-md">
@@ -419,14 +419,14 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
 
                     {/* Middle Row: Title & Actions */}
                     <div className="flex flex-col xl:flex-row items-end justify-between gap-10">
-                        <div className="flex flex-col gap-6 max-w-4xl">
-                            <h2 className="text-5xl md:text-7xl lg:text-9xl font-serif text-white tracking-tighter leading-[0.85]">
+                        <div className="flex flex-col gap-3 max-w-4xl">
+                            <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif text-white tracking-tighter leading-[0.85]">
                                 {language === 'EN' ? 'INSTITUTIONAL' : 'संस्थागत'} <br />
                                 <span className="text-white/20 italic">
                                     {language === 'EN' ? 'NETWORK REGISTRY.' : 'नेटवर्क रजिस्ट्री।'}
                                 </span>
                             </h2>
-                            <p className="text-lg md:text-xl text-white/30 max-w-2xl leading-relaxed font-light">
+                            <p className="text-md md:text-lg text-white/30 max-w-2xl leading-relaxed font-light">
                                 Managed telemetry and encrypted protocol synchronization for distributed satellite campus nodes.
                             </p>
                         </div>
@@ -458,26 +458,26 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
 
                     {/* Bottom Row: Stats Matrix */}
                     <div className="w-full h-px bg-white/5" />
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
-                        <div className="flex flex-col gap-3">
-                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.3em]">Active Nodes</span>
-                            <span className="text-4xl font-serif text-white">{metrics?.total_nodes || branches.length} <span className="text-xl text-white/20 italic">/ 30</span></span>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[9px] font-bold uppercase text-white/20 tracking-[0.3em]">Active Nodes</span>
+                            <span className="text-3xl font-serif text-white">{metrics?.total_nodes || branches.length} <span className="text-lg text-white/20 italic">/ 30</span></span>
                         </div>
-                        <div className="flex flex-col gap-3">
-                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.3em]">Verified Links</span>
-                            <div className="flex items-center gap-4">
-                                <span className={`text-4xl font-serif ${(metrics?.verified_links || 0) > 0 ? 'text-indigo-400' : 'text-white/20'}`}>{metrics?.verified_links || 0}</span>
-                                {(metrics?.verified_links || 0) > 0 && <ShieldCheckIcon className="w-6 h-6 text-indigo-400" />}
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[9px] font-bold uppercase text-white/20 tracking-[0.3em]">Verified Links</span>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-3xl font-serif ${(metrics?.verified_links || 0) > 0 ? 'text-indigo-400' : 'text-white/20'}`}>{metrics?.verified_links || 0}</span>
+                                {(metrics?.verified_links || 0) > 0 && <ShieldCheckIcon className="w-5 h-5 text-indigo-400" />}
                             </div>
                         </div>
-                        <div className="flex flex-col gap-3">
-                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.3em]">Security Protocol</span>
-                            <span className="text-4xl font-mono text-primary tracking-tighter">256-BIT</span>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[9px] font-bold uppercase text-white/20 tracking-[0.3em]">Security Protocol</span>
+                            <span className="text-3xl font-mono text-primary tracking-tighter">256-BIT</span>
                         </div>
-                        <div className="flex flex-col gap-3">
-                            <span className="text-[10px] font-bold uppercase text-white/20 tracking-[0.3em]">System Status</span>
-                            <div className="flex items-center gap-4">
-                                <span className={`text-4xl font-serif ${metrics?.online_nodes ? 'text-emerald-500' : 'text-white/40'}`}>
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[9px] font-bold uppercase text-white/20 tracking-[0.3em]">System Status</span>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-3xl font-serif ${metrics?.online_nodes ? 'text-emerald-500' : 'text-white/40'}`}>
                                     {metrics?.online_nodes ? 'Online' : 'Standby'}
                                 </span>
                                 {metrics?.online_nodes > 0 && <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)]" />}
@@ -506,17 +506,17 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                         whileTap={{ scale: 0.98 }}
                         onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
                         className="
-                            relative flex flex-col items-center justify-center gap-8 min-h-[860px] 
-                            rounded-[40px] border border-dashed border-white/5 bg-transparent 
+                            relative flex flex-col items-center justify-center gap-6 min-h-[720px] 
+                            rounded-[32px] border border-dashed border-white/5 bg-transparent 
                             hover:bg-white/[0.01] transition-all group
                         "
                     >
-                        <div className="w-24 h-24 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
-                            <PlusIcon className="w-10 h-10 text-white/20 group-hover:text-primary transition-colors" />
+                        <div className="w-20 h-20 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
+                            <PlusIcon className="w-8 h-8 text-white/20 group-hover:text-primary transition-colors" />
                         </div>
-                        <div className="flex flex-col items-center gap-3 text-center">
-                            <span className="text-2xl font-serif text-white/20 group-hover:text-white/60 transition-colors italic">Expansion Protocol</span>
-                            <span className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/10 group-hover:text-white/40">Initialize Satellite Node</span>
+                        <div className="flex flex-col items-center gap-2 text-center">
+                            <span className="text-xl font-serif text-white/20 group-hover:text-white/60 transition-colors italic">Expansion Protocol</span>
+                            <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-white/10 group-hover:text-white/40">Initialize Satellite Node</span>
                         </div>
                     </motion.button>
                 )}
