@@ -834,4 +834,43 @@ BEGIN
 END;
 $$;
 
+-- RPC: Verify and Link Branch Admin (v2 - Hyphen Insensitive)
+DROP FUNCTION IF EXISTS public.verify_and_link_branch_admin(TEXT) CASCADE;
+CREATE OR REPLACE FUNCTION public.verify_and_link_branch_admin(p_invitation_code TEXT)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_branch_id BIGINT;
+    v_clean_code TEXT;
+BEGIN
+    -- Strip all non-alphanumeric characters from input
+    v_clean_code := UPPER(REGEXP_REPLACE(p_invitation_code, '[^A-Z0-9]', '', 'g'));
+
+    SELECT id INTO v_branch_id 
+    FROM public.school_branches 
+    WHERE UPPER(REGEXP_REPLACE(access_key, '[^A-Z0-9]', '', 'g')) = v_clean_code 
+      AND (status = 'Active' OR status = 'Pending');
+
+    IF v_branch_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'The Access Key provided is invalid, expired, or not authorized for this identity.');
+    END IF;
+
+    -- Update branch status to Active (Linked)
+    UPDATE public.school_branches SET status = 'Active' WHERE id = v_branch_id;
+
+    -- Link current profile to the branch
+    UPDATE public.profiles SET
+        branch_id = v_branch_id,
+        role = 'School Administration',
+        profile_completed = true
+    WHERE id = auth.uid();
+
+    -- Ensure specialized profile exists and set to completed
+    INSERT INTO public.school_admin_profiles (user_id, onboarding_step)
+    VALUES (auth.uid(), 'completed')
+    ON CONFLICT (user_id) DO UPDATE SET onboarding_step = 'completed';
+
+    RETURN jsonb_build_object('success', true, 'branch_id', v_branch_id);
+END;
+$$;
+
 COMMIT;

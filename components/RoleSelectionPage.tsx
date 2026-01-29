@@ -132,15 +132,15 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
     }
 
     const handleJoinBranch = async (e: React.MouseEvent | React.KeyboardEvent) => {
-        e.preventDefault();
-        // Sanitation: Remove spaces and uppercase
-        const rawInput = invitationCode.trim().toUpperCase();
-        // Allow for formatted inputs (e.g. ABCD-1234) or raw (ABCD1234)
-        // We strip spaces to be safe. We keep hyphens.
-        const code = rawInput.replace(/\s/g, '');
+        if (e && e.preventDefault) e.preventDefault();
+
+        // Sanitation: Remove spaces, hyphens, and any non-alphanumeric chars
+        // We want the pure alphanumeric string to compare
+        const code = invitationCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
         if (code.length < 6 || joinLoading) return;
 
+        console.log(`[Handshake] Initiating verification for node: ${code}`);
         setJoinLoading(true);
         setJoinError(null);
 
@@ -333,28 +333,34 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                                 value={invitationCode}
                                                 onChange={e => setInvitationCode(e.target.value.toUpperCase())}
                                                 onKeyDown={e => {
-                                                    if (e.key === 'Enter' && invitationCode.replace(/\s/g, '').length >= 6 && !joinLoading) {
+                                                    if (e.key === 'Enter' && invitationCode.replace(/[\s-]/g, '').length >= 6 && !joinLoading) {
                                                         handleJoinBranch(e);
                                                     }
                                                 }}
                                                 disabled={joinLoading}
-                                                placeholder="NODE ACCESS KEY"
-                                                className="w-full h-16 bg-[#050608] border-2 border-white/5 rounded-2xl text-center font-mono font-black tracking-[0.3em] text-white focus:border-primary/50 focus:ring-8 focus:ring-primary/5 outline-none transition-all disabled:opacity-40 placeholder:text-white/10 placeholder:tracking-normal placeholder:font-sans placeholder:text-[10px]"
+                                                placeholder="NODE ACCESS KEY (Format: XXXX-XXXX)"
+                                                className="w-full h-20 bg-[#050608] border-2 border-white/5 rounded-2xl text-center font-mono font-black tracking-[0.4em] text-white focus:border-primary/50 focus:ring-8 focus:ring-primary/5 outline-none transition-all disabled:opacity-40 placeholder:text-white/10 placeholder:tracking-normal placeholder:font-sans placeholder:text-[10px]"
                                             />
                                             <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-0 group-focus-within/input:opacity-100 pointer-events-none transition-all" />
                                         </div>
 
                                         <motion.button
-                                            whileHover={{ scale: 1.02, y: -2 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            onClick={handleJoinBranch}
-                                            disabled={joinLoading || invitationCode.replace(/\s/g, '').length < 6}
-                                            className="w-full h-16 bg-white/[0.05] hover:bg-white/10 text-white/40 hover:text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 disabled:opacity-20 active:scale-95 group/joinbtn border border-white/5"
+                                            whileHover={!(joinLoading || invitationCode.replace(/[\s-]/g, '').length < 6) ? { scale: 1.02, y: -2 } : {}}
+                                            whileTap={!(joinLoading || invitationCode.replace(/[\s-]/g, '').length < 6) ? { scale: 0.98 } : {}}
+                                            onClick={(e) => handleJoinBranch(e)}
+                                            disabled={joinLoading || invitationCode.replace(/[\s-]/g, '').length < 6}
+                                            className={`
+                                                w-full h-18 rounded-2xl font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 border shadow-2xl
+                                                ${(joinLoading || invitationCode.replace(/[\s-]/g, '').length < 6)
+                                                    ? 'bg-white/[0.02] border-white/5 text-white/10 cursor-not-allowed opacity-40'
+                                                    : 'bg-primary border-primary/20 text-white cursor-pointer hover:shadow-primary/20 hover:bg-primary/90'
+                                                }
+                                            `}
                                         >
                                             {joinLoading ? <Spinner size="sm" className="text-white" /> : (
                                                 <>
                                                     Verify & Access Node
-                                                    <div className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center group-hover/joinbtn:bg-primary transition-colors">
+                                                    <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
                                                         <ChevronRightIcon className="w-3 h-3" />
                                                     </div>
                                                 </>
