@@ -158,6 +158,14 @@ BEGIN
     SELECT role, school_id, branch_id INTO v_user_role, v_my_school_id, v_my_branch_id 
     FROM public.profiles WHERE id = auth.uid();
     
+    -- Fallback: If school_id is missing in profile, try to find it in school_admin_profiles
+    IF v_my_school_id IS NULL AND v_user_role IN ('School Admin', 'School Administration') THEN
+         -- Attempt lookup if table exists
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'school_admin_profiles') THEN
+            SELECT school_id INTO v_my_school_id FROM public.school_admin_profiles WHERE user_id = auth.uid();
+        END IF;
+    END IF;
+
     v_user_email := auth.jwt() ->> 'email';
 
     -- Case 1: Super Admin (See All)
@@ -196,6 +204,13 @@ DECLARE
     v_online_nodes INT;
 BEGIN
     SELECT role, school_id, branch_id INTO v_role, v_school_id, v_branch_id FROM public.profiles WHERE id = auth.uid();
+
+    -- Fallback: If school_id is missing in profile, try to find it in school_admin_profiles
+    IF v_school_id IS NULL AND v_role IN ('School Admin', 'School Administration') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'school_admin_profiles') THEN
+            SELECT school_id INTO v_school_id FROM public.school_admin_profiles WHERE user_id = auth.uid();
+        END IF;
+    END IF;
 
     -- Filter base table
     IF v_role IN ('School Admin', 'School Administration') AND v_branch_id IS NULL THEN
