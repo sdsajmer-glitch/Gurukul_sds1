@@ -393,10 +393,11 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                 <p className="text-red-500 text-[11px] font-black uppercase tracking-[0.4em]">{error}</p>
 
                 {error.includes('Desync') && (
-                    <div className="bg-black/50 p-4 rounded-xl text-left max-w-xl mx-auto border border-white/10 mt-4">
-                        <p className="text-white/40 text-[10px] font-mono mb-2">RUN THIS SQL TO FIX:</p>
-                        <code className="block text-[10px] text-green-400 font-mono bg-black p-2 rounded selectable">
+                    <div className="bg-black/50 p-4 rounded-xl text-left max-w-xl mx-auto border border-white/10 mt-4 select-all">
+                        <p className="text-white/40 text-[10px] font-mono mb-2">CRITICAL DATABASE FIX REQUIRED. PLEASE RUN THIS IN SUPABASE SQL EDITOR:</p>
+                        <code className="block text-[10px] text-green-400 font-mono bg-black p-4 rounded-lg border border-white/5">
                             ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS school_id UUID;<br />
+                            ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS branch_id BIGINT;<br />
                             ALTER TABLE public.school_branches ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES public.school_admin_profiles(user_id) ON DELETE CASCADE;<br />
                             NOTIFY pgrst, 'reload schema';
                         </code>

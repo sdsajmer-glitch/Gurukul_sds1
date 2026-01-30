@@ -30,12 +30,8 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             if (profileError) throw profileError;
             setSchoolProfile(profileData);
 
-            // Fetch branches
-            const { data: branchData, error: branchError } = await supabase
-                .from('school_branches')
-                .select('*')
-                .eq('school_id', profileData.id)
-                .order('created_at', { ascending: true });
+            // Fetch branches via RPC (handles missing columns/fallback better)
+            const { data: branchData, error: branchError } = await supabase.rpc('get_school_branches');
 
             if (branchError) throw branchError;
             setBranches(branchData || []);
