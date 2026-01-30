@@ -41,6 +41,23 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Critical UI Error Captured:", error, errorInfo);
+
+    // Auto-Recovery for Deployment Sync Issues (Vite Chunk Failures)
+    const isChunkError = error.message.includes('Failed to fetch dynamically imported module') ||
+      error.message.includes('error loading dynamically imported module') ||
+      error.message.includes('Importing a stopped module');
+
+    if (isChunkError) {
+      console.warn("Detected dynamic module handshake failure. Initiating automated node sync...");
+      const lastReload = sessionStorage.getItem('last_chunk_reload');
+      const now = Date.now();
+
+      // Prevent reload loops (only reload if last reload was > 5s ago)
+      if (!lastReload || now - parseInt(lastReload) > 5000) {
+        sessionStorage.setItem('last_chunk_reload', now.toString());
+        window.location.reload();
+      }
+    }
   }
 
   render(): ReactNode {
