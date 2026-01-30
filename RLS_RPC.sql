@@ -145,7 +145,7 @@ $$;
 -- 3. STRICT VISIBILITY RPCs (The Core Fix)
 -- ===============================================================================================
 
--- RPC: Get School Branches (STRICTLY FILTERED)
+-- RPC: Get School Branches (STRICTLY FILTERED - Desync Proof)
 DROP FUNCTION IF EXISTS public.get_school_branches() CASCADE;
 CREATE OR REPLACE FUNCTION public.get_school_branches()
 RETURNS SETOF public.school_branches LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -155,15 +155,24 @@ DECLARE
     v_my_branch_id BIGINT;
     v_user_email TEXT;
 BEGIN
-    SELECT role, school_id, branch_id INTO v_user_role, v_my_school_id, v_my_branch_id 
-    FROM public.profiles WHERE id = auth.uid();
+    BEGIN
+        SELECT role, school_id, branch_id INTO v_user_role, v_my_school_id, v_my_branch_id 
+        FROM public.profiles WHERE id = auth.uid();
+    EXCEPTION WHEN undefined_column THEN
+        -- Fallback: Fetch basic profile data if columns are missing
+        SELECT role INTO v_user_role FROM public.profiles WHERE id = auth.uid();
+        v_my_school_id := NULL;
+        v_my_branch_id := NULL;
+    END;
     
     -- Fallback: If school_id is missing in profile, try to find it in school_admin_profiles
     IF v_my_school_id IS NULL AND v_user_role IN ('School Admin', 'School Administration') THEN
-         -- Attempt lookup if table exists
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'school_admin_profiles') THEN
-            SELECT school_id INTO v_my_school_id FROM public.school_admin_profiles WHERE user_id = auth.uid();
-        END IF;
+        BEGIN
+            -- In school_admin_profiles, the ID is user_id
+            SELECT user_id INTO v_my_school_id FROM public.school_admin_profiles WHERE user_id = auth.uid();
+        EXCEPTION WHEN OTHERS THEN
+            v_my_school_id := NULL;
+        END;
     END IF;
 
     v_user_email := auth.jwt() ->> 'email';
@@ -191,7 +200,7 @@ BEGIN
 END;
 $$;
 
--- RPC: Get Network Registry Metrics (STRICTLY FILTERED)
+-- RPC: Get Network Registry Metrics (STRICTLY FILTERED - Desync Proof)
 DROP FUNCTION IF EXISTS public.get_network_registry_metrics() CASCADE;
 CREATE OR REPLACE FUNCTION public.get_network_registry_metrics()
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -203,25 +212,30 @@ DECLARE
     v_verified_links INT;
     v_online_nodes INT;
 BEGIN
-    SELECT role, school_id, branch_id INTO v_role, v_school_id, v_branch_id FROM public.profiles WHERE id = auth.uid();
+    BEGIN
+        SELECT role, school_id, branch_id INTO v_role, v_school_id, v_branch_id FROM public.profiles WHERE id = auth.uid();
+    EXCEPTION WHEN undefined_column THEN
+        SELECT role INTO v_role FROM public.profiles WHERE id = auth.uid();
+        v_school_id := NULL; v_branch_id := NULL;
+    END;
 
     -- Fallback: If school_id is missing in profile, try to find it in school_admin_profiles
     IF v_school_id IS NULL AND v_role IN ('School Admin', 'School Administration') THEN
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'school_admin_profiles') THEN
-            SELECT school_id INTO v_school_id FROM public.school_admin_profiles WHERE user_id = auth.uid();
-        END IF;
+        BEGIN
+            SELECT user_id INTO v_school_id FROM public.school_admin_profiles WHERE user_id = auth.uid();
+        EXCEPTION WHEN OTHERS THEN v_school_id := NULL; END;
     END IF;
 
     -- Filter base table
     IF v_role IN ('School Admin', 'School Administration') AND v_branch_id IS NULL THEN
         -- School View: All Nodes
-        SELECT count(*), count(*) FILTER (WHERE status = 'Verified'), count(*) FILTER (WHERE status = 'Online')
+        SELECT count(*), count(*) FILTER (WHERE status = 'Verified' OR status = 'Active'), count(*) FILTER (WHERE status = 'Online')
         INTO v_total_nodes, v_verified_links, v_online_nodes
         FROM public.school_branches
         WHERE school_id = v_school_id;
     ELSE
         -- Branch View: Only Self
-        SELECT count(*), count(*) FILTER (WHERE status = 'Verified'), count(*) FILTER (WHERE status = 'Online')
+        SELECT count(*), count(*) FILTER (WHERE status = 'Verified' OR status = 'Active'), count(*) FILTER (WHERE status = 'Online')
         INTO v_total_nodes, v_verified_links, v_online_nodes
         FROM public.school_branches
         WHERE id = v_branch_id;
@@ -232,7 +246,7 @@ BEGIN
         'verified_links', COALESCE(v_verified_links, 0),
         'online_nodes', COALESCE(v_online_nodes, 0),
         'protocol_health', 100,
-        'version', 'v4.5'
+        'version', 'v4.5-resilient'
     );
 END;
 $$;
