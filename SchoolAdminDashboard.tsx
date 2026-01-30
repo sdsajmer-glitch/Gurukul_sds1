@@ -46,13 +46,22 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
     const [loadingData, setLoadingData] = useState(true);
     const [dataError, setDataError] = useState<string | null>(null);
 
+    // Discovery: Determine if the user holds Head Office (HO) credentials
     const isHeadOfficeAdmin = useMemo(() => {
-        return profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !profile.branch_id;
-    }, [profile.role, profile.branch_id]);
+        const isHO = profile.role === BuiltInRoles.SUPER_ADMIN ||
+            (profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !profile.branch_id);
+
+        // If assigned to a branch, check if it's the Main Node
+        if (!isHO && profile.branch_id && branches.length > 0) {
+            const myBranch = branches.find(b => b.id === profile.branch_id);
+            return myBranch?.is_main_branch === true;
+        }
+        return isHO;
+    }, [profile.role, profile.branch_id, branches]);
 
     const isBranchAdmin = useMemo(() => {
-        return profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !!profile.branch_id;
-    }, [profile.role, profile.branch_id]);
+        return profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !isHeadOfficeAdmin;
+    }, [profile.role, isHeadOfficeAdmin]);
 
     const menuGroups = useMemo(() => {
         if (!profile.role) return [];
@@ -109,12 +118,17 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
 
             setBranches(sortedBranches);
 
+            setBranches(sortedBranches);
+
+            // Governance: Strictly enforce branch selection based on HO status
             let targetId: number | null = null;
-            if (isBranchAdmin) {
-                targetId = profileBranchId || sortedBranches[0]?.id || null;
-            } else if (sortedBranches.length > 0) {
+            if (isHeadOfficeAdmin) {
+                // HO Admin defaults to Main Branch or First Available
                 const mainBranch = sortedBranches.find(b => b.is_main_branch);
-                targetId = mainBranch ? mainBranch.id : sortedBranches[0].id;
+                targetId = currentBranchId || mainBranch?.id || sortedBranches[0]?.id || null;
+            } else {
+                // Branch Admin is LOCKED to their assigned branch
+                targetId = profileBranchId || sortedBranches[0]?.id || null;
             }
             setCurrentBranchId(targetId);
 

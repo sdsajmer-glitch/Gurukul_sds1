@@ -29,6 +29,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
 
     const [completedRoles, setCompletedRoles] = useState<Set<string>>(new Set());
     const [checkingRoles, setCheckingRoles] = useState(false);
+    const [branchName, setBranchName] = useState<string | null>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -53,10 +54,14 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
 
             // Channel 2: Targeted Redundancy Check (Explicit sub-profile table queries)
             // This ensures that even if the RPC result is stale, recently created profiles are caught.
-            const [parentCheck, adminCheck] = await Promise.all([
+            const [parentCheck, adminCheck, branchCheck] = await Promise.all([
                 supabase.from('parent_profiles').select('user_id').eq('user_id', profile.id).maybeSingle(),
-                supabase.from('school_admin_profiles').select('user_id, onboarding_step').eq('user_id', profile.id).maybeSingle()
+                supabase.from('school_admin_profiles').select('user_id, onboarding_step').eq('user_id', profile.id).maybeSingle(),
+                profile.branch_id ? supabase.from('school_branches').select('name').eq('id', profile.branch_id).maybeSingle() : Promise.resolve({ data: null, error: null })
             ]);
+
+            if (branchCheck.data) setBranchName(branchCheck.data.name);
+            else setBranchName(null);
 
             const found = new Set<string>();
 
@@ -138,7 +143,10 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                 </div>
                 <div className="hidden md:flex flex-col items-start text-left mr-1">
                     <span className="text-xs font-bold text-white leading-tight max-w-[120px] truncate">{profile.display_name}</span>
-                    <span className="text-[9px] font-black text-white/30 max-w-[120px] truncate uppercase tracking-widest leading-none mt-0.5">{profile.role || 'Provisioning'}</span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                        <span className="text-[9px] font-black text-white/40 max-w-[120px] truncate uppercase tracking-widest leading-none">{profile.role || 'Provisioning'}</span>
+                    </div>
                 </div>
                 <ChevronDownIcon className={`h-3 w-3 text-white/20 transition-transform duration-500 ${isOpen ? 'rotate-180 text-primary opacity-100' : ''}`} />
             </button>
@@ -148,15 +156,32 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                     <div className="flex flex-col">
                         {/* Identity Header */}
                         <div className="p-8 pb-6 flex items-center gap-5 border-b border-white/5 bg-white/[0.01]">
-                            <PremiumAvatar
-                                src={profile.profile_photo_url}
-                                name={profile.display_name}
-                                size="sm"
-                                className="w-14 h-14 rounded-2xl shadow-2xl border border-white/10"
-                            />
-                            <div className="min-w-0">
+                            <div className="relative">
+                                <PremiumAvatar
+                                    src={profile.profile_photo_url}
+                                    name={profile.display_name}
+                                    size="sm"
+                                    className="w-14 h-14 rounded-2xl shadow-2xl border border-white/10"
+                                />
+                                <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-4 h-4 rounded-full border-4 border-[#0d0f14] flex items-center justify-center">
+                                    <div className="w-1 h-1 bg-white rounded-full animate-ping"></div>
+                                </div>
+                            </div>
+                            <div className="min-w-0 flex-1">
                                 <p className="font-serif font-black text-white text-lg truncate leading-tight uppercase tracking-tight">{profile.display_name}</p>
-                                <p className="text-[11px] text-white/30 truncate mt-1.5 font-medium tracking-tight opacity-60">{profile.email}</p>
+                                <div className="flex flex-col gap-1 mt-2 min-w-0">
+                                    <p className="text-[11px] text-white/40 truncate font-medium tracking-tight overflow-hidden">{profile.email}</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10">
+                                            <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">{profile.role}</span>
+                                        </div>
+                                        {branchName && (
+                                            <div className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20">
+                                                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.2em]">{branchName}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -198,12 +223,12 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                                                             </div>
                                                             <div className="flex-grow text-left">
                                                                 <span className={`block text-[11px] font-black uppercase tracking-[0.15em] ${isCurrent ? 'text-primary' : 'text-white/50 group-hover/item:text-white/80 transition-colors'}`}>{roleName}</span>
-                                                                {isCurrent && (
-                                                                    <div className="flex items-center gap-2 mt-1 animate-in fade-in slide-in-from-left-2 duration-700">
-                                                                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
-                                                                        <span className="block text-[9px] text-emerald-500 font-black uppercase tracking-[0.2em]">Primary Session</span>
-                                                                    </div>
-                                                                )}
+                                                                <div className="flex items-center gap-2 mt-1.5">
+                                                                    <div className={`w-1 h-1 rounded-full ${isCurrent ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-white/20'}`}></div>
+                                                                    <span className={`block text-[9px] font-black uppercase tracking-[0.2em] ${isCurrent ? 'text-emerald-500' : 'text-white/20 group-hover/item:text-white/40'}`}>
+                                                                        {isCurrent ? 'Active Session' : 'Identity Verified'}
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                             {processingRole === roleName ? (
                                                                 <Spinner size="sm" className="text-primary" />

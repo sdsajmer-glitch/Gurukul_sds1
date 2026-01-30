@@ -39,8 +39,9 @@ const BranchCard: React.FC<{
     onEdit: () => void,
     onDelete: () => void,
     onSync: () => void,
+    isHeadOfficeAdmin: boolean,
     index: number
-}> = ({ branch, onEdit, onDelete, onSync, index }) => {
+}> = ({ branch, onEdit, onDelete, onSync, isHeadOfficeAdmin, index }) => {
     const [copied, setCopied] = useState(false);
     const [revealed, setRevealed] = useState(false);
     const [handshakeStep, setHandshakeStep] = useState<HandshakeStatus>(
@@ -101,25 +102,27 @@ const BranchCard: React.FC<{
 
                 {/* Status & Actions Group */}
                 <div className="flex items-center gap-3">
-                    {/* Hover Actions */}
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                            className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
-                            title="Edit Configuration"
-                        >
-                            <EditIcon className="w-4 h-4" />
-                        </button>
-                        {!branch.is_main_branch && (
+                    {/* Hover Actions (LOCKED for Branch Admins) */}
+                    {isHeadOfficeAdmin && (
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
                             <button
-                                onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                                className="w-9 h-9 rounded-full bg-red-500/5 border border-red-500/10 flex items-center justify-center text-red-500/40 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all"
-                                title="Decommission Node"
+                                onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                                className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
+                                title="Edit Configuration"
                             >
-                                <TrashIcon className="w-4 h-4" />
+                                <EditIcon className="w-4 h-4" />
                             </button>
-                        )}
-                    </div>
+                            {!branch.is_main_branch && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                                    className="w-9 h-9 rounded-full bg-red-500/5 border border-red-500/10 flex items-center justify-center text-red-500/40 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all"
+                                    title="Decommission Node"
+                                >
+                                    <TrashIcon className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     {/* Status Badge */}
                     <div className={`
@@ -519,6 +522,7 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                         key={branch.id}
                         branch={branch}
                         index={idx}
+                        isHeadOfficeAdmin={isHeadOfficeAdmin}
                         onEdit={() => { setSelectedBranch(branch); setDrawerMode('EDIT'); }}
                         onDelete={() => setBranchToDelete(branch)}
                         onSync={() => { /* Quick Sync Logic */ fetchMetrics(); }}
@@ -614,8 +618,8 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                     <BranchForm
                         branch={selectedBranch}
                         schoolProfile={schoolProfile}
-                        readOnly={drawerMode === 'DETAILS'}
-                        onEditMode={() => setDrawerMode('EDIT')}
+                        readOnly={drawerMode === 'DETAILS' || !isHeadOfficeAdmin}
+                        onEditMode={() => isHeadOfficeAdmin && setDrawerMode('EDIT')}
                         onSave={(branch) => {
                             setDrawerMode(null);
                             onBranchUpdate();

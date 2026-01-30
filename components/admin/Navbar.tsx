@@ -24,10 +24,11 @@ interface NavbarProps {
     menuGroups: MenuGroup[];
 }
 
-const Navbar: React.FC<NavbarProps> = ({ 
-    activeComponent, 
-    setActiveComponent, 
-    isBranchAdmin, 
+const Navbar: React.FC<NavbarProps> = ({
+    activeComponent,
+    setActiveComponent,
+    isBranchAdmin,
+    isHeadOfficeAdmin,
     profile,
     onSelectRole,
     onSignOut,
@@ -46,24 +47,28 @@ const Navbar: React.FC<NavbarProps> = ({
                     <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 -ml-2 text-muted-foreground hover:bg-muted rounded-xl transition-colors">
                         <MenuIcon className="h-6 w-6" />
                     </button>
-                    
+
                     <div className="h-8 w-px bg-border/60 mx-1 hidden lg:block"></div>
-                    
+
                     {currentBranch && (
-                        <div className="flex items-center gap-2 group cursor-pointer overflow-hidden max-w-[150px] md:max-w-none">
-                            <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-500 hidden sm:block">
+                        <div className={`flex items-center gap-2 group overflow-hidden max-w-[150px] md:max-w-none ${isHeadOfficeAdmin ? 'cursor-pointer' : 'cursor-default'}`}>
+                            <div className={`p-1.5 rounded-lg hidden sm:block ${isHeadOfficeAdmin ? 'bg-indigo-500/10 text-indigo-500' : 'bg-muted text-muted-foreground'}`}>
                                 <LocationIcon className="w-3.5 h-3.5" />
                             </div>
-                            <select
-                                value={currentBranchId || ''}
-                                onChange={(e) => onSwitchBranch(parseInt(e.target.value))}
-                                className="appearance-none bg-transparent py-1 text-xs md:text-sm font-black text-foreground focus:outline-none cursor-pointer hover:text-primary transition-colors truncate"
-                            >
-                                {branches.map(b => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                ))}
-                            </select>
-                            {!isBranchAdmin && <ChevronDownIcon className="w-3 h-3 opacity-30 group-hover:opacity-100 hidden sm:block"/>}
+                            <div className="flex flex-col min-w-0">
+                                <select
+                                    value={currentBranchId || ''}
+                                    onChange={(e) => isHeadOfficeAdmin && onSwitchBranch(parseInt(e.target.value))}
+                                    disabled={!isHeadOfficeAdmin}
+                                    className={`appearance-none bg-transparent py-1 text-xs md:text-sm font-black text-foreground focus:outline-none transition-colors truncate ${isHeadOfficeAdmin ? 'cursor-pointer hover:text-primary' : 'cursor-default opacity-80'}`}
+                                >
+                                    {branches.map(b => (
+                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                    ))}
+                                </select>
+                                {!isHeadOfficeAdmin && <span className="text-[8px] font-black uppercase text-muted-foreground/50 tracking-tighter -mt-1 leading-none">Restricted Access</span>}
+                            </div>
+                            {isHeadOfficeAdmin && <ChevronDownIcon className="w-3 h-3 opacity-30 group-hover:opacity-100 hidden sm:block animate-pulse" />}
                         </div>
                     )}
                 </div>
@@ -76,11 +81,11 @@ const Navbar: React.FC<NavbarProps> = ({
                         <BellIcon className="h-5 w-5" />
                         <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
                     </button>
-                    <ProfileDropdown 
-                        profile={profile} 
-                        onSignOut={onSignOut} 
-                        onSelectRole={onSelectRole} 
-                        onProfileClick={() => setActiveComponent('Profile')} 
+                    <ProfileDropdown
+                        profile={profile}
+                        onSignOut={onSignOut}
+                        onSelectRole={onSelectRole}
+                        onProfileClick={() => setActiveComponent('Profile')}
                     />
                 </div>
             </nav>
@@ -91,13 +96,13 @@ const Navbar: React.FC<NavbarProps> = ({
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
                     <div className="absolute left-0 top-0 bottom-0 w-[280px] bg-card border-r border-border shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
                         <div className="p-5 border-b border-border flex justify-between items-center bg-muted/10">
-                             <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3">
                                 <SchoolIcon className="h-6 w-6 text-primary" />
                                 <span className="font-black text-foreground uppercase tracking-widest text-xs">Admin Menu</span>
                             </div>
-                            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl hover:bg-muted text-muted-foreground"><XIcon className="w-5 h-5"/></button>
+                            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl hover:bg-muted text-muted-foreground"><XIcon className="w-5 h-5" /></button>
                         </div>
-                        
+
                         <div className="flex-1 overflow-y-auto p-4 space-y-8 custom-scrollbar">
                             {menuGroups.map((group) => (
                                 <div key={group.id} className="space-y-2">

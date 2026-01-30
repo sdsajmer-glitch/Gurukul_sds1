@@ -61,6 +61,29 @@ BEGIN RETURN (SELECT branch_id FROM public.profiles WHERE id = auth.uid()); END;
 CREATE OR REPLACE FUNCTION public.is_super_admin() RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'Super Admin'); END; $$;
 
+CREATE OR REPLACE FUNCTION public.is_head_office_admin() RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_role TEXT;
+    v_branch_id BIGINT;
+    v_is_main BOOLEAN;
+BEGIN
+    SELECT role, branch_id INTO v_role, v_branch_id FROM public.profiles WHERE id = auth.uid();
+    
+    -- Case 1: Super Admin is always Head Office
+    IF v_role = 'Super Admin' THEN RETURN TRUE; END IF;
+    
+    -- Case 2: School Admin with no branch_id is Centralized Owner
+    IF v_role IN ('School Admin', 'School Administration') AND v_branch_id IS NULL THEN RETURN TRUE; END IF;
+    
+    -- Case 3: Explicitly assigned to Main Branch
+    IF v_branch_id IS NOT NULL THEN
+        SELECT is_main_branch INTO v_is_main FROM public.school_branches WHERE id = v_branch_id;
+        IF v_is_main THEN RETURN TRUE; END IF;
+    END IF;
+    
+    RETURN FALSE;
+END; $$;
+
 -- HANDSHAKE: Verify Branch Access Key (Enhanced for Redundancy)
 CREATE OR REPLACE FUNCTION public.verify_branch_execution_node(
     p_access_key TEXT,
@@ -100,53 +123,60 @@ BEGIN
 END;
 $$;
 
--- Helper: VIEW ACCESS (Read-Only from Master Support)
+-- Helper: VIEW ACCESS (v4.0 Strict Isolation)
 CREATE OR REPLACE FUNCTION public.has_institutional_access(p_school_id UUID, p_branch_id BIGINT DEFAULT NULL)
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-    v_role TEXT;
+    v_is_ho BOOLEAN;
     v_my_school UUID;
     v_my_branch BIGINT;
 BEGIN
     IF public.is_super_admin() THEN RETURN TRUE; END IF;
-    SELECT role, school_id, branch_id INTO v_role, v_my_school, v_my_branch FROM public.profiles WHERE id = auth.uid();
+    
+    v_is_ho := public.is_head_office_admin();
+    v_my_school := public.get_my_school_id();
+    v_my_branch := public.get_my_branch_id();
 
-    -- School Admin: Must match school_id
-    IF v_role IN ('School Admin', 'School Administration') THEN
-        RETURN v_my_school = p_school_id;
+    -- Rule 1: School ID must match (Zero-Leakage)
+    IF v_my_school IS NULL OR v_my_school != p_school_id THEN RETURN FALSE; END IF;
+
+    -- Rule 2: HO Admin can see all branches in institutional network
+    IF v_is_ho THEN RETURN TRUE; END IF;
+
+    -- Rule 3: Branch Level can only see records for their branch OR global institution records
+    IF p_branch_id IS NULL OR v_my_branch = p_branch_id THEN
+        RETURN TRUE;
     END IF;
 
-    -- Branch Admin / Staff / Student: Match School ID AND (Match Branch OR Global Record)
-    IF v_my_school = p_school_id THEN
-        IF p_branch_id IS NULL OR v_my_branch = p_branch_id THEN
-            RETURN TRUE;
-        END IF;
-    END IF;
     RETURN FALSE;
 END;
 $$;
 
--- Helper: WRITE ACCESS (Strict Isolation)
+-- Helper: WRITE ACCESS (v4.0 Strict Isolation)
 CREATE OR REPLACE FUNCTION public.has_institutional_write_access(p_school_id UUID, p_branch_id BIGINT DEFAULT NULL)
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-    v_role TEXT;
+    v_is_ho BOOLEAN;
     v_my_school UUID;
     v_my_branch BIGINT;
 BEGIN
     IF public.is_super_admin() THEN RETURN TRUE; END IF;
-    SELECT role, school_id, branch_id INTO v_role, v_my_school, v_my_branch FROM public.profiles WHERE id = auth.uid();
     
-    -- School Admin: Full Write
-    IF v_role IN ('School Admin', 'School Administration') THEN
-        RETURN v_my_school = p_school_id;
-    END IF;
-    
-    -- Branch Admin: Write ONLY to Own Branch
-    IF v_my_school = p_school_id AND p_branch_id IS NOT NULL AND v_my_branch = p_branch_id THEN
+    v_is_ho := public.is_head_office_admin();
+    v_my_school := public.get_my_school_id();
+    v_my_branch := public.get_my_branch_id();
+
+    -- Rule 1: School ID must match
+    IF v_my_school IS NULL OR v_my_school != p_school_id THEN RETURN FALSE; END IF;
+
+    -- Rule 2: HO Admin has full write access
+    IF v_is_ho THEN RETURN TRUE; END IF;
+
+    -- Rule 3: Branch Level can ONLY write to their specific branch
+    IF p_branch_id IS NOT NULL AND v_my_branch = p_branch_id THEN
         RETURN TRUE;
     END IF;
-    
+
     RETURN FALSE;
 END;
 $$;
@@ -154,55 +184,30 @@ $$;
 -- 3. STRICT VISIBILITY RPCs (The Core Fix)
 -- ===============================================================================================
 
--- RPC: Get School Branches (STRICTLY FILTERED - Desync Proof)
+-- RPC: Get School Branches (STRICTLY FILTERED v5.0)
 DROP FUNCTION IF EXISTS public.get_school_branches() CASCADE;
 CREATE OR REPLACE FUNCTION public.get_school_branches()
 RETURNS SETOF public.school_branches LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-    v_user_role TEXT;
+    v_is_ho BOOLEAN;
     v_my_school_id UUID;
     v_my_branch_id BIGINT;
     v_user_email TEXT;
 BEGIN
-    BEGIN
-        SELECT role, school_id, branch_id INTO v_user_role, v_my_school_id, v_my_branch_id 
-        FROM public.profiles WHERE id = auth.uid();
-    EXCEPTION WHEN undefined_column THEN
-        -- Fallback: Fetch basic profile data if columns are missing
-        SELECT role INTO v_user_role FROM public.profiles WHERE id = auth.uid();
-        v_my_school_id := NULL;
-        v_my_branch_id := NULL;
-    END;
-    
-    -- Fallback: If school_id is missing in profile, try to find it in school_admin_profiles
-    IF v_my_school_id IS NULL AND v_user_role IN ('School Admin', 'School Administration') THEN
-        BEGIN
-            -- In school_admin_profiles, the ID is user_id
-            SELECT user_id INTO v_my_school_id FROM public.school_admin_profiles WHERE user_id = auth.uid();
-        EXCEPTION WHEN OTHERS THEN
-            v_my_school_id := NULL;
-        END;
-    END IF;
-
+    v_is_ho := public.is_head_office_admin();
+    v_my_school_id := public.get_my_school_id();
+    v_my_branch_id := public.get_my_branch_id();
     v_user_email := auth.jwt() ->> 'email';
 
-    -- Case 1: Super Admin (See All)
-    IF v_user_role = 'Super Admin' THEN
-        RETURN QUERY SELECT * FROM public.school_branches ORDER BY name;
-        RETURN;
-    END IF;
-
-    -- Case 2: School Admin (See All in School)
-    IF v_user_role IN ('School Admin', 'School Administration') AND v_my_branch_id IS NULL THEN
-        -- He is a centralized admin
+    -- Case 1: Head Office / Super Admin (Can view entire network)
+    IF v_is_ho THEN
         RETURN QUERY SELECT * FROM public.school_branches 
-        WHERE school_id = v_my_school_id
+        WHERE school_id = v_my_school_id OR public.is_super_admin()
         ORDER BY is_main_branch DESC, name;
         RETURN;
     END IF;
 
-    -- Case 3: Branch Admin / Staff (See ONLY Own Branch)
-    -- Also include "Target Identity" match for Handshake Phase (Email match)
+    -- Case 2: Branch Level (Restricted to assigned branch only)
     RETURN QUERY SELECT * FROM public.school_branches 
     WHERE id = v_my_branch_id 
        OR LOWER(admin_email) = LOWER(v_user_email);
@@ -235,19 +240,19 @@ BEGIN
         EXCEPTION WHEN OTHERS THEN v_school_id := NULL; END;
     END IF;
 
-    -- Filter base table
-    IF v_role IN ('School Admin', 'School Administration') AND v_branch_id IS NULL THEN
+    -- Filter base table (v2.0 with HO logic)
+    IF public.is_head_office_admin() THEN
         -- School View: All Nodes
         SELECT count(*), count(*) FILTER (WHERE status = 'Verified' OR status = 'Active'), count(*) FILTER (WHERE status = 'Online')
         INTO v_total_nodes, v_verified_links, v_online_nodes
         FROM public.school_branches
-        WHERE school_id = v_school_id;
+        WHERE school_id = public.get_my_school_id() OR public.is_super_admin();
     ELSE
         -- Branch View: Only Self
         SELECT count(*), count(*) FILTER (WHERE status = 'Verified' OR status = 'Active'), count(*) FILTER (WHERE status = 'Online')
         INTO v_total_nodes, v_verified_links, v_online_nodes
         FROM public.school_branches
-        WHERE id = v_branch_id;
+        WHERE id = public.get_my_branch_id();
     END IF;
 
     RETURN jsonb_build_object(
@@ -367,6 +372,29 @@ BEGIN
 END;
 $$;
 
+-- RPC: Get All Users for Admin (STRICT BRANCH FILTERING)
+DROP FUNCTION IF EXISTS public.get_all_users_for_admin() CASCADE;
+CREATE OR REPLACE FUNCTION public.get_all_users_for_admin()
+RETURNS SETOF public.profiles LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_is_ho BOOLEAN;
+    v_my_school_id UUID;
+    v_my_branch_id BIGINT;
+BEGIN
+    v_is_ho := public.is_head_office_admin();
+    v_my_school_id := public.get_my_school_id();
+    v_my_branch_id := public.get_my_branch_id();
+
+    IF v_is_ho THEN
+        -- HO can see all users in the institutional network
+        RETURN QUERY SELECT * FROM public.profiles WHERE school_id = v_my_school_id OR public.is_super_admin();
+    ELSE
+        -- Branch Admin is LOCKED to seeing only their branch directory
+        RETURN QUERY SELECT * FROM public.profiles WHERE branch_id = v_my_branch_id;
+    END IF;
+END;
+$$;
+
 -- 4. DYNAMIC RLS ENFORCEMENT
 -- ===============================================================================================
 
@@ -383,20 +411,13 @@ BEGIN
         EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
     END LOOP;
 
-    -- Policy: Branch Registry (Strict)
-    DROP POLICY IF EXISTS "Branch Registry Policy" ON public.school_branches;
-    CREATE POLICY "Branch Registry Policy" ON public.school_branches FOR ALL USING (
-        -- School Admin
-        (school_id = public.get_my_school_id() AND public.get_my_branch_id() IS NULL)
-        OR 
-        -- Branch Admin (Own Branch)
-        id = public.get_my_branch_id()
-        OR 
-        -- Handshake Candidate (Based on Email)
-        LOWER(admin_email) = LOWER(auth.jwt() ->> 'email')
-        OR
-        -- Allow Access Key Lookup (for verify RPC, though RPC is SECURITY DEFINER, this adds safety for Selects if needed)
-        true
+    -- Policy: Profiles (Self & Chain of Command)
+    DROP POLICY IF EXISTS "Profile Discovery Policy" ON public.profiles;
+    CREATE POLICY "Profile Discovery Policy" ON public.profiles FOR ALL USING (
+        id = auth.uid() 
+        OR public.is_super_admin()
+        OR (school_id = public.get_my_school_id() AND public.is_head_office_admin())
+        OR (branch_id = public.get_my_branch_id() AND public.get_my_branch_id() IS NOT NULL)
     );
 
     -- Apply policies to all other tables
