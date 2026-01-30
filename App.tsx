@@ -26,22 +26,22 @@ const App: React.FC = () => {
             // Attempt Auto-Handshake (Role Resolution)
             await supabase.rpc('auto_handshake_on_login');
 
-            let { data, error: profileError } = await supabase
+            let { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', user.id)
-                .maybeSingle(); // Use maybeSingle to avoid error on 404
+                .maybeSingle();
 
             if (profileError) throw profileError;
 
-            if (!data) {
+            if (!profileData) {
                 // Profile missing, attempt to create it (Self-Healing)
                 console.log("Profile missing for user, attempting to create...");
                 const newProfile = {
                     id: user.id,
                     email: user.email,
                     display_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'New User',
-                    role: null, // Allow user to select role
+                    role: null,
                     is_active: true
                 };
 
@@ -51,7 +51,6 @@ const App: React.FC = () => {
 
                 if (createError) throw createError;
 
-                // Retry fetch
                 const { data: retryData, error: retryError } = await supabase
                     .from('profiles')
                     .select('*')
@@ -59,10 +58,23 @@ const App: React.FC = () => {
                     .single();
 
                 if (retryError) throw retryError;
-                data = retryData;
+                profileData = retryData;
             }
 
-            setProfile(data as UserProfile);
+            // Sync Onboarding Step for School Administration identity nodes
+            if (profileData?.role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+                const { data: adminData } = await supabase
+                    .from('school_admin_profiles')
+                    .select('onboarding_step')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+
+                if (adminData) {
+                    (profileData as any).onboarding_step = adminData.onboarding_step;
+                }
+            }
+
+            setProfile(profileData as UserProfile);
         } catch (err: any) {
             console.error("Profile Fetch Error:", err);
             setError(formatError(err));

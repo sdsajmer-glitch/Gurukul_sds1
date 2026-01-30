@@ -158,7 +158,8 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 display_name: formData.display_name,
                 phone: formData.phone,
                 profile_completed: role !== BuiltInRoles.SCHOOL_ADMINISTRATION,
-                role: role
+                role: role,
+                school_id: role === BuiltInRoles.SCHOOL_ADMINISTRATION ? profile.id : profile.school_id
             }).eq('id', profile.id);
 
             if (profileError) throw profileError;

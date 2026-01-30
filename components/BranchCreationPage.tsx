@@ -68,7 +68,15 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             {branches.length > 0 && (
                 <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-8 duration-1000">
                     <button
-                        onClick={onNext}
+                        onClick={async () => {
+                            try {
+                                const { error } = await supabase.rpc('complete_branch_step');
+                                if (error) throw error;
+                                onNext();
+                            } catch (err: any) {
+                                alert(`Failed to finalize setup: ${err.message}`);
+                            }
+                        }}
                         className="btn-primary-premium flex items-center gap-8 px-20 py-8 text-[15px] shadow-[0_40px_100px_rgba(var(--primary),0.6)] group"
                     >
                         COMPLETE INSTITUTIONAL MESH

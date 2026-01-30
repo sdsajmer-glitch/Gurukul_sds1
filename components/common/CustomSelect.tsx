@@ -191,7 +191,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                             top: openUpwards ? 'auto' : coords.top + coords.height + 12,
                             bottom: openUpwards ? window.innerHeight - coords.top + 12 : 'auto',
                             left: coords.left,
-                            width: coords.width,
+                            width: coords.width > 0 ? `${coords.width}px` : '100%',
                             minWidth: '280px',
                             zIndex: 11000,
                             perspective: '1200px'
