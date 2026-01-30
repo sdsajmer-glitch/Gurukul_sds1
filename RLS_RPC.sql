@@ -61,6 +61,36 @@ BEGIN RETURN (SELECT branch_id FROM public.profiles WHERE id = auth.uid()); END;
 CREATE OR REPLACE FUNCTION public.is_super_admin() RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'Super Admin'); END; $$;
 
+-- HANDSHAKE: Verify Branch Access Key
+CREATE OR REPLACE FUNCTION public.verify_branch_execution_node(
+    p_access_key TEXT,
+    p_admin_email TEXT
+)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_branch RECORD;
+BEGIN
+    -- 1. Validate the Key and Email Combo against the Registry
+    SELECT * INTO v_branch
+    FROM public.school_branches
+    WHERE access_key = p_access_key 
+    AND (admin_email ILIKE p_admin_email OR p_admin_email IS NULL);
+
+    IF v_branch IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Invalid Identity Cipher or Access Node Key.');
+    END IF;
+
+    -- 2. Success
+    RETURN jsonb_build_object(
+        'success', true, 
+        'branch_id', v_branch.id, 
+        'school_id', v_branch.school_id,
+        'branch_name', v_branch.name,
+        'admin_email', v_branch.admin_email
+    );
+END;
+$$;
+
 -- Helper: VIEW ACCESS (Read-Only from Master Support)
 CREATE OR REPLACE FUNCTION public.has_institutional_access(p_school_id UUID, p_branch_id BIGINT DEFAULT NULL)
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
