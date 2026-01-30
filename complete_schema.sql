@@ -100,6 +100,7 @@ CREATE TABLE public.profiles (
     role TEXT DEFAULT 'Student',
     phone TEXT,
     branch_id BIGINT,
+    school_id UUID,
     profile_photo_url TEXT,
     is_active BOOLEAN DEFAULT true,
     profile_completed BOOLEAN DEFAULT false,
