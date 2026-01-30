@@ -61,7 +61,7 @@ BEGIN RETURN (SELECT branch_id FROM public.profiles WHERE id = auth.uid()); END;
 CREATE OR REPLACE FUNCTION public.is_super_admin() RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'Super Admin'); END; $$;
 
--- HANDSHAKE: Verify Branch Access Key
+-- HANDSHAKE: Verify Branch Access Key (Enhanced for Redundancy)
 CREATE OR REPLACE FUNCTION public.verify_branch_execution_node(
     p_access_key TEXT,
     p_admin_email TEXT
@@ -69,18 +69,27 @@ CREATE OR REPLACE FUNCTION public.verify_branch_execution_node(
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
     v_branch RECORD;
+    v_clean_key TEXT;
 BEGIN
-    -- 1. Validate the Key and Email Combo against the Registry
-    SELECT * INTO v_branch
-    FROM public.school_branches
-    WHERE access_key = p_access_key 
-    AND (admin_email ILIKE p_admin_email OR p_admin_email IS NULL);
-
-    IF v_branch IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', 'Invalid Identity Cipher or Access Node Key.');
+    -- 1. Sanitation: Canonical format XXXX-XXXX (Uppercase, no spaces)
+    v_clean_key := UPPER(TRIM(p_access_key));
+    
+    -- Handle cases where user might have omitted the hyphen 
+    IF LENGTH(v_clean_key) = 8 AND v_clean_key NOT LIKE '%-%' THEN
+        v_clean_key := SUBSTR(v_clean_key, 1, 4) || '-' || SUBSTR(v_clean_key, 5, 4);
     END IF;
 
-    -- 2. Success
+    -- 2. Validate against Registry (Case Insensitive for Email)
+    SELECT * INTO v_branch
+    FROM public.school_branches
+    WHERE UPPER(access_key) = v_clean_key 
+    AND (admin_email ILIKE p_admin_email OR p_admin_email IS NULL);
+
+    IF v_branch.id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Identity Verification Failed: Invalid Access Key or Email Mismatch.');
+    END IF;
+
+    -- 3. Success
     RETURN jsonb_build_object(
         'success', true, 
         'branch_id', v_branch.id, 
@@ -251,7 +260,7 @@ BEGIN
 END;
 $$;
 
--- RPC: Auto Handshake On Login (Identity Resolver)
+-- RPC: Auto Handshake On Login (Identity Resolver v2.0)
 DROP FUNCTION IF EXISTS public.auto_handshake_on_login() CASCADE;
 CREATE OR REPLACE FUNCTION public.auto_handshake_on_login()
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -260,31 +269,37 @@ DECLARE
     v_branch RECORD;
 BEGIN
     v_user_email := auth.jwt() ->> 'email';
+    
+    IF v_user_email IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'No session context found.');
+    END IF;
 
     -- Check if this user is designated as a Branch Admin via Email Match
     SELECT * INTO v_branch 
     FROM public.school_branches 
     WHERE LOWER(admin_email) = LOWER(v_user_email)
-    AND (admin_user_id IS NULL OR admin_user_id = auth.uid());
+    AND (admin_user_id IS NULL OR admin_user_id = auth.uid())
+    LIMIT 1;
 
     IF v_branch.id IS NOT NULL THEN
-        -- Auto-Link logic
+        -- Auto-Link logic (Claiming the node)
         UPDATE public.school_branches 
         SET admin_user_id = auth.uid(), status = 'Online', updated_at = NOW() 
         WHERE id = v_branch.id;
         
-        -- Update Profile
+        -- Propagate Identity to Profile
         UPDATE public.profiles
         SET branch_id = v_branch.id,
-            school_id = v_branch.school_id, -- Inherit School ID
-            role = 'School Administration' -- Branch Admins share this role name but are scoped by branch_id
+            school_id = v_branch.school_id,
+            role = 'School Administration',
+            profile_completed = true
         WHERE id = auth.uid();
 
         -- Audit
-        INSERT INTO public.handshake_audit_logs (branch_id, admin_user_id, target_email, event_type)
-        VALUES (v_branch.id, auth.uid(), v_user_email, 'AUTO_HANDSHAKE');
+        INSERT INTO public.handshake_audit_logs (branch_id, admin_user_id, target_email, event_type, details)
+        VALUES (v_branch.id, auth.uid(), v_user_email, 'AUTO_HANDSHAKE', jsonb_build_object('branch_name', v_branch.name));
 
-        RETURN jsonb_build_object('success', true, 'branch_id', v_branch.id, 'mode', 'AUTO_LINK');
+        RETURN jsonb_build_object('success', true, 'branch_id', v_branch.id, 'mode', 'AUTO_LINK', 'branch_name', v_branch.name);
     END IF;
 
     RETURN jsonb_build_object('success', false, 'message', 'No pending branch assignment found.');
@@ -298,39 +313,57 @@ RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
     v_branch RECORD;
     v_user_id UUID := auth.uid();
+    v_user_email TEXT := auth.jwt() ->> 'email';
+    v_clean_key TEXT;
 BEGIN
-    -- 1. Find the branch by Access Key
+    -- 1. Sanitation
+    v_clean_key := UPPER(TRIM(p_invitation_code));
+    IF LENGTH(v_clean_key) = 8 AND v_clean_key NOT LIKE '%-%' THEN
+        v_clean_key := SUBSTR(v_clean_key, 1, 4) || '-' || SUBSTR(v_clean_key, 5, 4);
+    END IF;
+
+    -- 2. Find the branch by Access Key (Verify Email if registered)
     SELECT * INTO v_branch 
     FROM public.school_branches 
-    WHERE access_key = p_invitation_code;
+    WHERE UPPER(access_key) = v_clean_key;
 
     IF v_branch.id IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'message', 'Invalid Access Key.');
+        RETURN jsonb_build_object('success', false, 'message', 'Security Violation: Invalid Handshake Key.');
     END IF;
 
-    -- 2. Check if already claimed
+    -- 3. Identity Check (If admin_email was specified, must match current user)
+    IF v_branch.admin_email IS NOT NULL AND LOWER(v_branch.admin_email) != LOWER(v_user_email) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Identity Mismatch: This key is reserved for ' || v_branch.admin_email);
+    END IF;
+
+    -- 4. Check if already claimed
     IF v_branch.admin_user_id IS NOT NULL AND v_branch.admin_user_id != v_user_id THEN
-         RETURN jsonb_build_object('success', false, 'message', 'This node is already claimed by another administrator.');
+         RETURN jsonb_build_object('success', false, 'message', 'Registry Conflict: Node already claimed by another administrator.');
     END IF;
 
-    -- 3. Link User to Branch
+    -- 5. Link User to Branch
     UPDATE public.school_branches 
     SET admin_user_id = v_user_id, status = 'Online', updated_at = NOW() 
     WHERE id = v_branch.id;
 
-    -- 4. Update Profile
+    -- 6. Update Profile
     UPDATE public.profiles
     SET branch_id = v_branch.id,
         school_id = v_branch.school_id,
         role = 'School Administration',
         profile_completed = true
     WHERE id = v_user_id;
-    
-    -- 5. Log Handshake
-    INSERT INTO public.handshake_audit_logs (branch_id, admin_user_id, event_type)
-    VALUES (v_branch.id, v_user_id, 'MANUAL_HANDSHAKE_VERIFY');
 
-    RETURN jsonb_build_object('success', true, 'branch_id', v_branch.id);
+    -- 7. Ensure specialized profile exists
+    INSERT INTO public.school_admin_profiles (user_id, onboarding_step)
+    VALUES (v_user_id, 'completed')
+    ON CONFLICT (user_id) DO UPDATE SET onboarding_step = 'completed';
+    
+    -- 8. Log Handshake
+    INSERT INTO public.handshake_audit_logs (branch_id, admin_user_id, target_email, event_type)
+    VALUES (v_branch.id, v_user_id, v_user_email, 'MANUAL_HANDSHAKE_VERIFY');
+
+    RETURN jsonb_build_object('success', true, 'branch_id', v_branch.id, 'branch_name', v_branch.name);
 END;
 $$;
 
