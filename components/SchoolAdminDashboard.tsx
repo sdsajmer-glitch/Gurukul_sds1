@@ -44,7 +44,13 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
     const [loadingData, setLoadingData] = useState(true);
     const [dataError, setDataError] = useState<string | null>(null);
 
-    const isHeadOfficeAdmin = useMemo(() => profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION, [profile.role]);
+    // Correct Identity Resolution:
+    // Head Office Admin = Role is 'School Administration' AND branch_id is NULL (Global Context)
+    // Branch Admin = Role is 'School Administration' AND branch_id is NOT NULL (Restricted Context)
+    const isHeadOfficeAdmin = useMemo(() =>
+        profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !profile.branch_id,
+        [profile.role, profile.branch_id]
+    );
     const isBranchAdmin = !isHeadOfficeAdmin;
 
     const menuGroups = useMemo(() => {
