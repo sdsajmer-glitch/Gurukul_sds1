@@ -391,7 +391,19 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
             <div className="p-12 rounded-[3rem] border border-red-500/20 bg-red-500/5 text-center space-y-4">
                 <AlertTriangleIcon className="w-12 h-12 text-red-500 mx-auto opacity-40" />
                 <p className="text-red-500 text-[11px] font-black uppercase tracking-[0.4em]">{error}</p>
-                <button onClick={() => onBranchUpdate()} className="btn-secondary-premium h-12 px-8 border-red-500/20 text-red-500">Retry Protocol</button>
+
+                {error.includes('Desync') && (
+                    <div className="bg-black/50 p-4 rounded-xl text-left max-w-xl mx-auto border border-white/10 mt-4">
+                        <p className="text-white/40 text-[10px] font-mono mb-2">RUN THIS SQL TO FIX:</p>
+                        <code className="block text-[10px] text-green-400 font-mono bg-black p-2 rounded selectable">
+                            ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS school_id UUID;<br />
+                            ALTER TABLE public.school_branches ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES public.school_admin_profiles(user_id) ON DELETE CASCADE;<br />
+                            NOTIFY pgrst, 'reload schema';
+                        </code>
+                    </div>
+                )}
+
+                <button onClick={() => onBranchUpdate()} className="btn-secondary-premium h-12 px-8 border-red-500/20 text-red-500 mt-4">Retry Protocol</button>
             </div>
         );
     }

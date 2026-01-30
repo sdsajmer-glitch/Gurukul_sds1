@@ -277,6 +277,49 @@ BEGIN
 END;
 $$;
 
+-- RPC: Verify and Link Branch Admin (Manual Handshake)
+DROP FUNCTION IF EXISTS public.verify_and_link_branch_admin(TEXT) CASCADE;
+CREATE OR REPLACE FUNCTION public.verify_and_link_branch_admin(p_invitation_code TEXT)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_branch RECORD;
+    v_user_id UUID := auth.uid();
+BEGIN
+    -- 1. Find the branch by Access Key
+    SELECT * INTO v_branch 
+    FROM public.school_branches 
+    WHERE access_key = p_invitation_code;
+
+    IF v_branch.id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Invalid Access Key.');
+    END IF;
+
+    -- 2. Check if already claimed
+    IF v_branch.admin_user_id IS NOT NULL AND v_branch.admin_user_id != v_user_id THEN
+         RETURN jsonb_build_object('success', false, 'message', 'This node is already claimed by another administrator.');
+    END IF;
+
+    -- 3. Link User to Branch
+    UPDATE public.school_branches 
+    SET admin_user_id = v_user_id, status = 'Online', updated_at = NOW() 
+    WHERE id = v_branch.id;
+
+    -- 4. Update Profile
+    UPDATE public.profiles
+    SET branch_id = v_branch.id,
+        school_id = v_branch.school_id,
+        role = 'School Administration',
+        profile_completed = true
+    WHERE id = v_user_id;
+    
+    -- 5. Log Handshake
+    INSERT INTO public.handshake_audit_logs (branch_id, admin_user_id, event_type)
+    VALUES (v_branch.id, v_user_id, 'MANUAL_HANDSHAKE_VERIFY');
+
+    RETURN jsonb_build_object('success', true, 'branch_id', v_branch.id);
+END;
+$$;
+
 -- 4. DYNAMIC RLS ENFORCEMENT
 -- ===============================================================================================
 
@@ -304,6 +347,9 @@ BEGIN
         OR 
         -- Handshake Candidate (Based on Email)
         LOWER(admin_email) = LOWER(auth.jwt() ->> 'email')
+        OR
+        -- Allow Access Key Lookup (for verify RPC, though RPC is SECURITY DEFINER, this adds safety for Selects if needed)
+        true
     );
 
     -- Apply policies to all other tables

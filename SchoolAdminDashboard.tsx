@@ -81,7 +81,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
             const [schoolRes, branchRes, latestProfileRes] = await Promise.all([
                 supabase.from('school_admin_profiles').select('*').eq('user_id', profile.id).maybeSingle(),
                 supabase.rpc('get_school_branches'),
-                supabase.from('profiles').select('branch_id').eq('id', profile.id).maybeSingle()
+                supabase.from('profiles').select('*').eq('id', profile.id).maybeSingle()
             ]);
 
             if (schoolRes.error && schoolRes.error.code !== 'PGRST116') throw schoolRes.error;
