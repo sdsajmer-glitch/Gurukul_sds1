@@ -296,7 +296,7 @@ BEGIN
         UPDATE public.profiles
         SET branch_id = v_branch.id,
             school_id = v_branch.school_id,
-            role = 'School Administration',
+            role = 'Branch Admin',
             profile_completed = true
         WHERE id = auth.uid();
 
@@ -355,7 +355,7 @@ BEGIN
     UPDATE public.profiles
     SET branch_id = v_branch.id,
         school_id = v_branch.school_id,
-        role = 'School Administration',
+        role = 'Branch Admin',
         profile_completed = true
     WHERE id = v_user_id;
 

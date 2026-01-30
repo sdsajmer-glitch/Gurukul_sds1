@@ -250,7 +250,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                                             <p className="px-5 py-5 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] flex items-center gap-2">
                                                 <PlusIcon className="w-3.5 h-3.5 opacity-40" /> Register New Scope
                                             </p>
-                                            <div className="space-y-1.5">
+                                            <div className="grid grid-cols-1 gap-3 px-2">
                                                 {registerableScopes.map(roleName => {
                                                     const Icon = ROLE_ICONS[roleName] || UserIcon;
                                                     return (
@@ -258,18 +258,19 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                                                             key={roleName}
                                                             disabled={processingRole !== null}
                                                             onClick={() => handleAction(roleName, false)}
-                                                            className="w-full flex items-center p-4 rounded-2xl bg-white/[0.01] hover:bg-white/[0.04] transition-all group/item active:scale-[0.98] border border-transparent hover:border-white/5"
+                                                            className="w-full h-16 flex items-center px-5 rounded-2xl bg-[#12141a]/60 hover:bg-primary transition-all group/item active:scale-[0.98] border border-white/5 hover:border-primary shadow-lg overflow-hidden relative"
                                                         >
-                                                            <div className="p-2.5 rounded-xl bg-black/20 text-white/10 mr-5 group-hover/item:bg-primary/10 group-hover/item:text-primary transition-all duration-500 shadow-inner">
+                                                            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                                                            <div className="p-2.5 rounded-xl bg-black/40 text-white/20 mr-5 group-hover/item:bg-white/20 group-hover/item:text-white transition-all duration-500 shadow-inner">
                                                                 <Icon className="w-5 h-5" />
                                                             </div>
-                                                            <span className="text-[11px] font-black text-white/30 uppercase tracking-[0.1em] group-hover/item:text-white transition-colors">
+                                                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] group-hover/item:text-white transition-colors flex-grow text-center pr-8">
                                                                 Onboard as {roleName}
                                                             </span>
                                                             {processingRole === roleName ? (
                                                                 <Spinner size="sm" className="ml-auto" />
                                                             ) : (
-                                                                <ChevronRightIcon className="w-4 h-4 ml-auto text-white/5 group-hover/item:text-primary group-hover/item:translate-x-1 transition-all" />
+                                                                <ChevronRightIcon className="w-4 h-4 ml-auto text-white/10 group-hover/item:text-white group-hover/item:translate-x-1 transition-all" />
                                                             )}
                                                         </button>
                                                     )
@@ -285,9 +286,11 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                         <div className="p-6 bg-black border-t border-white/5 shadow-[0_-12px_24px_rgba(0,0,0,0.4)]">
                             <button
                                 onClick={onSignOut}
-                                className="w-full h-14 flex items-center justify-center gap-4 p-4 rounded-[1.6rem] text-[10px] font-black text-red-500 bg-red-500/5 hover:bg-red-600 hover:text-white transition-all uppercase tracking-[0.4em] active:scale-97 group/logout shadow-2xl"
+                                className="w-full h-14 flex items-center justify-center gap-4 p-4 rounded-[1.6rem] text-[10px] font-black text-red-500 bg-red-500/5 hover:bg-red-500 hover:text-white transition-all uppercase tracking-[0.4em] active:scale-97 group/logout shadow-2xl relative overflow-hidden"
                             >
-                                <LogoutIcon className="w-5 h-5 transition-transform group-hover/logout:-translate-x-1" /> Terminate Node Session
+                                <div className="absolute inset-0 bg-red-600 opacity-0 group-hover/logout:opacity-100 transition-opacity" />
+                                <LogoutIcon className="w-5 h-5 transition-transform group-hover/logout:-translate-x-2 relative z-10" />
+                                <span className="relative z-10">Terminate Node Session</span>
                             </button>
                         </div>
                     </div>

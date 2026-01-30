@@ -251,26 +251,38 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                             <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover/create:opacity-100 transition-opacity duration-1000" />
                             <motion.div
                                 whileHover={{ scale: 1.1, rotate: 5 }}
-                                className="w-20 h-20 md:w-28 md:h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-8 md:mb-12 relative border border-primary/20"
+                                className="w-20 h-20 md:w-28 md:h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-8 md:mb-12 relative border border-primary/20 shadow-[0_0_50px_rgba(var(--primary),0.1)]"
                             >
                                 {createLoading ? <Spinner size="lg" className="text-primary relative z-10" /> : <SchoolIcon className="w-10 h-10 md:w-12 md:h-12 text-primary relative z-10" />}
+                                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover/create:opacity-100 transition-opacity" />
                             </motion.div>
                             <h3 className="text-2xl md:text-4xl font-serif font-black text-white tracking-tighter mb-4 md:mb-6 uppercase leading-tight">
                                 Establish <br /><span className="text-white/20 italic">Global Node.</span>
+                                <span className="block text-[10px] text-primary mt-2 font-black tracking-[0.3em] font-sans opacity-60">(School / Head Office)</span>
                             </h3>
-                            <p className="text-white/30 max-w-xs mx-auto text-xs md:text-sm font-medium leading-relaxed mb-8 md:mb-12">
-                                Initialize a head office and set up global academic infrastructure for your institution.
-                            </p>
+                            <div className="space-y-4 mb-10 text-left w-full max-w-xs mx-auto">
+                                <p className="text-white/30 text-[11px] font-medium leading-relaxed">
+                                    Root authority for the institution network. Initialize head office and oversee global operations.
+                                </p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {['Full Network Registry Access', 'Manage Multi-Branch Nodes', 'Institutional Expand Privileges', 'Identity Key Generation'].map(p => (
+                                        <div key={p} className="flex items-center gap-2">
+                                            <CheckCircleIcon className="w-3 h-3 text-primary/40" />
+                                            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{p}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                             <motion.button
                                 whileHover={{ scale: 1.05, y: -4 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleCreateNewSchool}
                                 disabled={createLoading || joinLoading}
-                                className="group/btn relative px-8 md:px-12 py-4 md:py-5 rounded-2xl overflow-hidden shadow-2xl transition-all disabled:opacity-50"
+                                className="group/btn relative px-8 md:px-12 py-4 md:py-5 rounded-2xl overflow-hidden shadow-2xl transition-all disabled:opacity-50 w-full"
                             >
-                                <div className="absolute inset-0 bg-primary" />
+                                <div className="absolute inset-0 bg-primary shadow-[0_20px_40px_rgba(var(--primary),0.3)]" />
                                 <span className="relative z-10 text-white text-[10px] md:text-[11px] font-black uppercase tracking-[0.4em]">
-                                    {createLoading ? 'Provisioning...' : 'Get Started'}
+                                    {createLoading ? 'Provisioning...' : 'Initialize Registry'}
                                 </span>
                             </motion.button>
                         </div>
@@ -279,45 +291,64 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                             <div className="absolute inset-0 bg-indigo-500/[0.02] opacity-0 group-hover/join:opacity-100 transition-opacity duration-1000" />
                             <motion.div
                                 whileHover={{ scale: 1.1, rotate: -5 }}
-                                className="w-20 h-20 md:w-28 md:h-28 bg-indigo-500/10 rounded-full flex items-center justify-center mb-8 md:mb-12 relative border border-indigo-500/20"
+                                className="w-20 h-20 md:w-28 md:h-28 bg-indigo-500/10 rounded-full flex items-center justify-center mb-8 md:mb-12 relative border border-indigo-500/20 shadow-[0_0_50px_rgba(99,102,241,0.1)]"
                             >
                                 {joinSuccess ? (
                                     <CheckCircleIcon className="w-10 h-10 md:w-14 md:h-14 text-emerald-500 animate-in zoom-in" />
                                 ) : (
-                                    <ShieldCheckIcon className="w-10 h-10 md:w-12 md:h-12 text-indigo-400" />
+                                    <ShieldCheckIcon className="w-10 h-10 md:w-12 md:h-12 text-indigo-400 relative z-10" />
                                 )}
+                                <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full opacity-0 group-hover/join:opacity-100 transition-opacity" />
                             </motion.div>
                             <h3 className="text-2xl md:text-4xl font-serif font-black text-white tracking-tighter mb-4 md:mb-6 uppercase leading-tight">
                                 Join <br /><span className="text-white/20 italic">Institutional Hub.</span>
+                                <span className="block text-[10px] text-indigo-400 mt-2 font-black tracking-[0.3em] font-sans opacity-60">(Branch Admin / Satellite Node)</span>
                             </h3>
+
                             {joinSuccess ? (
                                 <div className="space-y-4">
                                     <p className="text-emerald-400 font-black text-[11px] uppercase tracking-[0.4em]">Handshake Secured</p>
+                                    <p className="text-white/20 text-[10px] font-medium max-w-[200px] mx-auto uppercase tracking-widest">Redirecting to institutional node matrix...</p>
                                 </div>
                             ) : (
-                                <form onSubmit={handleJoinBranch} className="w-full max-w-xs space-y-6 relative z-10">
-                                    <input
-                                        type="text"
-                                        value={invitationCode}
-                                        onChange={e => setInvitationCode(e.target.value.toUpperCase())}
-                                        disabled={joinLoading}
-                                        placeholder="NODE ACCESS KEY"
-                                        className="w-full h-16 md:h-20 bg-[#050608] border-2 border-white/5 rounded-2xl text-center font-mono font-black tracking-[0.2em] md:tracking-[0.4em] text-white focus:border-primary/50 outline-none transition-all placeholder:text-white/10 placeholder:text-[10px]"
-                                    />
-                                    <motion.button
-                                        type="submit"
-                                        disabled={joinLoading || invitationCode.length < 6}
-                                        className={`w-full h-16 md:h-20 rounded-2xl font-black text-[11px] md:text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 border shadow-2xl ${joinLoading || invitationCode.length < 6 ? 'bg-white/[0.02] border-white/5 text-white/10' : 'bg-primary border-primary/20 text-white'
-                                            }`}
-                                    >
-                                        {joinLoading ? <Spinner size="sm" /> : 'Verify & Access Node'}
-                                    </motion.button>
-                                    <AnimatePresence>
-                                        {joinError && (
-                                            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-[10px] font-black uppercase tracking-widest">{joinError}</motion.p>
-                                        )}
-                                    </AnimatePresence>
-                                </form>
+                                <div className="w-full max-w-xs space-y-8">
+                                    <div className="space-y-3 text-left">
+                                        <p className="text-white/30 text-[11px] font-medium leading-relaxed">
+                                            Access an existing node using an admin invite. Your scope is isolated to your assigned branch.
+                                        </p>
+                                        <div className="flex flex-col gap-2">
+                                            {['Branch-Level Management', 'Isolated Data Sovereignty', 'No Global Sync Privileges', 'Automated Registry Updates'].map(p => (
+                                                <div key={p} className="flex items-center gap-2">
+                                                    <div className="w-1 h-1 rounded-full bg-indigo-500/40" />
+                                                    <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{p}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <form onSubmit={handleJoinBranch} className="w-full space-y-6 relative z-10">
+                                        <input
+                                            type="text"
+                                            value={invitationCode}
+                                            onChange={e => setInvitationCode(e.target.value.toUpperCase())}
+                                            disabled={joinLoading}
+                                            placeholder="NODE ACCESS KEY (XXXX-XXXX)"
+                                            className="w-full h-16 md:h-20 bg-[#050608] border-2 border-white/5 rounded-2xl text-center font-mono font-black tracking-[0.2em] md:tracking-[0.4em] text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-white/10 placeholder:text-[10px]"
+                                        />
+                                        <motion.button
+                                            type="submit"
+                                            disabled={joinLoading || invitationCode.length < 6}
+                                            className={`w-full h-16 md:h-20 rounded-2xl font-black text-[11px] md:text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 border shadow-2xl ${joinLoading || invitationCode.length < 6 ? 'bg-white/[0.02] border-white/5 text-white/10' : 'bg-indigo-600 border-indigo-400/20 text-white hover:bg-indigo-500 shadow-[0_20px_40px_rgba(79,70,229,0.3)]'
+                                                }`}
+                                        >
+                                            {joinLoading ? <Spinner size="sm" /> : 'Verify Node Connection'}
+                                        </motion.button>
+                                        <AnimatePresence>
+                                            {joinError && (
+                                                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-[10px] font-black uppercase tracking-widest bg-red-500/5 p-3 rounded-xl border border-red-500/20">{joinError}</motion.p>
+                                            )}
+                                        </AnimatePresence>
+                                    </form>
+                                </div>
                             )}
                         </div>
 
