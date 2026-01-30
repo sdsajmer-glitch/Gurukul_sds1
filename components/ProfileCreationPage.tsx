@@ -78,17 +78,25 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setFormData((prev: any) => {
+            const next = { ...prev, [name]: value };
+            // Sync protocol: If Custodian Name changes, aggressively propagate to Identity Node for School Admins
+            if (role === BuiltInRoles.SCHOOL_ADMINISTRATION && name === 'admin_contact_name') {
+                next.display_name = value;
+            }
+            return next;
+        });
     };
 
     const isFormValid = useMemo(() => {
-        if (!formData.display_name?.trim()) return false;
+        // Global mandatory check
+        const hasIdentity = !!(formData.display_name?.trim() || formData.admin_contact_name?.trim());
 
         if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-            if (!formData.school_name?.trim()) return false;
-            // Add other mandatory school admin fields here if needed
+            return !!(formData.school_name?.trim() && (formData.admin_contact_name?.trim() || formData.display_name?.trim()));
         }
 
+        if (!formData.display_name?.trim()) return false;
         if (role === BuiltInRoles.PARENT_GUARDIAN && !formData.relationship_to_student) return false;
         return true;
     }, [formData, role]);
@@ -170,7 +178,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
     if (isFetchingInitialData) return <div className="flex justify-center p-20"><Spinner size="lg" /></div>;
 
     return (
-        <div className="w-full max-w-4xl mx-auto space-y-12 pb-32 font-sans relative">
+        <div className="w-full max-w-6xl mx-auto space-y-12 pb-32 font-sans relative">
             {/* Ambient Ambient Background Atmosphere */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
                 <div className="absolute -top-1/4 -left-1/4 w-[1000px] h-[1000px] bg-primary/5 rounded-full blur-[150px]" />
@@ -292,7 +300,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="premium-card p-10 border-red-500/20 bg-red-500/5 text-red-200 flex items-center gap-8 ring-1 ring-red-500/20"
+                    className="premium-card p-6 border-red-500/20 bg-red-500/5 text-red-200 flex items-center gap-6 ring-1 ring-red-500/20"
                 >
                     <div className="p-5 bg-red-500/20 rounded-3xl border border-red-500/30">
                         <XIcon className="w-8 h-8 text-red-400" />

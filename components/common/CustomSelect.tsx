@@ -113,14 +113,14 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             window.addEventListener('resize', updatePosition);
 
             if (searchable && searchInputRef.current) {
-                setTimeout(() => searchInputRef.current?.focus(), 100);
+                setTimeout(() => searchInputRef.current?.focus(), 150);
             }
         }
         return () => {
             window.removeEventListener('scroll', updatePosition, true);
             window.removeEventListener('resize', updatePosition);
         };
-    }, [isOpen]);
+    }, [isOpen, searchable, filteredOptions.length]);
 
     const handleSelect = (optionValue: string) => {
         onChange(optionValue);
@@ -192,10 +192,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                             bottom: openUpwards ? window.innerHeight - coords.top + 12 : 'auto',
                             left: coords.left,
                             width: coords.width,
+                            minWidth: '280px',
                             zIndex: 11000,
                             perspective: '1200px'
                         }}
-                        className={`bg-[#0d0e14] rounded-[2.75rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] border border-white/10 overflow-hidden origin-${openUpwards ? 'bottom' : 'top'} backdrop-blur-[120px] ring-2 ring-white/10`}
+                        className={`bg-[#0d0e14] rounded-[1.6rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] border border-white/10 overflow-hidden origin-${openUpwards ? 'bottom' : 'top'} backdrop-blur-[120px] ring-2 ring-white/10`}
                     >
                         {searchable && (
                             <div className="p-6 border-b border-white/[0.05] bg-white/[0.02]">
@@ -281,13 +282,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                 </label>
             )}
 
-            <div className="relative h-[72px]">
+            <div className="relative h-[76px]">
                 <button
                     type="button"
                     onClick={() => !disabled && setIsOpen(!isOpen)}
                     disabled={disabled}
                     className={`
-                        peer w-full h-full text-left rounded-[2.25rem] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none select-none
+                        peer w-full h-full text-left rounded-[1.6rem] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] outline-none select-none
                         flex items-center px-10 border backdrop-blur-3xl
                         ${icon ? 'pl-16' : 'pl-8'}
                         ${isOpen

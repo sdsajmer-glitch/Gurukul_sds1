@@ -19,8 +19,8 @@ const PremiumFloatingInput: React.FC<PremiumFloatingInputProps> = ({ label, icon
                 </label>
             )}
 
-            <div className={`absolute ${isTextArea ? 'top-8' : 'top-1/2 -translate-y-1/2'} left-6 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none ${isSynced ? 'text-primary/60' : ''}`}>
-                {icon && React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6 transition-transform group-focus-within:scale-110' }) : null}
+            <div className={`absolute ${isTextArea ? 'top-8' : 'top-1/2 -translate-y-1/2'} left-8 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none ${isSynced ? 'text-primary/60' : ''}`}>
+                {icon && React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement, { className: 'w-7 h-7 transition-all group-focus-within:scale-110 group-focus-within:rotate-3' }) : null}
             </div>
 
             {isTextArea ? (
@@ -35,8 +35,8 @@ const PremiumFloatingInput: React.FC<PremiumFloatingInputProps> = ({ label, icon
                 <input
                     {...props}
                     placeholder=" "
-                    className={`peer block w-full h-[72px] rounded-[2rem] border transition-all duration-500 px-8 ${icon ? 'pl-16' : 'pl-10'} pt-6 pb-2 text-[17px] text-white font-bold outline-none placeholder-transparent
-                        ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_30px_rgba(var(--primary),0.05)]' : 'border-white/5 bg-black/40 hover:border-white/10 focus:border-primary/30 focus:bg-black/60 focus:ring-8 focus:ring-primary/5'} 
+                    className={`peer block w-full h-[76px] rounded-[1.6rem] border transition-all duration-500 px-10 ${icon ? 'pl-20' : 'pl-10'} pt-6 pb-2 text-[18px] text-white font-bold outline-none placeholder-transparent
+                        ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_30px_rgba(var(--primary),0.05)]' : 'border-white/5 bg-black/40 hover:border-white/10 focus:border-primary/30 focus:bg-black/60 focus:ring-12 focus:ring-primary/5'} 
                         ${className}`}
                 />
             )}
