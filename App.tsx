@@ -23,6 +23,9 @@ const App: React.FC = () => {
 
     const fetchProfile = useCallback(async (user: any) => {
         try {
+            // Attempt Auto-Handshake (Role Resolution)
+            await supabase.rpc('auto_handshake_on_login');
+
             let { data, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')

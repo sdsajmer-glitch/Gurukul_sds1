@@ -1,52 +1,56 @@
-# Authentication Gateway & Branch Handshake Protocol
+# Authentication Gateway & Branch Handshake Protocol (v2 - Unified)
 
 ## Overview
-We have successfully implemented a dual-path authentication gateway that strictly separates **School Administration (Global Node)** and **Branch Administration (Institutional Hub)**. This ensures role-based isolation, security, and a premium user experience.
+We have refined the authentication gateway to a **Single Sign-On (SSO) Unified Interface**. The manual selection between "Global Node" and "Institutional Hub" has been removed to streamline the user experience. 
 
-## key Components Implemented
+**Core Principle**: Role resolution is handled **automatically post-login** based on the user's email identity and its mapping in the institution's registry.
 
-### 1. Gateway Selection Interface (`AuthPage.tsx`)
-- **Visual Split**: Users are presented with two clear options: "Establish Global Node" and "Join Institutional Hub".
-- **Dynamic Routing**:
-  - **Global Node**: Routes to the standard `LoginForm` (Email/Password).
-  - **Institutional Hub**: Routes to the new `BranchHandshakeForm`.
-- **Aesthetics**: Premium dark mode design with glassmorphism, hover effects, and institutional branding.
+## Implementation Details
 
-### 2. Branch Handshake Protocol (`BranchHandshakeForm.tsx`)
-- **Secure Verification**: Users must enter their **Branch Access Key** and **Admin Email**.
-- **RPC Validation**: A new secure RPC `verify_branch_execution_node` validates the credentials against the `school_branches` registry without exposing the database to the public.
-- **Identity Binding**: Upon verification, the user is prompted to authenticate (Password) to finalize the session and bind their identity to the verified branch.
+### 1. Unified Login Interface (`AuthPage.tsx`)
+- **Single Entry Point**: The login screen now presents a standard Email/Password form for ALL users.
+- **Removed Selection**: The "Establish Global Node" vs "Join Institutional Hub" screen has been deprecated.
 
-### 3. Security Enhancements (`RLS_RPC.sql`)
-- **New RPC**: `verify_branch_execution_node(p_access_key, p_admin_email)`
-  - Checks if the key and email match a valid branch.
-  - Returns `success`, `branch_id`, and `branch_name` only if valid.
-  - Defined as `SECURITY DEFINER` to bypass RLS safely for this specific check.
-- **Strict RLS**: The `school_branches` table RLS policy remains strict, allowing visibility only to the Assigned Admin or School Admin.
+### 2. Automatic Role Resolution (`App.tsx` + `RPC`)
+- **Flow**:
+  1. User logs in standard `signInWithPassword`.
+  2. `App.tsx` detects the new session.
+  3. **CRITICAL**: Before fetching the user profile, `App.tsx` calls `rpc('auto_handshake_on_login')`.
+  4. **Server-Side Logic**: 
+     - The RPC checks `school_branches` for a matching `admin_email`.
+     - If found, it **Auto-Binds** the user's `branch_id` and sets their role to `School Administration`.
+     - It logs the handshake in `handshake_audit_logs`.
+  5. `App.tsx` then fetches the `profiles` row, which now contains the correct `branch_id`.
+
+### 3. Dashboard Isolation (`SchoolAdminDashboard.tsx`)
+- **Global Node (Head Office)**: 
+  - Identified by: `role == 'School Administration'` AND `branch_id IS NULL`.
+  - Has full access to all branches and network settings.
+- **Satellite Node (Branch Admin)**:
+  - Identified by: `role == 'School Administration'` AND `branch_id IS NOT NULL`.
+  - **Restricted Access**: 
+    - Cannot see "Expand Network" or "Institutional Branches" UI.
+    - `get_school_branches` RPC returns ONLY their specific branch.
+    - RLS policies prevent access to other branches' data.
 
 ## How to Test
 
-1. **Apply Database Changes**:
-   - Run the updated `RLS_RPC.sql` in your Supabase SQL Editor. This functions is CRITICAL for the handshake to work.
-
-2. **Test Global Node Flow**:
-   - Select "Establish Global Node".
-   - Login with a School Admin email.
-   - Verify you see the **School Admin Dashboard** with all branches.
-
-3. **Test Branch Handshake Flow**:
-   - Select "Join Institutional Hub".
-   - Enter a valid **Branch Access Key** and the corresponding **Admin Email** (from your `school_branches` table).
-   - Click "Verify & Access Node".
-   - Verify the system identifies the branch and prompts for password.
+1. **Test Branch Admin Flow**:
+   - Ensure a branch exists in `school_branches` with an `admin_email` (e.g., `princpal@delhi-branch.com`).
+   - Create a new Auth User with that email.
    - Login.
-   - Verify you see the **School Admin Dashboard** (scoped to Branch) with restricted access (no "Expand Network", only own branch data).
+   - The system should automatically detect the match, assign the branch, and show the **Branch-Scoped Dashboard** (no "Expand Network").
+
+2. **Test School Admin Flow**:
+   - Login with a user that has `role = 'School Administration'` and `branch_id = NULL`.
+   - Verify full access to all branches.
 
 ## File Changes
-- **Modified**: `components/AuthPage.tsx`
-- **Created**: `components/BranchHandshakeForm.tsx`
-- **Modified**: `RLS_RPC.sql`
+- **Modified**: `components/AuthPage.tsx` (Removed Gateway Selection)
+- **Modified**: `App.tsx` (Added RPC call hook)
+- **Modified**: `SchoolAdminDashboard.tsx` (Enhanced permission logic)
+- **Deleted**: `components/BranchHandshakeForm.tsx` (Deprecated)
 
-## Next Steps
-- Ensure all Branch Admins have their `access_key` distributed securely.
-- Monitor `handshake_audit_logs` (if enabled) for failed attempts.
+## Security
+- **Strict RLS**: Row Level Security ensures that even if a Branch Admin tries to query global data, the database will return empty results.
+- **Zero Leakage**: No list of branches is ever exposed to the client until the user is authenticated and authorized.

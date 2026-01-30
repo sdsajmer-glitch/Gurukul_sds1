@@ -3,18 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
 import ForgotPasswordForm from './ForgotPasswordForm';
-import BranchHandshakeForm from './BranchHandshakeForm';
 import ThemeSwitcher from './common/ThemeSwitcher';
 import { SchoolIcon } from './icons/SchoolIcon';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 
-type AuthView = 'login' | 'signup' | 'forgot' | 'handshake';
-type GatewayMode = 'selection' | 'global' | 'branch';
+type AuthView = 'login' | 'signup' | 'forgot';
 
 const AuthPage: React.FC = () => {
-    const [gatewayMode, setGatewayMode] = useState<GatewayMode>('selection'); // 'selection' is default
-    const [authView, setAuthView] = useState<AuthView>('login');
+    const [view, setView] = useState<AuthView>('login');
     const [signupSuccess, setSignupSuccess] = useState(false);
     const [userEmail, setUserEmail] = useState('');
 
@@ -22,57 +19,6 @@ const AuthPage: React.FC = () => {
         setUserEmail(email);
         setSignupSuccess(true);
     };
-
-    const GatewaySelection = () => (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 p-4"
-        >
-            {/* Option 1: Global Node (School) */}
-            <div
-                onClick={() => { setGatewayMode('global'); setAuthView('login'); }}
-                className="group relative bg-[#0c0d12] hover:bg-[#111318] border border-white/5 hover:border-primary/30 rounded-[2.5rem] p-12 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 overflow-hidden flex flex-col justify-center items-center text-center min-h-[400px]"
-            >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                <div className="w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-[0_0_30px_rgba(var(--primary),0.2)]">
-                    <SchoolIcon className="w-8 h-8 text-primary" />
-                </div>
-
-                <h3 className="text-3xl font-serif font-black text-white mb-4 uppercase tracking-tight">Establish <br />Global Node.</h3>
-                <p className="text-white/40 text-sm font-serif italic leading-relaxed max-w-xs">
-                    Initialize a head office and set up global academic infrastructure for your institution.
-                </p>
-
-                <div className="mt-10 px-8 py-3 rounded-full border border-white/10 group-hover:bg-primary group-hover:border-primary group-hover:text-white text-white/30 text-[10px] font-black uppercase tracking-[0.2em] transition-all">
-                    Initialize Protocol
-                </div>
-            </div>
-
-            {/* Option 2: Institutional Hub (Branch) */}
-            <div
-                onClick={() => { setGatewayMode('branch'); setAuthView('handshake'); }}
-                className="group relative bg-[#0c0d12] hover:bg-[#111318] border border-white/5 hover:border-emerald-500/30 rounded-[2.5rem] p-12 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/5 overflow-hidden flex flex-col justify-center items-center text-center min-h-[400px]"
-            >
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                    <ShieldCheckIcon className="w-8 h-8 text-emerald-500" />
-                </div>
-
-                <h3 className="text-3xl font-serif font-black text-white mb-4 uppercase tracking-tight">Join <br />Institutional Hub.</h3>
-                <p className="text-white/40 text-sm font-serif italic leading-relaxed max-w-xs">
-                    Enter your unique <span className="text-emerald-500 not-italic font-bold">Branch Access Key</span> to synchronize with an established network.
-                </p>
-
-                <div className="mt-10 px-8 py-3 rounded-full border border-white/10 group-hover:bg-emerald-500 group-hover:border-emerald-500 group-hover:text-[#08090a] text-white/30 text-[10px] font-black uppercase tracking-[0.2em] transition-all">
-                    Access Satellite Node
-                </div>
-            </div>
-        </motion.div>
-    );
 
     return (
         <div className="min-h-screen flex bg-[#08090a] selection:bg-primary/20 selection:text-primary overflow-hidden relative font-sans">
@@ -90,87 +36,112 @@ const AuthPage: React.FC = () => {
                 <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"></div>
             </div>
 
-            {/* Main Content Area */}
-            <div className="w-full flex flex-col relative overflow-y-auto bg-transparent custom-scrollbar h-screen z-20">
+            {/* Left Column: Institutional Branding (Desktop Only) */}
+            <div className="hidden lg:flex lg:w-[45%] xl:w-[50%] relative overflow-hidden bg-[#0c0d12] border-r border-white/5 shadow-2xl z-10">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50"></div>
+
+                <div className="relative z-20 flex flex-col justify-between w-full p-16 xl:p-24 text-white h-full">
+                    <div className="flex items-center gap-4 group">
+                        <div className="p-3 bg-white/5 rounded-2xl backdrop-blur-3xl border border-white/10 shadow-2xl transition-transform group-hover:scale-110 duration-500">
+                            <SchoolIcon className="h-8 w-8 text-primary" />
+                        </div>
+                        <span className="text-2xl font-serif font-black tracking-[0.3em] text-white uppercase">Gurukul</span>
+                    </div>
+
+                    <div className="max-w-xl">
+                        <motion.h1
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-6xl xl:text-8xl font-serif font-black leading-[1.1] mb-8 tracking-tighter uppercase"
+                        >
+                            Unified <br /> <span className="text-white/30 italic font-medium">Identity.</span>
+                        </motion.h1>
+                        <p className="text-xl text-white/40 leading-relaxed font-serif italic max-w-md border-l-2 border-primary/40 pl-8">
+                            The high-fidelity administrative operating system for next-generation institutional orchestration.
+                        </p>
+                    </div>
+
+                    <div className="text-[9px] text-white/10 font-black uppercase tracking-[0.5em]">
+                        &copy; 2025 Gurukul OS • Protocol Node 9.5.1
+                    </div>
+                </div>
+            </div>
+
+            {/* Right Column: Auth Node */}
+            <div className="w-full lg:w-[55%] xl:w-[50%] flex flex-col relative overflow-y-auto bg-[#08090a] custom-scrollbar h-screen z-20">
                 {/* Header / Top Bar */}
                 <div className="absolute top-6 right-6 z-30 flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                        <ShieldCheckIcon className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Protocol Secured</span>
+                    </div>
                     <ThemeSwitcher />
                 </div>
 
-                <div className="flex-grow flex flex-col items-center justify-center p-6 sm:p-12 relative">
-
-                    {/* Common Logo/Header (Visible when selecting or in specific persistent modes) */}
-                    <div className="mb-12 text-center">
-                        <div className="flex items-center justify-center gap-4 mb-6">
-                            <SchoolIcon className="h-10 w-10 text-primary" />
-                            <span className="text-3xl font-serif font-black tracking-[0.3em] text-white uppercase">Gurukul</span>
+                <div className="flex-grow flex items-center justify-center p-6 sm:p-12 lg:p-20 relative">
+                    <div className="w-full max-w-[480px] z-10 relative">
+                        {/* Mobile Logo */}
+                        <div className="lg:hidden mb-12 text-center">
+                            <div className="flex items-center justify-center gap-4">
+                                <SchoolIcon className="h-10 w-10 text-primary" />
+                                <span className="text-3xl font-serif font-black tracking-[0.3em] text-white uppercase">Gurukul</span>
+                            </div>
                         </div>
-                        {gatewayMode === 'selection' && (
-                            <motion.p
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                className="text-white/40 text-sm font-serif italic tracking-widest uppercase"
-                            >
-                                Select Interface Protocol
-                            </motion.p>
-                        )}
+
+                        <AnimatePresence mode="wait">
+                            {signupSuccess ? (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="bg-[#0d0f14]/80 backdrop-blur-3xl p-10 sm:p-14 rounded-[3.5rem] border border-white/10 text-center shadow-3xl relative overflow-hidden ring-1 ring-white/5"
+                                >
+                                    <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner border border-emerald-500/20">
+                                        <CheckCircleIcon animate className="w-10 h-10" />
+                                    </div>
+                                    <h3 className="text-3xl font-serif font-black text-white mb-4 tracking-tighter uppercase leading-none">Identity Provisioned.</h3>
+                                    <p className="text-white/50 mb-10 text-sm leading-relaxed font-serif italic">
+                                        Your node has been initialized. A verification cipher has been dispatched to <strong className="text-white">{userEmail}</strong>.
+                                    </p>
+                                    <button
+                                        onClick={() => { setSignupSuccess(false); setView('login'); }}
+                                        className="w-full h-14 flex items-center justify-center py-3.5 px-8 rounded-2xl text-[10px] font-black text-white bg-primary hover:bg-primary/90 transition-all transform active:scale-95 uppercase tracking-[0.4em] shadow-xl shadow-primary/20"
+                                    >
+                                        Return to Terminal
+                                    </button>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key={view}
+                                    initial={{ opacity: 0, x: view === 'login' ? -20 : 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: view === 'login' ? 20 : -20 }}
+                                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                                    className="w-full"
+                                >
+                                    {view === 'login' && (
+                                        <LoginForm
+                                            onSwitchToSignup={() => setView('signup')}
+                                            onForgotPassword={() => setView('forgot')}
+                                        />
+                                    )}
+                                    {view === 'signup' && (
+                                        <SignupForm
+                                            onSuccess={handleSignupSuccess}
+                                            onSwitchToLogin={() => setView('login')}
+                                        />
+                                    )}
+                                    {view === 'forgot' && (
+                                        <ForgotPasswordForm
+                                            onBack={() => setView('login')}
+                                        />
+                                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
-                    <AnimatePresence mode="wait">
-                        {gatewayMode === 'selection' && (
-                            <GatewaySelection key="selection" />
-                        )}
-
-                        {gatewayMode === 'global' && (
-                            <motion.div
-                                key="global"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className="w-full max-w-[480px]"
-                            >
-                                {signupSuccess ? (
-                                    <div className="bg-[#0d0f14]/80 backdrop-blur-3xl p-10 sm:p-14 rounded-[3.5rem] border border-white/10 text-center shadow-3xl relative overflow-hidden ring-1 ring-white/5">
-                                        <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner border border-emerald-500/20">
-                                            <CheckCircleIcon className="w-10 h-10" />
-                                        </div>
-                                        <h3 className="text-3xl font-serif font-black text-white mb-4 tracking-tighter uppercase leading-none">Identity Provisioned.</h3>
-                                        <p className="text-white/50 mb-10 text-sm leading-relaxed font-serif italic">
-                                            Your node has been initialized. A verification cipher has been dispatched to <strong className="text-white">{userEmail}</strong>.
-                                        </p>
-                                        <button
-                                            onClick={() => { setSignupSuccess(false); setAuthView('login'); }}
-                                            className="w-full py-4 rounded-2xl text-[10px] font-black text-white bg-primary hover:bg-primary/90 transition-all uppercase tracking-[0.4em]"
-                                        >
-                                            Return to Terminal
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {authView === 'login' && <LoginForm onSwitchToSignup={() => setAuthView('signup')} onForgotPassword={() => setAuthView('forgot')} />}
-                                        {authView === 'signup' && <SignupForm onSuccess={handleSignupSuccess} onSwitchToLogin={() => setAuthView('login')} />}
-                                        {authView === 'forgot' && <ForgotPasswordForm onBack={() => setAuthView('login')} />}
-
-                                        <div className="text-center mt-8">
-                                            <button onClick={() => setGatewayMode('selection')} className="text-white/20 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors">
-                                                ← Return to Gateway Selection
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </motion.div>
-                        )}
-
-                        {gatewayMode === 'branch' && (
-                            <div className="w-full max-w-[540px]">
-                                <BranchHandshakeForm
-                                    onBack={() => setGatewayMode('selection')}
-                                    onSuccess={() => { }} // Handled inside via reload usually
-                                />
-                            </div>
-                        )}
-                    </AnimatePresence>
-
-                    <div className="absolute bottom-6 text-[9px] text-white/5 font-black uppercase tracking-[0.5em]">
+                    <div className="absolute bottom-6 text-[9px] text-white/5 font-black uppercase tracking-[0.5em] lg:block hidden">
                         &copy; 2025 Gurukul OS • Protocol Node 9.5.1
                     </div>
                 </div>
