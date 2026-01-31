@@ -120,6 +120,7 @@ export interface SchoolBranch {
     admin_phone?: string;
     status?: string;
     base_currency?: CurrencyCode;
+    school_user_id?: string;
 }
 
 export interface Communication {
@@ -145,9 +146,9 @@ export interface TimetableEntry {
 }
 
 export interface StudentDashboardData {
-    profile: UserProfile & { 
-        roll_number?: string; 
-        student_id_number?: string; 
+    profile: UserProfile & {
+        roll_number?: string;
+        student_id_number?: string;
         grade?: string;
         parent_guardian_details?: string;
     };

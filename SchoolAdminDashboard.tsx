@@ -40,14 +40,14 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
     const [activeComponent, setActiveComponent] = useState('Dashboard');
     const [schoolData, setSchoolData] = useState<SchoolAdminProfileData | null>(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    
+
     const [branches, setBranches] = useState<SchoolBranch[]>([]);
     const [currentBranchId, setCurrentBranchId] = useState<number | null>(null);
     const [loadingData, setLoadingData] = useState(true);
     const [dataError, setDataError] = useState<string | null>(null);
 
-    const isHeadOfficeAdmin = useMemo(() => profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION, [profile.role]);
-    const isBranchAdmin = !isHeadOfficeAdmin;
+    const isHeadOfficeAdmin = useMemo(() => profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !profile.branch_id, [profile.role, profile.branch_id]);
+    const isBranchAdmin = useMemo(() => profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !!profile.branch_id, [profile.role, profile.branch_id]);
 
     const menuGroups = useMemo(() => {
         if (!profile.role) return [];
@@ -73,40 +73,63 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
         setLoadingData(true);
         setDataError(null);
         try {
-            const [schoolRes, branchRes, latestProfileRes] = await Promise.all([
-                supabase.from('school_admin_profiles').select('*').eq('user_id', profile.id).maybeSingle(),
+            // 1. Fetch Branches and latest Profile Identity first
+            const [branchRes, latestProfileRes] = await Promise.all([
                 supabase.rpc('get_school_branches'),
                 supabase.from('profiles').select('branch_id').eq('id', profile.id).maybeSingle()
             ]);
 
-            if (schoolRes.error && schoolRes.error.code !== 'PGRST116') throw schoolRes.error;
             if (branchRes.error) throw branchRes.error;
 
-            setSchoolData(schoolRes.data);
             let rawBranches = (branchRes.data || []) as SchoolBranch[];
             const profileBranchId = latestProfileRes.data?.branch_id;
 
-            if (isBranchAdmin) {
-                const { data: identityMatch } = await supabase
-                    .from('school_branches')
-                    .select('*')
-                    .or(`admin_email.ilike.${profile.email},id.eq.${profileBranchId || -1}`)
-                    .maybeSingle();
-                
-                if (identityMatch && !rawBranches.some(b => b.id === identityMatch.id)) {
-                    rawBranches = [identityMatch, ...rawBranches];
+            // 2. Ensuring Branch Admin has access to their specific branch
+            if (!!profileBranchId && profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+                // If RPC didn't return it (e.g. edge case), try direct fetch
+                if (rawBranches.length === 0 || !rawBranches.some(b => b.id === profileBranchId)) {
+                    const { data: identityMatch } = await supabase
+                        .from('school_branches')
+                        .select('*')
+                        .eq('id', profileBranchId)
+                        .maybeSingle();
+
+                    if (identityMatch) {
+                        rawBranches = [identityMatch, ...rawBranches];
+                    }
                 }
             }
 
-            const sortedBranches = [...rawBranches].sort((a, b) => 
+            const sortedBranches = [...rawBranches].sort((a, b) =>
                 (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0)
             );
-            
+
             setBranches(sortedBranches);
 
+            // 3. Determine whose School Profile to show (Head Office vs Self)
+            let schoolHeadId = profile.id;
+            // If I am a Branch Admin (have a branch_id), I should see the profile of the School Owner (school_user_id)
+            if (profileBranchId && sortedBranches.length > 0) {
+                const myBranch = sortedBranches.find(b => b.id === profileBranchId);
+                if (myBranch?.school_user_id) {
+                    schoolHeadId = myBranch.school_user_id;
+                }
+            }
+
+            // 4. Fetch the School Admin Profile (Institution Details)
+            const { data: schoolData, error: schoolError } = await supabase
+                .from('school_admin_profiles')
+                .select('*')
+                .eq('user_id', schoolHeadId)
+                .maybeSingle();
+
+            if (schoolError && schoolError.code !== 'PGRST116') throw schoolError;
+            setSchoolData(schoolData);
+
+            // 5. IoT State Selection
             let targetId: number | null = null;
-            if (isBranchAdmin) {
-                targetId = profileBranchId || sortedBranches[0]?.id || null;
+            if (profileBranchId) {
+                targetId = profileBranchId;
             } else if (sortedBranches.length > 0) {
                 const mainBranch = sortedBranches.find(b => b.is_main_branch);
                 targetId = mainBranch ? mainBranch.id : sortedBranches[0].id;
@@ -118,7 +141,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
         } finally {
             setLoadingData(false);
         }
-    }, [profile.id, profile.email, isBranchAdmin]);
+    }, [profile.id, profile.email, profile.role]);
 
     useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
 
