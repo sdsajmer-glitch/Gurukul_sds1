@@ -1455,6 +1455,31 @@ CREATE POLICY "Users can insert own profile" ON public.profiles
 CREATE POLICY "Public can view branches" ON public.school_branches
   FOR SELECT USING (true);
 
+-- 4. Institutional Profile Sub-nodes (Self-management)
+-- School Admin Profiles
+CREATE POLICY "Admin can manage own profile" ON public.school_admin_profiles
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Teacher Profiles
+CREATE POLICY "Teachers can manage own profile" ON public.teacher_profiles
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Student Profiles
+CREATE POLICY "Students can manage own profile" ON public.student_profiles
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Parent Profiles
+CREATE POLICY "Parents can manage own profile" ON public.parent_profiles
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Transport Staff Profiles
+CREATE POLICY "Transport can manage own profile" ON public.transport_staff_profiles
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Ecommerce Operator Profiles
+CREATE POLICY "Ecommerce can manage own profile" ON public.ecommerce_operator_profiles
+  FOR ALL USING (auth.uid() = user_id);
+
 
 -- ============================================
 -- 7. FUNCTIONS & TRIGGERS
