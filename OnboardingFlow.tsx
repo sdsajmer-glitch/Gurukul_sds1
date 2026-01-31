@@ -30,13 +30,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [loading, setLoading] = useState(true);
     const [isTransitioning, setIsTransitioning] = useState(false);
-
+    
     const isMounted = useRef(true);
 
     useEffect(() => {
         return () => { isMounted.current = false; };
     }, []);
-
+    
     useEffect(() => {
         if (!isMounted.current || isTransitioning) return;
 
@@ -48,26 +48,24 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
         }
 
         setSelectedRole(profile.role);
-
-        // If user is already completed, it will be handled by App.tsx.
-        // Otherwise, determine where they should be.
+        
         if (profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-            if (onboardingStep && ['profile', 'pricing', 'branches'].includes(onboardingStep)) {
-                setStep(onboardingStep as any);
-            } else if (onboardingStep === 'completed') {
-                // Should be finished
+            const dbStep = onboardingStep;
+            if (dbStep && ['profile', 'pricing', 'branches'].includes(dbStep)) {
+                setStep(dbStep as any);
+            } else if (dbStep === 'completed' || profile.profile_completed) {
+                onComplete();
             } else {
-                setStep('role');
+                setStep('profile');
             }
         } else {
             if (profile.profile_completed) {
-                // Should be finished
+                onComplete();
             } else {
-                // If they have a role but aren't complete, go to profile
                 setStep('profile');
             }
         }
-
+        
         setLoading(false);
     }, [profile.role, profile.profile_completed, onboardingStep, isTransitioning]);
 
@@ -75,22 +73,30 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
         if (!isMounted.current || isTransitioning) return;
         setIsTransitioning(true);
         setLoading(true);
-
+        
         try {
-            const { error } = await supabase.rpc('switch_active_role', { p_target_role: role });
+            // Atomic Role Switch with sub-profile verification
+            const { data, error } = await supabase.rpc('switch_active_role', { p_target_role: role });
             if (error) throw error;
 
+            if (onStepChange) await onStepChange();
+            
             setSelectedRole(role);
 
-            // Fetch the updated profile to see where we stand
-            if (onStepChange) await onStepChange();
+            // AUTO-SKIP: If the profile was already established, finalize immediately
+            if (data?.profile_restored) {
+                onComplete();
+            } else {
+                setStep('profile');
+                setLoading(false);
+                setIsTransitioning(false);
+            }
 
-            // Next step determination logic moved to useEffect which triggers on onStepChange()
-            setIsTransitioning(false);
         } catch (err: any) {
             console.error('Identity Provisioning failure:', formatError(err));
             alert(`Setup Failed: ${formatError(err)}`);
             if (isMounted.current) {
+                setStep('role');
                 setLoading(false);
                 setIsTransitioning(false);
             }
@@ -99,13 +105,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
 
     const handleStepAdvance = async () => {
         if (!isMounted.current) return;
-
-        // Immediate local transition for smoother UI if possible
-        if (selectedRole === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-            if (step === 'profile') setStep('pricing');
-            else if (step === 'pricing') setStep('branches');
-        }
-
         if (onStepChange) await onStepChange();
     };
 
@@ -129,11 +128,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
             </div>
         );
     }
-
+    
     let content;
     switch (step) {
         case 'role':
-            content = <RoleSelectionPage onRoleSelect={handleRoleSelect} onComplete={onComplete} existingRole={profile.role} />;
+            content = <RoleSelectionPage onRoleSelect={handleRoleSelect} onComplete={onComplete} />;
             break;
         case 'profile':
             content = <ProfileCreationPage profile={profile} role={selectedRole!} onComplete={handleStepAdvance} onBack={handleBack} showBackButton={true} />;
@@ -145,7 +144,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
             content = <BranchCreationPage onNext={onComplete} profile={profile} onBack={handleBack} />;
             break;
         default:
-            content = <RoleSelectionPage onRoleSelect={handleRoleSelect} onComplete={onComplete} existingRole={profile.role} />;
+            content = <RoleSelectionPage onRoleSelect={handleRoleSelect} onComplete={onComplete} />;
     }
 
     const currentStepIndex = stepMap[step] ?? 0;

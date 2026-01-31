@@ -14,8 +14,6 @@ const StudentDashboard = lazy(() => import('./components/StudentDashboard'));
 const TeacherDashboard = lazy(() => import('./TeacherDashboard'));
 const MinimalAdminDashboard = lazy(() => import('./MinimalAdminDashboard'));
 const OnboardingFlow = lazy(() => import('./OnboardingFlow'));
-const TransportDashboard = lazy(() => import('./components/TransportDashboard'));
-const EcommerceDashboard = lazy(() => import('./components/EcommerceDashboard'));
 
 const App: React.FC = () => {
     const [session, setSession] = useState<any | null>(null);
@@ -23,46 +21,15 @@ const App: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-
     const fetchProfile = useCallback(async (userId: string) => {
         try {
             const { data, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
-                .maybeSingle();
+                .single();
 
             if (profileError) throw profileError;
-
-            if (!data) {
-                // Self-healing: Protocol requires profile presence. Attempting reconstruction.
-                console.warn("Profile node disconnected. Initiating reconstruction sequence...");
-
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    const newProfile = {
-                        id: user.id,
-                        email: user.email,
-                        display_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown User',
-                        role: user.user_metadata?.role || 'Student'
-                    };
-
-                    const { error: createError } = await supabase.from('profiles').insert(newProfile);
-
-                    if (!createError) {
-                        // Reconstruction successful, verifying...
-                        const { data: retryData } = await supabase.from('profiles').select('*').eq('id', userId).single();
-                        if (retryData) {
-                            setProfile(retryData as UserProfile);
-                            return;
-                        }
-                    } else {
-                        console.error("Reconstruction failed:", createError);
-                    }
-                }
-
-                throw new Error("Profile not found. Database requires re-registration.");
-            }
             setProfile(data as UserProfile);
         } catch (err: any) {
             setError(formatError(err));
@@ -126,7 +93,7 @@ const App: React.FC = () => {
     if (loading) return <PageLoader label="ESTABLISHING SECURE HANDSHAKE" sublabel="Synchronizing identity context with node cluster..." />;
 
     // Handle initialization errors in the UI
-    if (error) {
+    if (error && !session) {
         return (
             <div className="min-h-screen bg-[#08090a] flex items-center justify-center p-6">
                 <div className="bg-[#0d0f14] p-10 rounded-[2.5rem] border border-red-500/20 max-w-md text-center shadow-3xl">
@@ -137,10 +104,7 @@ const App: React.FC = () => {
                     </div>
                     <h2 className="text-white font-serif font-black text-2xl uppercase tracking-tight mb-4">Node Disconnect</h2>
                     <p className="text-white/40 text-sm leading-relaxed mb-8">{error}</p>
-                    <div className="flex flex-col gap-3">
-                        <button onClick={() => window.location.reload()} className="w-full py-3 bg-white text-black font-black rounded-xl text-xs uppercase tracking-widest hover:bg-white/90 transition-all">Retry Handshake</button>
-                        <button onClick={handleSignOut} className="w-full py-3 border border-white/10 text-white/60 font-black rounded-xl text-xs uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all">Emergency Sign Out</button>
-                    </div>
+                    <button onClick={() => window.location.reload()} className="w-full py-3 bg-white text-black font-black rounded-xl text-xs uppercase tracking-widest hover:bg-white/90 transition-all">Retry Handshake</button>
                 </div>
             </div>
         );
@@ -162,9 +126,9 @@ const App: React.FC = () => {
 
         if (!profile.role || !profile.profile_completed) {
             return (
-                <OnboardingFlow
-                    profile={profile}
-                    onComplete={handleProfileUpdate}
+                <OnboardingFlow 
+                    profile={profile} 
+                    onComplete={handleProfileUpdate} 
                     onStepChange={handleProfileUpdate}
                     onboardingStep={(profile as any)?.onboarding_step}
                 />
@@ -175,65 +139,47 @@ const App: React.FC = () => {
             case BuiltInRoles.SCHOOL_ADMINISTRATION:
             case BuiltInRoles.BRANCH_ADMIN:
                 return (
-                    <SchoolAdminDashboard
-                        profile={profile}
-                        onSelectRole={handleSelectRole}
+                    <SchoolAdminDashboard 
+                        profile={profile} 
+                        onSelectRole={handleSelectRole} 
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                     />
                 );
             case BuiltInRoles.PARENT_GUARDIAN:
                 return (
-                    <ParentDashboard
-                        profile={profile}
-                        onSelectRole={handleSelectRole}
+                    <ParentDashboard 
+                        profile={profile} 
+                        onSelectRole={handleSelectRole} 
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                     />
                 );
             case BuiltInRoles.STUDENT:
                 return (
-                    <StudentDashboard
-                        profile={profile}
+                    <StudentDashboard 
+                        profile={profile} 
                         onSignOut={handleSignOut}
-                        onSwitchRole={() => { }}
+                        onSwitchRole={() => {}}
                         onSelectRole={handleSelectRole}
                     />
                 );
             case BuiltInRoles.TEACHER:
                 return (
-                    <TeacherDashboard
-                        profile={profile}
-                        onSwitchRole={() => { }}
+                    <TeacherDashboard 
+                        profile={profile} 
+                        onSwitchRole={() => {}}
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                         onSelectRole={handleSelectRole}
                     />
                 );
-            case BuiltInRoles.TRANSPORT_STAFF:
-                return (
-                    <TransportDashboard
-                        profile={profile}
-                        onSignOut={handleSignOut}
-                        onSelectRole={handleSelectRole}
-                        onSwitchRole={() => { }}
-                    />
-                );
-            case BuiltInRoles.ECOMMERCE_OPERATOR:
-                return (
-                    <EcommerceDashboard
-                        profile={profile}
-                        onSignOut={handleSignOut}
-                        onSelectRole={handleSelectRole}
-                        onSwitchRole={() => { }}
-                    />
-                );
             case BuiltInRoles.SUPER_ADMIN:
                 return (
-                    <MinimalAdminDashboard
-                        profile={profile}
-                        onSignOut={handleSignOut}
-                        onSelectRole={handleSelectRole}
+                    <MinimalAdminDashboard 
+                        profile={profile} 
+                        onSignOut={handleSignOut} 
+                        onSelectRole={handleSelectRole} 
                     />
                 );
             default:
