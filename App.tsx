@@ -191,7 +191,25 @@ const App: React.FC = () => {
                     />
                 );
             default:
-                return <div className="p-20 text-center text-white/50 italic">Identity Scoping Failure: Role not recognized.</div>;
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center bg-[#08090a] p-4 text-center">
+                        <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-white font-serif font-black text-2xl uppercase tracking-tight mb-2">Unrecognized Identity</h2>
+                        <p className="text-white/40 text-sm leading-relaxed mb-8 max-w-md">
+                            The system could not resolve your role permissions ({profile.role}). This requires a session reset.
+                        </p>
+                        <button
+                            onClick={handleSignOut}
+                            className="px-8 py-3 bg-white text-black font-black rounded-xl text-xs uppercase tracking-widest hover:bg-white/90 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                        >
+                            Terminate Session
+                        </button>
+                    </div>
+                );
         }
     };
 
