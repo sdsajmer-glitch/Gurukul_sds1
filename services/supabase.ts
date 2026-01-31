@@ -1,8 +1,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://jforwngnlqyvlpqzuqpz.supabase.co';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmb3J3bmdubHF5dmxwcXp1cXB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczNjY0NTksImV4cCI6MjA4Mjk0MjQ1OX0.f3WXFI972q4P-PKD_vWQo6fKzh9bedoQ6FzIgpJxU8M';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://uakcydchamgtjbmcyfzi.supabase.co';
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVha2N5ZGNoYW1ndGpibWN5ZnppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4MjE3NzgsImV4cCI6MjA4NTM5Nzc3OH0.rRP1gfU7_-Wrxkd7qwRDpZsb6o-OcdS34w6Nt_wMYkE';
 
 export const STORAGE_KEY = 'school_v15_auth_session';
 
@@ -27,7 +27,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export const formatError = (err: any): string => {
     if (!err) return "Synchronization error.";
     if (typeof err === 'string') return err;
-    
+
     // Extract base message
     const msg = err.message || err.error_description || err.error || err.details || err.hint || "";
     const lowerMsg = String(msg).toLowerCase();
@@ -52,7 +52,7 @@ export const formatError = (err: any): string => {
     if (code === '42703') return `Attribute Desync: ${msg}. Re-apply latest schema.txt.`;
     if (code === '23502') return `Data Integrity Fault: Mandatory parameter missing. Check input context.`;
     if (code === 'P0001') return msg || "Custom validation protocol rejected the payload.";
-    
+
     try {
         const stringified = JSON.stringify(err, Object.getOwnPropertyNames(err));
         return stringified && stringified !== '{}' ? msg || stringified : msg || "Identity Handshake Protocol Exception.";

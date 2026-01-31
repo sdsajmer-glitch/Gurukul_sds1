@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    base: '/', 
+    base: '/',
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
@@ -32,9 +32,9 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       'process.env.NODE_ENV': JSON.stringify(mode),
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || 'AIzaSyCJkHG6RTsAlvTARuHWgQfULh9VGHV4WfA'),
-      'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || 'https://jforwngnlqyvlpqzuqpz.supabase.co'),
-      'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmb3J3bmdubHF5dmxwcXp1cXB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczNjY0NTksImV4cCI6MjA4Mjk0MjQ1OX0.f3WXFI972q4P-PKD_vWQo6fKzh9bedoQ6FzIgpJxU8M'),
+      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.API_KEY || 'AIzaSyAB32DPh9ZZtkWfJid4-syW0hHVbwMMjsg'),
+      'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || 'https://uakcydchamgtjbmcyfzi.supabase.co'),
+      'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVha2N5ZGNoYW1ndGpibWN5ZnppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4MjE3NzgsImV4cCI6MjA4NTM5Nzc3OH0.rRP1gfU7_-Wrxkd7qwRDpZsb6o-OcdS34w6Nt_wMYkE'),
       'global': 'window',
     },
     resolve: {
