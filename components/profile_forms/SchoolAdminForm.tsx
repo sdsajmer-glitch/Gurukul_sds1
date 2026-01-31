@@ -94,9 +94,9 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [internalTab, setInternalTab] = useState<TabType>('details');
     const [isResolving, setIsResolving] = useState(false);
-    
+
     const currentTab = activeTab !== undefined ? activeTab : internalTab;
-    
+
     const handleTabSwitch = (tab: TabType) => {
         if (onTabChange) {
             onTabChange(tab);
@@ -104,7 +104,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
             setInternalTab(tab);
         }
     };
-    
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,102 +173,102 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
 
     return (
         <div className="space-y-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-5xl mx-auto pb-20">
-            
+
             {/* --- HERO SECTION --- */}
             <div className="relative rounded-3xl overflow-hidden bg-card border border-border shadow-xl group">
                 {/* Banner Area */}
-                <div className="h-56 md:h-72 bg-muted relative group/banner">
+                <div className="h-40 md:h-52 bg-muted relative group/banner transition-all duration-500">
                     {bannerPreview ? (
-                         <img src={bannerPreview} alt="School Banner" className="w-full h-full object-cover" />
+                        <img src={bannerPreview} alt="School Banner" className="w-full h-full object-cover" />
                     ) : (
                         <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
                             <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                             <div className="text-center z-10">
-                                <SchoolIcon className="w-16 h-16 text-white/10 mx-auto mb-2" />
-                                <p className="text-white/20 text-sm font-medium uppercase tracking-widest">Add Cover Photo</p>
+                                <SchoolIcon className="w-12 h-12 text-white/10 mx-auto mb-2" />
+                                <p className="text-white/20 text-xs font-medium uppercase tracking-widest">Add Cover Photo</p>
                             </div>
                         </div>
                     )}
-                    <div 
+                    <div
                         className="absolute inset-0 bg-black/40 opacity-0 group-hover/banner:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer backdrop-blur-[2px]"
                         onClick={() => bannerInputRef.current?.click()}
                     >
-                        <span className="text-white font-bold text-sm flex items-center gap-2 bg-white/20 px-6 py-3 rounded-full border border-white/30 hover:bg-white/30 transition-all transform hover:scale-105 backdrop-blur-md shadow-lg">
-                            <UploadIcon className="w-4 h-4"/> Upload Banner
+                        <span className="text-white font-bold text-xs flex items-center gap-2 bg-white/20 px-5 py-2.5 rounded-full border border-white/30 hover:bg-white/30 transition-all transform hover:scale-105 backdrop-blur-md shadow-lg">
+                            <UploadIcon className="w-4 h-4" /> Upload Banner
                         </span>
                     </div>
                     <input type="file" ref={bannerInputRef} onChange={handleBannerChange} accept="image/*" className="hidden" />
 
                     {/* Status Badges Overlay */}
-                    <div className="absolute top-6 right-6 flex gap-3">
-                         <div className="bg-black/40 backdrop-blur-md border border-white/10 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2">
-                             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                             85% Complete
-                         </div>
-                         <div className="bg-white/90 backdrop-blur-md border border-white/50 text-slate-900 px-4 py-1.5 rounded-full text-xs font-bold shadow-lg uppercase tracking-wider">
-                             Draft
-                         </div>
+                    <div className="absolute top-4 right-4 flex gap-2">
+                        <div className="bg-black/60 backdrop-blur-md border border-white/10 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                            85%
+                        </div>
+                        <div className="bg-white/90 backdrop-blur-md border border-white/50 text-slate-900 px-3 py-1 rounded-full text-[10px] font-bold shadow-lg uppercase tracking-wider">
+                            Draft
+                        </div>
                     </div>
                 </div>
 
                 {/* Identity Area */}
-                <div className="px-8 md:px-12 pb-8 pt-0 relative">
-                    <div className="flex flex-col md:flex-row items-start md:items-end gap-8 -mt-20">
+                <div className="px-6 md:px-10 pb-6 pt-0 relative">
+                    <div className="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-14">
                         {/* Logo */}
                         <div className="relative group/logo flex-shrink-0">
-                            <div className={`w-40 h-40 rounded-[2rem] border-[6px] border-card shadow-2xl flex items-center justify-center overflow-hidden bg-background relative z-10 transition-transform duration-300 group-hover/logo:scale-[1.02] ${!logoPreview ? 'bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900' : ''}`}>
+                            <div className={`w-32 h-32 rounded-3xl border-[4px] border-card shadow-2xl flex items-center justify-center overflow-hidden bg-background relative z-10 transition-transform duration-300 group-hover/logo:scale-[1.02] ${!logoPreview ? 'bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900' : ''}`}>
                                 {logoPreview ? (
                                     <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="text-center p-4">
-                                        <SchoolIcon className="w-16 h-16 mx-auto text-muted-foreground/30 mb-2" />
-                                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/50">Upload Logo</span>
+                                        <SchoolIcon className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
+                                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-muted-foreground/50">Upload Logo</span>
                                     </div>
                                 )}
-                                <div 
+                                <div
                                     onClick={() => fileInputRef.current?.click()}
                                     className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer backdrop-blur-[1px]"
                                 >
-                                    <UploadIcon className="w-8 h-8 text-white" />
+                                    <UploadIcon className="w-6 h-6 text-white" />
                                 </div>
                                 <input type="file" ref={fileInputRef} onChange={handleLogoChange} accept="image/*" className="hidden" />
                             </div>
-                            <div className="absolute bottom-2 right-2 bg-blue-500 border-4 border-card w-8 h-8 rounded-full z-20 shadow-md flex items-center justify-center text-white" title="Upload Required">
-                                <span className="text-xl font-bold leading-none mb-0.5">+</span>
+                            <div className="absolute bottom-1 right-1 bg-blue-500 border-[3px] border-card w-7 h-7 rounded-full z-20 shadow-md flex items-center justify-center text-white" title="Upload Required">
+                                <span className="text-lg font-bold leading-none mb-0.5">+</span>
                             </div>
                         </div>
 
                         {/* Title Input */}
-                        <div className="flex-grow w-full pt-2 md:pb-4 space-y-1">
-                            <label className="block text-[10px] font-extrabold text-muted-foreground/80 uppercase tracking-[0.2em] mb-1 pl-1">Institution Name</label>
+                        <div className="flex-grow w-full pt-1 md:pb-2 space-y-1">
+                            <label className="block text-[10px] font-extrabold text-muted-foreground/80 uppercase tracking-[0.2em] mb-0.5 pl-0.5">Institution Name</label>
                             <input
                                 name="school_name"
                                 value={formData.school_name || ''}
                                 onChange={handleChange}
                                 placeholder="Enter Official School Name"
-                                className="w-full bg-transparent border-b-2 border-transparent hover:border-border focus:border-primary p-1 text-3xl md:text-5xl font-black text-foreground placeholder:text-muted-foreground/20 focus:ring-0 focus:outline-none transition-all font-serif tracking-tight leading-tight"
+                                className="w-full bg-transparent border-b-2 border-transparent hover:border-border focus:border-primary p-0 text-2xl md:text-4xl font-black text-foreground placeholder:text-muted-foreground/20 focus:ring-0 focus:outline-none transition-all font-serif tracking-tight leading-tight"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Modern Tabs */}
-                <div className="px-8 md:px-12 mt-4 bg-muted/30 border-t border-border/60">
-                    <div className="flex overflow-x-auto scrollbar-hide gap-8">
+                <div className="px-6 md:px-10 mt-2 bg-muted/40 backdrop-blur-sm border-t border-border/60">
+                    <div className="flex overflow-x-auto scrollbar-hide gap-6 md:gap-10">
                         {[
-                            { id: 'details', label: 'Institution Details', icon: <SchoolIcon className="w-4 h-4"/> },
-                            { id: 'contact', label: 'Contact Info', icon: <UsersIcon className="w-4 h-4"/> },
-                            { id: 'academic', label: 'Academic Settings', icon: <DocumentTextIcon className="w-4 h-4"/> },
+                            { id: 'details', label: 'Institution Details', icon: <SchoolIcon className="w-3.5 h-3.5" /> },
+                            { id: 'contact', label: 'Contact Info', icon: <UsersIcon className="w-3.5 h-3.5" /> },
+                            { id: 'academic', label: 'Academic Settings', icon: <DocumentTextIcon className="w-3.5 h-3.5" /> },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
                                 type="button"
                                 onClick={() => handleTabSwitch(tab.id as TabType)}
                                 className={`
-                                    flex items-center gap-2.5 py-5 text-sm font-bold border-b-[3px] transition-all whitespace-nowrap
-                                    ${currentTab === tab.id 
-                                        ? 'border-primary text-primary' 
-                                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                                    flex items-center gap-2 py-4 text-xs font-bold border-b-[3px] transition-all whitespace-nowrap uppercase tracking-wider
+                                    ${currentTab === tab.id
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground/70 hover:text-foreground hover:border-border'
                                     }
                                 `}
                             >
@@ -282,28 +282,28 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
 
             {/* --- FORM CONTENT --- */}
             <div className="pt-2">
-                
+
                 {currentTab === 'details' && (
                     <div className="bg-card rounded-3xl border border-border/60 shadow-sm p-8 md:p-10 animate-in fade-in slide-in-from-right-4 duration-500">
-                        <SectionHeader 
-                            title="Location & Headquarters" 
-                            subtitle="Set the official address for correspondence and mapping." 
-                            icon={<LocationIcon className="w-6 h-6 text-blue-600 dark:text-blue-400"/>}
+                        <SectionHeader
+                            title="Location & Headquarters"
+                            subtitle="Set the official address for correspondence and mapping."
+                            icon={<LocationIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
                             colorClass="bg-blue-50 dark:bg-blue-900/20"
                         />
-                        
+
                         <div className="space-y-6 max-w-4xl">
-                            <PremiumInput 
-                                label="Street Address" 
-                                name="address" 
-                                value={formData.address || ''} 
-                                onChange={handleChange} 
-                                required 
-                                icon={<LocationIcon className="w-5 h-5"/>}
+                            <PremiumInput
+                                label="Street Address"
+                                name="address"
+                                value={formData.address || ''}
+                                onChange={handleChange}
+                                required
+                                icon={<LocationIcon className="w-5 h-5" />}
                                 fullWidth
                                 action={
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onClick={handleResolveAddress}
                                         disabled={isResolving || !formData.address?.trim()}
                                         className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all disabled:opacity-30 disabled:grayscale"
@@ -315,33 +315,33 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                             />
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <CustomSelect 
-                                    label="Country" 
+                                <CustomSelect
+                                    label="Country"
                                     placeholder="Select Country"
-                                    options={countries.map(c => ({ label: c, value: c }))} 
-                                    value={formData.country || 'India'} 
+                                    options={countries.map(c => ({ label: c, value: c }))}
+                                    value={formData.country || 'India'}
                                     onChange={handleCountrySelect}
-                                    icon={<GlobeIcon className="w-4 h-4"/>}
+                                    icon={<GlobeIcon className="w-4 h-4" />}
                                     searchable
                                 />
-                                <CustomSelect 
-                                    label="State" 
+                                <CustomSelect
+                                    label="State"
                                     placeholder="Select State"
-                                    options={availableStates.map(s => ({ label: s, value: s }))} 
-                                    value={formData.state || ''} 
+                                    options={availableStates.map(s => ({ label: s, value: s }))}
+                                    value={formData.state || ''}
                                     onChange={handleStateSelect}
                                     disabled={!formData.country}
-                                    icon={<LocationIcon className="w-4 h-4"/>}
+                                    icon={<LocationIcon className="w-4 h-4" />}
                                     searchable
                                 />
-                                <CustomSelect 
-                                    label="City" 
+                                <CustomSelect
+                                    label="City"
                                     placeholder="Select City"
-                                    options={availableCities.map(c => ({ label: c, value: c }))} 
-                                    value={formData.city || ''} 
+                                    options={availableCities.map(c => ({ label: c, value: c }))}
+                                    value={formData.city || ''}
                                     onChange={(val) => handleChange({ target: { name: 'city', value: val } } as any)}
                                     disabled={!formData.state}
-                                    icon={<LocationIcon className="w-4 h-4"/>}
+                                    icon={<LocationIcon className="w-4 h-4" />}
                                     searchable
                                 />
                             </div>
@@ -351,14 +351,14 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
 
                 {currentTab === 'contact' && (
                     <div className="bg-card rounded-3xl border border-border/60 shadow-sm p-8 md:p-10 animate-in fade-in slide-in-from-right-4 duration-500">
-                        <SectionHeader 
-                            title="Primary Administrator" 
-                            subtitle="Main contact for technical and administrative issues." 
-                            icon={<UsersIcon className="w-6 h-6 text-purple-600 dark:text-purple-400"/>}
+                        <SectionHeader
+                            title="Primary Administrator"
+                            subtitle="Main contact for technical and administrative issues."
+                            icon={<UsersIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />}
                             colorClass="bg-purple-50 dark:bg-purple-900/20"
                         />
 
-                         {isInitialCreation && (
+                        {isInitialCreation && (
                             <div className="bg-primary/5 border border-primary/10 rounded-2xl p-5 mb-8 flex items-start gap-4">
                                 <CheckCircleIcon className="w-6 h-6 text-primary mt-0.5 flex-shrink-0" />
                                 <div>
@@ -369,56 +369,56 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
-                            <PremiumInput 
-                                label="Full Name" 
-                                name="admin_contact_name" 
-                                value={formData.admin_contact_name || ''} 
-                                onChange={handleChange} 
-                                required 
-                                icon={<UsersIcon className="w-5 h-5"/>} 
+                            <PremiumInput
+                                label="Full Name"
+                                name="admin_contact_name"
+                                value={formData.admin_contact_name || ''}
+                                onChange={handleChange}
+                                required
+                                icon={<UsersIcon className="w-5 h-5" />}
                             />
-                            
-                            <PremiumInput 
-                                label="Designation" 
-                                name="admin_designation" 
-                                value={formData.admin_designation || ''} 
-                                onChange={handleChange} 
-                                required 
+
+                            <PremiumInput
+                                label="Designation"
+                                name="admin_designation"
+                                value={formData.admin_designation || ''}
+                                onChange={handleChange}
+                                required
                                 placeholder="e.g. Principal"
-                                icon={<CheckCircleIcon className="w-5 h-5"/>} 
+                                icon={<CheckCircleIcon className="w-5 h-5" />}
                             />
-                            
+
                             <div className="md:col-span-2">
-                                <PremiumInput 
-                                    label="Official Email" 
+                                <PremiumInput
+                                    label="Official Email"
                                     type="email"
-                                    name="admin_contact_email" 
-                                    value={formData.admin_contact_email || ''} 
-                                    onChange={handleChange} 
-                                    required 
-                                    icon={<MailIcon className="w-5 h-5"/>} 
+                                    name="admin_contact_email"
+                                    value={formData.admin_contact_email || ''}
+                                    onChange={handleChange}
+                                    required
+                                    icon={<MailIcon className="w-5 h-5" />}
                                 />
                             </div>
 
                             <div className="flex gap-4 md:col-span-2">
                                 <div className="w-[160px]">
-                                     <CustomSelect
+                                    <CustomSelect
                                         label="Code"
                                         placeholder="+91"
                                         options={countryCodes.map(c => ({ value: c.dial_code, label: `${c.code} ${c.dial_code}` }))}
                                         value={formData.admin_contact_phone_country_code || '+91'}
                                         onChange={(val) => handleChange({ target: { name: 'admin_contact_phone_country_code', value: val } } as any)}
-                                        icon={<PhoneIcon className="w-4 h-4"/>}
+                                        icon={<PhoneIcon className="w-4 h-4" />}
                                         searchable
                                     />
                                 </div>
                                 <div className="flex-grow">
-                                    <PremiumInput 
-                                        label="Phone Number" 
+                                    <PremiumInput
+                                        label="Phone Number"
                                         type="tel"
-                                        name="admin_contact_phone_local" 
-                                        value={formData.admin_contact_phone_local || ''} 
-                                        onChange={handleChange} 
+                                        name="admin_contact_phone_local"
+                                        value={formData.admin_contact_phone_local || ''}
+                                        onChange={handleChange}
                                         required
                                     />
                                 </div>
@@ -428,14 +428,14 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                 )}
 
                 {currentTab === 'academic' && (
-                     <div className="bg-card rounded-3xl border border-border/60 shadow-sm p-8 md:p-10 animate-in fade-in slide-in-from-right-4 duration-500">
-                         <SectionHeader 
-                            title="Academic Configuration" 
-                            subtitle="Set up boards, affiliation, and grade structures." 
-                            icon={<DocumentTextIcon className="w-6 h-6 text-amber-600 dark:text-amber-400"/>}
+                    <div className="bg-card rounded-3xl border border-border/60 shadow-sm p-8 md:p-10 animate-in fade-in slide-in-from-right-4 duration-500">
+                        <SectionHeader
+                            title="Academic Configuration"
+                            subtitle="Set up boards, affiliation, and grade structures."
+                            icon={<DocumentTextIcon className="w-6 h-6 text-amber-600 dark:text-amber-400" />}
                             colorClass="bg-amber-50 dark:bg-amber-900/20"
                         />
-                        
+
                         <div className="space-y-8 max-w-4xl">
                             {/* Board & Affiliation */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -456,14 +456,14 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                     required
                                     searchable
                                 />
-                                
-                                <PremiumInput 
-                                    label="Affiliation / School Code" 
-                                    name="affiliation_number" 
-                                    value={formData.affiliation_number || ''} 
-                                    onChange={handleChange} 
+
+                                <PremiumInput
+                                    label="Affiliation / School Code"
+                                    name="affiliation_number"
+                                    value={formData.affiliation_number || ''}
+                                    onChange={handleChange}
                                     placeholder="e.g. 830012"
-                                    icon={<HashIcon className="w-5 h-5"/>} 
+                                    icon={<HashIcon className="w-5 h-5" />}
                                 />
                             </div>
 
@@ -471,7 +471,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
 
                             {/* School Type & Session */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                 <CustomSelect
+                                <CustomSelect
                                     label="Institution Type"
                                     placeholder="Select Type"
                                     options={[
@@ -485,7 +485,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                 />
 
                                 <div className="md:col-span-2 grid grid-cols-2 gap-5">
-                                     <CustomSelect
+                                    <CustomSelect
                                         label="Academic Year Start"
                                         placeholder="Start Month"
                                         options={MONTHS}
@@ -494,7 +494,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                         icon={<CalendarIcon className="w-4 h-4" />}
                                         searchable
                                     />
-                                     <CustomSelect
+                                    <CustomSelect
                                         label="Academic Year End"
                                         placeholder="End Month"
                                         options={MONTHS}
@@ -512,7 +512,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                     <LayersIcon className="w-4 h-4 text-primary" /> Grade Levels Offered
                                 </h4>
                                 <div className="grid grid-cols-2 gap-8">
-                                     <CustomSelect
+                                    <CustomSelect
                                         label="Lowest Grade"
                                         placeholder="Start Grade"
                                         options={GRADES}
@@ -520,7 +520,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                         onChange={(val) => handleChange({ target: { name: 'grade_range_start', value: val } } as any)}
                                         searchable
                                     />
-                                     <CustomSelect
+                                    <CustomSelect
                                         label="Highest Grade"
                                         placeholder="End Grade"
                                         options={GRADES}

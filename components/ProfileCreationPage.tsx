@@ -180,38 +180,40 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
     return (
         <div className="w-full max-w-2xl mx-auto space-y-8 pb-32 font-sans">
-            <div
-                className="relative bg-slate-900/60 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/5 shadow-2xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4"
-            >
-                <div className="p-8 md:p-10 flex flex-col items-center relative z-10">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center text-3xl font-semibold text-white shadow-xl mb-6 relative group overflow-hidden">
-                        <span className="relative z-10">{(formData.display_name || 'U').charAt(0).toUpperCase()}</span>
-                        <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            {role !== BuiltInRoles.SCHOOL_ADMINISTRATION && (
+                <div
+                    className="relative bg-slate-900/60 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/5 shadow-2xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4"
+                >
+                    <div className="p-8 md:p-10 flex flex-col items-center relative z-10">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center text-3xl font-semibold text-white shadow-xl mb-6 relative group overflow-hidden">
+                            <span className="relative z-10">{(formData.display_name || 'U').charAt(0).toUpperCase()}</span>
+                            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight text-center">
+                            {formData.display_name || 'New Identity'}
+                        </h2>
+                        <p className="text-primary/70 text-[10px] font-bold uppercase tracking-[0.3em] mt-3 flex items-center gap-2">
+                            <ShieldCheckIcon className="w-3 h-3" />
+                            {role}
+                        </p>
                     </div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight text-center">
-                        {formData.display_name || 'New Identity'}
-                    </h2>
-                    <p className="text-primary/70 text-[10px] font-bold uppercase tracking-[0.3em] mt-3 flex items-center gap-2">
-                        <ShieldCheckIcon className="w-3 h-3" />
-                        {role}
-                    </p>
-                </div>
 
-                <div className="px-8 border-t border-white/5 flex justify-center gap-10 bg-black/20">
-                    <button
-                        onClick={() => setActiveTab('details')}
-                        className={`py-4 text-[11px] font-bold uppercase tracking-widest relative transition-all duration-300 ${activeTab === 'details' ? 'text-primary' : 'text-white/30 hover:text-white/50'}`}
-                    >
-                        Core Registry {activeTab === 'details' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_12px_rgba(var(--primary),0.6)]"></div>}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('contact')}
-                        className={`py-4 text-[11px] font-bold uppercase tracking-widest relative transition-all duration-300 ${activeTab === 'contact' ? 'text-primary' : 'text-white/30 hover:text-white/50'}`}
-                    >
-                        Contact & Node {activeTab === 'contact' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_12px_rgba(var(--primary),0.6)]"></div>}
-                    </button>
+                    <div className="px-8 border-t border-white/5 flex justify-center gap-10 bg-black/20">
+                        <button
+                            onClick={() => setActiveTab('details')}
+                            className={`py-4 text-[11px] font-bold uppercase tracking-widest relative transition-all duration-300 ${activeTab === 'details' ? 'text-primary' : 'text-white/30 hover:text-white/50'}`}
+                        >
+                            Core Registry {activeTab === 'details' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_12px_rgba(var(--primary),0.6)]"></div>}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('contact')}
+                            className={`py-4 text-[11px] font-bold uppercase tracking-widest relative transition-all duration-300 ${activeTab === 'contact' ? 'text-primary' : 'text-white/30 hover:text-white/50'}`}
+                        >
+                            Contact & Node {activeTab === 'contact' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_12px_rgba(var(--primary),0.6)]"></div>}
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {error && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-5 rounded-2xl flex items-center gap-4 animate-in shake">
