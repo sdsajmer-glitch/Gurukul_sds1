@@ -1,6 +1,7 @@
 -- Fix Branch Verification Logic
 -- 1. Makes code comparison case-insensitive (Frontend sends Uppercase, valid hex is lowercase)
 -- 2. Adds Email Verification (User must be logged in with the email assigned to the branch admin)
+-- 3. AUTO-COMPLETION: Marks the user's onboarding as 'completed' so they bypass the "Create School" flow.
 
 CREATE OR REPLACE FUNCTION public.verify_and_link_branch_admin(p_invitation_code text)
 RETURNS jsonb
@@ -53,8 +54,15 @@ BEGIN
   -- Link user to branch
   UPDATE public.profiles
   SET role = 'School Administration', 
-      branch_id = v_invitation.branch_id
+      branch_id = v_invitation.branch_id,
+      profile_completed = true -- Mark profile as completed
   WHERE id = v_user_id;
+
+  -- Update or Insert into School Admin Profiles to mark onboarding as completed
+  INSERT INTO public.school_admin_profiles (user_id, onboarding_step)
+  VALUES (v_user_id, 'completed')
+  ON CONFLICT (user_id) DO UPDATE SET
+    onboarding_step = 'completed';
   
   -- Update school_branches table
   UPDATE public.school_branches

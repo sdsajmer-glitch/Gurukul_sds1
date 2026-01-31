@@ -38,14 +38,17 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
     const [activeComponent, setActiveComponent] = useState('Dashboard');
     const [schoolData, setSchoolData] = useState<SchoolAdminProfileData | null>(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    
+
     const [branches, setBranches] = useState<SchoolBranch[]>([]);
     const [currentBranchId, setCurrentBranchId] = useState<number | null>(null);
     const [loadingData, setLoadingData] = useState(true);
     const [dataError, setDataError] = useState<string | null>(null);
 
-    const isHeadOfficeAdmin = useMemo(() => profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION, [profile.role]);
-    const isBranchAdmin = !isHeadOfficeAdmin;
+    // Fix: Distinguish between Head Office Admin (Global) and Branch Admin (Restricted)
+    // Head Office Admins have 'School Administration' role but NO specific branch_id in their profile.
+    // Branch Admins have 'School Administration' role AND a specific branch_id.
+    const isHeadOfficeAdmin = useMemo(() => profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !profile.branch_id, [profile.role, profile.branch_id]);
+    const isBranchAdmin = useMemo(() => profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !!profile.branch_id, [profile.role, profile.branch_id]);
 
     const menuGroups = useMemo(() => {
         if (!profile.role) return [];
@@ -90,16 +93,16 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
                     .select('*')
                     .or(`admin_email.ilike.${profile.email},id.eq.${profileBranchId || -1}`)
                     .maybeSingle();
-                
+
                 if (identityMatch && !rawBranches.some(b => b.id === identityMatch.id)) {
                     rawBranches = [identityMatch, ...rawBranches];
                 }
             }
 
-            const sortedBranches = [...rawBranches].sort((a, b) => 
+            const sortedBranches = [...rawBranches].sort((a, b) =>
                 (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0)
             );
-            
+
             setBranches(sortedBranches);
 
             let targetId: number | null = null;
