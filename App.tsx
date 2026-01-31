@@ -21,6 +21,7 @@ const App: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+
     const fetchProfile = useCallback(async (userId: string) => {
         try {
             const { data, error: profileError } = await supabase
@@ -30,7 +31,36 @@ const App: React.FC = () => {
                 .maybeSingle();
 
             if (profileError) throw profileError;
-            if (!data) throw new Error("Profile not found. Database requires re-registration.");
+
+            if (!data) {
+                // Self-healing: Protocol requires profile presence. Attempting reconstruction.
+                console.warn("Profile node disconnected. Initiating reconstruction sequence...");
+
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const newProfile = {
+                        id: user.id,
+                        email: user.email,
+                        display_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown User',
+                        role: user.user_metadata?.role || 'Student'
+                    };
+
+                    const { error: createError } = await supabase.from('profiles').insert(newProfile);
+
+                    if (!createError) {
+                        // Reconstruction successful, verifying...
+                        const { data: retryData } = await supabase.from('profiles').select('*').eq('id', userId).single();
+                        if (retryData) {
+                            setProfile(retryData as UserProfile);
+                            return;
+                        }
+                    } else {
+                        console.error("Reconstruction failed:", createError);
+                    }
+                }
+
+                throw new Error("Profile not found. Database requires re-registration.");
+            }
             setProfile(data as UserProfile);
         } catch (err: any) {
             setError(formatError(err));

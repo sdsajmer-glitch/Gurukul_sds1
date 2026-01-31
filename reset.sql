@@ -1398,9 +1398,14 @@ ALTER TABLE public.storage_files ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON public.profiles
   FOR SELECT USING (auth.uid() = id);
 
+
 -- 2. Profiles: Updating own profile
 CREATE POLICY "Users can update own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
+
+-- 2b. Profiles: Inserting own profile (Self-healing)
+CREATE POLICY "Users can insert own profile" ON public.profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- 3. Public Read for School Branches (for login/enquiry)
 CREATE POLICY "Public can view branches" ON public.school_branches
