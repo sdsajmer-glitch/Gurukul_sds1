@@ -47,12 +47,28 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
             return;
         }
 
-        // User has a role.
-        // We do NOT auto-advance anymore. We show the "Welcome Back" screen (RoleSelectionPage with existingRole).
         setSelectedRole(profile.role);
-        setStep('role');
-        setLoading(false);
 
+        // If user is already completed, it will be handled by App.tsx.
+        // Otherwise, determine where they should be.
+        if (profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+            if (onboardingStep && ['profile', 'pricing', 'branches'].includes(onboardingStep)) {
+                setStep(onboardingStep as any);
+            } else if (onboardingStep === 'completed') {
+                // Should be finished
+            } else {
+                setStep('role');
+            }
+        } else {
+            if (profile.profile_completed) {
+                // Should be finished
+            } else {
+                // If they have a role but aren't complete, go to profile
+                setStep('profile');
+            }
+        }
+
+        setLoading(false);
     }, [profile.role, profile.profile_completed, onboardingStep, isTransitioning]);
 
     const handleRoleSelect = async (role: Role) => {
@@ -61,43 +77,20 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
         setLoading(true);
 
         try {
-            // If the user already has this role and just clicked "Continue", we might skip the RPC 
-            // if we trust the state, but calling it ensures session claims are fresh.
-            const { data, error } = await supabase.rpc('switch_active_role', { p_target_role: role });
+            const { error } = await supabase.rpc('switch_active_role', { p_target_role: role });
             if (error) throw error;
-
-            if (onStepChange) await onStepChange();
 
             setSelectedRole(role);
 
-            // Determine next step based on role type and completion status
-            if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-                const dbStep = onboardingStep;
-                if (dbStep && ['profile', 'pricing', 'branches'].includes(dbStep)) {
-                    setStep(dbStep as any);
-                } else if (dbStep === 'completed' || profile.profile_completed) {
-                    onComplete();
-                    return;
-                } else {
-                    setStep('profile');
-                }
-            } else {
-                if (profile.profile_completed && profile.role === role) {
-                    onComplete();
-                    return;
-                } else {
-                    setStep('profile');
-                }
-            }
+            // Fetch the updated profile to see where we stand
+            if (onStepChange) await onStepChange();
 
-            setLoading(false);
+            // Next step determination logic moved to useEffect which triggers on onStepChange()
             setIsTransitioning(false);
-
         } catch (err: any) {
             console.error('Identity Provisioning failure:', formatError(err));
             alert(`Setup Failed: ${formatError(err)}`);
             if (isMounted.current) {
-                setStep('role');
                 setLoading(false);
                 setIsTransitioning(false);
             }
@@ -106,6 +99,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
 
     const handleStepAdvance = async () => {
         if (!isMounted.current) return;
+
+        // Immediate local transition for smoother UI if possible
+        if (selectedRole === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+            if (step === 'profile') setStep('pricing');
+            else if (step === 'pricing') setStep('branches');
+        }
+
         if (onStepChange) await onStepChange();
     };
 

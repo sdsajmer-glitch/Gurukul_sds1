@@ -6,6 +6,8 @@ import SchoolAdminForm from './profile_forms/SchoolAdminForm';
 import ParentForm from './profile_forms/ParentForm';
 import StudentForm from './profile_forms/StudentForm';
 import TeacherForm from './profile_forms/TeacherForm';
+import EcommerceForm from './profile_forms/EcommerceForm';
+import TransportForm from './profile_forms/TransportForm';
 import { UserIcon } from './icons/UserIcon';
 import { PhoneIcon } from './icons/PhoneIcon';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
@@ -27,7 +29,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isFetchingInitialData, setIsFetchingInitialData] = useState(true);
-    const [activeTab, setActiveTab] = useState<'details' | 'contact'>('details');
+    const [activeTab, setActiveTab] = useState<'details' | 'contact' | 'academic'>('details');
 
     const isMounted = useRef(true);
     useEffect(() => { return () => { isMounted.current = false; }; }, []);
@@ -42,6 +44,8 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
             case BuiltInRoles.PARENT_GUARDIAN: tableName = 'parent_profiles'; break;
             case BuiltInRoles.TEACHER: tableName = 'teacher_profiles'; break;
             case BuiltInRoles.STUDENT: tableName = 'student_profiles'; break;
+            case BuiltInRoles.TRANSPORT_STAFF: tableName = 'transport_staff_profiles'; break;
+            case BuiltInRoles.ECOMMERCE_OPERATOR: tableName = 'ecommerce_operator_profiles'; break;
         }
 
         let fetchedData: any = {};
@@ -72,6 +76,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
     const isFormValid = useMemo(() => {
         if (!formData.display_name?.trim()) return false;
         if (role === BuiltInRoles.PARENT_GUARDIAN && !formData.relationship_to_student) return false;
+        if (role === BuiltInRoles.STUDENT && !formData.applicant_name?.trim()) return false;
         return true;
     }, [formData, role]);
 
@@ -86,48 +91,91 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
         setError(null);
 
         try {
-            if (role === BuiltInRoles.TEACHER) {
-                const { error: tError } = await supabase.rpc('upsert_teacher_profile', {
-                    p_user_id: profile.id,
-                    p_display_name: formData.display_name,
-                    p_email: profile.email,
-                    p_phone: formData.phone,
-                    p_department: formData.department,
-                    p_designation: formData.designation,
-                    p_subject: formData.subject,
-                    p_qualification: formData.qualification,
-                    p_experience: Number(formData.experience_years) || 0,
-                    p_doj: formData.date_of_joining || new Date().toISOString().split('T')[0]
-                });
-                if (tError) throw tError;
-            } else if (role === BuiltInRoles.PARENT_GUARDIAN) {
-                const { error: pError } = await supabase.from('parent_profiles').upsert({
-                    user_id: profile.id,
-                    relationship_to_student: formData.relationship_to_student,
-                    gender: formData.gender,
-                    number_of_children: Number(formData.number_of_children) || 1,
-                    address: formData.address,
-                    city: formData.city,
-                    state: formData.state,
-                    country: formData.country,
-                    pin_code: formData.pin_code
-                });
-                if (pError) throw pError;
-            } else if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-                const { error: sError } = await supabase.from('school_admin_profiles').upsert({
-                    user_id: profile.id,
-                    school_name: formData.school_name,
-                    address: formData.address,
-                    city: formData.city,
-                    state: formData.state,
-                    country: formData.country,
-                    admin_contact_name: formData.admin_contact_name,
-                    admin_contact_phone: formData.admin_contact_phone,
-                    onboarding_step: 'completed'
-                });
-                if (sError) throw sError;
+            let rpcName = '';
+            let rpcParams: any = {};
+
+            switch (role) {
+                case BuiltInRoles.TEACHER:
+                    rpcName = 'upsert_teacher_profile';
+                    rpcParams = {
+                        p_user_id: profile.id,
+                        p_display_name: formData.display_name,
+                        p_email: profile.email,
+                        p_phone: formData.phone,
+                        p_department: formData.department,
+                        p_designation: formData.designation,
+                        p_subject: formData.subject,
+                        p_qualification: formData.qualification,
+                        p_experience: Number(formData.experience_years) || 0,
+                        p_doj: formData.date_of_joining || new Date().toISOString().split('T')[0]
+                    };
+                    break;
+                case BuiltInRoles.PARENT_GUARDIAN:
+                    rpcName = 'upsert_parent_profile';
+                    rpcParams = {
+                        p_user_id: profile.id,
+                        p_display_name: formData.display_name,
+                        p_relationship: formData.relationship_to_student,
+                        p_gender: formData.gender,
+                        p_num_children: Number(formData.number_of_children) || 1,
+                        p_address: formData.address,
+                        p_city: formData.city,
+                        p_state: formData.state,
+                        p_country: formData.country,
+                        p_pin_code: formData.pin_code
+                    };
+                    break;
+                case BuiltInRoles.STUDENT:
+                    rpcName = 'upsert_student_profile';
+                    rpcParams = {
+                        p_user_id: profile.id,
+                        p_display_name: formData.display_name,
+                        p_grade: formData.grade,
+                        p_gender: formData.gender,
+                        p_dob: formData.date_of_birth
+                    };
+                    break;
+                case BuiltInRoles.TRANSPORT_STAFF:
+                    rpcName = 'upsert_transport_profile';
+                    rpcParams = {
+                        p_user_id: profile.id,
+                        p_display_name: formData.display_name,
+                        p_vehicle_details: formData.vehicle_details,
+                        p_license_info: formData.license_info
+                    };
+                    break;
+                case BuiltInRoles.ECOMMERCE_OPERATOR:
+                    rpcName = 'upsert_ecommerce_profile';
+                    rpcParams = {
+                        p_user_id: profile.id,
+                        p_display_name: formData.display_name,
+                        p_store_name: formData.store_name,
+                        p_business_type: formData.business_type
+                    };
+                    break;
+                case BuiltInRoles.SCHOOL_ADMINISTRATION:
+                    // Using direct table update since we handle onboarding_step locally
+                    const { error: sError } = await supabase.from('school_admin_profiles').upsert({
+                        user_id: profile.id,
+                        school_name: formData.school_name,
+                        address: formData.address,
+                        city: formData.city,
+                        state: formData.state,
+                        country: formData.country,
+                        admin_contact_name: formData.admin_contact_name,
+                        admin_contact_phone: formData.admin_contact_phone,
+                        onboarding_step: 'completed'
+                    });
+                    if (sError) throw sError;
+                    break;
             }
 
+            if (rpcName) {
+                const { error: rpcError } = await supabase.rpc(rpcName, rpcParams);
+                if (rpcError) throw rpcError;
+            }
+
+            // Universal completion marker
             const { error: profileError } = await supabase.from('profiles').update({
                 display_name: formData.display_name,
                 phone: formData.phone,
@@ -155,19 +203,43 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
         [BuiltInRoles.SCHOOL_ADMINISTRATION]: 'Institutional Command',
         [BuiltInRoles.PARENT_GUARDIAN]: 'Guardian Proxy',
         [BuiltInRoles.TEACHER]: 'Faculty Hub',
-        [BuiltInRoles.STUDENT]: 'Scholar Portal'
+        [BuiltInRoles.STUDENT]: 'Scholar Portal',
+        [BuiltInRoles.TRANSPORT_STAFF]: 'Logistics Nexus',
+        [BuiltInRoles.ECOMMERCE_OPERATOR]: 'Commerce Terminal'
+    };
+
+    const renderSpecializedForm = () => {
+        switch (role) {
+            case BuiltInRoles.PARENT_GUARDIAN:
+                return <ParentForm formData={formData} handleChange={handleFormChange} activeTab={activeTab} />;
+            case BuiltInRoles.TEACHER:
+                return <TeacherForm formData={formData} handleChange={handleFormChange} photoPreviewUrl={null} onPhotoChange={() => { }} currentUserId={profile.id} isRestrictedView={false} />;
+            case BuiltInRoles.SCHOOL_ADMINISTRATION:
+                return <SchoolAdminForm formData={formData} handleChange={handleFormChange} isInitialCreation={false} activeTab={activeTab === 'academic' ? 'academic' : activeTab as any} onTabChange={(t) => setActiveTab(t as any)} />;
+            case BuiltInRoles.STUDENT:
+                return <StudentForm formData={formData} handleChange={handleFormChange} profile={profile} />;
+            case BuiltInRoles.TRANSPORT_STAFF:
+                return <TransportForm formData={formData} handleChange={handleFormChange} activeTab={activeTab} />;
+            case BuiltInRoles.ECOMMERCE_OPERATOR:
+                return <EcommerceForm formData={formData} handleChange={handleFormChange} />;
+            default:
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <FloatingPremiumInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleFormChange} icon={<UserIcon className="w-5 h-5" />} />
+                        <FloatingPremiumInput label="Contact Number" name="phone" value={formData.phone} onChange={handleFormChange} icon={<PhoneIcon className="w-5 h-5" />} />
+                    </div>
+                );
+        }
     };
 
     return (
         <div className="w-full max-w-4xl mx-auto space-y-12 pb-32">
 
-            {/* Identity Header Card */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="relative bg-white/[0.03] backdrop-blur-[40px] rounded-[3rem] overflow-hidden border border-white/10 shadow-3xl"
             >
-                {/* Background Glow */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] -mr-32 -mt-32" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 blur-[100px] -ml-32 -mb-32" />
 
@@ -206,7 +278,6 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     </div>
                 </div>
 
-                {/* Tab Navigation */}
                 <div className="px-10 md:px-16 border-t border-white/10 flex gap-12 bg-black/20">
                     <button
                         onClick={() => setActiveTab('details')}
@@ -232,6 +303,20 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                             />
                         )}
                     </button>
+                    {role === BuiltInRoles.SCHOOL_ADMINISTRATION && (
+                        <button
+                            onClick={() => setActiveTab('academic')}
+                            className={`py-8 text-[10px] font-black uppercase tracking-[0.3em] relative transition-all group ${activeTab === 'academic' ? 'text-white' : 'text-white/30 hover:text-white/50'}`}
+                        >
+                            Academic Engine
+                            {activeTab === 'academic' && (
+                                <motion.div
+                                    layoutId="activeTab"
+                                    className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full shadow-[0_0_20px_rgba(var(--primary),0.8)]"
+                                />
+                            )}
+                        </button>
+                    )}
                 </div>
             </motion.div>
 
@@ -258,25 +343,11 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                         transition={{ duration: 0.3 }}
                         className="bg-white/[0.02] backdrop-blur-[20px] border border-white/5 rounded-[3.5rem] p-10 md:p-16 shadow-2xl relative overflow-hidden"
                     >
-                        {/* Interactive Grid Background for Form */}
                         <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '30px 30px' }} />
-
-                        {role === BuiltInRoles.PARENT_GUARDIAN ? (
-                            <ParentForm formData={formData} handleChange={handleFormChange} activeTab={activeTab} />
-                        ) : role === BuiltInRoles.TEACHER ? (
-                            <TeacherForm formData={formData} handleChange={handleFormChange} photoPreviewUrl={null} onPhotoChange={() => { }} currentUserId={profile.id} isRestrictedView={true} />
-                        ) : role === BuiltInRoles.SCHOOL_ADMINISTRATION ? (
-                            <SchoolAdminForm formData={formData} handleChange={handleFormChange} isInitialCreation={false} />
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <FloatingPremiumInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleFormChange} icon={<UserIcon className="w-5 h-5" />} />
-                                <FloatingPremiumInput label="Contact Number" name="phone" value={formData.phone} onChange={handleFormChange} icon={<PhoneIcon className="w-5 h-5" />} />
-                            </div>
-                        )}
+                        {renderSpecializedForm()}
                     </motion.div>
                 </AnimatePresence>
 
-                {/* Submit Controls */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-10">
                     {showBackButton ? (
                         <button

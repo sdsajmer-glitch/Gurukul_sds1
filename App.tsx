@@ -14,6 +14,8 @@ const StudentDashboard = lazy(() => import('./components/StudentDashboard'));
 const TeacherDashboard = lazy(() => import('./TeacherDashboard'));
 const MinimalAdminDashboard = lazy(() => import('./MinimalAdminDashboard'));
 const OnboardingFlow = lazy(() => import('./OnboardingFlow'));
+const TransportDashboard = lazy(() => import('./components/TransportDashboard'));
+const EcommerceDashboard = lazy(() => import('./components/EcommerceDashboard'));
 
 const App: React.FC = () => {
     const [session, setSession] = useState<any | null>(null);
@@ -206,6 +208,24 @@ const App: React.FC = () => {
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                         onSelectRole={handleSelectRole}
+                    />
+                );
+            case BuiltInRoles.TRANSPORT_STAFF:
+                return (
+                    <TransportDashboard
+                        profile={profile}
+                        onSignOut={handleSignOut}
+                        onSelectRole={handleSelectRole}
+                        onSwitchRole={() => { }}
+                    />
+                );
+            case BuiltInRoles.ECOMMERCE_OPERATOR:
+                return (
+                    <EcommerceDashboard
+                        profile={profile}
+                        onSignOut={handleSignOut}
+                        onSelectRole={handleSelectRole}
+                        onSwitchRole={() => { }}
                     />
                 );
             case BuiltInRoles.SUPER_ADMIN:

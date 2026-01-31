@@ -30,7 +30,7 @@ const StudentForm: React.FC<FormProps> = ({ formData, handleChange, profile }) =
                     label="Canonical Name"
                     name="applicant_name"
                     value={formData.applicant_name || ''}
-                    readOnly
+                    onChange={handleChange}
                     icon={<UserIcon className="w-5 h-5" />}
                 />
 
