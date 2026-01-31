@@ -1,152 +1,146 @@
-
 import React from 'react';
 import { TeacherProfileData } from '../../types';
+import { UserIcon } from '../icons/UserIcon';
+import { CalendarIcon } from '../icons/CalendarIcon';
+import { MailIcon } from '../icons/MailIcon';
+import { PhoneIcon } from '../icons/PhoneIcon';
+import { CheckCircleIcon } from '../icons/CheckCircleIcon';
+import { SparklesIcon } from '../icons/SparklesIcon';
+import { UsersIcon } from '../icons/UsersIcon';
+import { FloatingPremiumInput, PremiumSelect } from '../common/Inputs';
 
 interface FormProps {
     formData: Partial<TeacherProfileData & { display_name: string }>;
     handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
     photoPreviewUrl: string | null;
     onPhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    currentUserId: string; 
-    isRestrictedView?: boolean; // New prop to disable fields for teachers editing themselves
+    currentUserId: string;
+    isRestrictedView?: boolean;
 }
-
-const UserIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-full w-full text-muted-foreground" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-    </svg>
-);
-
-const BaseInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
-    <input 
-        {...props}
-        className={`appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-ring focus:border-primary sm:text-sm bg-background text-foreground ${props.readOnly ? 'opacity-60 cursor-not-allowed bg-muted' : ''}`} 
-    />
-);
-
-const BaseTextArea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (props) => (
-    <textarea 
-        {...props}
-        className={`appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-ring focus:border-primary sm:text-sm bg-background text-foreground ${props.readOnly ? 'opacity-60 cursor-not-allowed bg-muted' : ''}`} 
-    />
-);
-
-const BaseSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (props) => (
-    <select
-        {...props}
-        className={`appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-ring focus:border-primary sm:text-sm bg-background text-foreground ${props.disabled ? 'opacity-60 cursor-not-allowed bg-muted' : ''}`}
-    >
-        {props.children}
-    </select>
-);
-
-
-const Label: React.FC<{htmlFor: string; children: React.ReactNode}> = ({htmlFor, children}) => (
-    <label htmlFor={htmlFor} className="block text-sm font-medium text-muted-foreground mb-1">{children}</label>
-);
 
 const TeacherForm: React.FC<FormProps> = ({ formData, handleChange, photoPreviewUrl, onPhotoChange, currentUserId, isRestrictedView }) => {
     return (
-        <div className="space-y-4">
-             <div>
-                <Label htmlFor="photo">Profile Photo</Label>
-                <div className="mt-1 flex items-center gap-4">
-                    <span className="inline-block h-20 w-20 rounded-full overflow-hidden bg-muted border border-border">
-                        {photoPreviewUrl ? 
+        <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-500">
+            {/* Profile Sector */}
+            <div className="flex flex-col md:flex-row gap-10 items-center md:items-start p-8 rounded-[3rem] bg-white/[0.02] border border-white/5">
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-primary/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden bg-white/5 border border-white/10 shadow-2xl transition-transform group-hover:scale-105 duration-500">
+                        {photoPreviewUrl ?
                             <img src={photoPreviewUrl} alt="Profile Preview" className="h-full w-full object-cover" /> :
-                            <div className="p-4"><UserIcon /></div>
+                            <div className="p-8 text-white/10"><UserIcon /></div>
                         }
-                    </span>
-                    <label htmlFor="photo-upload" className="cursor-pointer bg-card text-foreground border border-border px-3 py-2 rounded-md text-sm font-medium hover:bg-muted">
-                        <span>Change</span>
-                        <input id="photo-upload" name="photo" type="file" onChange={onPhotoChange} accept="image/*" className="sr-only"/>
+                    </div>
+                    <label htmlFor="photo-upload" className="absolute -bottom-2 right-0 w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center cursor-pointer shadow-xl hover:scale-110 active:scale-95 transition-all border-4 border-[#08090a]">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                        <input id="photo-upload" name="photo" type="file" onChange={onPhotoChange} accept="image/*" className="sr-only" />
                     </label>
                 </div>
-            </div>
-            
-            {/* Personal Info */}
-            <div>
-                <Label htmlFor="display_name">Full Name</Label>
-                <BaseInput id="display_name" name="display_name" type="text" value={formData.display_name || ''} onChange={handleChange} required placeholder="e.g., Jane Doe"/>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="date_of_birth">Date of Birth</Label>
-                    <BaseInput id="date_of_birth" name="date_of_birth" type="date" value={formData.date_of_birth || ''} onChange={handleChange} readOnly={isRestrictedView} />
-                </div>
-                <div>
-                    <Label htmlFor="gender">Gender</Label>
-                    <BaseSelect id="gender" name="gender" value={formData.gender || ''} onChange={handleChange} disabled={isRestrictedView}>
-                        <option value="" disabled>Select Gender...</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                    </BaseSelect>
+
+                <div className="flex-grow space-y-6 w-full">
+                    <div className="space-y-1">
+                        <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">Institutional Faculty Registry</h3>
+                        <p className="text-[11px] text-white/30 font-medium tracking-widest italic">Biographical & professional specifications.</p>
+                    </div>
+                    <FloatingPremiumInput
+                        label="Canonical Faculty Name"
+                        name="display_name"
+                        value={formData.display_name || ''}
+                        onChange={handleChange}
+                        required
+                        icon={<UserIcon className="w-5 h-5" />}
+                    />
                 </div>
             </div>
 
-            {/* Academic Info */}
-            <div>
-                <Label htmlFor="subject">Primary Subject</Label>
-                <BaseInput id="subject" name="subject" type="text" value={formData.subject || ''} onChange={handleChange} required placeholder="e.g., Mathematics, Physics" readOnly={isRestrictedView}/>
-            </div>
-            <div>
-                <Label htmlFor="qualification">Qualification</Label>
-                <BaseInput id="qualification" name="qualification" type="text" value={formData.qualification || ''} onChange={handleChange} placeholder="e.g., M.Sc. in Physics"/>
-            </div>
-            
-            {/* Employment Info - Mostly Restricted for Teachers */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="date_of_joining">Date of Joining</Label>
-                    <BaseInput id="date_of_joining" name="date_of_joining" type="date" value={formData.date_of_joining || ''} onChange={handleChange} readOnly={isRestrictedView} />
-                </div>
-                <div>
-                    <Label htmlFor="experience_years">Years of Experience</Label>
-                    <BaseInput id="experience_years" name="experience_years" type="number" value={formData.experience_years || ''} onChange={handleChange} placeholder="e.g., 5" readOnly={isRestrictedView} />
-                </div>
-            </div>
-             
-             {/* Only Show Employment Details if NOT Restricted View (Admin/HR Mode) */}
-             {!isRestrictedView && (
-                 <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="department">Department</Label>
-                            <BaseInput id="department" name="department" type="text" value={formData.department || ''} onChange={handleChange} placeholder="e.g. Science" />
-                        </div>
-                        <div>
-                            <Label htmlFor="designation">Designation</Label>
-                            <BaseInput id="designation" name="designation" type="text" value={formData.designation || ''} onChange={handleChange} placeholder="e.g. Senior Teacher" />
-                        </div>
-                    </div>
-                    
-                    <div className="p-4 bg-muted/30 border border-border rounded-md space-y-4">
-                        <h4 className="text-xs font-bold uppercase text-muted-foreground">HR & Finance (Admin Only)</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Fix: salary mapping */}
-                            <div>
-                                <Label htmlFor="salary">Annual Salary</Label>
-                                <BaseInput id="salary" name="salary" type="text" value={formData.salary || ''} onChange={handleChange} placeholder="e.g. 45000" />
-                            </div>
-                            {/* Fix: bank_details mapping */}
-                            <div>
-                                <Label htmlFor="bank_details">Bank Details</Label>
-                                <BaseInput id="bank_details" name="bank_details" type="text" value={formData.bank_details || ''} onChange={handleChange} placeholder="IBAN / Account No." />
-                            </div>
-                        </div>
-                    </div>
-                 </>
-             )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <FloatingPremiumInput
+                    label="Chronological Marker (DOB)"
+                    name="date_of_birth"
+                    type="date"
+                    value={formData.date_of_birth || ''}
+                    onChange={handleChange}
+                    readOnly={isRestrictedView}
+                    icon={<CalendarIcon className="w-5 h-5" />}
+                    className="appearance-none [color-scheme:dark]"
+                />
+                <PremiumSelect
+                    label="Gender Assignment"
+                    name="gender"
+                    value={formData.gender || ''}
+                    onChange={handleChange}
+                    disabled={isRestrictedView}
+                    icon={<UserIcon className="w-5 h-5" />}
+                >
+                    <option value="" disabled className="bg-slate-900">Select Gender...</option>
+                    <option value="Male" className="bg-slate-900">Male</option>
+                    <option value="Female" className="bg-slate-900">Female</option>
+                    <option value="Other" className="bg-slate-900">Other</option>
+                </PremiumSelect>
 
-             <div>
-                <Label htmlFor="specializations">Specializations</Label>
-                <BaseInput id="specializations" name="specializations" type="text" value={formData.specializations || ''} onChange={handleChange} placeholder="e.g., AP Physics, Robotics"/>
+                <FloatingPremiumInput
+                    label="Primary Academic Domain"
+                    name="subject"
+                    value={formData.subject || ''}
+                    onChange={handleChange}
+                    required
+                    readOnly={isRestrictedView}
+                    icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>}
+                />
+                <FloatingPremiumInput
+                    label="Highest Qualification"
+                    name="qualification"
+                    value={formData.qualification || ''}
+                    onChange={handleChange}
+                    icon={<CheckCircleIcon className="w-5 h-5" />}
+                />
             </div>
-            <div>
-                <Label htmlFor="bio">Bio</Label>
-                <BaseTextArea id="bio" name="bio" value={formData.bio || ''} onChange={handleChange} rows={3} placeholder="A brief introduction about your teaching philosophy..."/>
+
+            <div className="h-px bg-white/5 w-full" />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <FloatingPremiumInput
+                    label="Onboarding Date"
+                    name="date_of_joining"
+                    type="date"
+                    value={formData.date_of_joining || ''}
+                    onChange={handleChange}
+                    readOnly={isRestrictedView}
+                    icon={<CalendarIcon className="w-5 h-5" />}
+                    className="appearance-none [color-scheme:dark]"
+                />
+                <FloatingPremiumInput
+                    label="Experience Tenure (Years)"
+                    name="experience_years"
+                    type="number"
+                    value={formData.experience_years || ''}
+                    onChange={handleChange}
+                    readOnly={isRestrictedView}
+                    icon={<CheckCircleIcon className="w-5 h-5" />}
+                />
+            </div>
+
+            {!isRestrictedView && (
+                <div className="p-10 rounded-[2.5rem] bg-indigo-500/5 border border-indigo-500/10 space-y-8">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
+                        </div>
+                        <h4 className="text-[10px] font-black uppercase text-indigo-400 tracking-[0.4em]">Administrative Specifications</h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <FloatingPremiumInput label="Faculty Department" name="department" value={formData.department || ''} onChange={handleChange} icon={<UsersIcon className="w-5 h-5" />} className="!bg-white/5" />
+                        <FloatingPremiumInput label="Designation Level" name="designation" value={formData.designation || ''} onChange={handleChange} icon={<UserIcon className="w-5 h-5" />} className="!bg-white/5" />
+                        <FloatingPremiumInput label="Remuneration Protocol" name="salary" value={formData.salary || ''} onChange={handleChange} icon={<CheckCircleIcon className="w-5 h-5" />} className="!bg-white/5" />
+                        <FloatingPremiumInput label="Bank Auth Identifier" name="bank_details" value={formData.bank_details || ''} onChange={handleChange} icon={<CheckCircleIcon className="w-5 h-5" />} className="!bg-white/5" />
+                    </div>
+                </div>
+            )}
+
+            <div className="space-y-8">
+                <FloatingPremiumInput label="Scientific Specializations" name="specializations" value={formData.specializations || ''} onChange={handleChange} icon={<SparklesIcon className="w-5 h-5" />} />
+                <FloatingPremiumInput label="Teaching Philosophy (Bio)" name="bio" value={formData.bio || ''} onChange={handleChange} isTextArea icon={<MailIcon className="w-5 h-5" />} />
             </div>
         </div>
     );
