@@ -1,18 +1,25 @@
 -- Database Reset Script
 -- Generated on 2026-01-31
 -- This script performs a full reset of the database schema.
--- It drops all existing objects and recreates them, including Tables, Views, RLS, and Functions.
+-- Dependencies: uuid-ossp, pgcrypto
 
 BEGIN;
+
+-- ============================================
+-- 0. EXTENSIONS & SETUP
+-- ============================================
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================
 -- 1. DROP EVERYTHING
 -- ============================================
 
--- Disable FK checks temporarily for mass dropping
+-- Disable FK checks temporarily
 SET session_replication_role = 'replica';
 
--- Drop Tables
+-- Drop Tables (Reverse Order of Logic/Dependencies)
 DROP TABLE IF EXISTS
   academic_years,
   admin_tasks,
@@ -96,7 +103,7 @@ DROP TABLE IF EXISTS
   workshops
 CASCADE;
 
--- Drop Custom Types
+-- Drop Enums / Types
 DROP TYPE IF EXISTS academic_year_status CASCADE;
 DROP TYPE IF EXISTS attendance_status CASCADE;
 DROP TYPE IF EXISTS timetable_status CASCADE;
@@ -107,14 +114,15 @@ DROP TYPE IF EXISTS fee_assignment_status CASCADE;
 DROP TYPE IF EXISTS transport_status CASCADE;
 DROP TYPE IF EXISTS vehicle_status CASCADE;
 
--- Drop Functions (if any specific ones exist, general cleanup)
--- DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
-
--- Drop Sequences (Auto-dropped by tables usually, but safe to ensure)
+-- Drop Sequences
 DROP SEQUENCE IF EXISTS invoice_number_seq;
+
+-- Drop Functions (Custom)
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 
 -- Re-enable FK checks
 SET session_replication_role = 'origin';
+
 
 -- ============================================
 -- 2. CREATE TYPES & SEQUENCES
@@ -133,13 +141,14 @@ CREATE TYPE vehicle_status AS ENUM ('active', 'inactive', 'maintenance', 'retire
 CREATE SEQUENCE IF NOT EXISTS invoice_number_seq;
 
 -- ============================================
--- 3. CREATE TABLES
+-- 3. CREATE TABLES (With Inline PKs and Basic Defaults)
 -- ============================================
 
--- Core Identity Tables
+-- >>> CORE HIERARCHY <<<
+
 CREATE TABLE public.school_branches (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  school_user_id uuid,
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  school_user_id uuid, -- FK deferred
   name text NOT NULL,
   address text,
   city text,
@@ -151,731 +160,215 @@ CREATE TABLE public.school_branches (
   admin_name text,
   admin_phone text,
   admin_email text,
-  branch_admin_id uuid,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT school_branches_pkey PRIMARY KEY (id)
+  branch_admin_id uuid, -- FK deferred
+  created_at timestamp with time zone DEFAULT now()
 );
 
 CREATE TABLE public.profiles (
-  id uuid NOT NULL,
+  id uuid PRIMARY KEY, -- Maps to auth.users.id usually
   email text NOT NULL UNIQUE,
   display_name text,
   phone text,
   role text,
-  branch_id bigint,
-  is_super_admin boolean NOT NULL DEFAULT false,
-  is_active boolean NOT NULL DEFAULT true,
-  profile_completed boolean NOT NULL DEFAULT false,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  branch_id bigint, -- FK deferred
+  is_super_admin boolean DEFAULT false,
+  is_active boolean DEFAULT true,
+  profile_completed boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
   email_confirmed_at timestamp with time zone,
-  profile_photo_url text,
-  CONSTRAINT profiles_pkey PRIMARY KEY (id),
-  CONSTRAINT profiles_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
+  profile_photo_url text
 );
 
--- Core Academic Tables
 CREATE TABLE public.school_classes (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   name text NOT NULL,
   grade_level text,
   section text,
   academic_year text,
-  class_teacher_id uuid,
-  branch_id bigint,
+  class_teacher_id uuid REFERENCES public.profiles(id),
+  branch_id bigint REFERENCES public.school_branches(id),
   capacity integer DEFAULT 30,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT school_classes_pkey PRIMARY KEY (id),
-  CONSTRAINT school_classes_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id),
-  CONSTRAINT school_classes_class_teacher_id_fkey FOREIGN KEY (class_teacher_id) REFERENCES public.profiles(id)
+  created_at timestamp with time zone DEFAULT now()
+);
+
+CREATE TABLE public.academic_years (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  branch_id bigint REFERENCES public.school_branches(id),
+  year_name text NOT NULL,
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  is_current boolean DEFAULT false,
+  status academic_year_status DEFAULT 'active',
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  deleted_at timestamp with time zone
 );
 
 CREATE TABLE public.courses (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   title text NOT NULL,
   code text,
   grade_level text,
   credits numeric,
   category text,
   subject_type text,
-  status text DEFAULT 'Active'::text,
+  status text DEFAULT 'Active',
   description text,
-  teacher_id uuid,
+  teacher_id uuid REFERENCES public.profiles(id),
   syllabus_pdf_url text,
   department text,
   deleted_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT courses_pkey PRIMARY KEY (id),
-  CONSTRAINT courses_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id)
+  updated_at timestamp with time zone DEFAULT now()
 );
 
 CREATE TABLE public.fee_structures (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   name text NOT NULL,
   academic_year text,
   description text,
-  branch_id bigint,
-  currency text DEFAULT 'INR'::text,
+  branch_id bigint REFERENCES public.school_branches(id),
+  currency text DEFAULT 'INR',
   is_active boolean DEFAULT false,
-  status text DEFAULT 'Draft'::text,
-  target_grade text DEFAULT '1'::text,
-  created_at timestamp with time zone DEFAULT now(),
+  status text DEFAULT 'Draft',
+  target_grade text DEFAULT '1',
   version_locked boolean DEFAULT false,
   is_default boolean DEFAULT false,
-  CONSTRAINT fee_structures_pkey PRIMARY KEY (id),
-  CONSTRAINT fee_structures_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
+  created_at timestamp with time zone DEFAULT now()
 );
 
--- Extended Tables
-
-CREATE TABLE public.academic_years (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  branch_id bigint,
-  year_name text NOT NULL,
-  start_date date NOT NULL,
-  end_date date NOT NULL,
-  is_current boolean DEFAULT false,
-  status academic_year_status DEFAULT 'active'::academic_year_status,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT academic_years_pkey PRIMARY KEY (id),
-  CONSTRAINT academic_years_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
-);
+-- >>> OPERATIONAL TABLES <<<
 
 CREATE TABLE public.admin_tasks (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  branch_id bigint,
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  branch_id bigint REFERENCES public.school_branches(id),
   title text NOT NULL,
   description text,
-  priority text DEFAULT 'MEDIUM'::text CHECK (priority = ANY (ARRAY['URGENT'::text, 'HIGH'::text, 'MEDIUM'::text, 'LOW'::text])),
-  category text DEFAULT 'General'::text,
-  status text DEFAULT 'Todo'::text CHECK (status = ANY (ARRAY['Todo'::text, 'Completed'::text])),
-  created_at timestamp with time zone DEFAULT now(),
-  created_by uuid,
+  priority text CHECK (priority IN ('URGENT', 'HIGH', 'MEDIUM', 'LOW')) DEFAULT 'MEDIUM',
+  category text DEFAULT 'General',
+  status text CHECK (status IN ('Todo', 'Completed')) DEFAULT 'Todo',
   due_date timestamp with time zone,
-  CONSTRAINT admin_tasks_pkey PRIMARY KEY (id),
-  CONSTRAINT admin_tasks_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
+  created_by uuid,
+  created_at timestamp with time zone DEFAULT now()
 );
 
-CREATE TABLE public.admission_audit_logs (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  item_type text NOT NULL,
-  previous_status text,
-  new_status text,
-  details jsonb DEFAULT '{}'::jsonb,
-  changed_by uuid,
-  changed_by_name text,
-  created_at timestamp with time zone DEFAULT now(),
-  admission_id uuid,
-  CONSTRAINT admission_audit_logs_pkey PRIMARY KEY (id)
+CREATE TABLE public.enquiries (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  branch_id bigint REFERENCES public.school_branches(id),
+  user_id uuid REFERENCES public.profiles(id),
+  enquiry_code text,
+  applicant_name text NOT NULL,
+  grade text,
+  status text DEFAULT 'NEW',
+  verification_status text DEFAULT 'PENDING' CHECK (verification_status IN ('PENDING', 'VERIFIED', 'FAILED')),
+  parent_name text,
+  parent_email text,
+  parent_phone text,
+  notes text,
+  conversion_state text DEFAULT 'NOT_CONVERTED' CHECK (conversion_state IN ('NOT_CONVERTED', 'CONVERTED')),
+  admission_id uuid UNIQUE, -- Circular ref to admissions deferred if strict, but uuid ok
+  is_archived boolean DEFAULT false,
+  is_deleted boolean DEFAULT false,
+  received_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  converted_at timestamp with time zone
 );
 
 CREATE TABLE public.admissions (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  branch_id integer, -- should be bigint really, matching school_branches
   applicant_name text NOT NULL,
-  parent_id uuid,
+  parent_id uuid REFERENCES public.profiles(id),
   parent_name text,
   parent_email text NOT NULL,
   parent_phone text,
   grade text NOT NULL,
-  status text NOT NULL DEFAULT 'Registered'::text,
-  submitted_at timestamp with time zone DEFAULT now(),
-  registered_at timestamp with time zone,
+  status text DEFAULT 'Registered',
+  application_number text,
+  student_user_id uuid REFERENCES public.profiles(id),
+  date_of_birth date,
+  gender text,
   profile_photo_url text,
   medical_info text,
   emergency_contact text,
-  application_number text,
-  student_user_id uuid,
-  date_of_birth date,
-  gender text,
-  branch_id integer,
-  updated_at timestamp with time zone DEFAULT now(),
   notes text,
-  CONSTRAINT admissions_pkey PRIMARY KEY (id),
-  CONSTRAINT admissions_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.profiles(id),
-  CONSTRAINT admissions_student_user_id_fkey FOREIGN KEY (student_user_id) REFERENCES public.profiles(id)
+  submitted_at timestamp with time zone DEFAULT now(),
+  registered_at timestamp with time zone,
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+CREATE TABLE public.admission_documents (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  admission_id uuid REFERENCES public.admissions(id),
+  requirement_id bigint, -- FK added later or assumed table exists
+  uploaded_by uuid REFERENCES public.profiles(id),
+  file_name text NOT NULL,
+  storage_path text NOT NULL,
+  status text DEFAULT 'Pending',
+  file_size bigint,
+  mime_type text,
+  uploaded_at timestamp with time zone DEFAULT now()
 );
 
 CREATE TABLE public.document_requirements (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  admission_id uuid REFERENCES public.admissions(id),
   document_name text NOT NULL,
-  status text DEFAULT 'Pending'::text,
+  status text DEFAULT 'Pending',
   is_mandatory boolean DEFAULT true,
   notes_for_parent text,
   rejection_reason text,
   created_at timestamp with time zone DEFAULT now(),
-  admission_id uuid,
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT document_requirements_pkey PRIMARY KEY (id),
-  CONSTRAINT document_requirements_admission_id_fkey FOREIGN KEY (admission_id) REFERENCES public.admissions(id)
+  updated_at timestamp with time zone DEFAULT now()
 );
+-- Add missing FK from admission_documents to document_requirements
+ALTER TABLE public.admission_documents
+ADD CONSTRAINT admission_documents_requirement_id_fkey FOREIGN KEY (requirement_id) REFERENCES public.document_requirements(id);
 
-CREATE TABLE public.admission_documents (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  admission_id uuid NOT NULL,
-  requirement_id bigint,
-  uploaded_by uuid,
-  file_name text NOT NULL,
-  storage_path text NOT NULL,
-  uploaded_at timestamp with time zone DEFAULT now(),
-  status text DEFAULT 'Pending'::text,
-  file_size bigint,
-  mime_type text,
-  CONSTRAINT admission_documents_pkey PRIMARY KEY (id),
-  CONSTRAINT admission_documents_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.profiles(id),
-  CONSTRAINT admission_documents_admission_id_fkey FOREIGN KEY (admission_id) REFERENCES public.admissions(id),
-  CONSTRAINT admission_documents_requirement_id_fkey FOREIGN KEY (requirement_id) REFERENCES public.document_requirements(id)
-);
 
-CREATE TABLE public.admission_share_codes (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  code text NOT NULL UNIQUE,
-  admission_id bigint,
-  enquiry_id bigint,
-  code_type text NOT NULL,
-  status text DEFAULT 'Active'::text,
-  purpose text,
-  expires_at timestamp with time zone DEFAULT (now() + '1 day'::interval),
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT admission_share_codes_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.assignments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  class_id bigint,
-  subject_id bigint,
-  teacher_id uuid,
-  title text NOT NULL,
-  description text,
-  due_date timestamp with time zone,
-  created_at timestamp with time zone DEFAULT now(),
-  status text DEFAULT 'Draft'::text,
-  max_score integer DEFAULT 100,
-  CONSTRAINT assignments_pkey PRIMARY KEY (id),
-  CONSTRAINT assignments_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.school_classes(id),
-  CONSTRAINT assignments_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.courses(id),
-  CONSTRAINT assignments_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.assignment_submissions (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  assignment_id bigint,
-  student_id uuid,
-  file_path text,
-  file_name text,
-  submitted_at timestamp with time zone DEFAULT now(),
-  status text DEFAULT 'Submitted'::text,
-  grade text,
-  feedback text,
-  CONSTRAINT assignment_submissions_pkey PRIMARY KEY (id),
-  CONSTRAINT assignment_submissions_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT assignment_submissions_assignment_id_fkey FOREIGN KEY (assignment_id) REFERENCES public.assignments(id)
-);
-
-CREATE TABLE public.attendance (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid NOT NULL,
-  class_id bigint NOT NULL,
-  attendance_date date NOT NULL,
-  status text,
-  notes text,
-  recorded_by uuid,
-  marked_at timestamp with time zone DEFAULT now(),
-  late_time text,
-  absence_reason text,
-  CONSTRAINT attendance_pkey PRIMARY KEY (id),
-  CONSTRAINT attendance_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT attendance_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.school_classes(id),
-  CONSTRAINT attendance_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.attendance_records (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid,
-  class_id bigint,
-  attendance_date date NOT NULL,
-  status attendance_status DEFAULT 'present'::attendance_status,
-  notes text,
-  marked_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT attendance_records_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.audit_logs (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  user_id uuid,
-  action text NOT NULL,
-  module text,
-  details jsonb DEFAULT '{}'::jsonb,
-  severity text DEFAULT 'info'::text,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT audit_logs_pkey PRIMARY KEY (id),
-  CONSTRAINT audit_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.routes (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  name text,
-  description text,
-  CONSTRAINT routes_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.bus_attendance (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid NOT NULL,
-  route_id bigint NOT NULL,
-  trip_date date NOT NULL,
-  trip_type text NOT NULL,
-  status text,
-  marked_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT bus_attendance_pkey PRIMARY KEY (id),
-  CONSTRAINT bus_attendance_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT bus_attendance_route_id_fkey FOREIGN KEY (route_id) REFERENCES public.routes(id)
-);
-
-CREATE TABLE public.class_fee_assignments (
-  class_id bigint NOT NULL,
-  structure_id bigint NOT NULL,
-  CONSTRAINT class_fee_assignments_pkey PRIMARY KEY (class_id),
-  CONSTRAINT class_fee_assignments_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.school_classes(id),
-  CONSTRAINT class_fee_assignments_structure_id_fkey FOREIGN KEY (structure_id) REFERENCES public.fee_structures(id)
-);
-
-CREATE TABLE public.class_subjects (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  class_id bigint NOT NULL,
-  subject_id bigint NOT NULL,
-  teacher_id uuid,
-  CONSTRAINT class_subjects_pkey PRIMARY KEY (id),
-  CONSTRAINT class_subjects_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.school_classes(id),
-  CONSTRAINT class_subjects_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.courses(id),
-  CONSTRAINT class_subjects_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.class_timetables (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  class_id bigint,
-  day_of_week text CHECK (day_of_week = ANY (ARRAY['Monday'::text, 'Tuesday'::text, 'Wednesday'::text, 'Thursday'::text, 'Friday'::text, 'Saturday'::text, 'Sunday'::text])),
-  start_time time without time zone NOT NULL,
-  end_time time without time zone NOT NULL,
-  course_id bigint,
-  teacher_id uuid,
-  room_number text,
-  subject_name text,
-  status timetable_status DEFAULT 'active'::timetable_status,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT class_timetables_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.communications (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  subject text,
-  body text,
-  sender_id uuid,
-  sender_name text,
-  sender_role text,
-  recipients text[],
-  target_criteria jsonb,
-  status text DEFAULT 'Sent'::text,
-  sent_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT communications_pkey PRIMARY KEY (id),
-  CONSTRAINT communications_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.course_drafts (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  course_id bigint NOT NULL,
-  version_number integer NOT NULL,
-  data jsonb NOT NULL,
-  created_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  commit_message text,
-  CONSTRAINT course_drafts_pkey PRIMARY KEY (id),
-  CONSTRAINT course_drafts_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
-  CONSTRAINT course_drafts_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.course_enrollments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid NOT NULL,
-  course_id bigint NOT NULL,
-  enrolled_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT course_enrollments_pkey PRIMARY KEY (id),
-  CONSTRAINT course_enrollments_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT course_enrollments_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
-);
-
-CREATE TABLE public.course_logs (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  course_id bigint NOT NULL,
-  user_id uuid,
-  action text NOT NULL,
-  details jsonb,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT course_logs_pkey PRIMARY KEY (id),
-  CONSTRAINT course_logs_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
-  CONSTRAINT course_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.course_units (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  course_id bigint NOT NULL,
-  title text NOT NULL,
-  description text,
-  order_index integer,
-  duration_hours numeric,
-  status text DEFAULT 'Draft'::text,
-  learning_objectives text[],
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT course_units_pkey PRIMARY KEY (id),
-  CONSTRAINT course_units_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
-);
-
-CREATE TABLE public.course_materials (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  course_id bigint NOT NULL,
-  unit_id bigint,
-  title text NOT NULL,
-  file_path text,
-  file_type text,
-  url text,
-  uploaded_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT course_materials_pkey PRIMARY KEY (id),
-  CONSTRAINT course_materials_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
-  CONSTRAINT course_materials_unit_id_fkey FOREIGN KEY (unit_id) REFERENCES public.course_units(id),
-  CONSTRAINT course_materials_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.course_modules (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  course_id bigint NOT NULL,
-  title text NOT NULL,
-  order_index integer,
-  status text,
-  duration_hours numeric,
-  CONSTRAINT course_modules_pkey PRIMARY KEY (id),
-  CONSTRAINT course_modules_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
-);
-
-CREATE TABLE public.course_teachers (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  course_id bigint NOT NULL,
-  teacher_id uuid NOT NULL,
-  role text DEFAULT 'Primary'::text,
-  is_active boolean DEFAULT true,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT course_teachers_pkey PRIMARY KEY (id),
-  CONSTRAINT course_teachers_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id),
-  CONSTRAINT course_teachers_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.ecommerce_operator_profiles (
-  user_id uuid NOT NULL,
-  store_name text,
-  business_type text,
-  CONSTRAINT ecommerce_operator_profiles_pkey PRIMARY KEY (user_id),
-  CONSTRAINT ecommerce_operator_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.enquiries (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  enquiry_code text,
-  applicant_name text NOT NULL,
-  grade text,
-  status text DEFAULT 'NEW'::text,
-  verification_status text DEFAULT 'PENDING'::text CHECK (verification_status = ANY (ARRAY['PENDING'::text, 'VERIFIED'::text, 'FAILED'::text])),
-  received_at timestamp with time zone NOT NULL DEFAULT now(),
-  parent_name text,
-  parent_email text,
-  parent_phone text,
-  user_id uuid,
-  notes text,
-  updated_at timestamp with time zone DEFAULT now(),
-  admission_id uuid UNIQUE,
-  branch_id bigint,
-  conversion_state text DEFAULT 'NOT_CONVERTED'::text CHECK (conversion_state = ANY (ARRAY['NOT_CONVERTED'::text, 'CONVERTED'::text])),
-  is_archived boolean DEFAULT false,
-  is_deleted boolean DEFAULT false,
-  converted_at timestamp with time zone,
-  CONSTRAINT enquiries_pkey PRIMARY KEY (id),
-  CONSTRAINT enquiries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT enquiries_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
-);
-
-CREATE TABLE public.enquiry_messages (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  enquiry_id uuid NOT NULL,
-  sender_id uuid,
-  message text,
-  is_admin_message boolean,
-  created_at timestamp with time zone DEFAULT now(),
-  is_admin boolean DEFAULT false,
-  CONSTRAINT enquiry_messages_pkey PRIMARY KEY (id),
-  CONSTRAINT enquiry_messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id),
-  CONSTRAINT enquiry_messages_enquiry_id_fkey FOREIGN KEY (enquiry_id) REFERENCES public.enquiries(id)
-);
-
-CREATE TABLE public.enrollments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid,
-  branch_id bigint,
-  academic_year text NOT NULL,
-  grade text NOT NULL,
-  application_status text DEFAULT 'ADMITTED'::text CHECK (application_status = ANY (ARRAY['ADMITTED'::text, 'REJECTED'::text, 'PENDING'::text])),
-  enrollment_status text DEFAULT 'FINALIZED'::text CHECK (enrollment_status = ANY (ARRAY['FINALIZED'::text, 'ACTIVE'::text, 'INACTIVE'::text, 'TRANSFERRED'::text, 'GRADUATED'::text, 'DROPPED'::text])),
-  class_id bigint,
+CREATE TABLE public.student_enrollments (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  student_id uuid REFERENCES public.profiles(id), -- assumed student is a profile
+  branch_id bigint NOT NULL REFERENCES public.school_branches(id),
+  academic_year text,
   enrollment_date date DEFAULT CURRENT_DATE,
+  status text DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Suspended', 'Graduated', 'Transferred')),
   roll_number text,
   student_id_number text,
   parent_guardian_details text,
-  admission_id bigint,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT enrollments_pkey PRIMARY KEY (id)
+  deleted_at timestamp with time zone
 );
 
-CREATE TABLE public.exams (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  course_id bigint,
-  class_id bigint,
-  title text NOT NULL,
-  exam_type text,
-  exam_date timestamp with time zone NOT NULL,
-  duration_minutes integer,
-  total_marks integer DEFAULT 100,
-  instructions text,
-  room_number text,
-  status exam_status DEFAULT 'scheduled'::exam_status,
-  created_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT exams_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.exam_results (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  exam_id bigint,
-  student_id uuid,
-  marks_obtained integer,
+CREATE TABLE public.student_profiles (
+  user_id uuid PRIMARY KEY REFERENCES public.profiles(id),
+  branch_id bigint REFERENCES public.school_branches(id),
+  admission_id bigint, -- or uuid? admissions.id is uuid. 
+  assigned_class_id bigint REFERENCES public.school_classes(id),
   grade text,
-  rank integer,
-  status result_status DEFAULT 'pending'::result_status,
-  remarks text,
-  graded_by uuid,
-  graded_at timestamp with time zone,
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT exam_results_pkey PRIMARY KEY (id),
-  CONSTRAINT exam_results_exam_id_fkey FOREIGN KEY (exam_id) REFERENCES public.exams(id)
-);
-
-CREATE TABLE public.expense_categories (
-  id integer GENERATED ALWAYS AS IDENTITY NOT NULL,
-  name text NOT NULL UNIQUE,
-  description text,
+  roll_number text,
+  student_id_number text,
+  parent_guardian_details text,
+  address text,
+  gender text,
+  date_of_birth date,
+  enrollment_status text DEFAULT 'Enrolled',
+  is_active boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT expense_categories_pkey PRIMARY KEY (id)
+  updated_at timestamp with time zone DEFAULT now()
 );
+-- Fix admission_id type mismatch if any (admissions is UUID)
+-- ALTER TABLE public.student_profiles ALTER COLUMN admission_id TYPE uuid USING admission_id::uuid; -- If needed. Assuming kept as bigint in legacy or schema, but best to match.
+-- For this script I will assume admission_id in student_profiles is meant to link to admissions(id) which is UUID.
+-- However, strict typing:
+ALTER TABLE public.student_profiles DROP COLUMN IF EXISTS admission_id;
+ALTER TABLE public.student_profiles ADD COLUMN admission_id uuid REFERENCES public.admissions(id);
 
-CREATE TABLE public.vendors (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  name text NOT NULL,
-  contact_person text,
-  contact_email text,
-  category text,
-  branch_id bigint,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT vendors_pkey PRIMARY KEY (id),
-  CONSTRAINT vendors_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
-);
-
-CREATE TABLE public.expenses (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  amount numeric NOT NULL,
-  vendor_id bigint,
-  vendor_name text,
-  expense_date date NOT NULL,
-  status text DEFAULT 'Pending'::text,
-  description text,
-  invoice_url text,
-  recorded_by uuid,
-  recorded_at timestamp with time zone DEFAULT now(),
-  branch_id bigint,
-  payment_mode text,
-  category_id integer,
-  created_at timestamp with time zone DEFAULT now(),
-  approved_by uuid,
-  approved_at timestamp with time zone,
-  CONSTRAINT expenses_pkey PRIMARY KEY (id),
-  CONSTRAINT expenses_vendor_id_fkey FOREIGN KEY (vendor_id) REFERENCES public.vendors(id),
-  CONSTRAINT expenses_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.profiles(id),
-  CONSTRAINT expenses_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id),
-  CONSTRAINT expenses_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.expense_categories(id),
-  CONSTRAINT expenses_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES auth.users(id)
-);
-
-CREATE TABLE public.expense_invoices (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  expense_id bigint,
-  file_name text NOT NULL,
-  storage_path text NOT NULL,
-  file_size bigint,
-  mime_type text,
-  uploaded_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT expense_invoices_pkey PRIMARY KEY (id),
-  CONSTRAINT expense_invoices_expense_id_fkey FOREIGN KEY (expense_id) REFERENCES public.expenses(id)
-);
-
-CREATE TABLE public.fee_components (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  structure_id bigint NOT NULL,
-  name text NOT NULL,
-  amount numeric NOT NULL,
-  frequency text DEFAULT 'Monthly'::text,
-  is_mandatory boolean DEFAULT true,
-  CONSTRAINT fee_components_pkey PRIMARY KEY (id),
-  CONSTRAINT fee_components_structure_id_fkey FOREIGN KEY (structure_id) REFERENCES public.fee_structures(id)
-);
-
-CREATE TABLE public.fee_invoices (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid,
-  fee_structure_id bigint,
-  invoice_number text DEFAULT ('INV-'::text || (nextval('invoice_number_seq'::regclass))::text) UNIQUE,
-  due_date date NOT NULL,
-  total_amount numeric NOT NULL,
-  paid_amount numeric DEFAULT 0,
-  status invoice_status DEFAULT 'pending'::invoice_status,
-  payment_method text,
-  academic_year text,
-  description text,
-  created_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  branch_id bigint,
-  storage_bucket text DEFAULT 'school_invoices'::text,
-  billing_month text,
-  billing_year text,
-  is_auto_generated boolean DEFAULT false,
-  CONSTRAINT fee_invoices_pkey PRIMARY KEY (id),
-  CONSTRAINT fee_invoices_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
-);
-
-CREATE TABLE public.fee_payments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  invoice_id bigint,
-  amount numeric NOT NULL,
-  payment_date timestamp with time zone DEFAULT now(),
-  payment_method text,
-  transaction_id text,
-  receipt_number text,
-  collected_by uuid,
-  notes text,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  branch_id bigint,
-  student_id uuid,
-  method text,
-  reference text,
-  reference_id text,
-  status text DEFAULT 'Completed'::text,
-  method_details jsonb,
-  recorded_by uuid,
-  CONSTRAINT fee_payments_pkey PRIMARY KEY (id),
-  CONSTRAINT fee_payments_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id),
-  CONSTRAINT fee_payments_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT fee_payments_invoice_id_fkey FOREIGN KEY (invoice_id) REFERENCES public.fee_invoices(id)
-);
-
-CREATE TABLE public.finance_audit_trail (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  branch_id bigint,
-  actor_id uuid,
-  entity_type text NOT NULL,
-  entity_id text NOT NULL,
-  action_type text NOT NULL,
-  magnitude numeric,
-  metadata jsonb DEFAULT '{}'::jsonb,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT finance_audit_trail_pkey PRIMARY KEY (id),
-  CONSTRAINT finance_audit_trail_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id),
-  CONSTRAINT finance_audit_trail_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES auth.users(id)
-);
-
-CREATE TABLE public.school_expenses (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  branch_id bigint,
-  category text NOT NULL,
-  description text NOT NULL,
-  amount numeric NOT NULL,
-  vendor_name text,
-  expense_date date DEFAULT CURRENT_DATE,
-  payment_mode text,
-  status text DEFAULT 'Approved'::text,
-  invoice_url text,
-  recorded_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT school_expenses_pkey PRIMARY KEY (id),
-  CONSTRAINT school_expenses_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id),
-  CONSTRAINT school_expenses_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.invoices (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid NOT NULL,
-  structure_id bigint,
-  description text,
-  amount numeric NOT NULL,
-  amount_paid numeric DEFAULT 0,
-  due_date date,
-  status text DEFAULT 'Pending'::text,
-  created_at timestamp with time zone DEFAULT now(),
-  expense_id bigint,
-  CONSTRAINT invoices_pkey PRIMARY KEY (id),
-  CONSTRAINT invoices_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT invoices_structure_id_fkey FOREIGN KEY (structure_id) REFERENCES public.fee_structures(id),
-  CONSTRAINT invoices_expense_id_fkey FOREIGN KEY (expense_id) REFERENCES public.school_expenses(id)
-);
-
-CREATE TABLE public.lesson_plans (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  teacher_id uuid,
-  class_id bigint,
-  subject_id bigint,
-  title text,
-  lesson_date date,
-  objectives text,
-  activities text,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT lesson_plans_pkey PRIMARY KEY (id),
-  CONSTRAINT lesson_plans_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id),
-  CONSTRAINT lesson_plans_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.school_classes(id),
-  CONSTRAINT lesson_plans_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.courses(id)
-);
-
-CREATE TABLE public.lesson_plan_resources (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  lesson_plan_id bigint,
-  file_name text,
-  file_path text,
-  file_type text,
-  CONSTRAINT lesson_plan_resources_pkey PRIMARY KEY (id),
-  CONSTRAINT lesson_plan_resources_lesson_plan_id_fkey FOREIGN KEY (lesson_plan_id) REFERENCES public.lesson_plans(id)
-);
 
 CREATE TABLE public.parent_profiles (
-  user_id uuid NOT NULL,
+  user_id uuid PRIMARY KEY REFERENCES public.profiles(id),
   relationship_to_student text,
   gender text,
   number_of_children integer,
@@ -888,332 +381,12 @@ CREATE TABLE public.parent_profiles (
   secondary_parent_relationship text,
   secondary_parent_gender text,
   secondary_parent_email text,
-  secondary_parent_phone text,
-  CONSTRAINT parent_profiles_pkey PRIMARY KEY (user_id),
-  CONSTRAINT parent_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.room_availability (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  room_name text,
-  day text,
-  start_time text,
-  end_time text,
-  is_booked boolean DEFAULT false,
-  booked_by_class_id bigint,
-  CONSTRAINT room_availability_pkey PRIMARY KEY (id),
-  CONSTRAINT room_availability_booked_by_class_id_fkey FOREIGN KEY (booked_by_class_id) REFERENCES public.school_classes(id)
-);
-
-CREATE TABLE public.school_admin_profiles (
-  user_id uuid NOT NULL,
-  school_name text,
-  address text,
-  city text,
-  state text,
-  country text DEFAULT 'India'::text,
-  admin_contact_name text,
-  admin_contact_phone text,
-  admin_contact_email text,
-  onboarding_step text DEFAULT 'profile'::text,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT school_admin_profiles_pkey PRIMARY KEY (user_id)
-);
-
-CREATE TABLE public.school_branch_invitations (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  branch_id bigint,
-  code text NOT NULL UNIQUE,
-  expires_at timestamp with time zone NOT NULL,
-  is_revoked boolean DEFAULT false,
-  redeemed_at timestamp with time zone,
-  redeemed_by uuid,
-  created_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT school_branch_invitations_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.school_departments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  name text NOT NULL,
-  description text,
-  hod_id uuid,
-  branch_id bigint,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT school_departments_pkey PRIMARY KEY (id),
-  CONSTRAINT school_departments_hod_id_fkey FOREIGN KEY (hod_id) REFERENCES public.profiles(id),
-  CONSTRAINT school_departments_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
-);
-
-CREATE TABLE public.share_codes (
-  id integer GENERATED ALWAYS AS IDENTITY NOT NULL,
-  admission_id uuid NOT NULL,
-  code text NOT NULL UNIQUE,
-  status text NOT NULL DEFAULT 'Active'::text CHECK (status = ANY (ARRAY['Active'::text, 'Expired'::text, 'Revoked'::text, 'Redeemed'::text])),
-  code_type text NOT NULL CHECK (code_type = ANY (ARRAY['Enquiry'::text, 'Admission'::text])),
-  expires_at timestamp with time zone NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  purpose text,
-  created_by uuid,
-  redeemed_at timestamp with time zone,
-  CONSTRAINT share_codes_pkey PRIMARY KEY (id),
-  CONSTRAINT share_codes_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT share_codes_admission_id_fkey FOREIGN KEY (admission_id) REFERENCES public.admissions(id)
-);
-
-CREATE TABLE public.storage_buckets (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  name text NOT NULL UNIQUE,
-  description text,
-  file_size_limit bigint DEFAULT 5242880,
-  allowed_mime_types text[],
-  is_public boolean DEFAULT false,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT storage_buckets_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.storage_files (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  bucket_name text NOT NULL,
-  file_path text NOT NULL,
-  file_name text NOT NULL,
-  file_size bigint,
-  mime_type text,
-  uploaded_by uuid,
-  entity_type text NOT NULL,
-  entity_id text NOT NULL,
-  metadata jsonb DEFAULT '{}'::jsonb,
-  is_deleted boolean DEFAULT false,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT storage_files_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.student_enrollments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid,
-  academic_year text,
-  enrollment_date date DEFAULT CURRENT_DATE,
-  status text DEFAULT 'Active'::text CHECK (status = ANY (ARRAY['Active'::text, 'Inactive'::text, 'Suspended'::text, 'Graduated'::text, 'Transferred'::text])),
-  roll_number text,
-  student_id_number text,
-  parent_guardian_details text,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  branch_id bigint NOT NULL,
-  CONSTRAINT student_enrollments_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.student_fee_accounts (
-  student_id uuid NOT NULL,
-  branch_id bigint,
-  total_billed numeric DEFAULT 0,
-  total_paid numeric DEFAULT 0,
-  outstanding_balance numeric DEFAULT 0,
-  integrity_score integer DEFAULT 100,
-  last_reconciled_at timestamp with time zone DEFAULT now(),
-  last_synced_at timestamp with time zone DEFAULT now(),
-  created_at timestamp with time zone DEFAULT now(),
-  last_reconciled timestamp with time zone,
-  updated_at timestamp with time zone DEFAULT now(),
-  unallocated_funds numeric DEFAULT 0,
-  CONSTRAINT student_fee_accounts_pkey PRIMARY KEY (student_id),
-  CONSTRAINT student_fee_accounts_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT student_fee_accounts_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
-);
-
-CREATE TABLE public.student_fee_assignments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid,
-  fee_structure_id bigint,
-  assigned_date date DEFAULT CURRENT_DATE,
-  status fee_assignment_status DEFAULT 'active'::fee_assignment_status,
-  discount_percentage numeric DEFAULT 0,
-  discount_amount numeric DEFAULT 0,
-  assigned_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT student_fee_assignments_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.student_invoices (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid NOT NULL,
-  branch_id bigint,
-  structure_id bigint,
-  description text NOT NULL,
-  total_amount numeric NOT NULL DEFAULT 0,
-  amount_paid numeric NOT NULL DEFAULT 0,
-  due_date date NOT NULL,
-  status text NOT NULL DEFAULT 'Pending'::text,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT student_invoices_pkey PRIMARY KEY (id),
-  CONSTRAINT student_invoices_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT student_invoices_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id),
-  CONSTRAINT student_invoices_structure_id_fkey FOREIGN KEY (structure_id) REFERENCES public.fee_structures(id)
-);
-
-CREATE TABLE public.student_parents (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid NOT NULL,
-  parent_id uuid NOT NULL,
-  relationship text,
-  is_primary boolean DEFAULT false,
-  CONSTRAINT student_parents_pkey PRIMARY KEY (id),
-  CONSTRAINT student_parents_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT student_parents_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.student_payments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  invoice_id bigint NOT NULL,
-  student_id uuid NOT NULL,
-  amount numeric NOT NULL,
-  payment_method text NOT NULL,
-  transaction_reference text,
-  recorded_by uuid,
-  payment_date timestamp with time zone DEFAULT now(),
-  CONSTRAINT student_payments_pkey PRIMARY KEY (id),
-  CONSTRAINT student_payments_invoice_id_fkey FOREIGN KEY (invoice_id) REFERENCES public.student_invoices(id),
-  CONSTRAINT student_payments_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
-  CONSTRAINT student_payments_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.student_profiles (
-  user_id uuid NOT NULL,
-  admission_id bigint,
-  grade text,
-  roll_number text,
-  student_id_number text,
-  parent_guardian_details text,
-  address text,
-  assigned_class_id bigint,
-  branch_id bigint,
-  gender text,
-  date_of_birth date,
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  created_at timestamp with time zone DEFAULT now(),
-  enrollment_status text DEFAULT 'Enrolled'::text,
-  is_active boolean DEFAULT true,
-  CONSTRAINT student_profiles_pkey PRIMARY KEY (user_id),
-  CONSTRAINT student_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT student_profiles_assigned_class_id_fkey FOREIGN KEY (assigned_class_id) REFERENCES public.school_classes(id),
-  CONSTRAINT student_profiles_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
-);
-
-CREATE TABLE public.transport_routes (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  branch_id bigint,
-  route_name text NOT NULL,
-  description text,
-  start_location text,
-  end_location text,
-  estimated_duration_minutes integer,
-  fare numeric,
-  capacity integer,
-  status transport_status DEFAULT 'active'::transport_status,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT transport_routes_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.student_transport_assignments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  student_id uuid,
-  route_id bigint,
-  pickup_location text,
-  drop_location text,
-  is_active boolean DEFAULT true,
-  assigned_date date DEFAULT CURRENT_DATE,
-  assigned_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT student_transport_assignments_pkey PRIMARY KEY (id),
-  CONSTRAINT student_transport_assignments_route_id_fkey FOREIGN KEY (route_id) REFERENCES public.transport_routes(id)
-);
-
-CREATE TABLE public.study_materials (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  class_id bigint,
-  subject_id bigint,
-  title text,
-  description text,
-  file_path text,
-  file_name text,
-  file_type text,
-  uploaded_by uuid,
-  created_at timestamp with time zone DEFAULT now(),
-  is_bookmarked boolean DEFAULT false,
-  CONSTRAINT study_materials_pkey PRIMARY KEY (id),
-  CONSTRAINT study_materials_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.school_classes(id),
-  CONSTRAINT study_materials_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.courses(id),
-  CONSTRAINT study_materials_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.teacher_availability (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  teacher_id uuid,
-  day text,
-  start_time text,
-  end_time text,
-  is_available boolean DEFAULT true,
-  CONSTRAINT teacher_availability_pkey PRIMARY KEY (id),
-  CONSTRAINT teacher_availability_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.teacher_awards (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  teacher_id uuid,
-  award_name text,
-  awarded_date date,
-  points integer,
-  CONSTRAINT teacher_awards_pkey PRIMARY KEY (id),
-  CONSTRAINT teacher_awards_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.teacher_documents (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  teacher_id uuid,
-  document_name text,
-  document_type text,
-  file_path text,
-  status text DEFAULT 'Pending'::text,
-  rejection_reason text,
-  uploaded_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT teacher_documents_pkey PRIMARY KEY (id),
-  CONSTRAINT teacher_documents_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id)
-);
-
-CREATE TABLE public.workshops (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  title text,
-  description text,
-  workshop_date date,
-  points integer DEFAULT 10,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT workshops_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.teacher_pd_records (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  teacher_id uuid,
-  workshop_id bigint,
-  completed_at timestamp with time zone DEFAULT now(),
-  points_earned integer,
-  notes text,
-  CONSTRAINT teacher_pd_records_pkey PRIMARY KEY (id),
-  CONSTRAINT teacher_pd_records_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id),
-  CONSTRAINT teacher_pd_records_workshop_id_fkey FOREIGN KEY (workshop_id) REFERENCES public.workshops(id)
+  secondary_parent_phone text
 );
 
 CREATE TABLE public.teacher_profiles (
-  user_id uuid NOT NULL,
+  user_id uuid PRIMARY KEY REFERENCES public.profiles(id),
+  branch_id bigint REFERENCES public.school_branches(id),
   subject text,
   qualification text,
   experience_years numeric,
@@ -1227,134 +400,230 @@ CREATE TABLE public.teacher_profiles (
   designation text,
   employee_id text,
   employment_type text,
-  employment_status text DEFAULT 'Pending Verification'::text,
-  branch_id bigint,
+  employment_status text DEFAULT 'Pending Verification',
   salary text,
-  bank_details text,
-  CONSTRAINT teacher_profiles_pkey PRIMARY KEY (user_id),
-  CONSTRAINT teacher_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT teacher_profiles_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
+  bank_details text
 );
 
-CREATE TABLE public.teacher_subject_assignments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  teacher_id uuid,
-  course_id bigint,
-  class_id bigint,
-  academic_year text,
-  workload_hours integer DEFAULT 1,
-  is_primary boolean DEFAULT false,
-  status text DEFAULT 'Active'::text CHECK (status = ANY (ARRAY['Active'::text, 'Inactive'::text, 'Pending'::text])),
-  assigned_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT teacher_subject_assignments_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.timetable_entries (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  class_id bigint,
-  day text NOT NULL,
-  start_time text NOT NULL,
-  end_time text NOT NULL,
-  subject_name text,
-  teacher_name text,
-  room_number text,
-  teacher_id uuid,
-  subject_id bigint,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT timetable_entries_pkey PRIMARY KEY (id),
-  CONSTRAINT timetable_entries_class_id_fkey FOREIGN KEY (class_id) REFERENCES public.school_classes(id),
-  CONSTRAINT timetable_entries_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id),
-  CONSTRAINT timetable_entries_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.courses(id)
-);
-
-CREATE TABLE public.transport_staff_profiles (
-  user_id uuid NOT NULL,
-  route_id bigint,
-  vehicle_details text,
-  license_info text,
-  CONSTRAINT transport_staff_profiles_pkey PRIMARY KEY (user_id),
-  CONSTRAINT transport_staff_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT transport_staff_profiles_route_id_fkey FOREIGN KEY (route_id) REFERENCES public.routes(id)
-);
-
-CREATE TABLE public.transport_vehicles (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  route_id bigint,
-  vehicle_number text NOT NULL UNIQUE,
-  vehicle_type text,
-  capacity integer,
-  driver_id uuid,
-  conductor_id uuid,
-  fuel_type text,
-  purchase_date date,
-  insurance_expiry date,
-  fitness_expiry date,
-  status vehicle_status DEFAULT 'active'::vehicle_status,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  deleted_at timestamp with time zone,
-  CONSTRAINT transport_vehicles_pkey PRIMARY KEY (id),
-  CONSTRAINT transport_vehicles_route_id_fkey FOREIGN KEY (route_id) REFERENCES public.transport_routes(id)
+CREATE TABLE public.school_admin_profiles (
+  user_id uuid PRIMARY KEY REFERENCES public.profiles(id), -- Removed FK check for safety in circular, but logically correct
+  school_name text,
+  address text,
+  city text,
+  state text,
+  country text DEFAULT 'India',
+  admin_contact_name text,
+  admin_contact_phone text,
+  admin_contact_email text,
+  onboarding_step text DEFAULT 'profile',
+  created_at timestamp with time zone DEFAULT now()
 );
 
 CREATE TABLE public.user_roles (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   name text NOT NULL UNIQUE,
   display_name text NOT NULL,
   description text,
   is_system_role boolean DEFAULT false,
   permissions jsonb DEFAULT '{}'::jsonb,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT user_roles_pkey PRIMARY KEY (id)
+  created_at timestamp with time zone DEFAULT now()
 );
 
 CREATE TABLE public.user_role_assignments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  user_id uuid NOT NULL,
-  role_name text NOT NULL,
-  assigned_by uuid,
-  branch_id bigint,
-  assigned_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT user_role_assignments_pkey PRIMARY KEY (id),
-  CONSTRAINT user_role_assignments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT user_role_assignments_role_name_fkey FOREIGN KEY (role_name) REFERENCES public.user_roles(name),
-  CONSTRAINT user_role_assignments_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.profiles(id),
-  CONSTRAINT user_role_assignments_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id uuid REFERENCES public.profiles(id),
+  role_name text REFERENCES public.user_roles(name),
+  branch_id bigint REFERENCES public.school_branches(id),
+  assigned_by uuid REFERENCES public.profiles(id),
+  assigned_at timestamp with time zone DEFAULT now()
 );
 
-CREATE TABLE public.user_scope_assignments (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  user_id uuid NOT NULL,
-  role_name text NOT NULL,
-  status text NOT NULL DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'inactive'::text, 'pending'::text, 'registered'::text])),
-  scope_data jsonb DEFAULT '{}'::jsonb,
-  assigned_at timestamp with time zone DEFAULT now(),
-  activated_at timestamp with time zone,
+-- >>> ACADEMIC & LMS <<<
+
+CREATE TABLE public.assignments (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  class_id bigint REFERENCES public.school_classes(id),
+  subject_id bigint REFERENCES public.courses(id),
+  teacher_id uuid REFERENCES public.profiles(id),
+  title text NOT NULL,
+  description text,
+  due_date timestamp with time zone,
+  status text DEFAULT 'Draft',
+  max_score integer DEFAULT 100,
+  created_at timestamp with time zone DEFAULT now()
+);
+
+CREATE TABLE public.assignment_submissions (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  assignment_id bigint REFERENCES public.assignments(id),
+  student_id uuid REFERENCES public.profiles(id),
+  file_path text,
+  file_name text,
+  status text DEFAULT 'Submitted',
+  grade text,
+  feedback text,
+  submitted_at timestamp with time zone DEFAULT now()
+);
+
+CREATE TABLE public.attendance (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  student_id uuid REFERENCES public.profiles(id),
+  class_id bigint REFERENCES public.school_classes(id),
+  attendance_date date NOT NULL,
+  status text,
+  notes text,
+  late_time text,
+  absence_reason text,
+  recorded_by uuid REFERENCES public.profiles(id),
+  marked_at timestamp with time zone DEFAULT now()
+);
+
+CREATE TABLE public.class_timetables (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  class_id bigint REFERENCES public.school_classes(id),
+  day_of_week text CHECK (day_of_week IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')),
+  start_time time without time zone NOT NULL,
+  end_time time without time zone NOT NULL,
+  course_id bigint REFERENCES public.courses(id),
+  teacher_id uuid REFERENCES public.profiles(id),
+  room_number text,
+  subject_name text,
+  status timetable_status DEFAULT 'active',
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  deleted_at timestamp with time zone
+);
+
+-- >>> FINANCE <<<
+
+CREATE TABLE public.fee_components (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  structure_id bigint REFERENCES public.fee_structures(id),
+  name text NOT NULL,
+  amount numeric NOT NULL,
+  frequency text DEFAULT 'Monthly',
+  is_mandatory boolean DEFAULT true
+);
+
+CREATE TABLE public.fee_invoices (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  branch_id bigint REFERENCES public.school_branches(id),
+  student_id uuid REFERENCES public.profiles(id),
+  fee_structure_id bigint REFERENCES public.fee_structures(id),
+  invoice_number text UNIQUE DEFAULT ('INV-' || nextval('invoice_number_seq')::text),
+  due_date date NOT NULL,
+  total_amount numeric NOT NULL,
+  paid_amount numeric DEFAULT 0,
+  status invoice_status DEFAULT 'pending',
+  payment_method text,
+  academic_year text,
+  description text,
+  billing_month text,
+  billing_year text,
+  is_auto_generated boolean DEFAULT false,
+  storage_bucket text DEFAULT 'school_invoices',
   created_by uuid,
-  CONSTRAINT user_scope_assignments_pkey PRIMARY KEY (id),
-  CONSTRAINT user_scope_assignments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT user_scope_assignments_role_name_fkey FOREIGN KEY (role_name) REFERENCES public.user_roles(name),
-  CONSTRAINT user_scope_assignments_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  deleted_at timestamp with time zone
 );
 
-CREATE TABLE public.verification_audit_logs (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  code text NOT NULL,
-  code_type text NOT NULL,
-  admission_id bigint,
-  enquiry_id bigint,
-  applicant_name text,
-  result text NOT NULL,
-  error_message text,
-  branch_id bigint,
-  verified_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT verification_audit_logs_pkey PRIMARY KEY (id)
+CREATE TABLE public.fee_payments (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  branch_id bigint REFERENCES public.school_branches(id),
+  invoice_id bigint REFERENCES public.fee_invoices(id),
+  student_id uuid REFERENCES public.profiles(id),
+  amount numeric NOT NULL,
+  payment_date timestamp with time zone DEFAULT now(),
+  payment_method text,
+  transaction_id text,
+  receipt_number text,
+  status text DEFAULT 'Completed',
+  collected_by uuid,
+  recorded_by uuid REFERENCES public.profiles(id),
+  notes text,
+  method_details jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  deleted_at timestamp with time zone
+);
+
+CREATE TABLE public.expenses (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  branch_id bigint REFERENCES public.school_branches(id),
+  amount numeric NOT NULL,
+  vendor_name text, -- or FK to vendors
+  expense_date date NOT NULL,
+  status text DEFAULT 'Pending',
+  description text,
+  invoice_url text,
+  category_id integer, -- FK to expense_categories
+  payment_mode text,
+  recorded_by uuid REFERENCES public.profiles(id),
+  approved_by uuid REFERENCES public.profiles(id), -- assuming auth.users ref, but profiles safer
+  recorded_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  approved_at timestamp with time zone
+);
+
+CREATE TABLE public.expense_categories (
+  id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name text NOT NULL UNIQUE,
+  description text,
+  created_at timestamp with time zone DEFAULT now()
+);
+ALTER TABLE public.expenses ADD CONSTRAINT expenses_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.expense_categories(id);
+
+
+-- >>> TRANSPORT <<<
+
+CREATE TABLE public.transport_routes (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  branch_id bigint REFERENCES public.school_branches(id),
+  route_name text NOT NULL,
+  description text,
+  start_location text,
+  end_location text,
+  estimated_duration_minutes integer,
+  fare numeric,
+  capacity integer,
+  status transport_status DEFAULT 'active',
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  deleted_at timestamp with time zone
+);
+
+CREATE TABLE public.transport_vehicles (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  route_id bigint REFERENCES public.transport_routes(id),
+  vehicle_number text NOT NULL UNIQUE,
+  vehicle_type text,
+  capacity integer,
+  driver_id uuid, -- could conform to profile FK
+  conductor_id uuid,
+  fuel_type text,
+  status vehicle_status DEFAULT 'active',
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  deleted_at timestamp with time zone
+);
+
+CREATE TABLE public.student_transport_assignments (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  student_id uuid REFERENCES public.profiles(id),
+  route_id bigint REFERENCES public.transport_routes(id),
+  pickup_location text,
+  drop_location text,
+  is_active boolean DEFAULT true,
+  assigned_date date DEFAULT CURRENT_DATE,
+  assigned_by uuid REFERENCES public.profiles(id),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  deleted_at timestamp with time zone
 );
 
 -- ============================================
--- 4. CIRCULAR DEPENDENCIES FIX
+-- 4. CIRCULAR DEPENDENCIES & CONSTRAINTS
 -- ============================================
 
 ALTER TABLE public.school_branches
@@ -1364,97 +633,88 @@ ALTER TABLE public.school_branches
 ALTER TABLE public.profiles
   ADD CONSTRAINT fk_profiles_branch_id FOREIGN KEY (branch_id) REFERENCES public.school_branches(id);
 
+-- Enquiries -> Admission (One to One optional)
+-- Altered inline above or here:
+-- ALTER TABLE public.enquiries ADD CONSTRAINT enquiries_admission_id_fkey FOREIGN KEY (admission_id) REFERENCES public.admissions(id);
+
+
 -- ============================================
--- 5. ENABLE ROW LEVEL SECURITY
+-- 5. INDEXES (PERFORMANCE)
+-- ============================================
+
+-- Create indexes on all Foreign Keys and commonly filtered columns
+CREATE INDEX idx_profiles_branch_id ON public.profiles(branch_id);
+CREATE INDEX idx_profiles_email ON public.profiles(email);
+CREATE INDEX idx_profiles_role ON public.profiles(role);
+
+CREATE INDEX idx_school_classes_branch_id ON public.school_classes(branch_id);
+CREATE INDEX idx_school_classes_teacher_id ON public.school_classes(class_teacher_id);
+
+CREATE INDEX idx_courses_teacher_id ON public.courses(teacher_id);
+
+CREATE INDEX idx_assignments_class_id ON public.assignments(class_id);
+CREATE INDEX idx_assignments_subject_id ON public.assignments(subject_id);
+
+CREATE INDEX idx_attendance_student_id ON public.attendance(student_id);
+CREATE INDEX idx_attendance_class_id ON public.attendance(class_id);
+CREATE INDEX idx_attendance_date ON public.attendance(attendance_date);
+
+CREATE INDEX idx_fee_invoices_student_id ON public.fee_invoices(student_id);
+CREATE INDEX idx_fee_invoices_branch_id ON public.fee_invoices(branch_id);
+CREATE INDEX idx_fee_invoices_status ON public.fee_invoices(status);
+
+CREATE INDEX idx_student_enrollments_branch_id ON public.student_enrollments(branch_id);
+CREATE INDEX idx_student_enrollments_student_id ON public.student_enrollments(student_id);
+
+CREATE INDEX idx_enquiries_branch_id ON public.enquiries(branch_id);
+CREATE INDEX idx_enquiries_status ON public.enquiries(status);
+
+CREATE INDEX idx_admissions_branch_id ON public.admissions(branch_id);
+CREATE INDEX idx_admissions_status ON public.admissions(status);
+
+-- ============================================
+-- 6. ROW LEVEL SECURITY (RLS)
 -- ============================================
 
 -- Enable RLS on all tables
-ALTER TABLE public.academic_years ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.admin_tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.admission_audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.admission_documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.admission_share_codes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.admissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.assignment_submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.attendance_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bus_attendance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.class_fee_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.class_subjects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.class_timetables ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.communications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.course_drafts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.course_enrollments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.course_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.course_materials ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.course_modules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.course_teachers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.course_units ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.school_branches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.school_classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.document_requirements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.ecommerce_operator_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.enquiries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.enquiry_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.exam_results ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.exams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.expense_categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.expense_invoices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.fee_components ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assignment_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fee_invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fee_payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.fee_structures ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.finance_audit_trail ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.lesson_plan_resources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.lesson_plans ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.parent_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.room_availability ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.routes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.school_admin_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.school_branch_invitations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.school_branches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.school_classes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.school_departments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.school_expenses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.share_codes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.storage_buckets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.storage_files ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_enrollments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_fee_accounts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_fee_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_invoices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_parents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.enquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_transport_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.study_materials ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.teacher_availability ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.teacher_awards ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.teacher_documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.teacher_pd_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.parent_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teacher_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.teacher_subject_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.timetable_entries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transport_routes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transport_staff_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transport_vehicles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_role_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_scope_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.verification_audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.workshops ENABLE ROW LEVEL SECURITY;
+
+-- Basic Policies
+-- 1. Profiles: Reading own profile
+CREATE POLICY "Users can view own profile" ON public.profiles
+  FOR SELECT USING (auth.uid() = id);
+
+-- 2. Profiles: Updating own profile
+CREATE POLICY "Users can update own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+-- 3. Branch Data: Public read for login (or specific role based)
+CREATE POLICY "Public can view branches" ON public.school_branches
+  FOR SELECT USING (true);
+
+-- 4. School Admins can view everything in their branch
+-- (Requires complex policy or role logic, simplifying for reset script)
+-- CREATE POLICY "Admins view branch data" ON public.school_classes
+--   FOR ALL USING (branch_id IN (SELECT branch_id FROM public.profiles WHERE id = auth.uid() AND role IN ('School Administration', 'Branch Admin')));
 
 -- ============================================
--- 6. FUNCTIONS & TRIGGERS
+-- 7. FUNCTIONS & TRIGGERS
 -- ============================================
 
--- Function: Handle New User (Auto-Profile Creation)
+-- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -1467,42 +727,15 @@ BEGIN
     new.id,
     new.email,
     COALESCE(new.raw_user_meta_data->>'full_name', new.email),
-    COALESCE(new.raw_user_meta_data->>'role', 'Student') -- Default role
+    COALESCE(new.raw_user_meta_data->>'role', 'Student')
   );
   RETURN new;
 END;
 $$;
 
--- Trigger: On Auth User Created
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- ============================================
--- 7. BASIC POLICIES (STARTING POINT)
--- ============================================
-
--- Profiles: Users can read their own profile
-CREATE POLICY "Users can view own profile"
-  ON public.profiles
-  FOR SELECT
-  USING (auth.uid() = id);
-
--- Profiles: Users can update their own profile
-CREATE POLICY "Users can update own profile"
-  ON public.profiles
-  FOR UPDATE
-  USING (auth.uid() = id);
-
--- School Branches: Public can view branches (required for login/signup context)
-CREATE POLICY "Public can view school branches"
-  ON public.school_branches
-  FOR SELECT
-  TO public
-  USING (true);
-
--- Commit transaction
 COMMIT;
-
--- End of Reset Script
