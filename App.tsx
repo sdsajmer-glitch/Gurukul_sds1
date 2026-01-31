@@ -93,7 +93,7 @@ const App: React.FC = () => {
     if (loading) return <PageLoader label="ESTABLISHING SECURE HANDSHAKE" sublabel="Synchronizing identity context with node cluster..." />;
 
     // Handle initialization errors in the UI
-    if (error && !session) {
+    if (error) {
         return (
             <div className="min-h-screen bg-[#08090a] flex items-center justify-center p-6">
                 <div className="bg-[#0d0f14] p-10 rounded-[2.5rem] border border-red-500/20 max-w-md text-center shadow-3xl">
@@ -105,6 +105,14 @@ const App: React.FC = () => {
                     <h2 className="text-white font-serif font-black text-2xl uppercase tracking-tight mb-4">Node Disconnect</h2>
                     <p className="text-white/40 text-sm leading-relaxed mb-8">{error}</p>
                     <button onClick={() => window.location.reload()} className="w-full py-3 bg-white text-black font-black rounded-xl text-xs uppercase tracking-widest hover:bg-white/90 transition-all">Retry Handshake</button>
+                    {session && (
+                        <button
+                            onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}
+                            className="w-full mt-3 py-3 bg-red-500/10 text-red-500 border border-red-500/20 font-black rounded-xl text-xs uppercase tracking-widest hover:bg-red-500/20 transition-all"
+                        >
+                            Emergency Sign Out
+                        </button>
+                    )}
                 </div>
             </div>
         );
@@ -126,9 +134,9 @@ const App: React.FC = () => {
 
         if (!profile.role || !profile.profile_completed) {
             return (
-                <OnboardingFlow 
-                    profile={profile} 
-                    onComplete={handleProfileUpdate} 
+                <OnboardingFlow
+                    profile={profile}
+                    onComplete={handleProfileUpdate}
                     onStepChange={handleProfileUpdate}
                     onboardingStep={(profile as any)?.onboarding_step}
                 />
@@ -139,36 +147,36 @@ const App: React.FC = () => {
             case BuiltInRoles.SCHOOL_ADMINISTRATION:
             case BuiltInRoles.BRANCH_ADMIN:
                 return (
-                    <SchoolAdminDashboard 
-                        profile={profile} 
-                        onSelectRole={handleSelectRole} 
+                    <SchoolAdminDashboard
+                        profile={profile}
+                        onSelectRole={handleSelectRole}
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                     />
                 );
             case BuiltInRoles.PARENT_GUARDIAN:
                 return (
-                    <ParentDashboard 
-                        profile={profile} 
-                        onSelectRole={handleSelectRole} 
+                    <ParentDashboard
+                        profile={profile}
+                        onSelectRole={handleSelectRole}
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                     />
                 );
             case BuiltInRoles.STUDENT:
                 return (
-                    <StudentDashboard 
-                        profile={profile} 
+                    <StudentDashboard
+                        profile={profile}
                         onSignOut={handleSignOut}
-                        onSwitchRole={() => {}}
+                        onSwitchRole={() => { }}
                         onSelectRole={handleSelectRole}
                     />
                 );
             case BuiltInRoles.TEACHER:
                 return (
-                    <TeacherDashboard 
-                        profile={profile} 
-                        onSwitchRole={() => {}}
+                    <TeacherDashboard
+                        profile={profile}
+                        onSwitchRole={() => { }}
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                         onSelectRole={handleSelectRole}
@@ -176,10 +184,10 @@ const App: React.FC = () => {
                 );
             case BuiltInRoles.SUPER_ADMIN:
                 return (
-                    <MinimalAdminDashboard 
-                        profile={profile} 
-                        onSignOut={handleSignOut} 
-                        onSelectRole={handleSelectRole} 
+                    <MinimalAdminDashboard
+                        profile={profile}
+                        onSignOut={handleSignOut}
+                        onSelectRole={handleSelectRole}
                     />
                 );
             default:
