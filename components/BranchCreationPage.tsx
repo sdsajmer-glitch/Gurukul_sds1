@@ -16,6 +16,7 @@ import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { GlobeIcon } from './icons/GlobeIcon';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
+import { CheckoutIcon } from './icons/CheckoutIcon';
 import { GoogleGenAI } from '@google/genai';
 
 interface BranchCreationPageProps {
@@ -62,7 +63,7 @@ const StyledSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement> & { l
             {label}
         </label>
         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground group-hover:text-foreground transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
         </div>
     </div>
 );
@@ -72,7 +73,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const [schoolData, setSchoolData] = useState<SchoolAdminProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBranch, setEditingBranch] = useState<SchoolBranch | null>(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -81,11 +82,11 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const [deletingBranch, setDeletingBranch] = useState<SchoolBranch | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isFinishing, setIsFinishing] = useState(false);
-    
+
     const isMounted = useRef(true);
 
     const [formData, setFormData] = useState({
-        name: '', address: '', country: 'India', city: '', state: '', 
+        name: '', address: '', country: 'India', city: '', state: '',
         adminName: '', adminPhone: '', adminEmail: '', isMain: false
     });
 
@@ -107,7 +108,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 const newBranches = exists
                     ? prev.map(b => (b.id === updatedBranch.id ? updatedBranch : b))
                     : [...prev, updatedBranch];
-                return newBranches.sort((a,b) => (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0));
+                return newBranches.sort((a, b) => (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0));
             });
         }
     };
@@ -128,7 +129,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             if (isMounted.current) {
                 const currentBranches = (branchRes.data || []).sort((a: SchoolBranch, b: SchoolBranch) => (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0));
                 setBranches(currentBranches);
-                if(schoolRes.data) setSchoolData(schoolRes.data);
+                if (schoolRes.data) setSchoolData(schoolRes.data);
             }
         } catch (err: any) {
             if (isMounted.current) setError(formatError(err));
@@ -214,16 +215,16 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
         setModalError(null);
         try {
             const payload = {
-                p_name: formData.name, 
-                p_address: formData.address, 
-                p_city: formData.city, 
+                p_name: formData.name,
+                p_address: formData.address,
+                p_city: formData.city,
                 p_state: formData.state,
                 p_country: formData.country,
-                p_contact_number: " ", 
-                p_is_main: formData.isMain, 
-                p_email: formData.adminEmail, 
-                p_admin_name: formData.adminName, 
-                p_admin_phone: formData.adminPhone, 
+                p_contact_number: " ",
+                p_is_main: formData.isMain,
+                p_email: formData.adminEmail,
+                p_admin_name: formData.adminName,
+                p_admin_phone: formData.adminPhone,
                 p_admin_email: formData.adminEmail
             };
 
@@ -243,12 +244,12 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             if (isMounted.current) setIsSaving(false);
         }
     };
-    
+
     const handleDelete = async () => {
         if (!deletingBranch) return;
         setIsDeleting(true);
         const { error } = await supabase.rpc('delete_school_branch', { p_branch_id: deletingBranch.id });
-        
+
         if (isMounted.current) {
             if (error) {
                 alert(`Failed to delete: ${formatError(error)}`);
@@ -272,128 +273,174 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const availableCities = useMemo(() => formData.state ? citiesByState[formData.state] || [] : [], [formData.state]);
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="text-center max-w-2xl mx-auto mb-10">
-                <h1 className="text-4xl font-serif font-extrabold text-foreground tracking-tight">Set Up Your Branches</h1>
-                <p className="text-muted-foreground mt-3 text-lg leading-relaxed">
-                    Start by defining your Head Office, then add any additional satellite campuses to your network.
-                </p>
-            </div>
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
+            {/* --- HERO SECTION --- */}
+            <div className="relative rounded-[3rem] bg-[#0c0d12] border border-white/10 p-10 md:p-16 mb-16 overflow-hidden shadow-2xl ring-1 ring-white/5">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] opacity-20 pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] opacity-20 pointer-events-none translate-y-1/3 -translate-x-1/3"></div>
 
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 bg-card p-4 rounded-xl border border-border shadow-sm">
-                <div>
-                    {onBack && (
-                        <button
-                            onClick={onBack}
-                            disabled={isFinishing}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-sm font-medium disabled:opacity-50"
-                        >
-                            <ChevronLeftIcon className="w-4 h-4" />
-                            Back to Pricing
-                        </button>
-                    )}
-                </div>
-                <div className="flex items-center gap-3">
-                    <button 
-                        onClick={() => handleOpenCreate()} 
-                        disabled={loading} 
-                        className="px-5 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary text-sm font-bold rounded-lg transition-all flex items-center gap-2 border border-primary/20 shadow-sm"
-                    >
-                        <PlusIcon className="w-4 h-4" /> Add Branch
-                    </button>
-                    {onNext && branches.length > 0 && (
-                        <button 
-                            onClick={handleFinish} 
-                            disabled={isFinishing} 
-                            className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all hover:bg-primary/90 shadow-md min-w-[180px] justify-center"
-                        >
-                            {isFinishing ? <><Spinner size="sm" className="text-current" /> Finalizing...</> : <>Complete Setup & Continue &rarr;</>}
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {loading ? (
-                <div className="flex justify-center p-20"><Spinner size="lg" /></div>
-            ) : error ? (
-                <div className="p-6 bg-destructive/10 text-destructive rounded-xl text-center font-medium">{error}</div>
-            ) : branches.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-muted/30 border-2 border-dashed border-border rounded-2xl text-center hover:bg-muted/50 transition-colors cursor-pointer group" onClick={() => handleOpenCreate()}>
-                    <div className="w-20 h-20 bg-background rounded-full flex items-center justify-center mb-6 shadow-sm border border-border group-hover:scale-110 transition-transform duration-300">
-                        <SchoolIcon className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors" />
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+                    <div className="max-w-3xl">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Network Configuration</span>
+                        </div>
+                        <h1 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tight leading-none uppercase mb-6">
+                            Institutional <span className="text-white/20">Architechture</span>
+                        </h1>
+                        <p className="text-lg md:text-xl text-white/40 font-medium leading-relaxed max-w-2xl border-l-2 border-primary/30 pl-6">
+                            Define your educational network topology. Establish your Head Office and satellite campuses to enable centralized telemetry and governance.
+                        </p>
                     </div>
-                    <h3 className="text-xl font-bold text-foreground">Welcome to Branch Setup</h3>
-                    <p className="text-muted-foreground mt-2 max-sm mx-auto">
-                        You haven't added any branches yet. Let's start by establishing your <strong>Head Office</strong>.
-                    </p>
-                    <button className="mt-8 px-8 py-3 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 transition-all">
-                        Create Head Office
+
+                    <div className="flex flex-col gap-4 min-w-[200px]">
+                        <button
+                            onClick={() => handleOpenCreate()}
+                            disabled={loading}
+                            className="group relative px-8 py-5 bg-primary text-black font-black text-xs uppercase tracking-[0.3em] rounded-2xl shadow-[0_0_30px_-10px_rgba(var(--primary),0.6)] hover:shadow-[0_0_50px_-10px_rgba(var(--primary),0.8)] hover:bg-white transition-all duration-500 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 overflow-hidden"
+                        >
+                            <span className="relative z-10 flex items-center gap-3">
+                                <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
+                                Initialize Node
+                            </span>
+                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* --- NAVIGATION BAR --- */}
+            <div className="flex justify-between items-center mb-10 px-4">
+                {onBack ? (
+                    <button
+                        onClick={onBack}
+                        disabled={isFinishing}
+                        className="flex items-center gap-3 text-white/40 hover:text-white transition-colors group text-xs font-bold uppercase tracking-wider"
+                    >
+                        <div className="p-2 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
+                            <ChevronLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                        </div>
+                        Return to Previous
                     </button>
+                ) : <div></div>}
+
+                {onNext && branches.length > 0 && (
+                    <button
+                        onClick={handleFinish}
+                        disabled={isFinishing}
+                        className="flex items-center gap-4 text-emerald-400 hover:text-emerald-300 transition-colors group text-xs font-black uppercase tracking-[0.2em]"
+                    >
+                        Finalize Architecture
+                        <div className="p-3 rounded-full bg-emerald-500/10 group-hover:bg-emerald-500/20 border border-emerald-500/20 transition-all">
+                            {isFinishing ? <Spinner size="sm" className="text-current" /> : <CheckoutIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+                        </div>
+                    </button>
+                )}
+            </div>
+
+            {/* --- BRANCH GRID --- */}
+            {loading ? (
+                <div className="flex justify-center p-32">
+                    <div className="flex flex-col items-center gap-4">
+                        <Spinner size="lg" className="text-white/20" />
+                        <span className="text-[10px] uppercase font-black tracking-[0.3em] text-white/20 animate-pulse">Loading Network Map...</span>
+                    </div>
+                </div>
+            ) : error ? (
+                <div className="p-10 border border-red-500/20 bg-red-500/5 rounded-3xl text-center">
+                    <p className="text-red-400 font-bold uppercase tracking-wider text-sm mb-2">Network Error</p>
+                    <p className="text-white/60">{error}</p>
+                </div>
+            ) : branches.length === 0 ? (
+                <div
+                    className="relative group cursor-pointer overflow-hidden rounded-[3rem] border border-dashed border-white/10 bg-white/[0.02] p-20 hover:bg-white/[0.04] transition-all duration-500 hover:border-primary/30 flex flex-col items-center justify-center text-center gap-8"
+                    onClick={() => handleOpenCreate()}
+                >
+                    <div className="w-32 h-32 rounded-[2.5rem] bg-black border border-white/10 flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-700 relative">
+                        <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        <SchoolIcon className="w-12 h-12 text-white/20 group-hover:text-primary transition-colors duration-500 relative z-10" />
+                    </div>
+                    <div>
+                        <h3 className="text-3xl font-serif font-black text-white tracking-tight mb-4 group-hover:text-primary transition-colors">Initialize Head Office</h3>
+                        <p className="text-white/40 max-w-md mx-auto leading-relaxed">
+                            Your network is currently empty. Establish the primary <strong className="text-white">Head Office</strong> node to begin building your institutional framework.
+                        </p>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 group-hover:text-primary transition-colors border-b border-transparent group-hover:border-primary">Start Configuration</span>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {branches.map(branch => (
-                        <div 
-                            key={branch.id} 
-                            className="group relative bg-card border border-border hover:border-primary/50 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {/* Render Branches */}
+                    {branches.map((branch, idx) => (
+                        <div
+                            key={branch.id}
+                            style={{ animationDelay: `${idx * 100}ms` }}
+                            className="group relative bg-[#0c0d12] border border-white/5 hover:border-white/10 rounded-[2.5rem] p-8 shadow-2xl transition-all duration-500 hover:-translate-y-2 flex flex-col animate-in fade-in slide-in-from-bottom-4"
                         >
-                            <div className="flex justify-between items-start mb-4">
-                                <div className={`p-3 rounded-xl ${branch.is_main_branch ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                                    <SchoolIcon className="w-6 h-6"/>
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
+
+                            <div className="relative z-10 flex justify-between items-start mb-8">
+                                <div className={`p-4 rounded-2xl shadow-inner border border-white/5 ${branch.is_main_branch ? 'bg-primary text-black' : 'bg-white/5 text-white'}`}>
+                                    <SchoolIcon className="w-6 h-6" />
                                 </div>
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => handleOpenEdit(branch)} className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors"><EditIcon className="w-4 h-4"/></button>
+                                <div className="flex gap-2">
+                                    <button onClick={() => handleOpenEdit(branch)} className="p-3 hover:bg-white/10 rounded-xl text-white/30 hover:text-white transition-colors"><EditIcon className="w-4 h-4" /></button>
                                     {!branch.is_main_branch && (
-                                        <button onClick={() => setDeletingBranch(branch)} className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive transition-colors"><XIcon className="w-4 h-4"/></button>
+                                        <button onClick={() => setDeletingBranch(branch)} className="p-3 hover:bg-red-500/20 rounded-xl text-white/30 hover:text-red-500 transition-colors"><XIcon className="w-4 h-4" /></button>
                                     )}
                                 </div>
                             </div>
-                            
-                            <h3 className="text-lg font-bold text-foreground truncate mb-1">{branch.name}</h3>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-4">
-                                <LocationIcon className="w-3.5 h-3.5"/>
-                                <span className="truncate">{[branch.city, branch.state, branch.country].filter(Boolean).join(', ')}</span>
+
+                            <div className="relative z-10 mb-6">
+                                <h3 className="text-xl font-bold text-white tracking-tight uppercase leading-none mb-3 font-sans truncate">{branch.name}</h3>
+                                <div className="flex items-center gap-2 text-[11px] font-bold text-white/40 uppercase tracking-widest">
+                                    <LocationIcon className="w-3.5 h-3.5 text-white/20" />
+                                    <span className="truncate">{[branch.city, branch.state].filter(Boolean).join(', ')}</span>
+                                </div>
                             </div>
 
-                            {branch.is_main_branch ? (
-                                <span className="inline-flex self-start items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20">
-                                    <CheckCircleIcon className="w-3 h-3"/> Head Office
-                                </span>
-                            ) : (
-                                <span className="inline-flex self-start items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-[10px] font-bold uppercase tracking-wider border border-border">
-                                    Satellite Branch
-                                </span>
-                            )}
+                            <div className="relative z-10 mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+                                {branch.is_main_branch ? (
+                                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[9px] font-black uppercase tracking-[0.2em]">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div> Head Office
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
+                                        Satellite Node
+                                    </span>
+                                )}
 
-                            <div className="mt-auto pt-5 border-t border-border flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                                    {branch.admin_name ? branch.admin_name.charAt(0) : '?'}
-                                </div>
-                                <div className="overflow-hidden">
-                                    <p className="text-xs font-bold text-foreground truncate">{branch.admin_name || 'No Admin Assigned'}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{branch.admin_email || '—'}</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-bold text-white/60 uppercase">{branch.admin_name?.split(' ')[0] || 'Unassigned'}</p>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 text-[10px] font-bold">
+                                        {branch.admin_name ? branch.admin_name.charAt(0) : '?'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     ))}
-                    
-                    {/* Add New Card */}
-                    <button 
+
+                    {/* Add New Card - Small */}
+                    <button
                         onClick={() => handleOpenCreate()}
-                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 transition-all group min-h-[200px]"
+                        className="group relative h-full min-h-[300px] border border-dashed border-white/10 hover:border-primary/40 rounded-[2.5rem] bg-white/[0.01] hover:bg-white/[0.03] transition-all duration-300 flex flex-col items-center justify-center gap-6"
                     >
-                        <div className="w-12 h-12 rounded-full bg-muted group-hover:bg-background flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors mb-3 shadow-sm group-hover:shadow-md border border-border group-hover:border-primary/20">
-                            <PlusIcon className="w-6 h-6 transform group-hover:rotate-90 transition-transform duration-300"/>
+                        <div className="w-16 h-16 rounded-full bg-white/5 group-hover:bg-primary group-hover:text-black flex items-center justify-center text-white/20 transition-all duration-300 shadow-2xl group-hover:scale-110">
+                            <PlusIcon className="w-7 h-7 transform group-hover:rotate-90 transition-transform duration-500" />
                         </div>
-                        <span className="font-bold text-foreground">Add Another Branch</span>
+                        <span className="font-black text-xs uppercase tracking-[0.25em] text-white/30 group-hover:text-primary transition-colors">Expand Network</span>
                     </button>
+
                 </div>
             )}
 
+
             {isModalOpen && (
-                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300" onClick={() => setIsModalOpen(false)}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300" onClick={() => setIsModalOpen(false)}>
                     <div className="bg-card w-full max-w-3xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        
+
                         {/* Modal Header */}
                         <div className="px-8 py-6 border-b border-border flex justify-between items-center bg-muted/30">
                             <div>
@@ -403,7 +450,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 <p className="text-sm text-muted-foreground mt-1">Please provide the campus and administrator details.</p>
                             </div>
                             <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                                <XIcon className="w-5 h-5"/>
+                                <XIcon className="w-5 h-5" />
                             </button>
                         </div>
 
@@ -411,36 +458,36 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                             <div className="flex-grow overflow-y-auto p-8 space-y-8 custom-scrollbar">
                                 {modalError && (
                                     <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-medium border border-destructive/20 flex items-center gap-3">
-                                        <XIcon className="w-5 h-5"/> {modalError}
+                                        <XIcon className="w-5 h-5" /> {modalError}
                                     </div>
                                 )}
-                                
+
                                 {/* Section 1: Campus Details */}
                                 <div className="space-y-5">
-                                     <div className="flex items-center gap-2 mb-2">
-                                         <SchoolIcon className="w-5 h-5 text-primary" />
-                                         <h4 className="text-sm font-bold uppercase text-foreground tracking-wide">Campus Information</h4>
-                                     </div>
-                                     
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <SchoolIcon className="w-5 h-5 text-primary" />
+                                        <h4 className="text-sm font-bold uppercase text-foreground tracking-wide">Campus Information</h4>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div className="md:col-span-2">
-                                            <FloatingLabelInput 
-                                                label="Branch Name" 
-                                                value={formData.name} 
-                                                onChange={e => setFormData({...formData, name: e.target.value})} 
-                                                required 
-                                                icon={<SchoolIcon className="w-4 h-4"/>} 
+                                            <FloatingLabelInput
+                                                label="Branch Name"
+                                                value={formData.name}
+                                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                                required
+                                                icon={<SchoolIcon className="w-4 h-4" />}
                                             />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <FloatingLabelInput 
-                                                label="Street Address" 
-                                                value={formData.address} 
-                                                onChange={e => setFormData({...formData, address: e.target.value})} 
-                                                required 
-                                                icon={<LocationIcon className="w-4 h-4"/>}
+                                            <FloatingLabelInput
+                                                label="Street Address"
+                                                value={formData.address}
+                                                onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                                required
+                                                icon={<LocationIcon className="w-4 h-4" />}
                                                 action={
-                                                    <button 
+                                                    <button
                                                         type="button"
                                                         onClick={handleResolveAddress}
                                                         disabled={isResolvingAddress || !formData.address.trim()}
@@ -452,25 +499,25 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                                 }
                                             />
                                         </div>
-                                        
-                                        <StyledSelect label="Country" required value={formData.country} onChange={handleCountryChange} icon={<GlobeIcon className="w-4 h-4"/>}>
+
+                                        <StyledSelect label="Country" required value={formData.country} onChange={handleCountryChange} icon={<GlobeIcon className="w-4 h-4" />}>
                                             {countries.map(c => <option key={c} value={c}>{c}</option>)}
                                         </StyledSelect>
-                                        
-                                        <StyledSelect label="State/Province" required value={formData.state} onChange={handleStateChange} disabled={!formData.country} icon={<LocationIcon className="w-4 h-4"/>}>
+
+                                        <StyledSelect label="State/Province" required value={formData.state} onChange={handleStateChange} disabled={!formData.country} icon={<LocationIcon className="w-4 h-4" />}>
                                             <option value="">Select State</option>
                                             {availableStates.map(s => <option key={s} value={s}>{s}</option>)}
                                         </StyledSelect>
-                                        
+
                                         {availableCities.length > 0 ? (
-                                            <StyledSelect className="md:col-span-2" label="City" required value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} disabled={!formData.state} icon={<LocationIcon className="w-4 h-4"/>}>
+                                            <StyledSelect className="md:col-span-2" label="City" required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} icon={<LocationIcon className="w-4 h-4" />}>
                                                 <option value="">Select City</option>
                                                 {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
                                             </StyledSelect>
                                         ) : (
-                                            <FloatingLabelInput className="md:col-span-2" label="City" required value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} disabled={!formData.state} icon={<LocationIcon className="w-4 h-4"/>} />
+                                            <FloatingLabelInput className="md:col-span-2" label="City" required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} icon={<LocationIcon className="w-4 h-4" />} />
                                         )}
-                                     </div>
+                                    </div>
                                 </div>
 
                                 <div className="h-px bg-border/50 w-full"></div>
@@ -478,24 +525,24 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                 {/* Section 2: Administrator Details */}
                                 <div className="space-y-5">
                                     <div className="flex items-center gap-2 mb-2">
-                                         <UsersIcon className="w-5 h-5 text-primary" />
-                                         <h4 className="text-sm font-bold uppercase text-foreground tracking-wide">IT Administrator Credentials</h4>
-                                     </div>
+                                        <UsersIcon className="w-5 h-5 text-primary" />
+                                        <h4 className="text-sm font-bold uppercase text-foreground tracking-wide">IT Administrator Credentials</h4>
+                                    </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <FloatingLabelInput label="Admin Name" value={formData.adminName} onChange={e => setFormData({...formData, adminName: e.target.value})} icon={<UsersIcon className="w-4 h-4"/>} />
-                                        <FloatingLabelInput label="Admin Phone" type="tel" value={formData.adminPhone} onChange={e => setFormData({...formData, adminPhone: e.target.value})} icon={<PhoneIcon className="w-4 h-4"/>} />
-                                        <div className="md:col-span-2"><FloatingLabelInput label="Login Email" type="email" required value={formData.adminEmail} onChange={e => setFormData({...formData, adminEmail: e.target.value})} icon={<MailIcon className="w-4 h-4"/>} /></div>
+                                        <FloatingLabelInput label="Admin Name" value={formData.adminName} onChange={e => setFormData({ ...formData, adminName: e.target.value })} icon={<UsersIcon className="w-4 h-4" />} />
+                                        <FloatingLabelInput label="Admin Phone" type="tel" value={formData.adminPhone} onChange={e => setFormData({ ...formData, adminPhone: e.target.value })} icon={<PhoneIcon className="w-4 h-4" />} />
+                                        <div className="md:col-span-2"><FloatingLabelInput label="Login Email" type="email" required value={formData.adminEmail} onChange={e => setFormData({ ...formData, adminEmail: e.target.value })} icon={<MailIcon className="w-4 h-4" />} /></div>
                                     </div>
                                 </div>
 
                                 {isHeadOfficeAdmin && (
-                                    <div 
-                                        className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${formData.isMain ? 'bg-primary/5 border-primary/30' : 'bg-muted/30 border-border hover:border-primary/30'}`} 
-                                        onClick={() => setFormData({...formData, isMain: !formData.isMain})}
+                                    <div
+                                        className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${formData.isMain ? 'bg-primary/5 border-primary/30' : 'bg-muted/30 border-border hover:border-primary/30'}`}
+                                        onClick={() => setFormData({ ...formData, isMain: !formData.isMain })}
                                     >
                                         <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.isMain ? 'bg-primary border-primary' : 'bg-background border-muted-foreground'}`}>
-                                            {formData.isMain && <CheckCircleIcon className="w-3.5 h-3.5 text-primary-foreground"/>}
+                                            {formData.isMain && <CheckCircleIcon className="w-3.5 h-3.5 text-primary-foreground" />}
                                         </div>
                                         <div>
                                             <p className="font-bold text-sm text-foreground">Set as Head Office</p>
@@ -515,15 +562,15 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                     </div>
                 </div>
             )}
-            
-            <ConfirmationModal 
-                isOpen={!!deletingBranch} 
-                onClose={() => setDeletingBranch(null)} 
-                onConfirm={handleDelete} 
-                title="Delete Branch" 
-                message={`Are you sure you want to permanently delete the "${deletingBranch?.name}" branch? This action cannot be undone.`} 
-                confirmText="Yes, Delete Branch" 
-                loading={isDeleting} 
+
+            <ConfirmationModal
+                isOpen={!!deletingBranch}
+                onClose={() => setDeletingBranch(null)}
+                onConfirm={handleDelete}
+                title="Delete Branch"
+                message={`Are you sure you want to permanently delete the "${deletingBranch?.name}" branch? This action cannot be undone.`}
+                confirmText="Yes, Delete Branch"
+                loading={isDeleting}
             />
         </div>
     );
