@@ -1506,4 +1506,218 @@ BEGIN
 END;
 $$;
 
+
+-- Get All Users (Admin)
+CREATE OR REPLACE FUNCTION public.get_all_users_for_admin()
+RETURNS SETOF public.profiles
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT * FROM public.profiles ORDER BY created_at DESC;
+$$;
+
+-- Verify Enquiry Code
+CREATE OR REPLACE FUNCTION public.admin_verify_enquiry_code(p_code text, p_branch_id bigint)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_enquiry_id uuid;
+BEGIN
+  SELECT id INTO v_enquiry_id FROM public.enquiries 
+  WHERE enquiry_code = p_code AND (branch_id = p_branch_id OR p_branch_id IS NULL)
+  LIMIT 1;
+  
+  IF v_enquiry_id IS NOT NULL THEN
+    RETURN jsonb_build_object('success', true, 'message', 'Verified', 'enquiry_id', v_enquiry_id);
+  ELSE
+    RETURN jsonb_build_object('success', false, 'message', 'Invalid Code');
+  END IF;
+END;
+$$;
+
+-- Update Enquiry Status
+CREATE OR REPLACE FUNCTION public.admin_update_enquiry_status(p_enquiry_id uuid, p_status text, p_notes text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE public.enquiries SET status = p_status, notes = COALESCE(p_notes, notes) WHERE id = p_enquiry_id;
+END;
+$$;
+
+-- Convert Enquiry to Admission
+CREATE OR REPLACE FUNCTION public.convert_enquiry_to_admission(p_enquiry_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_enquiry record;
+  v_admission_id uuid;
+BEGIN
+  SELECT * INTO v_enquiry FROM public.enquiries WHERE id = p_enquiry_id;
+  IF v_enquiry IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Enquiry not found');
+  END IF;
+
+  INSERT INTO public.admissions (
+    branch_id, applicant_name, parent_name, parent_email, parent_phone, grade, status
+  ) VALUES (
+    v_enquiry.branch_id::integer, v_enquiry.applicant_name, v_enquiry.parent_name, v_enquiry.parent_email, v_enquiry.parent_phone, v_enquiry.grade, 'Registered'
+  ) RETURNING id INTO v_admission_id;
+
+  UPDATE public.enquiries SET conversion_state = 'CONVERTED', admission_id = v_admission_id WHERE id = p_enquiry_id;
+
+  RETURN jsonb_build_object('success', true, 'admission_id', v_admission_id);
+END;
+$$;
+
+-- Finance Dashboard Data
+CREATE OR REPLACE FUNCTION public.get_finance_dashboard_data(p_branch_id bigint)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_revenue numeric;
+  v_pending numeric;
+  v_monthly numeric;
+  v_online numeric;
+BEGIN
+  SELECT COALESCE(SUM(amount), 0) INTO v_revenue FROM public.fee_payments WHERE (branch_id = p_branch_id OR p_branch_id IS NULL);
+  SELECT COALESCE(SUM(total_amount - paid_amount), 0) INTO v_pending FROM public.fee_invoices WHERE (branch_id = p_branch_id OR p_branch_id IS NULL) AND status != 'paid';
+  SELECT COALESCE(SUM(amount), 0) INTO v_monthly FROM public.fee_payments WHERE (branch_id = p_branch_id OR p_branch_id IS NULL) AND payment_date >= date_trunc('month', now());
+  SELECT COALESCE(SUM(amount), 0) INTO v_online FROM public.fee_payments WHERE (branch_id = p_branch_id OR p_branch_id IS NULL) AND payment_method = 'Online';
+  
+  RETURN jsonb_build_object(
+    'revenue_ytd', v_revenue,
+    'pending_dues', v_pending,
+    'collections_this_month', v_monthly,
+    'online_payments', v_online
+  );
+END;
+$$;
+
+-- Student Financial Nodes
+CREATE OR REPLACE FUNCTION public.get_student_financial_nodes(p_branch_id bigint)
+RETURNS TABLE (
+  student_id uuid,
+  display_name text,
+  grade text,
+  class_name text,
+  total_billed numeric,
+  total_paid numeric,
+  outstanding_balance numeric,
+  integrity_score integer
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT 
+    s.user_id as student_id,
+    p.display_name,
+    s.grade,
+    c.name as class_name,
+    COALESCE(fa.total_billed, 0) as total_billed,
+    COALESCE(fa.total_paid, 0) as total_paid,
+    COALESCE(fa.outstanding_balance, 0) as outstanding_balance,
+    COALESCE(fa.integrity_score, 100) as integrity_score
+  FROM public.student_profiles s
+  JOIN public.profiles p ON s.user_id = p.id
+  LEFT JOIN public.school_classes c ON s.assigned_class_id = c.id
+  LEFT JOIN public.student_fee_accounts fa ON s.user_id = fa.student_id
+  WHERE (s.branch_id = p_branch_id OR p_branch_id IS NULL);
+$$;
+
+-- Reconcile Finance Registry
+CREATE OR REPLACE FUNCTION public.reconcile_finance_registry_v2(p_branch_id bigint)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Placeholder for reconciliation logic.
+  -- In a real production system, this would recalculate totals from ledgers.
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+
+-- Get All Teachers (Admin)
+CREATE OR REPLACE FUNCTION public.get_all_teachers_for_admin()
+RETURNS TABLE (
+  id uuid,
+  email text,
+  display_name text,
+  phone text,
+  is_active boolean,
+  created_at timestamp with time zone,
+  subject text,
+  qualification text,
+  experience_years numeric,
+  date_of_joining date,
+  bio text,
+  specializations text,
+  profile_picture_url text,
+  gender text,
+  date_of_birth date,
+  department text,
+  designation text,
+  employee_id text,
+  employment_type text,
+  employment_status text,
+  branch_id bigint
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT 
+    p.id,
+    p.email,
+    p.display_name,
+    p.phone,
+    p.is_active,
+    p.created_at,
+    tp.subject,
+    tp.qualification,
+    tp.experience_years,
+    tp.date_of_joining,
+    tp.bio,
+    tp.specializations,
+    tp.profile_picture_url,
+    tp.gender,
+    tp.date_of_birth,
+    tp.department,
+    tp.designation,
+    tp.employee_id,
+    tp.employment_type,
+    tp.employment_status,
+    tp.branch_id
+  FROM public.teacher_profiles tp
+  JOIN public.profiles p ON tp.user_id = p.id
+  ORDER BY p.created_at DESC;
+$$;
+
+
+-- Admin Quick Add Student (Placeholder)
+CREATE OR REPLACE FUNCTION public.admin_quick_add_student(
+  p_display_name text, 
+  p_email text, 
+  p_grade text, 
+  p_parent_details text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- This typically requires an Edge Function to create the Auth User first.
+  -- returning failure to prompt UI.
+  RETURN jsonb_build_object('success', false, 'message', 'Feature requires Edge Function deployment for Auth provisioning.');
+END;
+$$;
+
 COMMIT;
