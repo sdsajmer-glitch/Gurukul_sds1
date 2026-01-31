@@ -15,6 +15,7 @@ import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 interface RoleSelectionPageProps {
     onRoleSelect: (role: Role) => Promise<void> | void;
     onComplete: () => void;
+    existingRole?: Role | null;
 }
 
 const ROLE_META: Record<string, { label: string; description: string; color: string; gradient: string; shadow: string }> = {
@@ -90,7 +91,7 @@ const ROLE_META: Record<string, { label: string; description: string; color: str
     },
 };
 
-const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onComplete }) => {
+const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onComplete, existingRole }) => {
     const { roles, loading } = useRoles();
     const [isSchoolAdminModalOpen, setIsSchoolAdminModalOpen] = useState(false);
     const [joinLoading, setJoinLoading] = useState(false);
@@ -101,24 +102,33 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
     // Filter roles based on the metadata we have defined
-    const displayRoles = roles.filter(r => ROLE_META[r]);
+    // If existingRole is set, we ONLY show that role.
+    const displayRoles = existingRole
+        ? [existingRole].filter(r => ROLE_META[r])
+        : roles.filter(r => ROLE_META[r]);
 
     const handleRoleClick = (role: Role) => {
         if (selectedRole || createLoading || joinLoading) return;
-        
+
         setSelectedRole(role);
 
         if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-            setTimeout(() => {
-                setIsSchoolAdminModalOpen(true);
-                setSelectedRole(null);
-            }, 300);
+            // Check if we are resuming (existing role) -> Skip modal, just proceed
+            if (existingRole === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+                Promise.resolve(onRoleSelect(role)).catch(() => setSelectedRole(null));
+            } else {
+                setTimeout(() => {
+                    setIsSchoolAdminModalOpen(true);
+                    setSelectedRole(null);
+                }, 300);
+            }
         } else {
-             Promise.resolve(onRoleSelect(role)).catch(() => setSelectedRole(null));
+            Promise.resolve(onRoleSelect(role)).catch(() => setSelectedRole(null));
         }
     };
 
     const handleCreateNewSchool = async (e: React.MouseEvent) => {
+        // ... (Same handler logic)
         e.preventDefault();
         if (createLoading) return;
         setCreateLoading(true);
@@ -130,21 +140,22 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
     }
 
     const handleJoinBranch = async (e: React.MouseEvent) => {
+        // ... (Same handler logic)
         e.preventDefault();
         const code = invitationCode.trim().toUpperCase();
-        
+
         if (code.length < 8 || joinLoading) return;
 
         setJoinLoading(true);
         setJoinError(null);
-        
+
         try {
-            const { data, error } = await supabase.rpc('verify_and_link_branch_admin', { 
-                p_invitation_code: code 
+            const { data, error } = await supabase.rpc('verify_and_link_branch_admin', {
+                p_invitation_code: code
             });
-            
+
             if (error) throw error;
-            
+
             if (data.success) {
                 setJoinSuccess(true);
                 setInvitationCode('');
@@ -174,14 +185,23 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
         <div className="w-full max-w-[1600px] mx-auto py-10 px-4 sm:px-6 lg:px-8">
             <header className="text-center mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
                 <h1 className="text-4xl md:text-6xl font-serif font-black text-foreground tracking-tight mb-4">
-                    Select Your Portal
+                    {existingRole ? 'Welcome back' : 'Select Your Portal'}
                 </h1>
                 <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
-                    Access your personalized institutional environment or initialize a new node.
+                    {existingRole
+                        ? 'Your identity context is verified. Proceed to your portal.'
+                        : 'Access your personalized institutional environment or initialize a new node.'
+                    }
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
+            <div className={`
+                gap-8 
+                ${existingRole
+                    ? 'flex justify-center items-center'
+                    : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
+                }
+            `}>
                 {displayRoles.map((name, idx) => {
                     const meta = ROLE_META[name];
                     const Icon = ROLE_ICONS[name] || UsersIcon;
@@ -197,16 +217,17 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                             style={{ animationDelay: `${idx * 100}ms` }}
                             className={`
                                 group relative flex flex-col items-start text-left p-8 rounded-[2.5rem] border-2 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden animate-in fade-in slide-in-from-bottom-10
-                                ${isProcessing 
-                                    ? 'border-primary ring-4 ring-primary/10 bg-card scale-[0.98] shadow-2xl z-10' 
-                                    : isFaded 
-                                        ? 'opacity-30 scale-95 grayscale' 
+                                ${existingRole ? 'w-full max-w-md ring-8 ring-primary/5 scale-105' : ''}
+                                ${isProcessing
+                                    ? 'border-primary ring-4 ring-primary/10 bg-card scale-[0.98] shadow-2xl z-10'
+                                    : isFaded
+                                        ? 'opacity-30 scale-95 grayscale'
                                         : 'bg-card/60 backdrop-blur-xl border-white/5 hover:border-primary/40 hover:shadow-2xl hover:-translate-y-2'
                                 }
                             `}
                         >
                             <div className={`absolute inset-0 bg-gradient-to-br ${meta.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
-                            
+
                             <div className="relative z-10 w-full">
                                 <div className={`
                                     w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-inner transition-all duration-500 group-hover:scale-110 group-hover:rotate-3
@@ -217,7 +238,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
 
                                 <div className="space-y-3">
                                     <h3 className={`text-xl font-black tracking-tight transition-colors duration-300 ${isProcessing ? 'text-primary' : 'text-foreground group-hover:text-primary'}`}>
-                                        {meta.label}
+                                        {existingRole ? `Continue as ${meta.label}` : meta.label}
                                     </h3>
                                     <p className="text-xs text-muted-foreground font-medium leading-relaxed transition-colors group-hover:text-foreground/80">
                                         {meta.description}
@@ -233,15 +254,15 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex justify-center items-center z-[100] p-4 animate-in fade-in duration-300" onClick={() => !createLoading && !joinLoading && setIsSchoolAdminModalOpen(false)}>
                     <div className="bg-card w-full max-w-4xl rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden transform transition-all scale-100" onClick={e => e.stopPropagation()}>
                         <div className="flex flex-col md:flex-row h-full min-h-[500px]">
-                            
-                            <button 
+
+                            <button
                                 onClick={handleCreateNewSchool}
                                 disabled={createLoading || joinLoading}
                                 className="flex-1 p-12 text-center group relative overflow-hidden transition-all hover:bg-primary/5 disabled:opacity-50"
                             >
                                 <div className="relative z-10 flex flex-col items-center">
                                     <div className="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500 shadow-inner border border-primary/20">
-                                        {createLoading ? <Spinner size="lg" className="text-primary"/> : <SchoolIcon className="w-12 h-12 text-primary" />}
+                                        {createLoading ? <Spinner size="lg" className="text-primary" /> : <SchoolIcon className="w-12 h-12 text-primary" />}
                                     </div>
                                     <h3 className="text-3xl font-serif font-black text-foreground tracking-tight mb-4">Establish New School</h3>
                                     <p className="text-muted-foreground max-w-xs mx-auto text-sm font-medium leading-relaxed">
@@ -262,7 +283,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                         {joinSuccess ? <CheckCircleIcon className="w-12 h-12 text-emerald-500 animate-in zoom-in" /> : <ShieldCheckIcon className="w-12 h-12 text-indigo-600" />}
                                     </div>
                                     <h3 className="text-3xl font-serif font-black text-foreground tracking-tight mb-4">Join Existing Group</h3>
-                                    
+
                                     {joinSuccess ? (
                                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                                             <p className="text-emerald-600 font-bold text-lg mb-2">Handshake Secured!</p>
@@ -278,7 +299,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
 
                                             <div className="w-full max-w-xs space-y-4">
                                                 <div className="relative group">
-                                                    <input 
+                                                    <input
                                                         type="text"
                                                         value={invitationCode}
                                                         onChange={e => setInvitationCode(e.target.value.toUpperCase())}
@@ -287,15 +308,15 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                                         className="w-full px-6 py-4 bg-background border-2 border-border rounded-2xl text-center font-mono font-black tracking-[0.2em] text-lg focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all disabled:opacity-50 placeholder:text-muted-foreground/30 placeholder:tracking-normal placeholder:font-sans placeholder:text-sm"
                                                     />
                                                 </div>
-                                                
-                                                <button 
+
+                                                <button
                                                     onClick={handleJoinBranch}
                                                     disabled={joinLoading || invitationCode.length < 8}
                                                     className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/25 hover:bg-indigo-500 transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95 disabled:grayscale"
                                                 >
-                                                    {joinLoading ? <Spinner size="sm" className="text-white"/> : 'Verify & Access Node'}
+                                                    {joinLoading ? <Spinner size="sm" className="text-white" /> : 'Verify & Access Node'}
                                                 </button>
-                                                
+
                                                 <div className="flex flex-col gap-3">
                                                     {joinError && (
                                                         <p className="text-red-500 text-[10px] font-black uppercase tracking-wider animate-in shake duration-300 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
@@ -311,7 +332,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                         </>
                                     )}
                                 </div>
-                                
+
                                 <p className="text-[9px] text-muted-foreground/30 uppercase tracking-[0.3em] mt-8 font-black text-center">
                                     Institutional Handshake Gateway
                                 </p>
