@@ -1,16 +1,18 @@
 -- Database Reset Script
 -- Generated on 2026-01-31
 -- This script performs a full reset of the database schema.
-
--- FULL RESET SCRIPT
--- Drops all tables safely if they exist
--- ============================================
+-- It drops all existing objects and recreates them, including Tables, Views, RLS, and Functions.
 
 BEGIN;
 
--- Disable FK checks temporarily
+-- ============================================
+-- 1. DROP EVERYTHING
+-- ============================================
+
+-- Disable FK checks temporarily for mass dropping
 SET session_replication_role = 'replica';
 
+-- Drop Tables
 DROP TABLE IF EXISTS
   academic_years,
   admin_tasks,
@@ -94,7 +96,7 @@ DROP TABLE IF EXISTS
   workshops
 CASCADE;
 
--- Drop Custom Types if they exist to allow clean recreation
+-- Drop Custom Types
 DROP TYPE IF EXISTS academic_year_status CASCADE;
 DROP TYPE IF EXISTS attendance_status CASCADE;
 DROP TYPE IF EXISTS timetable_status CASCADE;
@@ -105,7 +107,19 @@ DROP TYPE IF EXISTS fee_assignment_status CASCADE;
 DROP TYPE IF EXISTS transport_status CASCADE;
 DROP TYPE IF EXISTS vehicle_status CASCADE;
 
--- Create Custom Types
+-- Drop Functions (if any specific ones exist, general cleanup)
+-- DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+
+-- Drop Sequences (Auto-dropped by tables usually, but safe to ensure)
+DROP SEQUENCE IF EXISTS invoice_number_seq;
+
+-- Re-enable FK checks
+SET session_replication_role = 'origin';
+
+-- ============================================
+-- 2. CREATE TYPES & SEQUENCES
+-- ============================================
+
 CREATE TYPE academic_year_status AS ENUM ('active', 'inactive', 'archived', 'upcoming');
 CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'late', 'excused');
 CREATE TYPE timetable_status AS ENUM ('active', 'inactive', 'draft');
@@ -116,15 +130,13 @@ CREATE TYPE fee_assignment_status AS ENUM ('active', 'inactive', 'suspended');
 CREATE TYPE transport_status AS ENUM ('active', 'inactive', 'maintenance');
 CREATE TYPE vehicle_status AS ENUM ('active', 'inactive', 'maintenance', 'retired');
 
--- Re-enable FK checks
-SET session_replication_role = 'origin';
-
-COMMIT;
+CREATE SEQUENCE IF NOT EXISTS invoice_number_seq;
 
 -- ============================================
--- CORE TABLES (Moved to top due to dependencies)
+-- 3. CREATE TABLES
 -- ============================================
 
+-- Core Identity Tables
 CREATE TABLE public.school_branches (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   school_user_id uuid,
@@ -142,7 +154,6 @@ CREATE TABLE public.school_branches (
   branch_admin_id uuid,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT school_branches_pkey PRIMARY KEY (id)
-  -- FKs added at end
 );
 
 CREATE TABLE public.profiles (
@@ -159,10 +170,11 @@ CREATE TABLE public.profiles (
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   email_confirmed_at timestamp with time zone,
   profile_photo_url text,
-  CONSTRAINT profiles_pkey PRIMARY KEY (id)
-  -- FKs added at end
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
 );
 
+-- Core Academic Tables
 CREATE TABLE public.school_classes (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   name text NOT NULL,
@@ -173,8 +185,9 @@ CREATE TABLE public.school_classes (
   branch_id bigint,
   capacity integer DEFAULT 30,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT school_classes_pkey PRIMARY KEY (id)
-  -- FKs added at end
+  CONSTRAINT school_classes_pkey PRIMARY KEY (id),
+  CONSTRAINT school_classes_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id),
+  CONSTRAINT school_classes_class_teacher_id_fkey FOREIGN KEY (class_teacher_id) REFERENCES public.profiles(id)
 );
 
 CREATE TABLE public.courses (
@@ -193,8 +206,8 @@ CREATE TABLE public.courses (
   deleted_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT courses_pkey PRIMARY KEY (id)
-  -- FKs added at end
+  CONSTRAINT courses_pkey PRIMARY KEY (id),
+  CONSTRAINT courses_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id)
 );
 
 CREATE TABLE public.fee_structures (
@@ -210,13 +223,11 @@ CREATE TABLE public.fee_structures (
   created_at timestamp with time zone DEFAULT now(),
   version_locked boolean DEFAULT false,
   is_default boolean DEFAULT false,
-  CONSTRAINT fee_structures_pkey PRIMARY KEY (id)
-  -- FKs added at end
+  CONSTRAINT fee_structures_pkey PRIMARY KEY (id),
+  CONSTRAINT fee_structures_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
 );
 
--- ============================================
--- ALPHABETICAL TABLES (Dependencies Resolved)
--- ============================================
+-- Extended Tables
 
 CREATE TABLE public.academic_years (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -246,7 +257,6 @@ CREATE TABLE public.admin_tasks (
   due_date timestamp with time zone,
   CONSTRAINT admin_tasks_pkey PRIMARY KEY (id),
   CONSTRAINT admin_tasks_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)
-  -- created_by FK to auth.users can stay inline if auth schema is present, else remove. Assuming auth.users exists.
 );
 
 CREATE TABLE public.admission_audit_logs (
@@ -263,7 +273,7 @@ CREATE TABLE public.admission_audit_logs (
 );
 
 CREATE TABLE public.admissions (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   applicant_name text NOT NULL,
   parent_id uuid,
   parent_name text,
@@ -288,22 +298,6 @@ CREATE TABLE public.admissions (
   CONSTRAINT admissions_student_user_id_fkey FOREIGN KEY (student_user_id) REFERENCES public.profiles(id)
 );
 
-CREATE TABLE public.admission_documents (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  admission_id uuid NOT NULL,
-  requirement_id bigint,
-  uploaded_by uuid,
-  file_name text NOT NULL,
-  storage_path text NOT NULL,
-  uploaded_at timestamp with time zone DEFAULT now(),
-  status text DEFAULT 'Pending'::text,
-  file_size bigint,
-  mime_type text,
-  CONSTRAINT admission_documents_pkey PRIMARY KEY (id),
-  CONSTRAINT admission_documents_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.profiles(id),
-  CONSTRAINT admission_documents_admission_id_fkey FOREIGN KEY (admission_id) REFERENCES public.admissions(id)
-);
-
 CREATE TABLE public.document_requirements (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   document_name text NOT NULL,
@@ -318,15 +312,22 @@ CREATE TABLE public.document_requirements (
   CONSTRAINT document_requirements_admission_id_fkey FOREIGN KEY (admission_id) REFERENCES public.admissions(id)
 );
 
--- Add explicit dependency: Document Requirements must exist for admission_documents to reference it?
--- admission_documents referenced document_requirements. So document_requirements must be created first.
--- I swapped their order implicitly here by pasting document_requirements after? No, let's just make sure admission_documents FK is safe.
--- admission_documents references document_requirements(id). So document_requirements must exist.
--- REORDER: document_requirements ABOVE admission_documents.
-
-ALTER TABLE public.admission_documents 
-ADD CONSTRAINT admission_documents_requirement_id_fkey FOREIGN KEY (requirement_id) REFERENCES public.document_requirements(id);
-
+CREATE TABLE public.admission_documents (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  admission_id uuid NOT NULL,
+  requirement_id bigint,
+  uploaded_by uuid,
+  file_name text NOT NULL,
+  storage_path text NOT NULL,
+  uploaded_at timestamp with time zone DEFAULT now(),
+  status text DEFAULT 'Pending'::text,
+  file_size bigint,
+  mime_type text,
+  CONSTRAINT admission_documents_pkey PRIMARY KEY (id),
+  CONSTRAINT admission_documents_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.profiles(id),
+  CONSTRAINT admission_documents_admission_id_fkey FOREIGN KEY (admission_id) REFERENCES public.admissions(id),
+  CONSTRAINT admission_documents_requirement_id_fkey FOREIGN KEY (requirement_id) REFERENCES public.document_requirements(id)
+);
 
 CREATE TABLE public.admission_share_codes (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -339,20 +340,6 @@ CREATE TABLE public.admission_share_codes (
   expires_at timestamp with time zone DEFAULT (now() + '1 day'::interval),
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT admission_share_codes_pkey PRIMARY KEY (id)
-);
-
-CREATE TABLE public.assignment_submissions (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  assignment_id bigint,
-  student_id uuid,
-  file_path text,
-  file_name text,
-  submitted_at timestamp with time zone DEFAULT now(),
-  status text DEFAULT 'Submitted'::text,
-  grade text,
-  feedback text,
-  CONSTRAINT assignment_submissions_pkey PRIMARY KEY (id),
-  CONSTRAINT assignment_submissions_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id)
 );
 
 CREATE TABLE public.assignments (
@@ -371,11 +358,21 @@ CREATE TABLE public.assignments (
   CONSTRAINT assignments_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.courses(id),
   CONSTRAINT assignments_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.profiles(id)
 );
--- assignment_submissions references assignments. So assignments must be created first.
--- assignments is created above.
-ALTER TABLE public.assignment_submissions
-ADD CONSTRAINT assignment_submissions_assignment_id_fkey FOREIGN KEY (assignment_id) REFERENCES public.assignments(id);
 
+CREATE TABLE public.assignment_submissions (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  assignment_id bigint,
+  student_id uuid,
+  file_path text,
+  file_name text,
+  submitted_at timestamp with time zone DEFAULT now(),
+  status text DEFAULT 'Submitted'::text,
+  grade text,
+  feedback text,
+  CONSTRAINT assignment_submissions_pkey PRIMARY KEY (id),
+  CONSTRAINT assignment_submissions_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.profiles(id),
+  CONSTRAINT assignment_submissions_assignment_id_fkey FOREIGN KEY (assignment_id) REFERENCES public.assignments(id)
+);
 
 CREATE TABLE public.attendance (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -589,7 +586,7 @@ CREATE TABLE public.ecommerce_operator_profiles (
 );
 
 CREATE TABLE public.enquiries (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   enquiry_code text,
   applicant_name text NOT NULL,
   grade text,
@@ -614,7 +611,7 @@ CREATE TABLE public.enquiries (
 );
 
 CREATE TABLE public.enquiry_messages (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   enquiry_id uuid NOT NULL,
   sender_id uuid,
   message text,
@@ -749,8 +746,6 @@ CREATE TABLE public.fee_components (
   CONSTRAINT fee_components_structure_id_fkey FOREIGN KEY (structure_id) REFERENCES public.fee_structures(id)
 );
 
-CREATE SEQUENCE IF NOT EXISTS invoice_number_seq;
-
 CREATE TABLE public.fee_invoices (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   student_id uuid,
@@ -767,7 +762,6 @@ CREATE TABLE public.fee_invoices (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   deleted_at timestamp with time zone,
-
   branch_id bigint,
   storage_bucket text DEFAULT 'school_invoices'::text,
   billing_month text,
@@ -999,7 +993,6 @@ CREATE TABLE public.storage_files (
 CREATE TABLE public.student_enrollments (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   student_id uuid,
-
   academic_year text,
   enrollment_date date DEFAULT CURRENT_DATE,
   status text DEFAULT 'Active'::text CHECK (status = ANY (ARRAY['Active'::text, 'Inactive'::text, 'Suspended'::text, 'Graduated'::text, 'Transferred'::text])),
@@ -1360,9 +1353,8 @@ CREATE TABLE public.verification_audit_logs (
   CONSTRAINT verification_audit_logs_pkey PRIMARY KEY (id)
 );
 
-
 -- ============================================
--- ADDING DEFERRED FOREIGN KEYS (Circular Dependencies)
+-- 4. CIRCULAR DEPENDENCIES FIX
 -- ============================================
 
 ALTER TABLE public.school_branches
@@ -1371,3 +1363,146 @@ ALTER TABLE public.school_branches
 
 ALTER TABLE public.profiles
   ADD CONSTRAINT fk_profiles_branch_id FOREIGN KEY (branch_id) REFERENCES public.school_branches(id);
+
+-- ============================================
+-- 5. ENABLE ROW LEVEL SECURITY
+-- ============================================
+
+-- Enable RLS on all tables
+ALTER TABLE public.academic_years ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admission_audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admission_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admission_share_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assignment_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bus_attendance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.class_fee_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.class_subjects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.class_timetables ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.communications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_drafts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_enrollments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_modules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_teachers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_units ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.document_requirements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ecommerce_operator_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.enquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.enquiry_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exam_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expense_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expense_invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fee_components ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fee_invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fee_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fee_structures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.finance_audit_trail ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lesson_plan_resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lesson_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.parent_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.room_availability ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.routes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.school_admin_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.school_branch_invitations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.school_branches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.school_classes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.school_departments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.school_expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.share_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.storage_buckets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.storage_files ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_enrollments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_fee_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_fee_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_parents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_transport_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.study_materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teacher_availability ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teacher_awards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teacher_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teacher_pd_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teacher_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teacher_subject_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.timetable_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transport_routes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transport_staff_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transport_vehicles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_role_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_scope_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.verification_audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workshops ENABLE ROW LEVEL SECURITY;
+
+-- ============================================
+-- 6. FUNCTIONS & TRIGGERS
+-- ============================================
+
+-- Function: Handle New User (Auto-Profile Creation)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, display_name, role)
+  VALUES (
+    new.id,
+    new.email,
+    COALESCE(new.raw_user_meta_data->>'full_name', new.email),
+    COALESCE(new.raw_user_meta_data->>'role', 'Student') -- Default role
+  );
+  RETURN new;
+END;
+$$;
+
+-- Trigger: On Auth User Created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================
+-- 7. BASIC POLICIES (STARTING POINT)
+-- ============================================
+
+-- Profiles: Users can read their own profile
+CREATE POLICY "Users can view own profile"
+  ON public.profiles
+  FOR SELECT
+  USING (auth.uid() = id);
+
+-- Profiles: Users can update their own profile
+CREATE POLICY "Users can update own profile"
+  ON public.profiles
+  FOR UPDATE
+  USING (auth.uid() = id);
+
+-- School Branches: Public can view branches (required for login/signup context)
+CREATE POLICY "Public can view school branches"
+  ON public.school_branches
+  FOR SELECT
+  TO public
+  USING (true);
+
+-- Commit transaction
+COMMIT;
+
+-- End of Reset Script
