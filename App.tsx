@@ -93,7 +93,7 @@ const App: React.FC = () => {
     if (loading) return <PageLoader label="ESTABLISHING SECURE HANDSHAKE" sublabel="Synchronizing identity context with node cluster..." />;
 
     // Handle initialization errors in the UI
-    if (error && !session) {
+    if (error) {
         return (
             <div className="min-h-screen bg-[#08090a] flex items-center justify-center p-6">
                 <div className="bg-[#0d0f14] p-10 rounded-[2.5rem] border border-red-500/20 max-w-md text-center shadow-3xl">
@@ -104,7 +104,10 @@ const App: React.FC = () => {
                     </div>
                     <h2 className="text-white font-serif font-black text-2xl uppercase tracking-tight mb-4">Node Disconnect</h2>
                     <p className="text-white/40 text-sm leading-relaxed mb-8">{error}</p>
-                    <button onClick={() => window.location.reload()} className="w-full py-3 bg-white text-black font-black rounded-xl text-xs uppercase tracking-widest hover:bg-white/90 transition-all">Retry Handshake</button>
+                    <div className="flex flex-col gap-3">
+                        <button onClick={() => window.location.reload()} className="w-full py-3 bg-white text-black font-black rounded-xl text-xs uppercase tracking-widest hover:bg-white/90 transition-all">Retry Handshake</button>
+                        <button onClick={handleSignOut} className="w-full py-3 border border-white/10 text-white/60 font-black rounded-xl text-xs uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all">Emergency Sign Out</button>
+                    </div>
                 </div>
             </div>
         );
