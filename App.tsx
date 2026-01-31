@@ -27,9 +27,10 @@ const App: React.FC = () => {
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
-                .single();
+                .maybeSingle();
 
             if (profileError) throw profileError;
+            if (!data) throw new Error("Profile not found. Database requires re-registration.");
             setProfile(data as UserProfile);
         } catch (err: any) {
             setError(formatError(err));
@@ -129,9 +130,9 @@ const App: React.FC = () => {
 
         if (!profile.role || !profile.profile_completed) {
             return (
-                <OnboardingFlow 
-                    profile={profile} 
-                    onComplete={handleProfileUpdate} 
+                <OnboardingFlow
+                    profile={profile}
+                    onComplete={handleProfileUpdate}
                     onStepChange={handleProfileUpdate}
                     onboardingStep={(profile as any)?.onboarding_step}
                 />
@@ -142,36 +143,36 @@ const App: React.FC = () => {
             case BuiltInRoles.SCHOOL_ADMINISTRATION:
             case BuiltInRoles.BRANCH_ADMIN:
                 return (
-                    <SchoolAdminDashboard 
-                        profile={profile} 
-                        onSelectRole={handleSelectRole} 
+                    <SchoolAdminDashboard
+                        profile={profile}
+                        onSelectRole={handleSelectRole}
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                     />
                 );
             case BuiltInRoles.PARENT_GUARDIAN:
                 return (
-                    <ParentDashboard 
-                        profile={profile} 
-                        onSelectRole={handleSelectRole} 
+                    <ParentDashboard
+                        profile={profile}
+                        onSelectRole={handleSelectRole}
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                     />
                 );
             case BuiltInRoles.STUDENT:
                 return (
-                    <StudentDashboard 
-                        profile={profile} 
+                    <StudentDashboard
+                        profile={profile}
                         onSignOut={handleSignOut}
-                        onSwitchRole={() => {}}
+                        onSwitchRole={() => { }}
                         onSelectRole={handleSelectRole}
                     />
                 );
             case BuiltInRoles.TEACHER:
                 return (
-                    <TeacherDashboard 
-                        profile={profile} 
-                        onSwitchRole={() => {}}
+                    <TeacherDashboard
+                        profile={profile}
+                        onSwitchRole={() => { }}
                         onProfileUpdate={handleProfileUpdate}
                         onSignOut={handleSignOut}
                         onSelectRole={handleSelectRole}
@@ -179,10 +180,10 @@ const App: React.FC = () => {
                 );
             case BuiltInRoles.SUPER_ADMIN:
                 return (
-                    <MinimalAdminDashboard 
-                        profile={profile} 
-                        onSignOut={handleSignOut} 
-                        onSelectRole={handleSelectRole} 
+                    <MinimalAdminDashboard
+                        profile={profile}
+                        onSignOut={handleSignOut}
+                        onSelectRole={handleSelectRole}
                     />
                 );
             default:
