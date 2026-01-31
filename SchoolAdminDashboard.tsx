@@ -40,28 +40,14 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
     const [activeComponent, setActiveComponent] = useState('Dashboard');
     const [schoolData, setSchoolData] = useState<SchoolAdminProfileData | null>(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
+    
     const [branches, setBranches] = useState<SchoolBranch[]>([]);
     const [currentBranchId, setCurrentBranchId] = useState<number | null>(null);
     const [loadingData, setLoadingData] = useState(true);
     const [dataError, setDataError] = useState<string | null>(null);
 
-    // Discovery: Determine if the user holds Head Office (HO) credentials
-    const isHeadOfficeAdmin = useMemo(() => {
-        const isHO = profile.role === BuiltInRoles.SUPER_ADMIN ||
-            (profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !profile.branch_id);
-
-        // If assigned to a branch, check if it's the Main Node
-        if (!isHO && profile.branch_id && branches.length > 0) {
-            const myBranch = branches.find(b => b.id === profile.branch_id);
-            return myBranch?.is_main_branch === true;
-        }
-        return isHO;
-    }, [profile.role, profile.branch_id, branches]);
-
-    const isBranchAdmin = useMemo(() => {
-        return profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !isHeadOfficeAdmin;
-    }, [profile.role, isHeadOfficeAdmin]);
+    const isHeadOfficeAdmin = useMemo(() => profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION, [profile.role]);
+    const isBranchAdmin = !isHeadOfficeAdmin;
 
     const menuGroups = useMemo(() => {
         if (!profile.role) return [];
@@ -90,7 +76,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
             const [schoolRes, branchRes, latestProfileRes] = await Promise.all([
                 supabase.from('school_admin_profiles').select('*').eq('user_id', profile.id).maybeSingle(),
                 supabase.rpc('get_school_branches'),
-                supabase.from('profiles').select('*').eq('id', profile.id).maybeSingle()
+                supabase.from('profiles').select('branch_id').eq('id', profile.id).maybeSingle()
             ]);
 
             if (schoolRes.error && schoolRes.error.code !== 'PGRST116') throw schoolRes.error;
@@ -106,29 +92,24 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
                     .select('*')
                     .or(`admin_email.ilike.${profile.email},id.eq.${profileBranchId || -1}`)
                     .maybeSingle();
-
+                
                 if (identityMatch && !rawBranches.some(b => b.id === identityMatch.id)) {
                     rawBranches = [identityMatch, ...rawBranches];
                 }
             }
 
-            const sortedBranches = [...rawBranches].sort((a, b) =>
+            const sortedBranches = [...rawBranches].sort((a, b) => 
                 (b.is_main_branch ? 1 : 0) - (a.is_main_branch ? 1 : 0)
             );
-
+            
             setBranches(sortedBranches);
 
-            setBranches(sortedBranches);
-
-            // Governance: Strictly enforce branch selection based on HO status
             let targetId: number | null = null;
-            if (isHeadOfficeAdmin) {
-                // HO Admin defaults to Main Branch or First Available
-                const mainBranch = sortedBranches.find(b => b.is_main_branch);
-                targetId = currentBranchId || mainBranch?.id || sortedBranches[0]?.id || null;
-            } else {
-                // Branch Admin is LOCKED to their assigned branch
+            if (isBranchAdmin) {
                 targetId = profileBranchId || sortedBranches[0]?.id || null;
+            } else if (sortedBranches.length > 0) {
+                const mainBranch = sortedBranches.find(b => b.is_main_branch);
+                targetId = mainBranch ? mainBranch.id : sortedBranches[0].id;
             }
             setCurrentBranchId(targetId);
 

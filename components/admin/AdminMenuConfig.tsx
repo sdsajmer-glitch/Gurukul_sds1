@@ -111,9 +111,7 @@ export const getAdminMenu = (isHeadOfficeAdmin: boolean, userRole: Role): MenuGr
 
     return allGroups.map(group => {
         const filteredItems = group.items.filter(item => {
-            // Strict Filter: Only Head Office Admins (NULL branch_id) can see the Institutional Branches registry
             if (item.id === 'Branches' && !isHeadOfficeAdmin) return false;
-
             return canAccessAll || userPermissions.has(item.id);
         });
         return { ...group, items: filteredItems };

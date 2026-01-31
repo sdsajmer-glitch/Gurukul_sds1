@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { SchoolBranch, SchoolAdminProfileData } from '../types';
 import Spinner from './common/Spinner';
@@ -18,297 +18,173 @@ import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
 import { XIcon } from './icons/XIcon';
 import { BranchCreationPage } from './BranchCreationPage';
 import ConfirmationModal from './common/ConfirmationModal';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRightIcon } from './icons/ChevronRightIcon';
-import { GlobeIcon } from './icons/GlobeIcon';
-import { BranchSideDrawer } from './BranchSideDrawer';
-import { BranchForm } from './BranchForm';
-import { RefreshCwIcon } from './icons/RefreshCwIcon';
-import { LocationIcon } from './icons/LocationIcon';
-import { LockIcon } from './icons/LockIcon';
-import { BranchSyncProtocol } from './BranchSyncProtocol';
 
-// --- Types ---
-type Language = 'EN' | 'HI';
+interface BranchInvitation {
+    code: string;
+    expires_at: string;
+    is_revoked: boolean;
+}
 
-// --- Types for Handshake Identity ---
-type HandshakeStatus = 'PENDING' | 'KEY_READY' | 'SYNCHRONIZING' | 'VERIFIED' | 'FAILED';
-
-const BranchCard: React.FC<{
-    branch: SchoolBranch,
-    onEdit: () => void,
+const BranchCard: React.FC<{ 
+    branch: SchoolBranch, 
+    invitation?: BranchInvitation,
+    isGenerating: boolean,
+    onEdit: () => void, 
     onDelete: () => void,
-    onSync: () => void,
-    isHeadOfficeAdmin: boolean,
-    index: number
-}> = ({ branch, onEdit, onDelete, onSync, isHeadOfficeAdmin, index }) => {
+    onGenerate: () => void,
+    onRevoke: () => void 
+}> = ({ branch, invitation, isGenerating, onEdit, onDelete, onGenerate, onRevoke }) => {
     const [copied, setCopied] = useState(false);
     const [revealed, setRevealed] = useState(false);
-    const [handshakeStep, setHandshakeStep] = useState<HandshakeStatus>(
-        (branch.status === 'Verified' || branch.status === 'Online') ? 'VERIFIED' : 'PENDING'
-    );
 
-    const isLinked = handshakeStep === 'VERIFIED';
-    const isOnline = branch.status === 'Online';
-
-    const handleGenerateKey = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setHandshakeStep('KEY_READY');
-    };
-
-    const handleFinalizeVerification = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setHandshakeStep('SYNCHRONIZING');
-        // Actual verification happens via RoleSelection, here we show status
-        setTimeout(() => setHandshakeStep('VERIFIED'), 2000);
-    };
+    const isExpired = invitation ? new Date(invitation.expires_at) < new Date() : false;
+    const isActive = invitation && !invitation.is_revoked && !isExpired;
+    // Normalized check for 'Active' or 'Linked' status
+    const isLinked = branch.status === 'Linked' || branch.status === 'Active';
 
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (branch.access_key) {
-            navigator.clipboard.writeText(branch.access_key);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        }
+        if (!invitation) return;
+        // Fix: Use navigator.clipboard instead of undefined 'labels'
+        navigator.clipboard.writeText(invitation.code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.8, ease: "easeOut" }}
-            className={`
-                relative w-full min-h-[640px] flex flex-col justify-between 
-                p-6 rounded-[32px] overflow-hidden transition-all duration-500
-                border border-white/5 bg-[#0A0A0A] group
-                ${branch.is_main_branch ? 'shadow-[0_0_60px_-15px_rgba(var(--primary),0.3)]' : 'hover:bg-white/[0.02]'}
-            `}
-        >
-            {/* --- Background Ambience --- */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className={`absolute -top-32 -left-32 w-96 h-96 rounded-full blur-[128px] transition-opacity duration-1000 ${branch.is_main_branch ? 'bg-primary/20 opacity-100' : 'bg-white/5 opacity-0 group-hover:opacity-100'}`} />
-                <div className="absolute top-0 right-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50" />
+        <div className="group relative bg-card border border-border/60 hover:border-primary/40 rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col min-h-[460px] overflow-hidden">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-8">
+                <div className={`p-4 rounded-2xl shadow-inner transition-all duration-500 ${
+                    isLinked ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 
+                    branch.is_main_branch ? 'bg-primary text-white shadow-primary/20' : 
+                    'bg-muted text-muted-foreground'
+                }`}>
+                    <SchoolIcon className="w-8 h-8"/>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={onEdit} className="p-3 bg-muted/50 hover:bg-muted rounded-xl text-muted-foreground hover:text-primary transition-all shadow-sm"><EditIcon className="w-4 h-4" /></button>
+                    {!branch.is_main_branch && <button onClick={onDelete} className="p-3 bg-red-500/10 hover:bg-red-500 rounded-xl text-red-500 hover:text-white transition-all shadow-sm"><TrashIcon className="w-4 h-4" /></button>}
+                </div>
             </div>
 
-            {/* --- 1. Header: Meta & Status --- */}
-            <div className="relative z-10 flex flex-row items-center justify-between w-full h-12">
-                {/* ID Tag */}
-                <div className="flex flex-row items-center gap-3">
-                    <div className="w-8 h-[1px] bg-white/20" />
-                    <span className="text-[10px] font-bold tracking-[0.25em] text-white/40 uppercase">
-                        NODE 0{index + 1}
-                    </span>
+            <div className="mb-6">
+                <div className="flex items-center gap-3 mb-1">
+                    <h3 className="text-2xl font-black text-foreground tracking-tight truncate uppercase font-serif">{branch.name}</h3>
+                    {isLinked && <CheckCircleIcon className="w-5 h-5 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" />}
                 </div>
+                <p className="text-sm text-muted-foreground font-bold flex items-center gap-1.5 uppercase tracking-widest text-[10px]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30"></span>
+                    {branch.city}, {branch.state}
+                </p>
+            </div>
 
-                {/* Status & Actions Group */}
-                <div className="flex items-center gap-3">
-                    {/* Hover Actions (LOCKED for Branch Admins) */}
-                    {isHeadOfficeAdmin && (
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                                className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all"
-                                title="Edit Configuration"
-                            >
-                                <EditIcon className="w-4 h-4" />
-                            </button>
-                            {!branch.is_main_branch && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                                    className="w-9 h-9 rounded-full bg-red-500/5 border border-red-500/10 flex items-center justify-center text-red-500/40 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/20 transition-all"
-                                    title="Decommission Node"
-                                >
-                                    <TrashIcon className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
+            {/* Access Protocol Vault Area */}
+            <div className="bg-[#0c0d12] rounded-3xl p-6 border border-white/5 space-y-5 flex-grow flex flex-col justify-center shadow-inner relative overflow-hidden group/vault">
+                <div className="flex justify-between items-center relative z-10">
+                    <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Access Protocol Vault</span>
+                    {isActive ? (
+                        <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Provisioned</span>
+                    ) : isLinked ? (
+                        <span className="text-[9px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Synchronized</span>
+                    ) : (
+                        <span className="text-[9px] font-bold text-white/20 bg-white/5 px-2 py-0.5 rounded-full border border-white/5 uppercase">Idle</span>
                     )}
-
-                    {/* Status Badge */}
-                    <div className={`
-                        flex flex-row items-center gap-3 px-4 py-2 rounded-full border backdrop-blur-md
-                        ${isOnline
-                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                            : (isLinked ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-white/5 border-white/10 text-white/60')}
-                    `}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : (isLinked ? 'bg-indigo-400' : 'bg-white/40')}`} />
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-                            {isOnline ? 'Online' : (isLinked ? 'Verified' : 'Pending')}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* --- 2. Identity Block --- */}
-            <div className="relative z-10 flex flex-col items-center gap-6 py-4 flex-grow justify-center">
-                {/* Icon Container */}
-                <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-white/[0.02] border border-white/5 shadow-2xl group-hover:scale-110 transition-transform duration-700">
-                    <SchoolIcon className={`w-10 h-10 ${branch.is_main_branch ? 'text-primary' : (isOnline ? 'text-emerald-500' : 'text-white/40 group-hover:text-white')} transition-colors duration-500`} />
-                    {(branch.is_main_branch || isOnline) && <div className={`absolute inset-0 rounded-full border ${isOnline ? 'border-emerald-500/20' : 'border-primary/20'} animate-ping opacity-20`} />}
                 </div>
 
-                {/* Title Group */}
-                <div className="flex flex-col items-center gap-3 text-center">
-                    <h3 className="font-serif text-4xl text-white tracking-tight">
-                        {branch.name}
-                    </h3>
-
-                    {/* Location Badge */}
-                    <div className="flex flex-row items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
-                        <LocationIcon className="w-3 h-3 text-white/40" />
-                        <span className="text-[10px] font-medium text-white/40 uppercase tracking-widest">
-                            {branch.city}, {branch.country}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* --- 3. Telemetry Grid --- */}
-            <div className="relative z-10 grid grid-cols-3 gap-2 w-full mb-6">
-                {[
-                    { label: 'PROTOCOL', value: branch.protocol_version || 'v9.5', color: 'text-primary' },
-                    { label: 'IDENTITY', value: branch.admin_user_id ? 'VERIFIED' : 'PENDING', color: branch.admin_user_id ? 'text-emerald-500' : 'text-amber-500' },
-                    { label: 'LATENCY', value: isOnline ? '64ms' : 'INF', color: isOnline ? 'text-emerald-500' : 'text-white/40' }
-                ].map((stat, i) => (
-                    <div key={i} className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-                        <span className="text-[7px] font-bold text-white/20 uppercase tracking-[0.2em]">{stat.label}</span>
-                        <span className={`text-[9px] font-black uppercase tracking-widest ${stat.color}`}>{stat.value}</span>
-                    </div>
-                ))}
-            </div>
-
-            {/* --- 4. Security Vault (Footer) --- */}
-            <div className="relative z-10 w-full flex flex-col gap-4">
-                {/* Vault Container */}
-                <div className={`
-                    flex flex-col w-full p-2 rounded-3xl border transition-colors duration-500
-                    ${isLinked ? 'bg-emerald-950/5 border-emerald-500/10' : 'bg-white/[0.02] border-white/5'}
-                `}>
-                    {/* Vault Header */}
-                    <div className="flex flex-row items-center justify-between px-6 py-4 border-b border-white/5">
-                        <div className="flex flex-row items-center gap-3">
-                            <ShieldCheckIcon className={`w-4 h-4 ${isLinked ? 'text-emerald-500' : 'text-primary animate-pulse'}`} />
-                            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">
-                                ACCESS PROTOCOL VAULT
+                {isActive ? (
+                    <div className="space-y-4 animate-in fade-in duration-500 relative z-10">
+                        <div className="flex items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/10 shadow-2xl group/key">
+                            <span className="font-mono font-black text-primary tracking-[0.3em] text-lg select-all">
+                                {revealed ? invitation.code : '••••••••••••'}
                             </span>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => setRevealed(!revealed)} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all">
+                                    {revealed ? <EyeOffIcon className="w-4 h-4"/> : <EyeIcon className="w-4 h-4"/>}
+                                </button>
+                                <button 
+                                    onClick={handleCopy}
+                                    className={`p-2.5 rounded-xl transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-white/5 hover:bg-primary/20 text-white/40 hover:text-primary'}`}
+                                >
+                                    {copied ? <CheckCircleIcon className="w-4 h-4 animate-in zoom-in"/> : <CopyIcon className="w-4 h-4"/>}
+                                </button>
+                            </div>
                         </div>
-                        <div className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest ${isLinked ? 'text-emerald-500 bg-emerald-500/10' : 'text-white/20 bg-white/5'}`}>
-                            {isOnline ? 'LINKED' : (isLinked ? 'VERIFIED' : handshakeStep === 'PENDING' ? 'LOCKED' : 'PROVISIONING')}
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between px-1">
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                    <ClockIcon className="w-3.5 h-3.5 opacity-50"/>
+                                    Exp: {new Date(invitation.expires_at).toLocaleDateString()}
+                                </div>
+                                <button onClick={onRevoke} className="text-[9px] font-black text-red-500/60 hover:text-red-500 uppercase tracking-widest transition-colors">Revoke Key</button>
+                            </div>
                         </div>
                     </div>
-
-                    {/* Vault Content Swapper */}
-                    <div className="p-4 min-h-[140px] flex items-center justify-center">
-                        <AnimatePresence mode="wait">
-                            {handshakeStep === 'PENDING' && (
-                                <motion.div
-                                    key="pending"
-                                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
-                                    className="flex flex-col items-center w-full"
-                                >
-                                    <button
-                                        onClick={handleGenerateKey}
-                                        className="h-16 px-8 rounded-2xl bg-primary text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-[0_20px_40px_-10px_rgba(var(--primary),0.3)] hover:shadow-[0_25px_50px_-10px_rgba(var(--primary),0.4)] transition-all w-full flex items-center justify-center gap-3"
-                                    >
-                                        <KeyIcon className="w-5 h-5" />
-                                        Initialize Handshake
-                                    </button>
-                                </motion.div>
-                            )}
-
-                            {handshakeStep === 'KEY_READY' && (
-                                <motion.div
-                                    key="key-ready"
-                                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                                    className="flex flex-col w-full gap-6"
-                                >
-                                    {/* Key Display Block */}
-                                    <div className="space-y-3">
-                                        <span className="text-[8px] font-black text-white/20 uppercase tracking-widest block text-center">Encrypted Node Access Code</span>
-                                        <div className="flex flex-row items-center gap-2 p-4 rounded-2xl bg-black/60 border border-white/10 w-full shadow-inner ring-1 ring-white/5">
-                                            <code className="flex-grow text-center font-mono text-lg text-primary tracking-[0.4em] font-black">
-                                                {revealed ? branch.access_key : '••••-••••-••••'}
-                                            </code>
-                                            <div className="flex items-center gap-2">
-                                                <button onClick={handleCopy} className="p-3 rounded-xl bg-white/5 text-white/40 hover:text-white transition-all relative">
-                                                    <CopyIcon className="w-4 h-4" />
-                                                    {copied && (
-                                                        <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[7px] font-black px-2 py-1 rounded-lg uppercase tracking-widest whitespace-nowrap">COPIED</span>
-                                                    )}
-                                                </button>
-                                                <button onClick={() => setRevealed(!revealed)} className="p-3 rounded-xl bg-white/5 text-white/40 hover:text-white transition-all">
-                                                    {revealed ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Operator Guidelines (User Guide) */}
-                                    <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white/[0.03] border border-white/5 text-left">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                                            <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">Operator Directive</span>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <p className="text-[8px] text-white/30 uppercase font-black leading-relaxed tracking-wider">
-                                                1. SECURE THE <span className="text-primary">ACCESS KEY</span> DISPLAYED ABOVE.
-                                            </p>
-                                            <p className="text-[8px] text-white/30 uppercase font-black leading-relaxed tracking-wider">
-                                                2. RELAY CODE TO <span className="text-white/60">{branch.admin_email}</span> ADMINISTRATOR.
-                                            </p>
-                                            <p className="text-[8px] text-white/30 uppercase font-black leading-relaxed tracking-wider">
-                                                3. EXECUTE <span className="text-primary">VERIFICATION PROTOCOL</span> ONCE LINKED.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={handleFinalizeVerification}
-                                        className="h-14 rounded-2xl bg-white text-black text-[11px] font-black uppercase tracking-[0.2em] hover:bg-white/90 transition-all flex justify-center items-center gap-3 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)]"
-                                    >
-                                        Verify Node Connection
-                                    </button>
-                                </motion.div>
-                            )}
-
-                            {handshakeStep === 'SYNCHRONIZING' && (
-                                <motion.div
-                                    key="syncing"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    className="flex flex-col items-center gap-6 w-full py-4"
-                                >
-                                    <div className="relative w-24 h-24 flex items-center justify-center">
-                                        <Spinner size="lg" className="text-primary" />
-                                        <ShieldCheckIcon className="absolute w-8 h-8 text-primary opacity-40 animate-pulse" />
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <span className="text-[12px] font-black text-white uppercase tracking-[0.5em] animate-pulse">Synchronizing Matrix</span>
-                                        <span className="text-[8px] font-mono text-primary uppercase">Validating Handshake Protocol...</span>
-                                    </div>
-                                </motion.div>
-                            )}
-
-                            {handshakeStep === 'VERIFIED' && (
-                                <motion.div
-                                    key="verified"
-                                    initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 1, scale: 1 }}
-                                    className="flex flex-col items-center gap-4 py-4"
-                                >
-                                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.3)]">
-                                        <CheckCircleIcon className="w-8 h-8" />
-                                    </div>
-                                    <div className="flex flex-col items-center gap-1">
-                                        <p className="text-lg font-black text-white uppercase tracking-tight">{isOnline ? 'Matrix Synchronized' : 'Handshake Secured'}</p>
-                                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.4em]">{isOnline ? 'Active Neural Link Est.' : 'Encrypted Link Established'}</p>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                ) : isLinked ? (
+                    <div className="py-4 text-center space-y-5 animate-in zoom-in-95 duration-500 relative z-10">
+                        <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-[1.5rem] flex items-center justify-center mx-auto ring-8 ring-emerald-500/5 shadow-inner">
+                            <ShieldCheckIcon className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-black text-white uppercase tracking-widest">Connection Active</p>
+                            <p className="text-[10px] text-white/30 mt-1 uppercase font-bold tracking-widest">Identity Verified & Synced</p>
+                        </div>
                     </div>
+                ) : (
+                    <div className="space-y-6 py-2 relative z-10">
+                        {isExpired && (
+                            <div className="text-center p-3 bg-red-500/5 rounded-xl border border-red-500/10 mb-2 animate-in fade-in">
+                                <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest flex items-center justify-center gap-2"><AlertTriangleIcon className="w-3 h-3"/> Protocol Expired</p>
+                            </div>
+                        )}
+                        <button 
+                            onClick={onGenerate} 
+                            disabled={isGenerating}
+                            className="w-full py-5 bg-primary text-primary-foreground text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:transform-none transform active:scale-95 group/btn"
+                        >
+                            {isGenerating ? <Spinner size="sm" className="text-white"/> : <><KeyIcon className="w-5 h-5 group-hover/btn:rotate-12 transition-transform"/> Provision Access</>}
+                        </button>
+                        <p className="text-[10px] text-white/30 text-center font-bold uppercase tracking-widest px-4 leading-relaxed">Single Use Protocol • 7 Day Expiry</p>
+                    </div>
+                )}
+                {/* Decorative Matrix Background */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none font-mono text-[8px] p-2 leading-none break-all select-none">
+                    {Array.from({length: 40}).map((_,i) => <div key={i} className="mb-1">0x{Math.random().toString(16).slice(2, 24)}</div>)}
                 </div>
             </div>
 
-        </motion.div>
+            {/* Connectivity Pipeline Stepper */}
+            <div className="mt-8 pt-8 border-t border-border/50 flex flex-col gap-6">
+                <div className="flex justify-between items-end">
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em]">Connectivity Pipeline</span>
+                    <div className="flex items-center gap-2">
+                        <div className="flex -space-x-1.5">
+                            {[1, 2, 3].map(i => {
+                                const stepActive = isLinked ? true : (isActive ? i <= 2 : i <= 1);
+                                return (
+                                    <div key={i} className={`w-7 h-7 rounded-lg border-2 border-card flex items-center justify-center text-[10px] font-black transition-all duration-500 shadow-sm ${stepActive ? 'bg-primary text-white scale-110 z-10' : 'bg-muted text-muted-foreground/30'}`}>
+                                        {isLinked && i === 3 ? '✓' : i}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+                <div className="flex gap-2 h-1.5 w-full bg-muted/40 rounded-full overflow-hidden p-0.5 shadow-inner">
+                    <div className={`flex-1 rounded-full transition-all duration-700 bg-primary/80`}></div>
+                    <div className={`flex-1 rounded-full transition-all duration-700 ${isActive || isLinked ? 'bg-primary/80' : 'bg-transparent'}`}></div>
+                    <div className={`flex-1 rounded-full transition-all duration-700 ${isLinked ? 'bg-primary/80 shadow-[0_0_10px_rgba(var(--primary),0.5)]' : 'bg-transparent'}`}></div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                     <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                        <UsersIcon className="w-4 h-4 opacity-40"/>
+                        Synchronized Staff
+                    </span>
+                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">{isLinked ? 'Synchronized' : isActive ? 'Authentication' : 'Provisioning'}</span>
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -322,50 +198,64 @@ interface BranchManagementTabProps {
     schoolProfile: SchoolAdminProfileData | null;
 }
 
-interface NetworkMetrics {
-    total_nodes: number;
-    verified_links: number;
-    online_nodes: number;
-    protocol_health: number;
-    version: string;
-}
-
-export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHeadOfficeAdmin, branches, isLoading, error, onBranchUpdate, schoolProfile }) => {
-    const [drawerMode, setDrawerMode] = useState<'CREATE' | 'DETAILS' | 'EDIT' | 'SYNC' | null>(null);
-    const [selectedBranch, setSelectedBranch] = useState<SchoolBranch | null>(null);
+export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHeadOfficeAdmin, branches, onBranchUpdate, schoolProfile }) => {
+    const [invitations, setInvitations] = useState<Record<number, BranchInvitation>>({});
+    const [generatingMap, setGeneratingMap] = useState<Record<number, boolean>>({});
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [branchToEdit, setBranchToEdit] = useState<SchoolBranch | null>(null);
     const [branchToDelete, setBranchToDelete] = useState<SchoolBranch | null>(null);
-    const [language, setLanguage] = useState<Language>('EN');
-    const [metrics, setMetrics] = useState<NetworkMetrics | null>(null);
 
-    const fetchMetrics = useCallback(async () => {
-        try {
-            const { data, error } = await supabase.rpc('get_network_registry_metrics');
-            if (error) throw error;
-            setMetrics(data);
-        } catch (e) {
-            console.error('Failed to fetch network telemetry:', e);
+    const fetchInvitations = useCallback(async () => {
+        // Fetch only active, non-redeemed invitations
+        const { data, error } = await supabase
+            .from('school_branch_invitations')
+            .select('branch_id, code, expires_at, is_revoked')
+            .eq('is_revoked', false)
+            .is('redeemed_at', null);
+        
+        if (!error && data) {
+            const map: Record<number, BranchInvitation> = {};
+            data.forEach(inv => map[inv.branch_id] = inv);
+            setInvitations(map);
         }
     }, []);
 
-    const performAutoHandshake = useCallback(async () => {
-        if (!isHeadOfficeAdmin) {
-            try {
-                const { data } = await supabase.rpc('auto_handshake_on_login');
-                if (data?.success) {
-                    console.log('[Institutional Auth] Stealth handshake complete.');
-                }
-            } catch (e) {
-                console.error('[Institutional Auth] Handshake failed:', e);
-            }
-        }
-    }, [isHeadOfficeAdmin]);
+    useEffect(() => { 
+        fetchInvitations(); 
+    }, [fetchInvitations, branches]);
 
-    useEffect(() => {
-        fetchMetrics();
-        performAutoHandshake();
-        const interval = setInterval(fetchMetrics, 30000); // 30s heartbeat
-        return () => clearInterval(interval);
-    }, [fetchMetrics, performAutoHandshake]);
+    const handleGenerateKey = async (branchId: number) => {
+        setGeneratingMap(prev => ({ ...prev, [branchId]: true }));
+        try {
+            const { data, error } = await supabase.rpc('generate_branch_access_key', { 
+                p_branch_id: branchId 
+            });
+            
+            if (error) throw error;
+            
+            if (data && data.success) {
+                await fetchInvitations();
+                onBranchUpdate(); 
+            } else {
+                throw new Error(data?.message || 'Access allocation protocol error.');
+            }
+        } catch (e: any) {
+            alert(`Link Protocol Error: ${e.message}`);
+        } finally {
+            setGeneratingMap(prev => ({ ...prev, [branchId]: false }));
+        }
+    };
+
+    const handleRevokeKey = async (branchId: number) => {
+        try {
+            const { error } = await supabase.rpc('revoke_branch_access_key', { p_branch_id: branchId });
+            if (error) throw error;
+            await fetchInvitations();
+            onBranchUpdate();
+        } catch (e: any) {
+            alert(`Revocation Failure: ${e.message}`);
+        }
+    };
 
     const handleDelete = async () => {
         if (!branchToDelete) return;
@@ -374,271 +264,89 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
             if (error) throw error;
             onBranchUpdate(branchToDelete, true);
             setBranchToDelete(null);
-            fetchMetrics();
         } catch (e: any) {
             alert(`Deletion Failed: ${e.message}`);
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
-                <Spinner size="lg" className="text-primary" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 animate-pulse">Syncing Network Matrix...</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="p-12 rounded-[3rem] border border-red-500/20 bg-red-500/5 text-center space-y-4">
-                <AlertTriangleIcon className="w-12 h-12 text-red-500 mx-auto opacity-40" />
-                <p className="text-red-500 text-[11px] font-black uppercase tracking-[0.4em]">{error}</p>
-
-                {error.includes('Desync') && (
-                    <div className="bg-black/50 p-4 rounded-xl text-left max-w-xl mx-auto border border-white/10 mt-4 select-all">
-                        <p className="text-white/40 text-[10px] font-mono mb-2">CRITICAL DATABASE FIX REQUIRED. PLEASE RUN THIS IN SUPABASE SQL EDITOR:</p>
-                        <code className="block text-[10px] text-green-400 font-mono bg-black p-4 rounded-lg border border-white/5">
-                            ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS school_id UUID;<br />
-                            ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS branch_id BIGINT;<br />
-                            ALTER TABLE public.school_branches ADD COLUMN IF NOT EXISTS school_id UUID REFERENCES public.school_admin_profiles(user_id) ON DELETE CASCADE;<br />
-                            NOTIFY pgrst, 'reload schema';
-                        </code>
-                    </div>
-                )}
-
-                <button onClick={() => onBranchUpdate()} className="btn-secondary-premium h-12 px-8 border-red-500/20 text-red-500 mt-4">Retry Protocol</button>
-            </div>
-        );
-    }
+    const activeSyncs = branches.filter(b => b.status === 'Linked' || b.status === 'Active').length;
 
     return (
-        <div className="flex flex-col gap-8 pb-32 px-6 sm:px-8 max-w-[1600px] mx-auto w-full">
-
-            {/* --- 1. Master Command Header --- */}
-            <div className="relative w-full overflow-hidden rounded-[40px] border border-white/5 bg-[#050505]">
-                {/* Background FX */}
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/4" />
-
-                <div className="relative z-10 flex flex-col p-8 md:p-10 gap-10">
-                    {/* Top Row: Meta & Lang */}
-                    <div className="flex flex-row items-start justify-between w-full">
-                        <div className="flex flex-row items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-primary text-[10px] font-bold uppercase tracking-[0.3em] backdrop-blur-md">
-                            <ShieldCheckIcon className="w-4 h-4" />
-                            <span>Institutional Governance Layer</span>
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-40">
+            {/* Enterprise Header with Telemetry */}
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 bg-card border border-border p-8 md:p-10 rounded-[3rem] shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none"><ShieldCheckIcon className="w-64 h-64 text-foreground" /></div>
+                <div className="relative z-10 flex-grow">
+                    <h2 className="text-4xl md:text-5xl font-serif font-black text-foreground tracking-tight leading-none uppercase">Institutional Network</h2>
+                    <p className="text-muted-foreground mt-4 text-lg font-medium max-w-2xl leading-relaxed">Centralized telemetry for satellite campuses. All portal access keys are AES-256 encrypted, time-bound, and single-use.</p>
+                    
+                    <div className="flex flex-wrap items-center gap-8 mt-10">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.25em]">Connected Nodes</span>
+                            <span className="text-3xl font-black text-primary mt-1">{branches.length} <span className="text-sm font-bold text-muted-foreground/50 tracking-normal ml-1">/ {branches.length} Cap.</span></span>
                         </div>
-
-                        {/* Language Switcher */}
-                        <div className="flex flex-row items-center p-1 rounded-xl bg-black/40 border border-white/10">
-                            {(['EN', 'HI'] as Language[]).map((lang) => (
-                                <button
-                                    key={lang}
-                                    onClick={() => setLanguage(lang)}
-                                    className={`
-                                        px-4 py-1.5 rounded-lg text-[10px] font-bold tracking-widest uppercase transition-all
-                                        ${language === lang ? 'bg-primary text-white shadow-lg' : 'text-white/20 hover:text-white/40'}
-                                    `}
-                                >
-                                    {lang === 'EN' ? 'ENG' : 'HIN'}
-                                </button>
-                            ))}
+                        <div className="w-px h-10 bg-border hidden sm:block"></div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.25em]">Live Sync Active</span>
+                            <span className="text-3xl font-black text-emerald-500 mt-1">{activeSyncs} <span className="text-sm font-bold text-muted-foreground/50 tracking-normal ml-1">Nodes</span></span>
                         </div>
-                    </div>
-
-                    {/* Middle Row: Title & Actions */}
-                    <div className="flex flex-col xl:flex-row items-end justify-between gap-10">
-                        <div className="flex flex-col gap-3 max-w-4xl">
-                            <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif text-white tracking-tighter leading-[0.85]">
-                                {language === 'EN' ? 'INSTITUTIONAL' : 'संस्थागत'} <br />
-                                <span className="text-white/20 italic">
-                                    {language === 'EN' ? 'NETWORK REGISTRY.' : 'नेटवर्क रजिस्ट्री।'}
-                                </span>
-                            </h2>
-                            <p className="text-md md:text-lg text-white/30 max-w-2xl leading-relaxed font-light">
-                                Managed telemetry and encrypted protocol synchronization for distributed satellite campus nodes.
-                            </p>
-                        </div>
-
-                        {isHeadOfficeAdmin && (
-                            <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => { setSelectedBranch(null); setDrawerMode('SYNC'); fetchMetrics(); }}
-                                    className="h-14 px-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-500 text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-colors min-w-[200px]"
-                                >
-                                    <RefreshCwIcon className="w-4 h-4" />
-                                    <span>Sync Status</span>
-                                </motion.button>
-
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
-                                    className="h-14 px-10 rounded-2xl bg-white text-black hover:bg-white/90 text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] min-w-[240px]"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                    <span>Init New Node</span>
-                                </motion.button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Bottom Row: Stats Matrix */}
-                    <div className="w-full h-px bg-white/5" />
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        <div className="flex flex-col gap-2">
-                            <span className="text-[9px] font-bold uppercase text-white/20 tracking-[0.3em]">Active Nodes</span>
-                            <span className="text-3xl font-serif text-white">{metrics?.total_nodes || branches.length} <span className="text-lg text-white/20 italic">/ 30</span></span>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <span className="text-[9px] font-bold uppercase text-white/20 tracking-[0.3em]">Verified Links</span>
-                            <div className="flex items-center gap-3">
-                                <span className={`text-3xl font-serif ${(metrics?.verified_links || 0) > 0 ? 'text-indigo-400' : 'text-white/20'}`}>{metrics?.verified_links || 0}</span>
-                                {(metrics?.verified_links || 0) > 0 && <ShieldCheckIcon className="w-5 h-5 text-indigo-400" />}
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <span className="text-[9px] font-bold uppercase text-white/20 tracking-[0.3em]">Security Protocol</span>
-                            <span className="text-3xl font-mono text-primary tracking-tighter">256-BIT</span>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <span className="text-[9px] font-bold uppercase text-white/20 tracking-[0.3em]">System Status</span>
-                            <div className="flex items-center gap-3">
-                                <span className={`text-3xl font-serif ${metrics?.online_nodes ? 'text-emerald-500' : 'text-white/40'}`}>
-                                    {metrics?.online_nodes ? 'Online' : 'Standby'}
-                                </span>
-                                {metrics?.online_nodes > 0 && <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)]" />}
-                            </div>
+                        <div className="w-px h-10 bg-border hidden sm:block"></div>
+                         <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.25em]">Encryption Level</span>
+                            <span className="text-3xl font-black text-foreground mt-1">256-BIT <span className="text-sm font-bold text-emerald-500 tracking-normal ml-1 uppercase">Safe</span></span>
                         </div>
                     </div>
                 </div>
+                {isHeadOfficeAdmin && (
+                    <button 
+                        onClick={() => { setBranchToEdit(null); setIsCreateModalOpen(true); }}
+                        className="relative z-10 px-10 py-5 bg-primary text-white font-black text-xs uppercase tracking-[0.25em] rounded-2xl shadow-2xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-3 transform hover:-translate-y-1 active:scale-95 group"
+                    >
+                        <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300"/> Expand Network
+                    </button>
+                )}
             </div>
 
-            {/* --- 2. Registry Grid --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {branches.map((branch, idx) => (
-                    <BranchCard
-                        key={branch.id}
+                {branches.map(branch => (
+                    <BranchCard 
+                        key={branch.id} 
                         branch={branch}
-                        index={idx}
-                        isHeadOfficeAdmin={isHeadOfficeAdmin}
-                        onEdit={() => { setSelectedBranch(branch); setDrawerMode('EDIT'); }}
+                        invitation={invitations[branch.id]}
+                        isGenerating={!!generatingMap[branch.id]}
+                        onEdit={() => { setBranchToEdit(branch); setIsCreateModalOpen(true); }}
                         onDelete={() => setBranchToDelete(branch)}
-                        onSync={() => { /* Quick Sync Logic */ fetchMetrics(); }}
+                        onGenerate={() => handleGenerateKey(branch.id)}
+                        onRevoke={() => handleRevokeKey(branch.id)}
                     />
                 ))}
+            </div>
 
-                {!isHeadOfficeAdmin && branches.length === 0 && (
-                    <div className="col-span-full py-32 flex flex-col items-center justify-center gap-8 rounded-[40px] border border-white/5 bg-white/[0.01] backdrop-blur-sm">
-                        <div className="w-24 h-24 rounded-full bg-amber-500/5 border border-amber-500/10 flex items-center justify-center">
-                            <ShieldCheckIcon className="w-10 h-10 text-amber-500/20" />
+            {/* Modal for Branch Creation/Editing */}
+            {isCreateModalOpen && (
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4 animate-in fade-in" onClick={() => setIsCreateModalOpen(false)}>
+                    <div className="bg-background w-full max-w-4xl rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col max-h-[95vh]" onClick={e => e.stopPropagation()}>
+                        <div className="p-8 border-b border-border bg-card/40 flex justify-between items-center">
+                            <h3 className="text-2xl font-black text-foreground tracking-tight uppercase font-serif">{branchToEdit ? 'Configure Node' : 'Initialize New Node'}</h3>
+                            <button onClick={() => setIsCreateModalOpen(false)} className="p-2 rounded-full hover:bg-muted text-muted-foreground"><XIcon className="w-5 h-5"/></button>
                         </div>
-                        <div className="flex flex-col items-center gap-3 text-center">
-                            <p className="text-2xl font-serif text-white/40 italic tracking-tight">No branch registered for this account.</p>
-                            <div className="flex flex-col gap-1">
-                                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/10">Identity Match Failed</p>
-                                <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-white/5 leading-relaxed max-w-md">
-                                    Please contact Head Office to initialize your node access and establish a secure neural link with the registry.
-                                </p>
-                            </div>
+                        <div className="overflow-y-auto flex-grow p-4 md:p-10">
+                            <BranchCreationPage 
+                                profile={branchToEdit ? undefined : (schoolProfile?.user_id ? { id: schoolProfile.user_id } as any : undefined)} 
+                                onNext={() => { setIsCreateModalOpen(false); onBranchUpdate(); }} 
+                            />
                         </div>
                     </div>
-                )}
-
-                {isHeadOfficeAdmin && (
-                    <motion.button
-                        whileHover={{ scale: 0.99, borderColor: 'rgba(255,255,255,0.1)' }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => { setSelectedBranch(null); setDrawerMode('CREATE'); }}
-                        className="
-                            relative flex flex-col items-center justify-center gap-4 min-h-[640px] 
-                            rounded-[32px] border border-dashed border-white/5 bg-transparent 
-                            hover:bg-white/[0.01] transition-all group
-                        "
-                    >
-                        <div className="w-16 h-16 rounded-full border border-white/5 bg-white/[0.02] flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-500">
-                            <PlusIcon className="w-6 h-6 text-white/20 group-hover:text-primary transition-colors" />
-                        </div>
-                        <div className="flex flex-col items-center gap-2 text-center">
-                            <span className="text-lg font-serif text-white/20 group-hover:text-white/60 transition-colors italic">Expansion Protocol</span>
-                            <span className="text-[8px] font-bold uppercase tracking-[0.4em] text-white/10 group-hover:text-white/40">Initialize Satellite Node</span>
-                        </div>
-                    </motion.button>
-                )}
-            </div>
-
-            {/* Pagination / Footer Placeholder */}
-            <div className="flex justify-center mt-20">
-                <div className="flex items-center gap-8 py-4 px-10 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-3xl">
-                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Network Stability: 99.98%</span>
-                    <div className="w-px h-4 bg-white/10" />
-                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Protocol: {metrics?.version || 'v9.5'}</span>
                 </div>
-            </div>
+            )}
 
-            {/* --- Drawers & Modals --- */}
-            <BranchSideDrawer
-                isOpen={!!drawerMode}
-                onClose={() => { setDrawerMode(null); setSelectedBranch(null); }}
-                title={
-                    drawerMode === 'CREATE' ? 'Initialize Node' :
-                        drawerMode === 'SYNC' ? 'Handshake Protocol' :
-                            drawerMode === 'EDIT' ? 'Edit Configuration' :
-                                'Node Details'
-                }
-                subtitle="INSTITUTIONAL REGISTRY V4.0"
-            >
-                <div className="space-y-12">
-                    {drawerMode === 'SYNC' && (
-                        <BranchSyncProtocol
-                            language={language}
-                            onSyncComplete={(branch) => {
-                                onBranchUpdate(branch);
-                                setDrawerMode(null);
-                            }}
-                            onCancel={() => setDrawerMode(null)}
-                        />
-                    )}
-
-                    {drawerMode === 'DETAILS' && selectedBranch && (
-                        <div className="p-8 rounded-[2rem] border border-primary/20 bg-primary/5 flex flex-col gap-6">
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Identity Integrity</p>
-                                    <p className="text-[9px] text-white/30 font-mono">HASH: {selectedBranch.access_key}</p>
-                                </div>
-                                <div className="px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest">
-                                    Encrypted & Live
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <BranchForm
-                        branch={selectedBranch}
-                        schoolProfile={schoolProfile}
-                        readOnly={drawerMode === 'DETAILS' || !isHeadOfficeAdmin}
-                        onEditMode={() => isHeadOfficeAdmin && setDrawerMode('EDIT')}
-                        onSave={(branch) => {
-                            setDrawerMode(null);
-                            onBranchUpdate();
-                        }}
-                        onCancel={() => {
-                            if (drawerMode === 'EDIT') setDrawerMode('DETAILS');
-                            else setDrawerMode(null);
-                        }}
-                    />
-                </div>
-            </BranchSideDrawer>
-
-            <ConfirmationModal
+            <ConfirmationModal 
                 isOpen={!!branchToDelete}
                 onClose={() => setBranchToDelete(null)}
                 onConfirm={handleDelete}
                 title="Decommission Node"
-                message={`CRITICAL: You are about to permanently decommission the "${branchToDelete?.name}" node. This protocol terminates all live data pipelines and revokes all encrypted access tokens for this campus. This action is irreversible.`}
-                confirmText="Execute Decommission"
+                message={`Warning: You are about to decommission the "${branchToDelete?.name}" node. This action terminates all synchronized data pipelines for this campus.`}
+                confirmText="Confirm Decommission"
                 loading={false}
             />
         </div>

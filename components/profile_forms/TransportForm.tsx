@@ -1,19 +1,33 @@
+
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import { TransportProfileData, BusRoute } from '../../types';
-import { TransportIcon } from '../icons/TransportIcon';
-import { LocationIcon } from '../icons/LocationIcon';
-import { HashIcon } from '../icons/HashIcon';
-import { IdCardIcon } from '../icons/IdCardIcon';
-import PremiumFloatingInput from '../common/PremiumFloatingInput';
-import CustomSelect from '../common/CustomSelect';
-import Spinner from '../common/Spinner';
 
 interface FormProps {
     formData: Partial<TransportProfileData>;
     handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 }
+
+const BaseInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
+    <input 
+        {...props}
+        className="appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-ring focus:border-primary sm:text-sm bg-background text-foreground disabled:bg-muted/50 disabled:cursor-not-allowed" 
+    />
+);
+
+const BaseSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (props) => (
+    <select
+        {...props}
+        className="appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-ring focus:border-primary sm:text-sm bg-background text-foreground disabled:bg-muted/50 disabled:cursor-not-allowed"
+    >
+        {props.children}
+    </select>
+);
+
+
+const Label: React.FC<{htmlFor: string; children: React.ReactNode}> = ({htmlFor, children}) => (
+    <label htmlFor={htmlFor} className="block text-sm font-medium text-muted-foreground mb-1">{children}</label>
+);
 
 const TransportForm: React.FC<FormProps> = ({ formData, handleChange }) => {
     const [routes, setRoutes] = useState<BusRoute[]>([]);
@@ -31,69 +45,26 @@ const TransportForm: React.FC<FormProps> = ({ formData, handleChange }) => {
         fetchRoutes();
     }, []);
 
-    const handleSelectChange = (name: string) => (value: string) => {
-        handleChange({ target: { name, value } } as any);
-    };
-
     return (
-        <div className="space-y-16">
-            {/* Logistics Protocol Module */}
-            <div className="space-y-10">
-                <div className="flex items-center gap-6 mb-2">
-                    <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-400 border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
-                        <TransportIcon className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <h3 className="text-[12px] font-black text-white tracking-[0.3em] uppercase glow-text mb-1">Logistics Protocol</h3>
-                        <p className="text-[10px] text-white/30 font-bold tracking-widest">Navigation and transit telemetry synchronization.</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 bg-white/[0.02] p-10 rounded-[3rem] border border-white/5 shadow-inner">
-                    <div className="md:col-span-2">
-                        <CustomSelect
-                            label="Deployment Route"
-                            value={formData.route_id || ''}
-                            onChange={handleSelectChange('route_id')}
-                            options={routes.map(r => ({ value: r.id, label: r.name }))}
-                            placeholder={loadingRoutes ? "Synchronizing Routes..." : "Assign Active Route..."}
-                            icon={loadingRoutes ? <Spinner size="sm" /> : <LocationIcon />}
-                            searchable
-                            disabled={loadingRoutes}
-                        />
-                    </div>
-
-                    <PremiumFloatingInput
-                        label="Transit Vehicle Node"
-                        name="vehicle_details"
-                        value={formData.vehicle_details || ''}
-                        onChange={handleChange as any}
-                        placeholder="e.g., Node-05 [ABC-123]"
-                        icon={<HashIcon />}
-                    />
-
-                    <PremiumFloatingInput
-                        label="License Authorization"
-                        name="license_info"
-                        value={formData.license_info || ''}
-                        onChange={handleChange as any}
-                        placeholder="e.g., Class-A Institutional"
-                        icon={<IdCardIcon />}
-                    />
-                </div>
-            </div>
-
-            {/* Signal Strength Visualizer (Decorative) */}
-            <div className="p-8 rounded-[2rem] bg-amber-500/[0.03] border border-amber-500/10 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Transit Signal: Active</span>
-                </div>
-                <div className="flex gap-1 h-3 items-end">
-                    {[40, 70, 50, 90, 60].map((h, i) => (
-                        <div key={i} className="w-1 bg-amber-400/20 rounded-full" style={{ height: `${h}%` }} />
+        <div className="space-y-4">
+            <div>
+                <Label htmlFor="route_id">Assigned Route</Label>
+                <BaseSelect id="route_id" name="route_id" value={formData.route_id || ''} onChange={handleChange} required disabled={loadingRoutes}>
+                    <option value="" disabled>
+                        {loadingRoutes ? 'Loading routes...' : 'Select a route...'}
+                    </option>
+                    {routes.map(route => (
+                        <option key={route.id} value={route.id}>{route.name}</option>
                     ))}
-                </div>
+                </BaseSelect>
+            </div>
+            <div>
+                <Label htmlFor="vehicle_details">Vehicle Details</Label>
+                <BaseInput id="vehicle_details" name="vehicle_details" type="text" value={formData.vehicle_details || ''} onChange={handleChange} placeholder="e.g., School Bus #5, License Plate ABC-123"/>
+            </div>
+            <div>
+                <Label htmlFor="license_info">License Information</Label>
+                <BaseInput id="license_info" name="license_info" type="text" value={formData.license_info || ''} onChange={handleChange} placeholder="e.g., Commercial Driver's License"/>
             </div>
         </div>
     );

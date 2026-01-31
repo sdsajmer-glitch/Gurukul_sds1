@@ -1,13 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import PremiumFloatingInput from '../common/PremiumFloatingInput';
-import CustomSelect from '../common/CustomSelect';
 import Spinner from '../common/Spinner';
-import { UserIcon } from '../icons/UserIcon';
-import { MailIcon } from '../icons/MailIcon';
-import { PhoneIcon } from '../icons/PhoneIcon';
-import { UsersIcon } from '../icons/UsersIcon';
-import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 
 interface SecondaryParentData {
     name: string;
@@ -25,37 +17,83 @@ interface FormProps {
     primaryRelationship?: string;
 }
 
+const BaseInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
+    <input 
+        {...props}
+        className="appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-ring focus:border-primary sm:text-sm bg-background text-foreground disabled:bg-muted/50 disabled:cursor-not-allowed" 
+    />
+);
+
+const BaseSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (props) => (
+    <select
+        {...props}
+        className="appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-ring focus:border-primary sm:text-sm bg-background text-foreground disabled:bg-muted/50 disabled:cursor-not-allowed"
+    >
+        {props.children}
+    </select>
+);
+
+const Label: React.FC<{htmlFor: string; children: React.ReactNode}> = ({htmlFor, children}) => (
+    <label htmlFor={htmlFor} className="block text-sm font-medium text-muted-foreground mb-1">{children}</label>
+);
+
 const SecondaryParentForm: React.FC<FormProps> = ({ initialData, onSave, onCancel, loading, primaryRelationship }) => {
     const [formData, setFormData] = useState(initialData);
 
     const availableRelationships = useMemo(() => {
-        const all = ['Father', 'Mother', 'Guardian', 'Other'];
-        if (!primaryRelationship) return all;
-        return all.filter(r => r !== primaryRelationship);
+        if (primaryRelationship === 'Father') {
+            return ['Mother', 'Guardian', 'Other'];
+        }
+        if (primaryRelationship === 'Mother') {
+            return ['Father', 'Guardian', 'Other'];
+        }
+        // Fallback for when primary is Guardian, Other, or not set yet.
+        const allRelationships = ['Father', 'Mother', 'Guardian', 'Other'];
+        if (primaryRelationship) {
+            return allRelationships.filter(r => r !== primaryRelationship);
+        }
+        return allRelationships;
     }, [primaryRelationship]);
 
     useEffect(() => {
-        if (!initialData.name && !formData.relationship) {
+        // Auto-select relationship on mount for new entries only.
+        if (!initialData.relationship) {
             if (primaryRelationship === 'Father') {
-                setFormData(prev => ({ ...prev, relationship: 'Mother', gender: 'Female' }));
+                setFormData(prev => ({ ...prev, relationship: 'Mother' }));
             } else if (primaryRelationship === 'Mother') {
-                setFormData(prev => ({ ...prev, relationship: 'Father', gender: 'Male' }));
+                setFormData(prev => ({ ...prev, relationship: 'Father' }));
             }
         }
-    }, [initialData.name, primaryRelationship]);
+    }, [initialData.relationship, primaryRelationship]);
 
-    const handleSelectChange = (name: string) => (value: string) => {
-        setFormData(prev => {
-            const next = { ...prev, [name]: value };
-            if (name === 'relationship') {
-                if (value === 'Father') next.gender = 'Male';
-                else if (value === 'Mother') next.gender = 'Female';
-            }
-            return next;
-        });
-    };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    useEffect(() => {
+        // If the currently saved relationship is no longer valid, reset it.
+        if (formData.relationship && !availableRelationships.includes(formData.relationship)) {
+            setFormData(prev => ({ ...prev, relationship: '' }));
+        }
+    }, [availableRelationships, formData.relationship]);
+    
+    useEffect(() => {
+        const relationship = formData.relationship;
+        let newGender = '';
+
+        if (relationship === 'Father') {
+            newGender = 'Male';
+        } else if (relationship === 'Mother') {
+            newGender = 'Female';
+        }
+
+        // Only update if the gender needs to change to avoid infinite loops
+        if (newGender && formData.gender !== newGender) {
+            setFormData(prev => ({ ...prev, gender: newGender }));
+        }
+    }, [formData.relationship, formData.gender]);
+
+    const isGenderDisabled = formData.relationship === 'Father' || formData.relationship === 'Mother';
+
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -65,112 +103,51 @@ const SecondaryParentForm: React.FC<FormProps> = ({ initialData, onSave, onCance
     };
 
     return (
-        <motion.form
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            onSubmit={handleSubmit}
-            className="relative group space-y-12"
-        >
-            {/* Background Glow */}
-            <div className="absolute -inset-4 bg-primary/5 rounded-[4rem] blur-3xl opacity-0 group-hover:opacity-100 transition-all duration-1000" />
-
-            <div className="relative bg-[#0a0b10]/60 backdrop-blur-3xl p-10 rounded-[3.5rem] border border-white/5 shadow-2xl space-y-12">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20">
-                            <UsersIcon className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h3 className="text-[12px] font-black text-white tracking-[0.3em] uppercase mb-1">Affiliate Protocol</h3>
-                            <p className="text-[10px] text-white/30 font-bold tracking-widest uppercase">Secondary administrative guardian contact.</p>
-                        </div>
-                    </div>
-                    <div className="px-6 py-2 rounded-full bg-white/5 border border-white/5 text-[9px] font-black text-white/20 uppercase tracking-widest">
-                        Secondary Node
-                    </div>
+        <form onSubmit={handleSubmit} className="bg-muted/50 p-4 rounded-lg border border-border space-y-4">
+            <div>
+                <Label htmlFor="name">Full Name</Label>
+                <BaseInput id="name" name="name" type="text" value={formData.name} onChange={handleChange} required />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <Label htmlFor="relationship">Relationship to Student</Label>
+                    <BaseSelect id="relationship" name="relationship" value={formData.relationship} onChange={handleChange} required>
+                        <option value="" disabled>Select...</option>
+                        {availableRelationships.map(rel => (
+                            <option key={rel} value={rel}>{rel}</option>
+                        ))}
+                    </BaseSelect>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <div className="md:col-span-2">
-                        <PremiumFloatingInput
-                            label="Guardian Full Legal Name"
-                            name="name"
-                            type="text"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required
-                            icon={<UserIcon />}
-                        />
-                    </div>
-
-                    <CustomSelect
-                        label="Relationship Node"
-                        value={formData.relationship}
-                        onChange={handleSelectChange('relationship')}
-                        options={availableRelationships.map(r => ({ value: r, label: r }))}
-                        icon={<UsersIcon />}
-                        placeholder="Select Relationship..."
-                    />
-
-                    <CustomSelect
-                        label="Gender Matrix"
-                        value={formData.gender}
-                        onChange={handleSelectChange('gender')}
-                        disabled={formData.relationship === 'Father' || formData.relationship === 'Mother'}
-                        options={[
-                            { value: 'Male', label: 'Male' },
-                            { value: 'Female', label: 'Female' },
-                            { value: 'Other', label: 'Diverse' },
-                            { value: 'Prefer not to say', label: 'Hidden' }
-                        ]}
-                        icon={<UserIcon />}
-                        placeholder="Select Gender..."
-                    />
-
-                    <PremiumFloatingInput
-                        label="Communication Email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        icon={<MailIcon />}
-                    />
-
-                    <PremiumFloatingInput
-                        label="Mobile Terminal"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        icon={<PhoneIcon />}
-                    />
-                </div>
-
-                <div className="flex justify-end items-center gap-6 pt-6 pt-12 border-t border-white/5">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-white/60 transition-all px-8 py-4"
-                    >
-                        Abort Sync
-                    </button>
-                    <motion.button
-                        whileHover={{ scale: 1.05, y: -2 }}
-                        whileTap={{ scale: 0.95 }}
-                        type="submit"
-                        disabled={loading}
-                        className="h-[64px] px-12 rounded-2xl bg-primary text-white font-black text-[13px] uppercase tracking-[0.3em] shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] hover:shadow-[0_30px_60px_-10px_rgba(var(--primary),0.6)] flex items-center gap-4 transition-all disabled:opacity-50"
-                    >
-                        {loading ? <Spinner size="sm" /> : (
-                            <>
-                                <CheckCircleIcon className="w-5 h-5" />
-                                Validate & Seal
-                            </>
-                        )}
-                    </motion.button>
+                <div>
+                    <Label htmlFor="gender">Gender</Label>
+                    <BaseSelect id="gender" name="gender" value={formData.gender} onChange={handleChange} disabled={isGenderDisabled}>
+                        <option value="" disabled>Select Gender...</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                    </BaseSelect>
                 </div>
             </div>
-        </motion.form>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <Label htmlFor="email">Email Address</Label>
+                    <BaseInput id="email" name="email" type="email" value={formData.email} onChange={handleChange} />
+                </div>
+                <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <BaseInput id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
+                </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={onCancel} className="py-2 px-4 bg-background hover:bg-border text-foreground rounded-lg text-sm font-medium">
+                    Cancel
+                </button>
+                <button type="submit" disabled={loading} className="py-2 px-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg disabled:opacity-50 flex items-center text-sm font-medium">
+                    {loading ? <Spinner size="sm" /> : 'Save Details'}
+                </button>
+            </div>
+        </form>
     );
 };
 
