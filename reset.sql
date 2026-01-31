@@ -9,6 +9,10 @@ BEGIN;
 -- 0. EXTENSIONS & CONFIGURATION
 -- ============================================
 
+-- Drop Extensions (if applicable)
+DROP EXTENSION IF EXISTS "uuid-ossp" CASCADE;
+DROP EXTENSION IF EXISTS "pgcrypto" CASCADE;
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -19,7 +23,49 @@ SET session_replication_role = 'replica';
 -- 1. DROP EVERYTHING
 -- ============================================
 
--- Drop Tables (Alphabetical / Comprehensive list)
+-- Drop Triggers
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users CASCADE;
+DROP TRIGGER IF EXISTS trg_on_student_placement ON public.student_profiles CASCADE;
+
+-- Drop Policies
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Public can view branches" ON public.school_branches;
+
+-- Drop Functions (Comprehensive)
+DROP FUNCTION IF EXISTS public.admin_generate_bulk_invoices CASCADE;
+DROP FUNCTION IF EXISTS public.admin_quick_add_student CASCADE;
+DROP FUNCTION IF EXISTS public.admin_reconcile_student_account CASCADE;
+DROP FUNCTION IF EXISTS public.admin_sync_student_billing CASCADE;
+DROP FUNCTION IF EXISTS public.admin_update_enquiry_status CASCADE;
+DROP FUNCTION IF EXISTS public.admin_verify_enquiry_code CASCADE;
+DROP FUNCTION IF EXISTS public.complete_branch_step CASCADE;
+DROP FUNCTION IF EXISTS public.convert_enquiry_to_admission CASCADE;
+DROP FUNCTION IF EXISTS public.generate_student_ledger_for_student CASCADE;
+DROP FUNCTION IF EXISTS public.get_all_classes_for_admin CASCADE;
+DROP FUNCTION IF EXISTS public.get_all_teachers_for_admin CASCADE;
+DROP FUNCTION IF EXISTS public.get_all_users_for_admin CASCADE;
+DROP FUNCTION IF EXISTS public.get_class_roster CASCADE;
+DROP FUNCTION IF EXISTS public.get_finance_dashboard_data CASCADE;
+DROP FUNCTION IF EXISTS public.get_school_branches CASCADE;
+DROP FUNCTION IF EXISTS public.get_student_financial_node CASCADE;
+DROP FUNCTION IF EXISTS public.get_student_financial_nodes CASCADE;
+DROP FUNCTION IF EXISTS public.get_student_running_ledger CASCADE;
+DROP FUNCTION IF EXISTS public.handle_new_user CASCADE;
+DROP FUNCTION IF EXISTS public.initialize_school_admin CASCADE;
+DROP FUNCTION IF EXISTS public.reconcile_finance_registry_v2 CASCADE;
+DROP FUNCTION IF EXISTS public.switch_active_role CASCADE;
+DROP FUNCTION IF EXISTS public.trigger_on_student_placement CASCADE;
+DROP FUNCTION IF EXISTS public.update_school_plan CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_ecommerce_profile CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_parent_profile CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_student_profile CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_teacher_profile CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_transport_profile CASCADE;
+DROP FUNCTION IF EXISTS public.verify_and_link_branch_admin CASCADE;
+
+-- Drop Tables (Comprehensive list)
 DROP TABLE IF EXISTS
   academic_years,
   admin_tasks,
@@ -117,11 +163,9 @@ DROP TYPE IF EXISTS vehicle_status CASCADE;
 -- Drop Sequences
 DROP SEQUENCE IF EXISTS invoice_number_seq;
 
--- Drop Functions (Custom)
-DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
-
 -- Re-enable FK checks
 SET session_replication_role = 'origin';
+
 
 
 -- ============================================
@@ -1607,48 +1651,328 @@ END;
 $$;
 
 -- Student Financial Nodes
-CREATE OR REPLACE FUNCTION public.get_student_financial_nodes(p_branch_id bigint)
-RETURNS TABLE (
-  student_id uuid,
-  display_name text,
-  grade text,
-  class_name text,
-  total_billed numeric,
-  total_paid numeric,
-  outstanding_balance numeric,
-  integrity_score integer
-)
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  SELECT 
-    s.user_id as student_id,
-    p.display_name,
-    s.grade,
-    c.name as class_name,
-    COALESCE(fa.total_billed, 0) as total_billed,
-    COALESCE(fa.total_paid, 0) as total_paid,
-    COALESCE(fa.outstanding_balance, 0) as outstanding_balance,
-    COALESCE(fa.integrity_score, 100) as integrity_score
-  FROM public.student_profiles s
-  JOIN public.profiles p ON s.user_id = p.id
-  LEFT JOIN public.school_classes c ON s.assigned_class_id = c.id
-  LEFT JOIN public.student_fee_accounts fa ON s.user_id = fa.student_id
-  WHERE (s.branch_id = p_branch_id OR p_branch_id IS NULL);
-$$;
+-- ============================================
+-- ENHANCED FINANCE EQUILIBRIUM ENGINE
+-- ============================================
 
--- Reconcile Finance Registry
-CREATE OR REPLACE FUNCTION public.reconcile_finance_registry_v2(p_branch_id bigint)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+-- 1. Rebuilds the student's financial summary node from raw transaction data.
+CREATE OR REPLACE FUNCTION public.admin_reconcile_student_account(p_student_id UUID)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_total_billed NUMERIC;
+    v_total_paid NUMERIC;
+    v_unallocated NUMERIC;
+    v_integrity INT;
 BEGIN
-  -- Placeholder for reconciliation logic.
-  -- In a real production system, this would recalculate totals from ledgers.
-  RETURN jsonb_build_object('success', true);
+    -- Calculate Total Liability (Excluding cancelled invoices)
+    SELECT COALESCE(SUM(amount), 0) INTO v_total_billed 
+    FROM public.fee_invoices 
+    WHERE student_id = p_student_id AND status != 'Cancelled';
+
+    -- Calculate Total Settlements (Completed and Pending payments)
+    SELECT COALESCE(SUM(amount), 0) INTO v_total_paid 
+    FROM public.fee_payments 
+    WHERE student_id = p_student_id AND status IN ('Completed', 'Pending');
+
+    -- Identify Unallocated Magnitude (Payments not linked to a specific invoice)
+    SELECT COALESCE(SUM(amount), 0) INTO v_unallocated
+    FROM public.fee_payments
+    WHERE student_id = p_student_id AND invoice_id IS NULL AND status = 'Completed';
+
+    -- Calculate Integrity Score (Percentage of dues cleared)
+    v_integrity := CASE 
+        WHEN v_total_billed <= 0 AND v_total_paid > 0 THEN 100
+        WHEN v_total_billed <= 0 THEN 100
+        ELSE GREATEST(0, LEAST(100, (v_total_paid / v_total_billed * 100)::INT))
+    END;
+
+    -- Update Summary Node (Atomic Upsert)
+    INSERT INTO public.student_fee_accounts (
+        student_id, total_billed, total_paid, outstanding_balance, 
+        integrity_score, last_synced_at, unallocated_funds
+    )
+    VALUES (
+        p_student_id, v_total_billed, v_total_paid, (v_total_billed - v_total_paid), 
+        v_integrity, NOW(), v_unallocated
+    )
+    ON CONFLICT (student_id) DO UPDATE SET
+        total_billed = EXCLUDED.total_billed,
+        total_paid = EXCLUDED.total_paid,
+        outstanding_balance = EXCLUDED.outstanding_balance,
+        integrity_score = EXCLUDED.integrity_score,
+        unallocated_funds = EXCLUDED.unallocated_funds,
+        last_synced_at = NOW();
 END;
 $$;
+
+-- 2. Internal Student Provisioner
+CREATE OR REPLACE FUNCTION public.generate_student_ledger_for_student(p_student_id UUID)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_grade TEXT;
+    v_structure_id BIGINT;
+    v_component RECORD;
+    v_count INT := 0;
+BEGIN
+    SELECT grade INTO v_grade FROM public.student_profiles WHERE user_id = p_student_id;
+    IF v_grade IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Grade context not initialized.');
+    END IF;
+
+    SELECT id INTO v_structure_id 
+    FROM public.fee_structures 
+    WHERE target_grade = v_grade AND status = 'Active' AND is_default = true
+    ORDER BY created_at DESC LIMIT 1;
+
+    IF v_structure_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'No default active structure for Grade ' || v_grade);
+    END IF;
+
+    INSERT INTO public.student_fee_assignments (student_id, fee_structure_id)
+    VALUES (p_student_id, v_structure_id)
+    ON CONFLICT (student_id) DO UPDATE SET fee_structure_id = v_structure_id;
+
+    FOR v_component IN 
+        SELECT * FROM public.fee_components WHERE structure_id = v_structure_id
+    LOOP
+        IF NOT EXISTS (
+            SELECT 1 FROM public.fee_invoices 
+            WHERE student_id = p_student_id 
+            AND description ILIKE v_component.name || '%'
+            AND status != 'Cancelled'
+        ) THEN
+            INSERT INTO public.fee_invoices (
+                student_id, amount, due_date, description, status, created_at
+            ) VALUES (
+                p_student_id, v_component.amount, NOW() + INTERVAL '15 days',
+                v_component.name || ' (INITIAL_SYNC)', 'Pending', NOW()
+            );
+            v_count := v_count + 1;
+        END IF;
+    END LOOP;
+
+    PERFORM public.admin_reconcile_student_account(p_student_id);
+
+    RETURN jsonb_build_object('success', true, 'invoices_created', v_count, 'structure_id', v_structure_id);
+END;
+$$;
+
+-- 3. Frontend Handshake Protocol
+CREATE OR REPLACE FUNCTION public.admin_sync_student_billing(p_student_id UUID)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    RETURN public.generate_student_ledger_for_student(p_student_id);
+END;
+$$;
+
+-- 4. Placement Engine Trigger
+CREATE OR REPLACE FUNCTION public.trigger_on_student_placement()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (TG_OP = 'UPDATE') AND 
+       (COALESCE(NEW.grade, '') <> COALESCE(OLD.grade, '') OR 
+        COALESCE(NEW.assigned_class_id, 0) <> COALESCE(OLD.assigned_class_id, 0)) THEN
+        PERFORM public.generate_student_ledger_for_student(NEW.user_id);
+    END IF;
+    IF (TG_OP = 'INSERT') AND NEW.grade IS NOT NULL THEN
+        PERFORM public.generate_student_ledger_for_student(NEW.user_id);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trg_on_student_placement
+    AFTER INSERT OR UPDATE OF grade, assigned_class_id ON public.student_profiles
+    FOR EACH ROW EXECUTE FUNCTION public.trigger_on_student_placement();
+
+-- 5. Mass Invoicing Engine
+CREATE OR REPLACE FUNCTION public.admin_generate_bulk_invoices(
+    p_branch_id BIGINT,
+    p_class_id BIGINT,
+    p_billing_month TEXT,
+    p_billing_year TEXT,
+    p_due_date DATE
+)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_student RECORD;
+    v_component RECORD;
+    v_count INT := 0;
+BEGIN
+    FOR v_student IN 
+        SELECT sp.user_id, sfa.fee_structure_id as structure_id
+        FROM public.student_profiles sp
+        JOIN public.student_fee_assignments sfa ON sp.user_id = sfa.student_id
+        WHERE sp.assigned_class_id = p_class_id
+    LOOP
+        FOR v_component IN 
+            SELECT * FROM public.fee_components 
+            WHERE structure_id = v_student.structure_id 
+            AND frequency IN ('Monthly', 'Quarterly')
+        LOOP
+            IF NOT EXISTS (
+                SELECT 1 FROM public.fee_invoices 
+                WHERE student_id = v_student.user_id 
+                AND description ILIKE v_component.name || '%'
+                AND description ILIKE '%' || p_billing_month || ' ' || p_billing_year || '%'
+                AND status != 'Cancelled'
+            ) THEN
+                INSERT INTO public.fee_invoices (
+                    student_id, amount, due_date, description, status
+                ) VALUES (
+                    v_student.user_id, v_component.amount, p_due_date,
+                    v_component.name || ' (' || p_billing_month || ' ' || p_billing_year || ')', 'Pending'
+                );
+                v_count := v_count + 1;
+            END IF;
+        END LOOP;
+        PERFORM public.admin_reconcile_student_account(v_student.user_id);
+    END LOOP;
+    RETURN jsonb_build_object('success', true, 'invoices_generated', v_count);
+END;
+$$;
+
+-- 6. Forensic Ledger Reconstructor
+CREATE OR REPLACE FUNCTION public.get_student_running_ledger(p_student_id UUID)
+RETURNS TABLE (
+    transaction_date TIMESTAMPTZ,
+    identifier TEXT,
+    description TEXT,
+    debit NUMERIC,
+    credit NUMERIC,
+    running_balance NUMERIC,
+    protocol TEXT
+) LANGUAGE plpgsql AS $$
+BEGIN
+    PERFORM public.admin_reconcile_student_account(p_student_id);
+
+    RETURN QUERY
+    WITH raw_entries AS (
+        SELECT 
+            fi.created_at as t_date,
+            'INV-' || fi.id::TEXT as idnt,
+            fi.description as descr,
+            fi.amount as dbt,
+            0::NUMERIC as crdt,
+            CASE 
+                WHEN fi.description ILIKE '%SYSTEM_AUTO_SYNC%' THEN 'SYSTEM_SYNC'
+                ELSE 'MANUAL_DEBIT'
+            END as prot
+        FROM public.fee_invoices fi
+        WHERE fi.student_id = p_student_id AND fi.status != 'Cancelled'
+
+        UNION ALL
+
+        SELECT 
+            COALESCE(fp.payment_date, fp.created_at) as t_date,
+            'PAY-' || fp.id::TEXT as idnt,
+            'Settlement: ' || COALESCE(fp.payment_method, 'Transfer'),
+            0::NUMERIC as dbt,
+            fp.amount as crdt,
+            CASE 
+                WHEN fp.invoice_id IS NULL THEN 'UNALLOCATED_ADVANCE'
+                ELSE 'ALLOCATED_SETTLEMENT'
+            END as prot
+        FROM public.fee_payments fp
+        WHERE fp.student_id = p_student_id AND fp.status = 'Completed'
+    )
+    SELECT 
+        t_date as transaction_date,
+        idnt as identifier,
+        descr as description,
+        dbt as debit,
+        crdt as credit,
+        SUM(dbt - crdt) OVER (ORDER BY t_date ASC, idnt ASC) as running_balance,
+        prot as protocol
+    FROM raw_entries
+    ORDER BY t_date DESC, idnt DESC;
+END;
+$$;
+
+-- 7. Multi-Node Identity Handshake
+CREATE OR REPLACE FUNCTION public.get_student_financial_nodes(p_branch_id BIGINT)
+RETURNS TABLE (
+    student_id UUID,
+    display_name TEXT,
+    grade TEXT,
+    class_name TEXT,
+    total_billed NUMERIC,
+    total_paid NUMERIC,
+    outstanding_balance NUMERIC,
+    integrity_score INT,
+    profile_photo_url TEXT,
+    is_active BOOLEAN,
+    is_standby BOOLEAN,
+    unallocated_funds NUMERIC
+) LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id as student_id,
+        p.display_name,
+        sp.grade,
+        sc.name as class_name,
+        COALESCE(sfa.total_billed, 0) as total_billed,
+        COALESCE(sfa.total_paid, 0) as total_paid,
+        COALESCE(sfa.outstanding_balance, 0) as outstanding_balance,
+        COALESCE(sfa.integrity_score, 100) as integrity_score,
+        p.profile_photo_url,
+        p.is_active,
+        (NOT EXISTS (SELECT 1 FROM public.student_fee_assignments sfas WHERE sfas.student_id = p.id) 
+         OR COALESCE(sfa.unallocated_funds, 0) > 0) as is_standby,
+        COALESCE(sfa.unallocated_funds, 0) as unallocated_funds
+    FROM public.profiles p
+    JOIN public.student_profiles sp ON p.id = sp.user_id
+    LEFT JOIN public.school_classes sc ON sp.assigned_class_id = sc.id
+    LEFT JOIN public.student_fee_accounts sfa ON p.id = sfa.student_id
+    WHERE (p_branch_id IS NULL OR sp.branch_id = p_branch_id)
+    AND p.role = 'Student'
+    ORDER BY p.display_name ASC;
+END;
+$$;
+
+-- 8. Single-Node Identity Handshake
+CREATE OR REPLACE FUNCTION public.get_student_financial_node(p_student_id UUID)
+RETURNS TABLE (
+    student_id UUID,
+    display_name TEXT,
+    grade TEXT,
+    class_name TEXT,
+    total_billed NUMERIC,
+    total_paid NUMERIC,
+    outstanding_balance NUMERIC,
+    integrity_score INT,
+    profile_photo_url TEXT,
+    is_active BOOLEAN,
+    is_standby BOOLEAN,
+    unallocated_funds NUMERIC
+) LANGUAGE plpgsql AS $$
+BEGIN
+    PERFORM public.admin_reconcile_student_account(p_student_id);
+
+    RETURN QUERY
+    SELECT 
+        p.id as student_id,
+        p.display_name,
+        sp.grade,
+        sc.name as class_name,
+        COALESCE(sfa.total_billed, 0) as total_billed,
+        COALESCE(sfa.total_paid, 0) as total_paid,
+        COALESCE(sfa.outstanding_balance, 0) as outstanding_balance,
+        COALESCE(sfa.integrity_score, 100) as integrity_score,
+        p.profile_photo_url,
+        p.is_active,
+        (NOT EXISTS (SELECT 1 FROM public.student_fee_assignments sfas WHERE sfas.student_id = p_student_id) 
+         OR COALESCE(sfa.unallocated_funds, 0) > 0) as is_standby,
+        COALESCE(sfa.unallocated_funds, 0) as unallocated_funds
+    FROM public.profiles p
+    JOIN public.student_profiles sp ON p.id = sp.user_id
+    LEFT JOIN public.school_classes sc ON sp.assigned_class_id = sc.id
+    LEFT JOIN public.student_fee_accounts sfa ON p.id = sfa.student_id
+    WHERE p.id = p_student_id;
+END;
+$$;
+
 
 
 -- Get All Teachers (Admin)
@@ -1722,6 +2046,339 @@ BEGIN
   -- This typically requires an Edge Function to create the Auth User first.
   -- returning failure to prompt UI.
   RETURN jsonb_build_object('success', false, 'message', 'Feature requires Edge Function deployment for Auth provisioning.');
+END;
+$$;
+
+COMMIT;
+
+-- ===============================================================================================
+-- GURUKUL OS - CORE MISSION-CRITICAL RPC REGISTRY
+-- This file restores essential business logic functions for onboarding and role management.
+-- ===============================================================================================
+
+BEGIN;
+
+-- 1. Initialize School Administration Node
+CREATE OR REPLACE FUNCTION public.initialize_school_admin()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id uuid;
+BEGIN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Not authenticated');
+  END IF;
+
+  -- Update Role in Profile
+  UPDATE public.profiles
+  SET role = 'School Administration'
+  WHERE id = v_user_id;
+
+  -- Ensure School Admin Profile exists
+  INSERT INTO public.school_admin_profiles (user_id, onboarding_step)
+  VALUES (v_user_id, 'profile')
+  ON CONFLICT (user_id) DO NOTHING;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+
+-- 2. Complete Institutional Onboarding Step
+CREATE OR REPLACE FUNCTION public.complete_branch_step()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id uuid;
+BEGIN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Not authenticated');
+  END IF;
+
+  -- Mark Profile as Fully Operational
+  UPDATE public.profiles
+  SET profile_completed = true
+  WHERE id = v_user_id;
+
+  -- Update Internal Step Tracking
+  UPDATE public.school_admin_profiles
+  SET onboarding_step = 'completed'
+  WHERE user_id = v_user_id;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+
+-- 3. Unified Faculty Profile Synchronizer
+CREATE OR REPLACE FUNCTION public.upsert_teacher_profile(
+  p_user_id uuid,
+  p_display_name text,
+  p_email text,
+  p_phone text,
+  p_department text,
+  p_designation text,
+  p_subject text,
+  p_qualification text,
+  p_experience numeric,
+  p_doj date
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Sync Core Identity
+  UPDATE public.profiles
+  SET display_name = p_display_name,
+      phone = p_phone,
+      role = 'Teacher'
+  WHERE id = p_user_id;
+
+  -- Sync Faculty Metadata
+  INSERT INTO public.teacher_profiles (
+    user_id, subject, qualification, experience_years, date_of_joining, department, designation
+  )
+  VALUES (
+    p_user_id, p_subject, p_qualification, p_experience, p_doj, p_department, p_designation
+  )
+  ON CONFLICT (user_id) DO UPDATE SET
+    subject = EXCLUDED.subject,
+    qualification = EXCLUDED.qualification,
+    experience_years = EXCLUDED.experience_years,
+    date_of_joining = EXCLUDED.date_of_joining,
+    department = EXCLUDED.department,
+    designation = EXCLUDED.designation;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+
+-- 4. Get Institutional Branches (Telemetry)
+CREATE OR REPLACE FUNCTION public.get_school_branches()
+RETURNS SETOF public.school_branches
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT * FROM public.school_branches 
+  WHERE school_user_id = auth.uid() 
+  OR id IN (SELECT branch_id FROM public.profiles WHERE id = auth.uid());
+$$;
+
+
+-- 5. Atomic Student Profile Sync
+CREATE OR REPLACE FUNCTION public.upsert_student_profile(
+  p_user_id uuid,
+  p_display_name text,
+  p_grade text,
+  p_gender text,
+  p_dob date
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Sync Core Identity
+  UPDATE public.profiles
+  SET display_name = p_display_name,
+      role = 'Student'
+  WHERE id = p_user_id;
+
+  -- Sync Student Metadata
+  INSERT INTO public.student_profiles (
+    user_id, grade, gender, date_of_birth
+  )
+  VALUES (
+    p_user_id, p_grade, p_gender, p_dob
+  )
+  ON CONFLICT (user_id) DO UPDATE SET
+    grade = EXCLUDED.grade,
+    gender = EXCLUDED.gender,
+    date_of_birth = EXCLUDED.date_of_birth;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+
+-- 6. Atomic Parent/Guardian Sync
+CREATE OR REPLACE FUNCTION public.upsert_parent_profile(
+  p_user_id uuid,
+  p_display_name text,
+  p_relationship text,
+  p_gender text,
+  p_num_children integer,
+  p_address text,
+  p_city text,
+  p_state text,
+  p_country text,
+  p_pin_code text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Sync Core Identity
+  UPDATE public.profiles
+  SET display_name = p_display_name,
+      role = 'Parent/Guardian'
+  WHERE id = p_user_id;
+
+  -- Sync Guardian Metadata
+  INSERT INTO public.parent_profiles (
+    user_id, relationship_to_student, gender, number_of_children, address, city, state, country, pin_code
+  )
+  VALUES (
+    p_user_id, p_relationship, p_gender, p_num_children, p_address, p_city, p_state, p_country, p_pin_code
+  )
+  ON CONFLICT (user_id) DO UPDATE SET
+    relationship_to_student = EXCLUDED.relationship_to_student,
+    gender = EXCLUDED.gender,
+    number_of_children = EXCLUDED.number_of_children,
+    address = EXCLUDED.address,
+    city = EXCLUDED.city,
+    state = EXCLUDED.state,
+    country = EXCLUDED.country,
+    pin_code = EXCLUDED.pin_code;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- 7. Transport Staff Profile Sync
+CREATE OR REPLACE FUNCTION public.upsert_transport_profile(
+  p_user_id uuid,
+  p_display_name text,
+  p_vehicle_details text,
+  p_license_info text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET display_name = p_display_name,
+      role = 'Transport Staff'
+  WHERE id = p_user_id;
+
+  INSERT INTO public.transport_staff_profiles (user_id, vehicle_details, license_info)
+  VALUES (p_user_id, p_vehicle_details, p_license_info)
+  ON CONFLICT (user_id) DO UPDATE SET
+    vehicle_details = EXCLUDED.vehicle_details,
+    license_info = EXCLUDED.license_info;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+
+-- 8. Ecommerce Operator Profile Sync
+CREATE OR REPLACE FUNCTION public.upsert_ecommerce_profile(
+  p_user_id uuid,
+  p_display_name text,
+  p_store_name text,
+  p_business_type text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET display_name = p_display_name,
+      role = 'Ecommerce Operator'
+  WHERE id = p_user_id;
+
+  INSERT INTO public.ecommerce_operator_profiles (user_id, store_name, business_type)
+  VALUES (p_user_id, p_store_name, p_business_type)
+  ON CONFLICT (user_id) DO UPDATE SET
+    store_name = EXCLUDED.store_name,
+    business_type = EXCLUDED.business_type;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- 9. Get All Classes (Admin)
+CREATE OR REPLACE FUNCTION public.get_all_classes_for_admin()
+RETURNS TABLE (
+  id bigint,
+  name text,
+  grade_level text,
+  section text,
+  academic_year text,
+  branch_name text,
+  student_count bigint
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT 
+    c.id, c.name, c.grade_level, c.section, c.academic_year,
+    b.name as branch_name,
+    (SELECT COUNT(*) FROM public.student_profiles s WHERE s.assigned_class_id = c.id) as student_count
+  FROM public.school_classes c
+  LEFT JOIN public.school_branches b ON c.branch_id = b.id
+  ORDER BY c.grade_level, c.name;
+$$;
+
+
+-- 10. Get Class Roster (Teacher/Admin)
+CREATE OR REPLACE FUNCTION public.get_class_roster(p_class_id bigint)
+RETURNS TABLE (
+  student_id uuid,
+  display_name text,
+  email text,
+  roll_number text,
+  status text
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT 
+    p.id as student_id,
+    p.display_name,
+    p.email,
+    s.roll_number,
+    s.enrollment_status as status
+  FROM public.student_profiles s
+  JOIN public.profiles p ON s.user_id = p.id
+  WHERE s.assigned_class_id = p_class_id;
+$$;
+
+-- 11. Update School Plan
+CREATE OR REPLACE FUNCTION public.update_school_plan(p_plan_id text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.school_admin_profiles
+  SET 
+    plan_id = p_plan_id,
+    onboarding_step = 'branches'
+  WHERE user_id = auth.uid();
 END;
 $$;
 
