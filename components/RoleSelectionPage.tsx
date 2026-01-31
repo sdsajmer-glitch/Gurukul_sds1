@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Role, BuiltInRoles } from '../types';
-import { ROLE_ICONS, ROLE_ORDER } from '../constants';
+import { ROLE_ICONS } from '../constants';
 import { useRoles } from '../contexts/RoleContext';
 import Spinner from './common/Spinner';
 import { supabase } from '../services/supabase';
@@ -18,77 +19,169 @@ interface RoleSelectionPageProps {
     existingRole?: Role | null;
 }
 
-const ROLE_META: Record<string, { label: string; description: string; color: string; gradient: string; shadow: string }> = {
+const ROLE_META: Record<string, { label: string; description: string; color: string; gradient: string; accent: string }> = {
     [BuiltInRoles.SCHOOL_ADMINISTRATION]: {
-        label: 'School Administration',
-        description: 'Govern institutional operations, multi-branch strategy, and global oversight.',
-        color: 'text-purple-500',
-        gradient: 'from-purple-500/20 via-indigo-500/10 to-transparent',
-        shadow: 'group-hover:shadow-purple-500/20',
+        label: 'Institutional Command',
+        description: 'Multi-branch orchestration, global governance, and infrastructure control.',
+        color: 'text-purple-400',
+        gradient: 'from-purple-600/20 via-indigo-600/10 to-transparent',
+        accent: 'bg-purple-600',
     },
     [BuiltInRoles.PRINCIPAL]: {
-        label: 'Principal / Director',
-        description: 'Lead academic excellence and oversee institutional growth and faculty development.',
-        color: 'text-indigo-500',
-        gradient: 'from-indigo-500/20 via-blue-500/10 to-transparent',
-        shadow: 'group-hover:shadow-indigo-500/20',
+        label: 'Academic Leadership',
+        description: 'Director-level oversight of pedagogical excellence and faculty growth.',
+        color: 'text-indigo-400',
+        gradient: 'from-indigo-600/20 via-blue-600/10 to-transparent',
+        accent: 'bg-indigo-600',
     },
     [BuiltInRoles.HR_MANAGER]: {
-        label: 'HR Management',
-        description: 'Manage human capital, recruitment, and organizational compliance.',
-        color: 'text-cyan-500',
-        gradient: 'from-cyan-500/20 via-blue-500/10 to-transparent',
-        shadow: 'group-hover:shadow-cyan-500/20',
+        label: 'Human Capital',
+        description: 'Organizational compliance, talent acquisition, and workforce management.',
+        color: 'text-cyan-400',
+        gradient: 'from-cyan-600/20 via-blue-600/10 to-transparent',
+        accent: 'bg-cyan-600',
     },
     [BuiltInRoles.ACADEMIC_COORDINATOR]: {
-        label: 'Academic Coordinator',
-        description: 'Synchronize curriculum delivery and maintain pedagogical standards.',
-        color: 'text-amber-500',
-        gradient: 'from-amber-500/20 via-yellow-500/10 to-transparent',
-        shadow: 'group-hover:shadow-amber-500/20',
+        label: 'Curriculum Ops',
+        description: 'Pedagogical synchronization and educational standard maintenance.',
+        color: 'text-amber-400',
+        gradient: 'from-amber-600/20 via-yellow-600/10 to-transparent',
+        accent: 'bg-amber-600',
     },
     [BuiltInRoles.ACCOUNTANT]: {
-        label: 'Financial Controller',
-        description: 'Oversee fiscal health, fee collections, and institutional financial reporting.',
-        color: 'text-emerald-500',
-        gradient: 'from-emerald-500/20 via-teal-500/10 to-transparent',
-        shadow: 'group-hover:shadow-emerald-500/20',
+        label: 'Fiscal Control',
+        description: 'Comprehensive financial reporting, fee-registry, and audit cycles.',
+        color: 'text-emerald-400',
+        gradient: 'from-emerald-600/20 via-teal-600/10 to-transparent',
+        accent: 'bg-emerald-600',
     },
     [BuiltInRoles.TEACHER]: {
-        label: 'Faculty Member',
-        description: 'Empower students, manage dynamic classrooms, and curate learning experiences.',
-        color: 'text-blue-500',
-        gradient: 'from-blue-500/20 via-cyan-500/10 to-transparent',
-        shadow: 'group-hover:shadow-blue-500/20',
+        label: 'Faculty Nexus',
+        description: 'Classroom empowerment, learning curation, and student mentoring.',
+        color: 'text-blue-400',
+        gradient: 'from-blue-600/20 via-cyan-600/10 to-transparent',
+        accent: 'bg-blue-600',
     },
     [BuiltInRoles.STUDENT]: {
-        label: 'Student Portal',
-        description: 'Access your academic timeline, assignments, and digital learning resources.',
-        color: 'text-teal-500',
-        gradient: 'from-teal-500/20 via-emerald-500/10 to-transparent',
-        shadow: 'group-hover:shadow-teal-500/20',
+        label: 'Student Core',
+        description: 'Personalized learning environment, timeline access, and digital growth.',
+        color: 'text-teal-400',
+        gradient: 'from-teal-600/20 via-emerald-600/10 to-transparent',
+        accent: 'bg-teal-600',
     },
     [BuiltInRoles.PARENT_GUARDIAN]: {
-        label: 'Parent / Guardian',
-        description: 'Partner in your child\'s educational journey and manage family institutional needs.',
-        color: 'text-rose-500',
-        gradient: 'from-rose-500/20 via-pink-500/10 to-transparent',
-        shadow: 'group-hover:shadow-rose-500/20',
+        label: 'Guardian Hub',
+        description: 'Stakeholder partnership, progress tracking, and family-institutional sync.',
+        color: 'text-rose-400',
+        gradient: 'from-rose-600/20 via-pink-600/10 to-transparent',
+        accent: 'bg-rose-600',
     },
     [BuiltInRoles.TRANSPORT_STAFF]: {
-        label: 'Transport Operations',
-        description: 'Manage logistical operations, routes, and student transit safety.',
-        color: 'text-slate-500',
-        gradient: 'from-slate-500/20 via-zinc-500/10 to-transparent',
-        shadow: 'group-hover:shadow-slate-500/20',
+        label: 'Logistics Fleet',
+        description: 'Transit safety monitoring, fleet management, and route optimization.',
+        color: 'text-slate-400',
+        gradient: 'from-slate-600/20 via-zinc-600/10 to-transparent',
+        accent: 'bg-slate-600',
     },
     [BuiltInRoles.ECOMMERCE_OPERATOR]: {
-        label: 'E-commerce Operator',
-        description: 'Administer the institutional storefront, inventory, and supply chain.',
-        color: 'text-pink-500',
-        gradient: 'from-pink-500/20 via-rose-500/10 to-transparent',
-        shadow: 'group-hover:shadow-pink-500/20',
+        label: 'Inventory Control',
+        description: 'Supply chain management and institutional commerce operations.',
+        color: 'text-pink-400',
+        gradient: 'from-pink-600/20 via-rose-600/10 to-transparent',
+        accent: 'bg-pink-600',
     },
+};
+
+const BackgroundEffects = () => (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[150px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[150px] rounded-full animate-pulse [animation-delay:2s]" />
+
+        {/* Fine Mesh Grid */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+
+        {/* Animated Scanline Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent h-24 w-full animate-scanner-move pointer-events-none opacity-20" />
+    </div>
+);
+
+const RoleCard = ({ name, idx, meta, Icon, onClick, isProcessing, isFaded, isExistingMode, showAllRoles }: any) => {
+    const cardRef = useRef<HTMLButtonElement>(null);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!cardRef.current) return;
+        const rect = cardRef.current.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        setMousePos({ x: x * 20, y: y * 20 });
+    };
+
+    const handleMouseLeave = () => setMousePos({ x: 0, y: 0 });
+
+    return (
+        <motion.button
+            ref={cardRef}
+            layout
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{
+                opacity: isFaded ? 0.3 : 1,
+                y: 0,
+                rotateX: -mousePos.y,
+                rotateY: mousePos.x,
+                scale: isProcessing ? 0.98 : 1,
+                filter: isFaded ? 'blur(4px) grayscale(0.5)' : 'blur(0px) grayscale(0)'
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20, delay: idx * 0.1 }}
+            onClick={() => onClick(name)}
+            disabled={isProcessing}
+            className={`
+                group relative flex flex-col items-start text-left p-8 rounded-[2.5rem] border transition-all duration-300 overflow-hidden
+                ${isExistingMode && !showAllRoles ? 'w-full max-w-xl py-20 px-12 items-center text-center' : 'h-full min-h-[320px]'}
+                ${isProcessing ? 'border-primary shadow-[0_0_50px_rgba(139,92,246,0.3)] bg-card' : 'bg-card/30 backdrop-blur-2xl border-white/5 hover:border-white/20 hover:bg-card/50'}
+            `}
+        >
+            {/* Glossy Reflection Effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] to-transparent pointer-events-none" />
+
+            {/* Dynamic Accent Gradient */}
+            <div className={`absolute -inset-2 bg-gradient-to-br ${meta.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-2xl`} />
+
+            <div className="relative z-10 w-full flex flex-col h-full">
+                <div className={`
+                    rounded-3xl flex items-center justify-center transition-all duration-500 mb-8
+                    ${isExistingMode && !showAllRoles ? 'w-28 h-28 mx-auto mb-12 shadow-2xl' : 'w-16 h-16'}
+                    ${isProcessing ? 'bg-primary text-white scale-110' : `bg-white/5 ${meta.color} group-hover:scale-110 group-hover:rotate-6 group-hover:bg-white dark:group-hover:bg-black group-hover:text-primary border border-white/10`}
+                `}>
+                    {isProcessing ? <Spinner size={isExistingMode ? "lg" : "md"} className="text-white" /> : <Icon className={isExistingMode && !showAllRoles ? "w-12 h-12" : "w-8 h-8"} />}
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className={`font-serif font-black tracking-tight leading-none transition-colors duration-300 ${isProcessing ? 'text-primary' : 'text-white group-hover:text-primary'} ${isExistingMode && !showAllRoles ? 'text-4xl' : 'text-2xl'}`}>
+                        {isExistingMode && !showAllRoles ? `Continue as ${meta.label}` : meta.label}
+                    </h3>
+                    <p className={`text-white/40 font-medium leading-relaxed transition-colors group-hover:text-white/60 ${isExistingMode && !showAllRoles ? 'text-lg max-w-md mx-auto' : 'text-sm'}`}>
+                        {meta.description}
+                    </p>
+                </div>
+
+                {isExistingMode && !showAllRoles && !isProcessing && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-12 px-10 py-4 bg-primary text-white text-sm font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                    >
+                        Access Terminal &rarr;
+                    </motion.div>
+                )}
+            </div>
+
+            {/* Glowing Border Edge */}
+            <div className="absolute inset-0 rounded-[2.5rem] border border-white/0 group-hover:border-primary/30 transition-colors pointer-events-none" />
+        </motion.button>
+    );
 };
 
 const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onComplete, existingRole }) => {
@@ -100,22 +193,17 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
     const [joinError, setJoinError] = useState<string | null>(null);
     const [invitationCode, setInvitationCode] = useState('');
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
-
     const [showAllRoles, setShowAllRoles] = useState(false);
 
-    // Filter roles based on the metadata we have defined
-    // If existingRole is set, we ONLY show that role UNLESS showAllRoles is true.
     const displayRoles = (existingRole && !showAllRoles)
         ? [existingRole].filter(r => ROLE_META[r])
         : roles.filter(r => ROLE_META[r]);
 
     const handleRoleClick = (role: Role) => {
         if (selectedRole || createLoading || joinLoading) return;
-
         setSelectedRole(role);
 
         if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-            // Check if we are resuming (existing role) -> Skip modal, just proceed
             if (existingRole === BuiltInRoles.SCHOOL_ADMINISTRATION) {
                 Promise.resolve(onRoleSelect(role)).catch(() => setSelectedRole(null));
             } else {
@@ -143,239 +231,205 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
     const handleJoinBranch = async (e: React.MouseEvent) => {
         e.preventDefault();
         const code = invitationCode.trim().toUpperCase();
-
         if (code.length < 8 || joinLoading) return;
-
         setJoinLoading(true);
         setJoinError(null);
 
         try {
-            const { data, error } = await supabase.rpc('verify_and_link_branch_admin', {
-                p_invitation_code: code
-            });
-
+            const { data, error } = await supabase.rpc('verify_and_link_branch_admin', { p_invitation_code: code });
             if (error) throw error;
 
             if (data.success) {
                 setJoinSuccess(true);
                 setInvitationCode('');
-                setTimeout(() => {
-                    onComplete();
-                }, 1500);
+                setTimeout(() => onComplete(), 1500);
             } else {
-                setJoinError(data.message || 'The Access Key provided is invalid, expired, or not authorized for this identity.');
+                setJoinError(data.message || 'Key invalid or expired.');
                 setJoinLoading(false);
             }
         } catch (err: any) {
-            setJoinError(err.message || "An unexpected error occurred during institutional verification.");
+            setJoinError(err.message || "Verification failed.");
             setJoinLoading(false);
         }
     };
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Spinner size="lg" />
-                <p className="text-xs font-black uppercase text-muted-foreground animate-pulse tracking-[0.2em]">Recalling Identity Matrix</p>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
+                    <Spinner size="lg" className="relative z-10" />
+                </div>
+                <p className="text-[10px] font-black uppercase text-white/40 animate-pulse tracking-[0.4em]">Establishing Neural Sync</p>
             </div>
         );
     }
 
     return (
-        <div className="w-full max-w-[1600px] mx-auto py-12 px-6 sm:px-8 lg:px-12 flex flex-col justify-center min-h-[80vh]">
+        <div className="relative w-full min-h-screen py-24 px-6 sm:px-8 lg:px-12 flex flex-col justify-center overflow-hidden bg-[#08090a]">
+            <BackgroundEffects />
 
-            <header className="text-center mb-20 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-                <div className="inline-flex items-center justify-center p-3 bg-muted/30 rounded-full mb-6 ring-1 ring-white/10 backdrop-blur-md">
-                    <div className={`w-2 h-2 rounded-full mr-3 ${existingRole ? 'bg-emerald-500 animate-pulse' : 'bg-primary animate-pulse'}`}></div>
-                    <span className="text-[10px] font-black tracking-[0.3em] text-muted-foreground uppercase">
-                        {existingRole ? 'Identity Verified' : 'System Authorization'}
-                    </span>
-                </div>
-                <h1 className="text-5xl md:text-7xl font-serif font-black text-foreground tracking-tight mb-6 leading-tight">
-                    {existingRole ? 'Welcome Back' : 'Select Your Portal'}
-                </h1>
-                <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed opacity-80 mb-8">
-                    {existingRole
-                        ? 'Your secure session is ready. Resume your work within the institutional network.'
-                        : 'Choose your access level to initialize your personalized workspace environment.'
-                    }
-                </p>
-
-
-                {existingRole && !showAllRoles && (
-                    <button
-                        onClick={() => setShowAllRoles(true)}
-                        className="text-xs font-bold text-muted-foreground hover:text-white uppercase tracking-widest border-b border-white/20 hover:border-white transition-all pb-1 animate-in fade-in slide-in-from-top-2"
+            <div className="w-full max-w-[1700px] mx-auto relative z-10">
+                <header className="text-center mb-24 space-y-8">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="inline-flex items-center justify-center px-6 py-2.5 bg-white/5 rounded-full border border-white/10 backdrop-blur-xl shadow-2xl"
                     >
-                        Not you? Switch Identity
-                    </button>
-                )}
-            </header>
+                        <div className={`w-2 h-2 rounded-full mr-3 ${existingRole ? 'bg-emerald-500 animate-pulse' : 'bg-primary'}`}></div>
+                        <span className="text-[9px] font-black tracking-[0.4em] text-white/50 uppercase">
+                            {existingRole ? 'Identity Verified' : 'Root Security Protocol'}
+                        </span>
+                    </motion.div>
 
-            <div className={`
-                w-full transition-all duration-700 ease-out
-                ${existingRole
-                    ? 'flex justify-center items-center perspective-1000'
-                    : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6'
-                }
-            `}>
-                {displayRoles.map((name, idx) => {
-                    const meta = ROLE_META[name];
-                    const Icon = ROLE_ICONS[name] || UsersIcon;
-                    const isProcessing = selectedRole === name;
-                    const isFaded = selectedRole && selectedRole !== name;
-
-                    return (
-                        <button
-                            key={name}
-                            onClick={() => handleRoleClick(name)}
-                            disabled={!!selectedRole || createLoading}
-                            aria-pressed={isProcessing}
-                            style={{ animationDelay: `${idx * 100}ms` }}
-                            className={`
-                                group relative flex flex-col items-start text-left p-8 rounded-[2rem] border transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden animate-in fade-in slide-in-from-bottom-12 fill-mode-backwards
-                                ${existingRole ? 'w-full max-w-lg ring-1 ring-white/10 bg-gradient-to-b from-white/[0.08] to-transparent shadow-2xl hover:scale-105 hover:shadow-primary/20 items-center text-center py-16' : ''}
-                                ${isProcessing
-                                    ? 'border-primary ring-2 ring-primary/20 bg-card scale-[0.98] shadow-2xl z-10'
-                                    : isFaded
-                                        ? 'opacity-30 scale-95 grayscale blur-sm'
-                                        : 'bg-card/40 backdrop-blur-md border-white/5 hover:bg-card/80 hover:border-white/10 hover:shadow-2xl hover:-translate-y-1'
-                                }
-                            `}
+                    <div className="space-y-4">
+                        <motion.h1
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            className="text-6xl md:text-8xl font-serif font-black text-white tracking-tighter leading-[0.9]"
                         >
-                            {/* Dynamic Background Gradient */}
-                            <div className={`absolute inset-0 bg-gradient-to-br ${meta.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
+                            {existingRole && !showAllRoles ? 'Welcome Back' : 'Select Portal'}
+                        </motion.h1>
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.6 }}
+                            transition={{ delay: 0.4 }}
+                            className="text-lg md:text-xl text-white max-w-2xl mx-auto font-medium leading-relaxed italic"
+                        >
+                            {existingRole && !showAllRoles
+                                ? 'Authorization protocols cleared. Resume your institutional session.'
+                                : 'Choose an access level to initialize your specialized workspace cluster.'
+                            }
+                        </motion.p>
+                    </div>
 
-                            <div className="relative z-10 w-full flex flex-col h-full">
-                                <div className={`
-                                    rounded-2xl flex items-center justify-center mb-6 shadow-inner transition-all duration-500 group-hover:scale-110 group-hover:rotate-3
-                                    ${existingRole ? 'w-24 h-24 mb-10 mx-auto' : 'w-14 h-14'}
-                                    ${isProcessing ? 'bg-primary text-white shadow-lg scale-110' : `bg-muted/50 ${meta.color} group-hover:bg-white dark:group-hover:bg-black group-hover:shadow-xl`}
-                                `}>
-                                    {isProcessing ? <Spinner size={existingRole ? "md" : "sm"} className="text-white" /> : <Icon className={existingRole ? "w-10 h-10" : "w-7 h-7"} />}
-                                </div>
+                    {existingRole && !showAllRoles && (
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            onClick={() => setShowAllRoles(true)}
+                            className="inline-flex items-center gap-2 text-[10px] font-black text-white/30 hover:text-white uppercase tracking-[0.3em] border-b border-white/10 hover:border-primary transition-all pb-2 cursor-pointer pt-4"
+                        >
+                            Switch Operational Identity <span className="text-primary">&rarr;</span>
+                        </motion.button>
+                    )}
+                </header>
 
-                                <div className="space-y-3 mt-auto">
-                                    <h3 className={`font-black tracking-tight transition-colors duration-300 ${isProcessing ? 'text-primary' : 'text-foreground group-hover:text-primary'} ${existingRole ? 'text-3xl' : 'text-xl'}`}>
-                                        {existingRole ? `Continue as ${meta.label}` : meta.label}
-                                    </h3>
-                                    <p className={`text-muted-foreground font-medium leading-relaxed transition-colors group-hover:text-foreground/80 ${existingRole ? 'text-base max-w-sm mx-auto' : 'text-xs'}`}>
-                                        {meta.description}
-                                    </p>
-                                </div>
+                <div className={`
+                    w-full transition-all duration-1000
+                    ${existingRole && !showAllRoles
+                        ? 'flex justify-center perspective-1000'
+                        : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8'
+                    }
+                `}>
+                    <AnimatePresence mode="popLayout">
+                        {displayRoles.map((name, idx) => {
+                            const meta = ROLE_META[name];
+                            const Icon = ROLE_ICONS[name] || UsersIcon;
+                            const isProcessing = selectedRole === name;
+                            const isFaded = selectedRole && selectedRole !== name;
 
-                                {existingRole && (
-                                    <div className="mt-10 px-8 py-3 bg-primary text-white text-xs font-bold uppercase tracking-widest rounded-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 shadow-lg shadow-primary/25">
-                                        Access Portal &rarr;
-                                    </div>
-                                )}
-                            </div>
-                        </button>
-                    );
-                })}
+                            return (
+                                <RoleCard
+                                    key={name}
+                                    name={name}
+                                    idx={idx}
+                                    meta={meta}
+                                    Icon={Icon}
+                                    onClick={handleRoleClick}
+                                    isProcessing={isProcessing}
+                                    isFaded={isFaded}
+                                    isExistingMode={existingRole}
+                                    showAllRoles={showAllRoles}
+                                />
+                            );
+                        })}
+                    </AnimatePresence>
+                </div>
             </div>
 
             {isSchoolAdminModalOpen && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex justify-center items-center z-[100] p-4 animate-in fade-in duration-500" onClick={() => !createLoading && !joinLoading && setIsSchoolAdminModalOpen(false)}>
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-[40px] flex justify-center items-center z-[200] p-6 animate-in fade-in duration-700" onClick={() => !createLoading && !joinLoading && setIsSchoolAdminModalOpen(false)}>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="bg-[#0c0d12] w-full max-w-6xl rounded-[4rem] shadow-3xl border border-white/[0.08] overflow-hidden relative"
+                        onClick={e => e.stopPropagation()}
+                    >
 
-                    <div className="bg-[#0c0e12] w-full max-w-5xl rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden relative animate-in zoom-in-95 duration-500" onClick={e => e.stopPropagation()}>
-
-                        {/* Close Button */}
-                        <button
-                            onClick={() => setIsSchoolAdminModalOpen(false)}
-                            className="absolute top-8 right-8 z-20 p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all"
-                        >
-                            <XIcon className="w-6 h-6" />
+                        <button onClick={() => setIsSchoolAdminModalOpen(false)} className="absolute top-10 right-10 z-30 p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/30 hover:text-white transition-all">
+                            <XIcon className="w-8 h-8" />
                         </button>
 
-                        <div className="flex flex-col md:flex-row h-full min-h-[600px]">
-
-                            {/* Left Side: Create New */}
+                        <div className="flex flex-col lg:flex-row min-h-[700px]">
                             <button
                                 onClick={handleCreateNewSchool}
                                 disabled={createLoading || joinLoading}
-                                className="flex-1 p-16 text-center group relative overflow-hidden transition-all hover:bg-gradient-to-br hover:from-primary/10 hover:to-transparent disabled:opacity-50"
+                                className="flex-1 p-20 text-center group relative overflow-hidden transition-all hover:bg-primary/5 disabled:opacity-50"
                             >
-                                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-
-                                <div className="relative z-10 flex flex-col items-center justify-center h-full">
-                                    <div className="w-28 h-28 bg-[#1a1d24] rounded-[2rem] flex items-center justify-center mb-10 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-2xl border border-white/5 group-hover:border-primary/30 group-hover:shadow-primary/20">
-                                        {createLoading ? <Spinner size="lg" className="text-primary" /> : <SchoolIcon className="w-14 h-14 text-primary" />}
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                                <div className="relative z-10 flex flex-col items-center justify-center h-full space-y-10">
+                                    <div className="w-32 h-32 bg-[#1a1d24] rounded-[2.5rem] flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 shadow-2xl border border-white/5">
+                                        {createLoading ? <Spinner size="lg" className="text-primary" /> : <SchoolIcon className="w-16 h-16 text-primary" />}
                                     </div>
-                                    <h3 className="text-4xl font-serif font-black text-white tracking-tight mb-6">Establish New School</h3>
-                                    <p className="text-white/40 max-w-sm mx-auto text-base font-medium leading-relaxed mb-12">
-                                        Initialize a Master Node for your institution. Configure global settings, academic structures, and branch policies.
-                                    </p>
-                                    <div className={`inline-flex items-center gap-3 px-12 py-5 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-xl transition-all ${createLoading ? 'bg-primary/70 animate-pulse cursor-wait' : 'bg-primary hover:scale-105 shadow-primary/25 ring-1 ring-white/20'}`}>
-                                        {createLoading ? 'Provisioning Master Node...' : 'Initialize Infrastructure'}
+                                    <div className="space-y-4">
+                                        <h3 className="text-5xl font-serif font-black text-white tracking-tighter">Genesis Initialization</h3>
+                                        <p className="text-white/40 max-w-md mx-auto text-lg font-medium leading-relaxed italic">Provision a new institutional Master Node. Configure global policies and academic hierarchy.</p>
+                                    </div>
+                                    <div className={`px-14 py-6 rounded-3xl text-white text-[10px] font-black uppercase tracking-[0.4em] shadow-2xl transition-all ${createLoading ? 'bg-primary/70 animate-pulse' : 'bg-primary hover:shadow-primary/40 ring-1 ring-white/10 hover:scale-105'}`}>
+                                        {createLoading ? 'Provisioning...' : 'Initialize Master Node'}
                                     </div>
                                 </div>
                             </button>
 
-                            {/* Divider */}
-                            <div className="relative w-px bg-gradient-to-b from-transparent via-white/10 to-transparent self-stretch hidden md:block" />
-                            <div className="relative h-px bg-gradient-to-r from-transparent via-white/10 to-transparent self-stretch md:hidden" />
+                            <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
 
-                            {/* Right Side: Join Existing */}
-                            <div className="flex-1 p-16 text-center bg-[#08090a]/50 relative flex flex-col justify-center">
-                                <div className="flex flex-col items-center">
-                                    <div className="w-28 h-28 bg-[#1a1d24] rounded-full flex items-center justify-center mb-10 shadow-2xl border border-white/5">
-                                        {joinSuccess ? <CheckCircleIcon className="w-14 h-14 text-emerald-500 animate-in zoom-in" /> : <ShieldCheckIcon className="w-14 h-14 text-indigo-500" />}
+                            <div className="flex-1 p-20 text-center bg-black/40 relative flex flex-col justify-center">
+                                <div className="space-y-12 flex flex-col items-center">
+                                    <div className="w-32 h-32 bg-[#1a1d24] rounded-full flex items-center justify-center shadow-2xl border border-white/5">
+                                        {joinSuccess ? <CheckCircleIcon className="w-16 h-16 text-emerald-500" /> : <ShieldCheckIcon className="w-16 h-16 text-indigo-400" />}
                                     </div>
-                                    <h3 className="text-4xl font-serif font-black text-white tracking-tight mb-6">Join Existing Network</h3>
 
-                                    {joinSuccess ? (
-                                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                            <p className="text-emerald-500 font-bold text-xl mb-3 tracking-wide">Handshake Secured</p>
-                                            <p className="text-white/40 text-sm font-medium leading-relaxed max-w-xs mx-auto">
-                                                Linking your identity securely to the branch node. Initializing workstation environment...
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <p className="text-white/40 max-w-sm mx-auto text-sm font-medium leading-relaxed mb-12">
-                                                Enter your unique <span className="text-indigo-400 font-bold">Branch Access Key</span> provided by the administration.
-                                            </p>
+                                    <div className="space-y-4">
+                                        <h3 className="text-5xl font-serif font-black text-white tracking-tighter">Network Link</h3>
+                                        {joinSuccess ? (
+                                            <p className="text-emerald-500 font-black text-xl tracking-[0.2em] uppercase">Handshake Complete</p>
+                                        ) : (
+                                            <p className="text-white/40 max-w-md mx-auto text-lg font-medium leading-relaxed italic">Enter your unique <span className="text-indigo-400 font-bold">Protocol Key</span> to link your identity to an existing branch.</p>
+                                        )}
+                                    </div>
 
-                                            <div className="w-full max-w-sm space-y-6">
-                                                <div className="relative group">
-                                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
-                                                    <input
-                                                        type="text"
-                                                        value={invitationCode}
-                                                        onChange={e => setInvitationCode(e.target.value.toUpperCase())}
-                                                        disabled={joinLoading}
-                                                        placeholder="ENTER ACCESS KEY"
-                                                        className="relative w-full px-8 py-5 bg-[#0c0e12] border-2 border-white/5 rounded-2xl text-center font-mono font-black tracking-[0.2em] text-xl text-white focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all disabled:opacity-50 placeholder:text-white/10 placeholder:tracking-normal placeholder:font-sans placeholder:text-sm shadow-inner"
-                                                    />
-                                                </div>
-
-                                                <button
-                                                    onClick={handleJoinBranch}
-                                                    disabled={joinLoading || invitationCode.length < 8}
-                                                    className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/25 hover:bg-indigo-500 transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95 disabled:grayscale hover:shadow-indigo-500/40"
-                                                >
-                                                    {joinLoading ? <Spinner size="sm" className="text-white" /> : 'Verify & Access Node'}
-                                                </button>
-
-                                                <div className="flex flex-col gap-4 mt-2">
-                                                    {joinError && (
-                                                        <p className="text-red-400 text-[10px] font-black uppercase tracking-wider animate-in shake duration-300 bg-red-500/5 p-3 rounded-xl border border-red-500/10">
-                                                            {joinError}
-                                                        </p>
-                                                    )}
-                                                    <div className="flex items-center justify-center gap-2 text-white/20 group/help cursor-help hover:text-indigo-400 transition-colors">
-                                                        <InfoIcon className="w-4 h-4" />
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest">Access protocol help</span>
-                                                    </div>
-                                                </div>
+                                    {!joinSuccess && (
+                                        <div className="w-full max-w-md space-y-8">
+                                            <div className="relative group">
+                                                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-indigo-500 rounded-[2rem] blur opacity-10 group-hover:opacity-30 transition duration-1000"></div>
+                                                <input
+                                                    type="text"
+                                                    value={invitationCode}
+                                                    onChange={e => setInvitationCode(e.target.value.toUpperCase())}
+                                                    disabled={joinLoading}
+                                                    placeholder="VERIFY ACCESS KEY"
+                                                    className="relative w-full px-10 py-7 bg-[#0c0d12] border-2 border-white/5 rounded-[2rem] text-center font-mono font-black tracking-[0.3em] text-2xl text-white outline-none transition-all focus:border-primary/50 placeholder:text-white/5 placeholder:tracking-widest"
+                                                />
                                             </div>
-                                        </>
+
+                                            <button
+                                                onClick={handleJoinBranch}
+                                                disabled={joinLoading || invitationCode.length < 8}
+                                                className="w-full py-6 bg-white text-black rounded-3xl font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl hover:bg-white/90 transition-all disabled:opacity-20 active:scale-95"
+                                            >
+                                                {joinLoading ? <Spinner size="sm" className="text-black" /> : 'Authorize Connection'}
+                                            </button>
+
+                                            {joinError && (
+                                                <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-red-500 text-[10px] font-black uppercase tracking-[0.2em]">{joinError}</motion.p>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             )}
         </div>
