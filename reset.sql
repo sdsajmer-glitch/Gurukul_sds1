@@ -2445,4 +2445,68 @@ BEGIN
 END;
 $$;
 
+-- 12. Get My Children Profiles (Parent Dashboard)
+CREATE OR REPLACE FUNCTION public.get_my_children_profiles()
+RETURNS TABLE (
+  id uuid,
+  applicant_name text,
+  parent_name text,
+  parent_email text,
+  parent_phone text,
+  grade text,
+  status text,
+  date_of_birth date,
+  gender text,
+  profile_photo_url text,
+  branch_id integer,
+  submitted_at timestamptz,
+  student_user_id uuid
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT 
+    a.id,
+    a.applicant_name,
+    a.parent_name,
+    a.parent_email,
+    a.parent_phone,
+    a.grade,
+    a.status,
+    a.date_of_birth,
+    a.gender,
+    a.profile_photo_url,
+    a.branch_id,
+    a.submitted_at,
+    a.student_user_id
+  FROM public.admissions a
+  WHERE a.parent_id = auth.uid()
+     OR a.parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid())
+  ORDER BY a.submitted_at DESC;
+$$;
+
+-- 13. Parent Switch Student View
+CREATE OR REPLACE FUNCTION public.parent_switch_student_view(p_new_admission_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_admission record;
+BEGIN
+  SELECT * INTO v_admission
+  FROM public.admissions
+  WHERE id = p_new_admission_id
+    AND (parent_id = auth.uid() OR parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid()));
+  
+  IF v_admission IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Admission not found or access denied');
+  END IF;
+  
+  RETURN jsonb_build_object('success', true, 'admission_id', p_new_admission_id);
+END;
+$$;
+
 COMMIT;

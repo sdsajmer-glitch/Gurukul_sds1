@@ -271,3 +271,74 @@ WHERE NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = au.id)
 ON CONFLICT (id) DO NOTHING;
 
 SELECT 'COMPLETE: All fixes applied, missing profiles created!' as final_status;
+
+-- ============================================
+-- MISSING FUNCTION: get_my_children_profiles
+-- This function returns all children (admissions) linked to the current parent
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.get_my_children_profiles()
+RETURNS TABLE (
+  id uuid,
+  applicant_name text,
+  parent_name text,
+  parent_email text,
+  parent_phone text,
+  grade text,
+  status text,
+  date_of_birth date,
+  gender text,
+  profile_photo_url text,
+  branch_id integer,
+  submitted_at timestamptz,
+  student_user_id uuid
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT 
+    a.id,
+    a.applicant_name,
+    a.parent_name,
+    a.parent_email,
+    a.parent_phone,
+    a.grade,
+    a.status,
+    a.date_of_birth,
+    a.gender,
+    a.profile_photo_url,
+    a.branch_id,
+    a.submitted_at,
+    a.student_user_id
+  FROM public.admissions a
+  WHERE a.parent_id = auth.uid()
+     OR a.parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid())
+  ORDER BY a.submitted_at DESC;
+$$;
+
+-- Also add parent_switch_student_view function if missing
+CREATE OR REPLACE FUNCTION public.parent_switch_student_view(p_new_admission_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_admission record;
+BEGIN
+  -- Verify the admission belongs to this parent
+  SELECT * INTO v_admission
+  FROM public.admissions
+  WHERE id = p_new_admission_id
+    AND (parent_id = auth.uid() OR parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid()));
+  
+  IF v_admission IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Admission not found or access denied');
+  END IF;
+  
+  RETURN jsonb_build_object('success', true, 'admission_id', p_new_admission_id);
+END;
+$$;
+
+SELECT 'SUCCESS: All functions deployed including get_my_children_profiles!' as status;
