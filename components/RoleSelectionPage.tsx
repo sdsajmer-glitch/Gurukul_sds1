@@ -186,12 +186,6 @@ const RoleCard = ({ name, idx, meta, Icon, onClick, isProcessing, isFaded, isExi
 
 const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onComplete, existingRole }) => {
     const { roles, loading } = useRoles();
-    const [isSchoolAdminModalOpen, setIsSchoolAdminModalOpen] = useState(false);
-    const [joinLoading, setJoinLoading] = useState(false);
-    const [joinSuccess, setJoinSuccess] = useState(false);
-    const [createLoading, setCreateLoading] = useState(false);
-    const [joinError, setJoinError] = useState<string | null>(null);
-    const [invitationCode, setInvitationCode] = useState('');
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
     const [showAllRoles, setShowAllRoles] = useState(false);
 
@@ -200,57 +194,9 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
         : roles.filter(r => ROLE_META[r]);
 
     const handleRoleClick = (role: Role) => {
-        if (selectedRole || createLoading || joinLoading) return;
+        if (selectedRole) return;
         setSelectedRole(role);
-
-        if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-            if (existingRole === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-                Promise.resolve(onRoleSelect(role)).catch(() => setSelectedRole(null));
-            } else {
-                setTimeout(() => {
-                    setIsSchoolAdminModalOpen(true);
-                    setSelectedRole(null);
-                }, 300);
-            }
-        } else {
-            Promise.resolve(onRoleSelect(role)).catch(() => setSelectedRole(null));
-        }
-    };
-
-    const handleCreateNewSchool = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        if (createLoading) return;
-        setCreateLoading(true);
-        try {
-            await onRoleSelect(BuiltInRoles.SCHOOL_ADMINISTRATION);
-        } catch (err) {
-            setCreateLoading(false);
-        }
-    }
-
-    const handleJoinBranch = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        const code = invitationCode.trim().toUpperCase();
-        if (code.length < 8 || joinLoading) return;
-        setJoinLoading(true);
-        setJoinError(null);
-
-        try {
-            const { data, error } = await supabase.rpc('verify_and_link_branch_admin', { p_invitation_code: code });
-            if (error) throw error;
-
-            if (data.success) {
-                setJoinSuccess(true);
-                setInvitationCode('');
-                setTimeout(() => onComplete(), 1500);
-            } else {
-                setJoinError(data.message || 'Key invalid or expired.');
-                setJoinLoading(false);
-            }
-        } catch (err: any) {
-            setJoinError(err.message || "Verification failed.");
-            setJoinLoading(false);
-        }
+        Promise.resolve(onRoleSelect(role)).catch(() => setSelectedRole(null));
     };
 
     if (loading) {
@@ -348,90 +294,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                 </div>
             </div>
 
-            {isSchoolAdminModalOpen && (
-                <div className="fixed inset-0 bg-black/95 backdrop-blur-[40px] flex justify-center items-center z-[200] p-6 animate-in fade-in duration-700" onClick={() => !createLoading && !joinLoading && setIsSchoolAdminModalOpen(false)}>
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="bg-[#0c0d12] w-full max-w-6xl rounded-[4rem] shadow-3xl border border-white/[0.08] overflow-hidden relative"
-                        onClick={e => e.stopPropagation()}
-                    >
 
-                        <button onClick={() => setIsSchoolAdminModalOpen(false)} className="absolute top-10 right-10 z-30 p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/30 hover:text-white transition-all">
-                            <XIcon className="w-8 h-8" />
-                        </button>
-
-                        <div className="flex flex-col lg:flex-row min-h-[700px]">
-                            <button
-                                onClick={handleCreateNewSchool}
-                                disabled={createLoading || joinLoading}
-                                className="flex-1 p-20 text-center group relative overflow-hidden transition-all hover:bg-primary/5 disabled:opacity-50"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                                <div className="relative z-10 flex flex-col items-center justify-center h-full space-y-10">
-                                    <div className="w-32 h-32 bg-[#1a1d24] rounded-[2.5rem] flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 shadow-2xl border border-white/5">
-                                        {createLoading ? <Spinner size="lg" className="text-primary" /> : <SchoolIcon className="w-16 h-16 text-primary" />}
-                                    </div>
-                                    <div className="space-y-4">
-                                        <h3 className="text-5xl font-serif font-black text-white tracking-tighter">Genesis Initialization</h3>
-                                        <p className="text-white/40 max-w-md mx-auto text-lg font-medium leading-relaxed italic">Provision a new institutional Master Node. Configure global policies and academic hierarchy.</p>
-                                    </div>
-                                    <div className={`px-14 py-6 rounded-3xl text-white text-[10px] font-black uppercase tracking-[0.4em] shadow-2xl transition-all ${createLoading ? 'bg-primary/70 animate-pulse' : 'bg-primary hover:shadow-primary/40 ring-1 ring-white/10 hover:scale-105'}`}>
-                                        {createLoading ? 'Provisioning...' : 'Initialize Master Node'}
-                                    </div>
-                                </div>
-                            </button>
-
-                            <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
-
-                            <div className="flex-1 p-20 text-center bg-black/40 relative flex flex-col justify-center">
-                                <div className="space-y-12 flex flex-col items-center">
-                                    <div className="w-32 h-32 bg-[#1a1d24] rounded-full flex items-center justify-center shadow-2xl border border-white/5">
-                                        {joinSuccess ? <CheckCircleIcon className="w-16 h-16 text-emerald-500" /> : <ShieldCheckIcon className="w-16 h-16 text-indigo-400" />}
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <h3 className="text-5xl font-serif font-black text-white tracking-tighter">Network Link</h3>
-                                        {joinSuccess ? (
-                                            <p className="text-emerald-500 font-black text-xl tracking-[0.2em] uppercase">Handshake Complete</p>
-                                        ) : (
-                                            <p className="text-white/40 max-w-md mx-auto text-lg font-medium leading-relaxed italic">Enter your unique <span className="text-indigo-400 font-bold">Protocol Key</span> to link your identity to an existing branch.</p>
-                                        )}
-                                    </div>
-
-                                    {!joinSuccess && (
-                                        <div className="w-full max-w-md space-y-8">
-                                            <div className="relative group">
-                                                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-indigo-500 rounded-[2rem] blur opacity-10 group-hover:opacity-30 transition duration-1000"></div>
-                                                <input
-                                                    type="text"
-                                                    value={invitationCode}
-                                                    onChange={e => setInvitationCode(e.target.value.toUpperCase())}
-                                                    disabled={joinLoading}
-                                                    placeholder="VERIFY ACCESS KEY"
-                                                    className="relative w-full px-10 py-7 bg-[#0c0d12] border-2 border-white/5 rounded-[2rem] text-center font-mono font-black tracking-[0.3em] text-2xl text-white outline-none transition-all focus:border-primary/50 placeholder:text-white/5 placeholder:tracking-widest"
-                                                />
-                                            </div>
-
-                                            <button
-                                                onClick={handleJoinBranch}
-                                                disabled={joinLoading || invitationCode.length < 8}
-                                                className="w-full py-6 bg-white text-black rounded-3xl font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl hover:bg-white/90 transition-all disabled:opacity-20 active:scale-95"
-                                            >
-                                                {joinLoading ? <Spinner size="sm" className="text-black" /> : 'Authorize Connection'}
-                                            </button>
-
-                                            {joinError && (
-                                                <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-red-500 text-[10px] font-black uppercase tracking-[0.2em]">{joinError}</motion.p>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
         </div>
     );
 };
