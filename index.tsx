@@ -23,25 +23,24 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  error: Error | null;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState;
   public props: ErrorBoundaryProps;
-  private error: Error | null = null;
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
     this.props = props;
   }
 
-  static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.error = error;
     console.error("Critical UI Error Captured:", error, errorInfo);
   }
 
@@ -54,19 +53,38 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Portal Temporarily Unavailable</h1>
-          <p className="mb-4 text-muted-foreground max-w-sm mx-auto">An unexpected error occurred. We've logged the incident and are working on it.</p>
-          {this.error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl max-w-lg text-left">
-              <p className="text-red-400 text-sm font-mono break-all">{this.error.message}</p>
+          <h1 className="text-2xl font-bold mb-2 text-white">Portal Temporarily Unavailable</h1>
+          <p className="mb-4 text-gray-400 max-w-sm mx-auto">An unexpected error occurred. We've logged the incident and are working on it.</p>
+
+          {this.state.error && (
+            <div className="mb-6 p-4 bg-red-900/20 border border-red-500/20 rounded-xl max-w-2xl text-left w-full overflow-hidden">
+              <p className="text-red-400 text-sm font-mono font-bold mb-2">Error: {this.state.error.message}</p>
+              {this.state.error.stack && (
+                <pre className="text-xs text-red-400/70 overflow-auto max-h-60 p-2 bg-black/30 rounded border border-red-500/10 whitespace-pre-wrap">
+                  {this.state.error.stack}
+                </pre>
+              )}
             </div>
           )}
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:bg-primary/90 transition-all active:scale-95"
-          >
-            Reload Page
-          </button>
+
+          <div className="flex gap-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2.5 bg-white text-black font-bold rounded-xl shadow-lg hover:bg-gray-200 transition-all active:scale-95"
+            >
+              Reload Page
+            </button>
+            <button
+              onClick={() => {
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/';
+              }}
+              className="px-6 py-2.5 bg-red-600/20 text-red-500 border border-red-500/50 font-bold rounded-xl hover:bg-red-600/30 transition-all"
+            >
+              Clear Cache & Reset
+            </button>
+          </div>
         </div>
       );
     }
