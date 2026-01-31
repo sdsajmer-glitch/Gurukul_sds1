@@ -101,9 +101,11 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
     const [invitationCode, setInvitationCode] = useState('');
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
+    const [showAllRoles, setShowAllRoles] = useState(false);
+
     // Filter roles based on the metadata we have defined
-    // If existingRole is set, we ONLY show that role.
-    const displayRoles = existingRole
+    // If existingRole is set, we ONLY show that role UNLESS showAllRoles is true.
+    const displayRoles = (existingRole && !showAllRoles)
         ? [existingRole].filter(r => ROLE_META[r])
         : roles.filter(r => ROLE_META[r]);
 
@@ -181,6 +183,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
 
     return (
         <div className="w-full max-w-[1600px] mx-auto py-12 px-6 sm:px-8 lg:px-12 flex flex-col justify-center min-h-[80vh]">
+
             <header className="text-center mb-20 animate-in fade-in slide-in-from-bottom-6 duration-1000">
                 <div className="inline-flex items-center justify-center p-3 bg-muted/30 rounded-full mb-6 ring-1 ring-white/10 backdrop-blur-md">
                     <div className={`w-2 h-2 rounded-full mr-3 ${existingRole ? 'bg-emerald-500 animate-pulse' : 'bg-primary animate-pulse'}`}></div>
@@ -191,12 +194,22 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                 <h1 className="text-5xl md:text-7xl font-serif font-black text-foreground tracking-tight mb-6 leading-tight">
                     {existingRole ? 'Welcome Back' : 'Select Your Portal'}
                 </h1>
-                <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed opacity-80">
+                <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed opacity-80 mb-8">
                     {existingRole
                         ? 'Your secure session is ready. Resume your work within the institutional network.'
                         : 'Choose your access level to initialize your personalized workspace environment.'
                     }
                 </p>
+
+
+                {existingRole && !showAllRoles && (
+                    <button
+                        onClick={() => setShowAllRoles(true)}
+                        className="text-xs font-bold text-muted-foreground hover:text-white uppercase tracking-widest border-b border-white/20 hover:border-white transition-all pb-1 animate-in fade-in slide-in-from-top-2"
+                    >
+                        Not you? Switch Identity
+                    </button>
+                )}
             </header>
 
             <div className={`
