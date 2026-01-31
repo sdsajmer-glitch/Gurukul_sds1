@@ -40,11 +40,11 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
 
             try {
                 const [studentRes, teacherRes, courseRes] = await Promise.all([
-                    supabase.rpc('get_all_students_for_admin', { p_branch_id: branchId }), 
+                    supabase.rpc('get_all_students_for_admin', { p_branch_id: branchId }),
                     supabase.from('teacher_profiles').select('user_id', { count: 'exact', head: true }).eq('branch_id', branchId),
                     supabase.from('courses').select('id', { count: 'exact', head: true }).eq('branch_id', branchId)
                 ]);
-                
+
                 setStats({
                     students: studentRes.data?.length || 0,
                     teachers: teacherRes.count || 0,
@@ -57,7 +57,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
         fetchStats();
     }, [currentBranch]);
 
-    const isBranchAdmin = profile.role === BuiltInRoles.BRANCH_ADMIN;
+    const isBranchAdmin = profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !!profile.branch_id;
     const branchStatus = currentBranch?.status || 'Active';
     const isBranchLinked = branchStatus === 'Active' || branchStatus === 'Linked' || !!profile.branch_id;
 
@@ -66,7 +66,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
             {/* --- PREMIUM COMMAND CENTER HEADER --- */}
             <div className="relative overflow-hidden rounded-[3rem] bg-[#0a0a0c] border border-white/5 p-8 md:p-14 shadow-2xl shadow-black/50 ring-1 ring-white/10">
                 <div className="absolute -right-40 -top-40 w-[600px] h-[600px] bg-primary/10 rounded-full filter blur-[120px] opacity-40 animate-aurora pointer-events-none"></div>
-                
+
                 <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-12">
                     <div className="space-y-8 w-full max-w-4xl">
                         {loading && !currentBranch ? (
@@ -91,10 +91,10 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
                                         )
                                     )}
                                 </div>
-                                
+
                                 <div>
                                     <h1 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tight leading-none mb-2 uppercase">
-                                        Welcome, <br/><span className="text-white/30 italic lowercase">{(profile.display_name || 'Admin').split(' ')[0]}!</span>
+                                        Welcome, <br /><span className="text-white/30 italic lowercase">{(profile.display_name || 'Admin').split(' ')[0]}!</span>
                                     </h1>
                                     <p className="text-white/40 text-lg md:text-xl font-medium tracking-tight font-serif italic mt-6 border-l border-white/10 pl-8">System Status: {currentBranch ? 'Operating under local node context.' : 'Standby mode. Node resolution required.'}</p>
                                 </div>
@@ -136,7 +136,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
                                             <p className="text-sm text-white/40 mt-4 leading-relaxed font-medium max-w-sm">No active branch node detected for <strong className="text-white/80">{profile.email}</strong>. Enter your provisioned link code to activate this workstation.</p>
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => onNavigate('Code Verification')}
                                         className="w-full md:w-auto px-10 py-5 bg-red-600 hover:bg-red-500 text-white font-black text-[10px] uppercase tracking-[0.25em] rounded-2xl shadow-2xl shadow-red-600/20 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 whitespace-nowrap ring-4 ring-red-600/10"
                                     >
@@ -149,7 +149,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
 
                     <div className="flex flex-col gap-4 w-full lg:w-auto">
                         {!isBranchAdmin ? (
-                            <button 
+                            <button
                                 onClick={() => onNavigate('Branches')}
                                 className="px-10 py-5 bg-primary text-primary-foreground rounded-2xl shadow-2xl shadow-primary/30 hover:bg-primary/90 hover:shadow-primary/50 font-black text-xs uppercase tracking-[0.3em] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-4 whitespace-nowrap ring-4 ring-primary/10"
                             >
@@ -201,8 +201,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
     );
 };
 
-const GridIcon = ({className}:{className?:string}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="7" height="7" x="3" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="14" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5"/></svg>
+const GridIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="7" height="7" x="3" y="3" rx="1.5" /><rect width="7" height="7" x="14" y="3" rx="1.5" /><rect width="7" height="7" x="14" y="14" rx="1.5" /><rect width="7" height="7" x="3" y="14" rx="1.5" /></svg>
 );
 
 export default DashboardOverview;
