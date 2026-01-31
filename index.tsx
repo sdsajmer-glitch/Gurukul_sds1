@@ -28,6 +28,7 @@ interface ErrorBoundaryState {
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState;
   public props: ErrorBoundaryProps;
+  private error: Error | null = null;
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
@@ -40,6 +41,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.error = error;
     console.error("Critical UI Error Captured:", error, errorInfo);
   }
 
@@ -53,12 +55,17 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             </svg>
           </div>
           <h1 className="text-2xl font-bold mb-2">Portal Temporarily Unavailable</h1>
-          <p className="mb-8 text-muted-foreground max-w-sm mx-auto">An unexpected error occurred. We've logged the incident and are working on it.</p>
-          <button 
-            onClick={() => window.location.hash = '#/'} 
+          <p className="mb-4 text-muted-foreground max-w-sm mx-auto">An unexpected error occurred. We've logged the incident and are working on it.</p>
+          {this.error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl max-w-lg text-left">
+              <p className="text-red-400 text-sm font-mono break-all">{this.error.message}</p>
+            </div>
+          )}
+          <button
+            onClick={() => window.location.reload()}
             className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:bg-primary/90 transition-all active:scale-95"
           >
-            Return to Home
+            Reload Page
           </button>
         </div>
       );
