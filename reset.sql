@@ -445,6 +445,7 @@ CREATE TABLE public.school_admin_profiles (
   admin_contact_phone text,
   admin_contact_email text,
   onboarding_step text DEFAULT 'profile',
+  plan_id text,
   created_at timestamp with time zone DEFAULT now()
 );
 
@@ -2161,13 +2162,20 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_email text;
 BEGIN
-  -- Sync Core Identity
-  UPDATE public.profiles
-  SET display_name = p_display_name,
-      phone = p_phone,
-      role = 'Teacher'
-  WHERE id = p_user_id;
+  -- Fetch email from auth.users
+  SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
+  
+  -- Ensure the profile row exists first (UPSERT)
+  INSERT INTO public.profiles (id, email, display_name, phone, role, profile_completed)
+  VALUES (p_user_id, COALESCE(v_email, p_email, ''), p_display_name, p_phone, 'Teacher', false)
+  ON CONFLICT (id) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    phone = EXCLUDED.phone,
+    role = 'Teacher',
+    updated_at = now();
 
   -- Sync Faculty Metadata
   INSERT INTO public.teacher_profiles (
@@ -2215,12 +2223,19 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_email text;
 BEGIN
-  -- Sync Core Identity
-  UPDATE public.profiles
-  SET display_name = p_display_name,
-      role = 'Student'
-  WHERE id = p_user_id;
+  -- Fetch email from auth.users
+  SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
+  
+  -- Ensure the profile row exists first (UPSERT)
+  INSERT INTO public.profiles (id, email, display_name, role, profile_completed)
+  VALUES (p_user_id, COALESCE(v_email, ''), p_display_name, 'Student', false)
+  ON CONFLICT (id) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    role = 'Student',
+    updated_at = now();
 
   -- Sync Student Metadata
   INSERT INTO public.student_profiles (
@@ -2257,12 +2272,19 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_email text;
 BEGIN
-  -- Sync Core Identity
-  UPDATE public.profiles
-  SET display_name = p_display_name,
-      role = 'Parent/Guardian'
-  WHERE id = p_user_id;
+  -- Fetch email from auth.users to ensure we have the correct email for the profile
+  SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
+  
+  -- Ensure the profile row exists first (UPSERT), then update with display name and role
+  INSERT INTO public.profiles (id, email, display_name, role, profile_completed)
+  VALUES (p_user_id, COALESCE(v_email, ''), p_display_name, 'Parent/Guardian', false)
+  ON CONFLICT (id) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    role = 'Parent/Guardian',
+    updated_at = now();
 
   -- Sync Guardian Metadata
   INSERT INTO public.parent_profiles (
@@ -2297,11 +2319,19 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_email text;
 BEGIN
-  UPDATE public.profiles
-  SET display_name = p_display_name,
-      role = 'Transport Staff'
-  WHERE id = p_user_id;
+  -- Fetch email from auth.users
+  SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
+  
+  -- Ensure the profile row exists first (UPSERT)
+  INSERT INTO public.profiles (id, email, display_name, role, profile_completed)
+  VALUES (p_user_id, COALESCE(v_email, ''), p_display_name, 'Transport Staff', false)
+  ON CONFLICT (id) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    role = 'Transport Staff',
+    updated_at = now();
 
   INSERT INTO public.transport_staff_profiles (user_id, vehicle_details, license_info)
   VALUES (p_user_id, p_vehicle_details, p_license_info)
@@ -2326,11 +2356,19 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_email text;
 BEGIN
-  UPDATE public.profiles
-  SET display_name = p_display_name,
-      role = 'Ecommerce Operator'
-  WHERE id = p_user_id;
+  -- Fetch email from auth.users
+  SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
+  
+  -- Ensure the profile row exists first (UPSERT)
+  INSERT INTO public.profiles (id, email, display_name, role, profile_completed)
+  VALUES (p_user_id, COALESCE(v_email, ''), p_display_name, 'Ecommerce Operator', false)
+  ON CONFLICT (id) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    role = 'Ecommerce Operator',
+    updated_at = now();
 
   INSERT INTO public.ecommerce_operator_profiles (user_id, store_name, business_type)
   VALUES (p_user_id, p_store_name, p_business_type)
