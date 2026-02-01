@@ -16,7 +16,7 @@ RETURNS TABLE (
     parent_email text,
     parent_phone text,
     grade text,
-    status text, -- This should match EnquiryStatus in frontend
+    status text, 
     updated_at timestamptz,
     branch_id bigint,
     branch_name text
@@ -24,7 +24,16 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+    v_user_email text;
 BEGIN
+    -- Resolve current user email from all available sources
+    v_user_email := LOWER(COALESCE(
+        (SELECT email FROM public.profiles WHERE id = auth.uid()),
+        (SELECT auth.jwt() ->> 'email'),
+        ''
+    ));
+
     RETURN QUERY
     SELECT 
         e.id,
@@ -33,7 +42,6 @@ BEGIN
         e.parent_email,
         e.parent_phone,
         e.grade,
-        -- Ensure status matches ENQUIRY_ prefix if needed by frontend
         CASE 
             WHEN e.status NOT LIKE 'ENQUIRY_%' THEN 'ENQUIRY_' || e.status
             ELSE e.status
@@ -46,15 +54,16 @@ BEGIN
     WHERE 
         (e.user_id = auth.uid())
         OR 
-        (LOWER(e.parent_email) = LOWER((SELECT email FROM public.profiles WHERE id = auth.uid())))
+        (v_user_email <> '' AND LOWER(e.parent_email) = v_user_email)
         OR
-        (LOWER(e.parent_email) = LOWER((SELECT auth.jwt() ->> 'email')))
+        (e.id IN (
+            SELECT em.enquiry_id FROM public.enquiry_messages em WHERE em.sender_id = auth.uid()
+        ))
         OR
         (e.admission_id IN (
             SELECT a.id FROM public.admissions a 
             WHERE a.parent_id = auth.uid() 
-            OR LOWER(a.parent_email) = LOWER((SELECT email FROM public.profiles WHERE id = auth.uid()))
-            OR LOWER(a.parent_email) = LOWER((SELECT auth.jwt() ->> 'email'))
+            OR (v_user_email <> '' AND LOWER(a.parent_email) = v_user_email)
         ))
     ORDER BY e.updated_at DESC;
 END;
@@ -75,7 +84,15 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+    v_user_email text;
 BEGIN
+    v_user_email := LOWER(COALESCE(
+        (SELECT email FROM public.profiles WHERE id = auth.uid()),
+        (SELECT auth.jwt() ->> 'email'),
+        ''
+    ));
+
     RETURN QUERY
     SELECT 
         c.id,
@@ -86,10 +103,12 @@ BEGIN
         c.status
     FROM public.communications c
     WHERE 
-        -- Logic for recipients: if recipients is null, it's global; otherwise check if parent email is in list
-        (c.recipients IS NULL)
+        -- Logic: if recipients is null or empty, it's global; otherwise check if parent email matches
+        (c.recipients IS NULL OR array_length(c.recipients, 1) IS NULL)
         OR
-        ((SELECT email FROM public.profiles WHERE id = auth.uid()) = ANY(c.recipients))
+        (v_user_email <> '' AND v_user_email = ANY(
+            SELECT LOWER(r) FROM unnest(c.recipients) r
+        ))
     ORDER BY c.sent_at DESC;
 END;
 $$;

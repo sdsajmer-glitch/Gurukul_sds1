@@ -46,7 +46,7 @@ AS $$
     a.medical_info
   FROM public.admissions a
   WHERE a.parent_id = auth.uid()
-     OR a.parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid())
+     OR LOWER(a.parent_email) = LOWER(COALESCE((SELECT email FROM public.profiles WHERE id = auth.uid()), (SELECT auth.jwt() ->> 'email'), ''))
   ORDER BY a.submitted_at DESC;
 $$;
 
