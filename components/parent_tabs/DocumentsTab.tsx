@@ -72,85 +72,85 @@ const CollapsibleDocumentCard: React.FC<{
     const isExpired = status === 'Expired';
     const isPending = status === 'Pending';
 
-    // Matrix Configuration
+    // Matrix Configuration (Figma Spec Implementation)
     const getConfig = () => {
-        if (isVerified) return {
+        if (isVerified) return { // Approved
             theme: 'emerald',
-            bg: 'bg-[#051a10]',
-            border: 'border-emerald-500/30',
-            glow: 'shadow-[0_0_20px_-5px_rgba(16,185,129,0.15)]',
+            bg: 'bg-[#0E1F16]',
+            border: 'border-[#22C55E]',
+            glow: 'shadow-[0_0_20px_-5px_rgba(34,197,94,0.15)]',
             icon: <ShieldCheckIcon className="w-6 h-6" />,
             label: 'VERIFIED',
-            text: 'text-emerald-400',
+            text: 'text-[#22C55E]',
             subText: 'Verified and secured.',
-            barColor: 'bg-emerald-500'
+            barColor: 'bg-[#22C55E]'
         };
-        if (isRejected) return {
+        if (isRejected) return { // Rejected
             theme: 'red',
-            bg: 'bg-[#1a0505]',
-            border: 'border-red-500/30',
+            bg: 'bg-[#241212]',
+            border: 'border-[#EF4444]',
             glow: 'shadow-[0_0_20px_-5px_rgba(239,68,68,0.15)]',
             icon: <XIcon className="w-6 h-6" />,
             label: 'REJECTED',
-            text: 'text-red-400',
+            text: 'text-[#EF4444]',
             subText: 'Action Required: Re-upload',
-            barColor: 'bg-red-500'
+            barColor: 'bg-[#EF4444]'
         };
-        if (isExpired) return {
+        if (isExpired) return { // Expired
             theme: 'orange',
-            bg: 'bg-[#1a0f05]',
-            border: 'border-orange-500/30',
+            bg: 'bg-[#261A0D]',
+            border: 'border-[#F97316]',
             glow: 'shadow-[0_0_20px_-5px_rgba(249,115,22,0.15)]',
             icon: <AlertTriangleIcon className="w-6 h-6" />,
             label: 'EXPIRED',
-            text: 'text-orange-400',
+            text: 'text-[#F97316]',
             subText: 'Document has expired',
-            barColor: 'bg-orange-500'
+            barColor: 'bg-[#F97316]'
         };
-        if (isReviewing) return {
+        if (isReviewing) return { // Reviewing
             theme: 'purple',
-            bg: 'bg-[#11051a]',
-            border: 'border-purple-500/30',
+            bg: 'bg-[#1A1533]',
+            border: 'border-[#A855F7]',
             glow: 'shadow-[0_0_20px_-5px_rgba(168,85,247,0.15)]',
             icon: <EyeIcon className="w-6 h-6" />,
             label: 'REVIEWING',
-            text: 'text-purple-400',
+            text: 'text-[#A855F7]',
             subText: 'Verification in progress',
-            barColor: 'bg-purple-500'
+            barColor: 'bg-[#A855F7]'
         };
-        if (isSubmitted) return {
+        if (isSubmitted) return { // Submitted
             theme: 'blue',
-            bg: 'bg-[#080b14]',
-            border: 'border-blue-500/30',
+            bg: 'bg-[#121B2E]',
+            border: 'border-[#3B82F6]',
             glow: 'shadow-[0_0_20px_-5px_rgba(59,130,246,0.15)]',
             icon: <CheckCircleIcon className="w-6 h-6" />,
             label: 'SUBMITTED',
-            text: 'text-blue-400',
+            text: 'text-[#3B82F6]',
             subText: 'Typically verified in 24 hrs',
-            barColor: 'bg-blue-500'
+            barColor: 'bg-[#3B82F6]'
         };
-        if (isPending && isMandatory) return {
+        if (isPending && isMandatory) return { // Required
             theme: 'amber',
-            bg: 'bg-[#1a1405]',
-            border: 'border-amber-500/30',
-            glow: 'shadow-[0_0_20px_-5px_rgba(245,158,11,0.15)]',
+            bg: 'bg-[#1E1A0E]',
+            border: 'border-[#FBBF24] border-dashed',
+            glow: 'shadow-[0_0_20px_-5px_rgba(251,191,36,0.15)]',
             icon: <AlertTriangleIcon className="w-6 h-6" />,
             label: 'REQUIRED',
-            text: 'text-amber-400',
+            text: 'text-[#FBBF24]',
             subText: 'Mandatory for enrollment',
-            barColor: 'bg-amber-500'
+            barColor: 'bg-[#FBBF24]'
         };
         // Optional / Default
         return {
             theme: 'gray',
-            bg: 'bg-[#0c0d12]',
-            border: 'border-white/5',
+            bg: 'bg-[#1A1A1A]',
+            border: 'border-[#6B7280]',
             glow: '',
             icon: <DocumentTextIcon className="w-6 h-6" />,
             label: 'OPTIONAL',
-            text: 'text-white/30',
+            text: 'text-[#6B7280]',
             subText: 'Not mandatory',
-            barColor: 'bg-white/20'
+            barColor: 'bg-[#6B7280]'
         };
     };
 
@@ -225,57 +225,64 @@ const CollapsibleDocumentCard: React.FC<{
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`group relative rounded-[1.5rem] border transition-all duration-500 overflow-hidden ${config.bg} ${config.border} ${config.glow}`}
-            onClick={(!isExpanded && !isVerified) ? toggleExpand : undefined}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`group relative flex flex-col gap-3 p-4 rounded-[14px] border transition-all duration-300 overflow-hidden ${config.bg} ${config.border} ${config.glow}`}
+            style={{ minHeight: '112px' }}
         >
-            {/* Status sidebar line */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${config.barColor} opacity-50`}></div>
-
-            {/* --- Header --- */}
-            <div
-                onClick={toggleExpand}
-                className="p-5 flex items-center justify-between cursor-pointer relative z-10"
-            >
-                <div className="flex items-center gap-5">
-                    {/* Status Icon Box */}
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner transition-colors ${config.text} ${config.bg} border-white/5`}>
-                        <div className="brightness-125 contrast-125">{config.icon}</div>
-                    </div>
-
-                    <div>
-                        <h4 className={`text-base font-bold leading-tight text-white group-hover:text-primary transition-colors`}>{req.document_name}</h4>
-
-                        <div className="flex items-center gap-2 mt-1.5 h-5">
-                            <span className={`text-[10px] font-medium tracking-wide ${config.text} opacity-80 uppercase`}>
-                                {config.subText}
-                            </span>
-
-                            {docFile && (
-                                <>
-                                    <span className="w-1 h-1 rounded-full bg-white/10"></span>
-                                    <span className="text-[10px] font-mono text-white/40 flex items-center gap-1">
-                                        <PaperClipIcon className="w-3 h-3" /> {formatFileSize(docFile.file_size || 0)}
-                                    </span>
-                                </>
-                            )}
-                        </div>
-                    </div>
+            {/* Header: Icon + Badge */}
+            <div className="flex items-start justify-between w-full relative z-10">
+                <div className={`w-8 h-8 flex items-center justify-center rounded-lg border border-white/5 ${config.text} bg-white/5`}>
+                    {config.icon}
                 </div>
 
-                <div className="flex items-center gap-4">
-                    {/* Status Pill Badge */}
-                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] border shadow-sm backdrop-blur-md ${config.text} ${config.border} bg-white/5`}>
-                        {uploadProgress !== null ? 'SYNCING...' : config.label}
-                    </div>
-
-                    <div className={`p-2 rounded-full transition-colors ${isExpanded ? 'bg-white/10 text-white' : 'text-white/20 group-hover:text-white hover:bg-white/5'}`}>
-                        <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.3, ease: "backOut" }}>
-                            <ChevronDownIcon className="w-4 h-4" />
-                        </motion.div>
-                    </div>
+                {/* Status Pill Badge */}
+                <div className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border shadow-sm ${config.text} ${config.bg} border-white/5`}>
+                    {config.label}
                 </div>
+            </div>
+
+            {/* Title & Meta */}
+            <div className="relative z-10">
+                <h4 className="text-sm font-bold text-white leading-tight mb-1">{req.document_name}</h4>
+                <p className={`text-xs ${config.text} opacity-80 leading-relaxed`}>{config.subText}</p>
+                {docFile && (
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                        <p className="text-[10px] text-white/30 font-mono uppercase">{docFile.mime_type?.split('/')[1] || 'FILE'}</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Divider */}
+            <div className="h-px bg-white/5 w-full my-1"></div>
+
+            {/* Actions */}
+            <div className="mt-auto relative z-10">
+                {!isExpanded ? (
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={toggleExpand}
+                            className={`flex-1 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border shadow-lg ${isVerified ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20' :
+                                isRejected ? 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' :
+                                    isReviewing ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20' :
+                                        isMandatory && !docFile ? 'bg-[#FBBF24]/10 text-[#FBBF24] border-[#FBBF24]/20 hover:bg-[#FBBF24]/20' :
+                                            'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'
+                                }`}
+                        >
+                            {isVerified ? 'Verified' : isRejected ? 'Re-upload' : isReviewing ? 'View Status' : docFile ? 'View' : 'Upload'}
+                        </button>
+
+                        {/* Secondary Action: Download (if verified) or Info */}
+                        {isVerified && (
+                            <button onClick={handleDownload} className="p-2.5 rounded-lg bg-white/5 text-white/40 hover:text-white border border-white/5 transition-colors" title="Download">
+                                <DownloadIcon className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <button onClick={toggleExpand} className="w-full py-2 text-xs text-red-400/60 hover:text-red-400 font-bold uppercase tracking-wider transition-colors">Close View</button>
+                )}
             </div>
 
             {/* --- Expanded Content --- */}
@@ -306,41 +313,52 @@ const CollapsibleDocumentCard: React.FC<{
                             {hasFileRecord && !isRejected ? (
                                 <div className="space-y-6">
                                     {/* File Card */}
-                                    <div className="flex items-start gap-4 p-5 bg-[#0a0c10] rounded-2xl border border-white/5 relative overflow-hidden group/file">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover/file:opacity-100 transition-opacity"></div>
+                                    <div className="relative group/file overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e12] transition-colors hover:border-white/20">
 
-                                        <div className="w-12 h-12 bg-[#1c1f26] rounded-xl flex items-center justify-center border border-white/5 text-white/50 shadow-inner">
-                                            {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-6 h-6" /> : <PaperClipIcon className="w-6 h-6" />}
-                                        </div>
+                                        {/* File Info Header */}
+                                        <div className="flex items-start gap-5 p-6 pb-0">
 
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm text-white font-bold truncate pr-4">{docFile.file_name}</p>
-                                            <div className="flex items-center gap-3 mt-2">
-                                                <span className="text-[10px] text-white/30 font-mono uppercase bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                                                    {docFile.mime_type?.split('/')[1] || 'FILE'}
-                                                </span>
-                                                <span className="text-[10px] text-white/30 font-mono">
-                                                    {new Date(docFile.uploaded_at || new Date()).toLocaleDateString()}
-                                                </span>
+                                            <div className="w-16 h-16 rounded-2xl bg-[#151820] flex items-center justify-center border border-white/5 text-white/40 shadow-inner group-hover/file:text-white group-hover/file:scale-105 transition-all duration-300">
+                                                {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-8 h-8" /> : <PaperClipIcon className="w-8 h-8" />}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0 pt-1">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <p className="text-lg font-bold text-white truncate pr-4" title={docFile.file_name}>{docFile.file_name}</p>
+                                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${isVerified ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                                        'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                                                        }`}>
+                                                        {isVerified ? 'Verified' : 'Pending Review'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 text-xs text-white/40 font-mono">
+                                                    <span className="uppercase bg-white/5 px-2 py-0.5 rounded text-[10px]">{docFile.mime_type?.split('/')[1] || 'FILE'}</span>
+                                                    <span>•</span>
+                                                    <span>{formatFileSize(docFile.file_size || 0)}</span>
+                                                    <span>•</span>
+                                                    <span>{new Date(docFile.uploaded_at || new Date()).toLocaleDateString()}</span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        {/* File Actions */}
-                                        <div className="flex items-center gap-2">
+                                        {/* Action Bar */}
+                                        <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/5">
                                             <button
                                                 onClick={handleView}
-                                                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white border border-white/5 transition-colors"
-                                                title="Preview Artifact"
+                                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider border border-white/5 hover:border-white/20 transition-all group/btn"
                                             >
-                                                <EyeIcon className="w-4 h-4" />
+                                                <EyeIcon className="w-4 h-4 text-white/40 group-hover/btn:text-white transition-colors" />
+                                                Preview
                                             </button>
+
                                             <button
                                                 onClick={handleDownload}
                                                 disabled={isDownloading}
-                                                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white border border-white/5 transition-colors"
-                                                title="Download Artifact"
+                                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary hover:text-white font-bold text-xs uppercase tracking-wider border border-primary/20 hover:border-primary/50 transition-all group/btn"
                                             >
-                                                {isDownloading ? <Spinner size="sm" /> : <DownloadIcon className="w-4 h-4" />}
+                                                {isDownloading ? <Spinner size="sm" /> : <DownloadIcon className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />}
+                                                Download
                                             </button>
                                         </div>
                                     </div>
@@ -591,18 +609,18 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                                             <div className="flex justify-between items-end mb-2">
                                                 <div className="flex flex-col items-start">
                                                     <span className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-0.5">Vault Status</span>
-                                                    <span className={`text-[10px] font-bold uppercase tracking-wide ${percent === 100 ? 'text-emerald-500' : 'text-white/60'}`}>
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wide ${percent === 100 ? 'text-[#22C55E]' : 'text-white/60'}`}>
                                                         {percent === 100 ? 'Fully Synchronized' : percent > 75 ? 'Almost Complete' : percent > 0 ? 'Syncing in Progress' : 'Pending Initialization'}
                                                     </span>
                                                 </div>
                                                 <div className="flex flex-col items-end">
-                                                    <span className={`text-xl font-black ${percent === 100 ? 'text-emerald-500' : 'text-white'}`}>{percent}%</span>
+                                                    <span className={`text-xl font-black ${percent === 100 ? 'text-[#22C55E]' : 'text-white'}`}>{percent}%</span>
                                                 </div>
                                             </div>
-                                            <div className="h-2 bg-[#050608] rounded-full overflow-hidden border border-white/5 relative">
+                                            <div className="h-1.5 bg-[#121622] rounded-full overflow-hidden border border-white/5 relative">
                                                 <div className="absolute inset-0 bg-white/[0.02]"></div>
                                                 <motion.div
-                                                    className={`h-full rounded-full relative overflow-hidden ${percent === 100 ? 'bg-emerald-500' : 'bg-primary'}`}
+                                                    className={`h-full rounded-full relative overflow-hidden ${percent === 100 ? 'bg-[#22C55E]' : 'bg-[#8B5CF6]'}`}
                                                     initial={{ width: 0 }}
                                                     animate={{ width: `${percent}%` }}
                                                     transition={{ duration: 1, ease: "circOut" }}
@@ -611,7 +629,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                                                 </motion.div>
                                             </div>
                                             <p className="text-[9px] font-mono text-white/30 mt-2 text-right">
-                                                {verifiedCount} of {total} Artifacts Verified
+                                                {verifiedCount} of {total} required documents completed
                                             </p>
                                         </div>
                                     </div>
