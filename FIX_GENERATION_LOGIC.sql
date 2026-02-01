@@ -80,6 +80,7 @@ BEGIN
         SELECT * INTO v_adm_record FROM public.admissions WHERE id = v_target_admission_id;
         
         -- Insert Shadow Enquiry matched to this Admission
+        -- NOTE: Removed ON CONFLICT (admission_id) because the unique constraint might not exist.
         INSERT INTO public.enquiries (
             applicant_name,
             grade,
@@ -100,11 +101,9 @@ BEGIN
             v_adm_record.branch_id,
             v_target_admission_id,
             'CONVERTED', -- Mark as converted since they are already admitted
-            auth.uid(),
+            v_adm_record.parent_id,
             v_adm_record.submitted_at
         )
-        ON CONFLICT (admission_id) DO UPDATE 
-            SET applicant_name = EXCLUDED.applicant_name -- Dummy update to return ID
         RETURNING id INTO v_target_enquiry_id;
         
     END IF;
