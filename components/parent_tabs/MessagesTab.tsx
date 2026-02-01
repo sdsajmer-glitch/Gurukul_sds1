@@ -322,9 +322,10 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
             setText('');
             await loadTimeline();
             refresh(true);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Transmission Failure:", err);
-            alert("Transmission Failure: Node handshake refused or connection lost.");
+            const errorMsg = err.message || (typeof err === 'string' ? err : 'Node Handshake Refused');
+            alert(`Transmission Failure: ${errorMsg}`);
         } finally {
             setSending(false);
         }
