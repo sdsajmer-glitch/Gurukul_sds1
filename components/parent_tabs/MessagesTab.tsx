@@ -61,6 +61,7 @@ export default function MessagesTab() {
     const [loading, setLoading] = useState(true);
     const [selectedEnquiry, setSelectedEnquiry] = useState<MyEnquiry | null>(null);
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<Communication | null>(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const fetchData = useCallback(async (isSilent = false) => {
         if (!isSilent) setLoading(true);
@@ -102,42 +103,54 @@ export default function MessagesTab() {
 
     if (loading && announcements.length === 0 && enquiries.length === 0) {
         return (
-            <div className="h-[600px] flex flex-col items-center justify-center space-y-8 animate-pulse">
-                <div className="w-16 h-16 bg-primary/10 rounded-3xl border border-primary/20 flex items-center justify-center">
-                    <RadarIcon className="w-8 h-8 text-primary" />
+            <div className="h-[80vh] flex flex-col items-center justify-center space-y-8">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse"></div>
+                    <div className="relative w-20 h-20 bg-primary/10 rounded-3xl border border-primary/20 flex items-center justify-center shadow-2xl">
+                        <RadarIcon className="w-10 h-10 text-primary animate-spin-slow" />
+                    </div>
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20">Decrypting Institutional Ledger...</p>
+                <div className="flex flex-col items-center gap-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white animate-pulse">Synchronizing verified message history…</p>
+                    <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Establishing secure node handshake</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-[1400px] mx-auto py-8 space-y-12">
-            {/* Header / Orchestration Status */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/[0.05] pb-10">
+        <div className="max-w-[1600px] mx-auto py-6 px-4 md:px-8 space-y-8 h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] flex flex-col">
+            {/* Header - Fixed */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/[0.05] pb-6 shrink-0">
                 <div className="space-y-1">
                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em] opacity-80">Institutional Registry</span>
-                    <h1 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-none">Inbox <span className="text-white/20 italic font-medium">Channel.</span></h1>
-                    <p className="text-sm text-white/40 mt-3 font-medium max-w-lg leading-relaxed italic">Synchronized handshake terminal for all official school communications and enquiry payloads.</p>
+                    <h1 className="text-3xl md:text-4xl font-serif font-black text-white tracking-tighter uppercase leading-none">Inbox <span className="text-white/20 italic font-medium">Channel.</span></h1>
+                    <p className="text-xs text-white/40 mt-1 font-medium max-w-lg italic">Synchronized handshake terminal for all official school communications.</p>
                 </div>
-                <div className="flex items-center gap-3 bg-white/5 px-6 py-2 rounded-2xl border border-white/10 shadow-2xl">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></div>
-                    <span className="text-[10px] font-black text-white/60 tracking-[0.2em] uppercase">Identity Link Secured</span>
+                <div className="flex items-center gap-6">
+                    <div className="hidden md:flex items-center gap-3 bg-white/5 px-4 py-1.5 rounded-xl border border-white/10">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></div>
+                        <span className="text-[9px] font-black text-white/60 tracking-[0.2em] uppercase">Identity Link Secured</span>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch min-h-[700px]">
-                {/* 1. Registry Ledger (Left Sidebar) */}
-                <div className="lg:col-span-4 flex flex-col space-y-6">
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6">
+                {/* 1. Sidebar - Ledger */}
+                <div className={`lg:w-[400px] flex flex-col shrink-0 transition-transform duration-300 lg:translate-x-0 ${isMobileMenuOpen ? 'fixed inset-0 z-50 bg-black' : 'hidden lg:flex'}`}>
                     <div className="bg-[#0c0d12]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl h-full">
                         {/* Tab Switcher */}
-                        <div className="p-8 pb-4">
+                        <div className="p-6 pb-2">
+                            <div className="flex items-center justify-between mb-4 lg:hidden">
+                                <h3 className="text-xs font-black text-white/60 tracking-widest uppercase">Select Payload</h3>
+                                <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/40 font-black text-lg p-2">&times;</button>
+                            </div>
                             <div className="flex p-1.5 bg-black/40 rounded-[1.5rem] border border-white/5">
                                 {(['broadcasts', 'enquiries'] as Tab[]).map(t => (
                                     <button
                                         key={t}
-                                        onClick={() => handleSwitchTab(t)}
-                                        className={`flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.25em] rounded-2xl transition-all duration-300 ${activeTab === t
+                                        onClick={() => { handleSwitchTab(t); if (window.innerWidth < 1024) setIsMobileMenuOpen(false); }}
+                                        className={`flex-1 py-3 text-[9px] font-black uppercase tracking-[0.25em] rounded-xl transition-all duration-300 ${activeTab === t
                                             ? 'bg-primary/20 text-primary shadow-lg border border-primary/20'
                                             : 'text-white/20 hover:text-white/40'}`}
                                     >
@@ -151,92 +164,95 @@ export default function MessagesTab() {
                         <div className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar">
                             <AnimatePresence mode="wait">
                                 {activeTab === 'broadcasts' ? (
-                                    <motion.div key="broadcast-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                                    <motion.div key="broadcast-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2 pb-10">
                                         {announcements.length === 0 ? <EmptyNode label="Broadcasts" /> : announcements.map(msg => (
                                             <button
                                                 key={msg.id}
-                                                onClick={() => setSelectedAnnouncement(msg)}
-                                                className={`w-full p-6 rounded-[2rem] text-left transition-all duration-300 border group relative overflow-hidden ${selectedAnnouncement?.id === msg.id
+                                                onClick={() => { setSelectedAnnouncement(msg); setIsMobileMenuOpen(false); }}
+                                                className={`w-full p-5 rounded-[2rem] text-left transition-all duration-300 border group relative overflow-hidden ${selectedAnnouncement?.id === msg.id
                                                     ? 'bg-primary/10 border-primary/40 shadow-xl'
                                                     : 'bg-white/[0.01] border-white/[0.02] hover:bg-white/[0.04] opacity-50 hover:opacity-100'}`}
                                             >
-                                                <div className="flex justify-between items-center mb-3">
+                                                <div className="flex justify-between items-center mb-2">
                                                     <div className="flex items-center gap-2">
-                                                        <MegaphoneIcon className={`w-3.5 h-3.5 ${selectedAnnouncement?.id === msg.id ? 'text-primary' : 'text-white/20'}`} />
-                                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/40">{msg.sender_name || 'Official'}</span>
+                                                        <MegaphoneIcon className={`w-3 h-3 ${selectedAnnouncement?.id === msg.id ? 'text-primary' : 'text-white/20'}`} />
+                                                        <span className="text-[8px] font-black uppercase tracking-widest text-white/40">{msg.sender_name || 'Official'}</span>
                                                     </div>
-                                                    <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(msg.sent_at)}</span>
+                                                    <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(msg.sent_at)}</span>
                                                 </div>
-                                                <h4 className="text-sm font-black text-white uppercase tracking-tight leading-none group-hover:text-primary transition-colors truncate">{msg.subject}</h4>
-                                                <p className="text-[10px] text-white/20 mt-2 font-medium line-clamp-1">{msg.body}</p>
-                                                {selectedAnnouncement?.id === msg.id && <div className="absolute top-6 right-6 animate-in zoom-in"><ShieldCheckIcon className="w-3 h-3 text-primary" /></div>}
+                                                <h4 className="text-xs font-black text-white uppercase tracking-tight leading-none group-hover:text-primary transition-colors truncate">{msg.subject}</h4>
+                                                <p className="text-[9px] text-white/20 mt-1.5 font-medium line-clamp-1">{msg.body}</p>
+                                                {selectedAnnouncement?.id === msg.id && <div className="absolute top-5 right-5 animate-in zoom-in"><ShieldCheckIcon className="w-2.5 h-2.5 text-primary" /></div>}
                                             </button>
                                         ))}
                                     </motion.div>
                                 ) : (
-                                    <motion.div key="enquiry-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                                    <motion.div key="enquiry-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2 pb-10">
                                         {enquiries.length === 0 ? <EmptyNode label="Enquiries" /> : enquiries.map(enq => (
                                             <button
                                                 key={enq.id}
-                                                onClick={() => setSelectedEnquiry(enq)}
-                                                className={`w-full p-6 rounded-[2rem] text-left transition-all duration-300 border group relative overflow-hidden ${selectedEnquiry?.id === enq.id
+                                                onClick={() => { setSelectedEnquiry(enq); setIsMobileMenuOpen(false); }}
+                                                className={`w-full p-5 rounded-[2rem] text-left transition-all duration-300 border group relative overflow-hidden ${selectedEnquiry?.id === enq.id
                                                     ? 'bg-indigo-500/10 border-indigo-500/40 shadow-xl'
                                                     : 'bg-white/[0.01] border-white/[0.02] hover:bg-white/[0.04] opacity-50 hover:opacity-100'}`}
                                             >
-                                                <div className="flex justify-between items-center mb-3">
+                                                <div className="flex justify-between items-center mb-2">
                                                     <div className="flex items-center gap-2">
-                                                        <TerminalIcon className={`w-3.5 h-3.5 ${selectedEnquiry?.id === enq.id ? 'text-indigo-400' : 'text-white/20'}`} />
-                                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Node ID: {String(enq.id).slice(0, 8)}</span>
+                                                        <TerminalIcon className={`w-3 h-3 ${selectedEnquiry?.id === enq.id ? 'text-indigo-400' : 'text-white/20'}`} />
+                                                        <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Node: {String(enq.id).slice(0, 8)}</span>
                                                     </div>
-                                                    <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(enq.updated_at)}</span>
+                                                    <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(enq.updated_at)}</span>
                                                 </div>
-                                                <h4 className="text-sm font-black text-white uppercase tracking-tight leading-none group-hover:text-indigo-400 transition-colors">{enq.applicant_name}</h4>
-                                                <div className="mt-3 flex items-center gap-2">
-                                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-lg border tracking-widest ${statusConfig[enq.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enq.status as EnquiryStatus]?.color || 'text-white/20 border-white/5'}`}>
+                                                <h4 className="text-xs font-black text-white uppercase tracking-tight leading-none group-hover:text-indigo-400 transition-colors truncate">{enq.applicant_name}</h4>
+                                                <div className="mt-2 flex items-center gap-2">
+                                                    <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md border tracking-widest ${statusConfig[enq.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enq.status as EnquiryStatus]?.color || 'text-white/20 border-white/5'}`}>
                                                         {enq.status.replace('ENQUIRY_', '')}
                                                     </span>
-                                                    <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest">Grade {enq.grade}</span>
+                                                    <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">Grade {enq.grade}</span>
                                                 </div>
-                                                {selectedEnquiry?.id === enq.id && <div className="absolute top-6 right-6 animate-in zoom-in"><ShieldCheckIcon className="w-3 h-3 text-indigo-400" /></div>}
+                                                {selectedEnquiry?.id === enq.id && <div className="absolute top-5 right-5 animate-in zoom-in"><ShieldCheckIcon className="w-2.5 h-2.5 text-indigo-400" /></div>}
                                             </button>
                                         ))}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
-
-                        {/* Static Footer */}
-                        <div className="p-8 border-t border-white/[0.03] text-center">
-                            <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Secure Node Registry Access</p>
-                        </div>
                     </div>
                 </div>
 
-                {/* 2. Payload View (Main Display) */}
-                <div className="lg:col-span-8 flex flex-col bg-[#0c0d12]/40 backdrop-blur-3xl rounded-[3.5rem] border border-white/5 relative overflow-hidden h-full">
+                {/* 2. Main Viewport */}
+                <div className="flex-1 flex flex-col bg-[#0c0d12]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 relative overflow-hidden min-w-0">
+                    {/* Mobile Menu Trigger */}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(true)}
+                        className="lg:hidden absolute top-4 left-4 z-10 p-3 bg-white/5 border border-white/10 rounded-2xl text-white/60 hover:text-white"
+                    >
+                        <RadarIcon className="w-5 h-5" />
+                    </button>
+
                     <AnimatePresence mode="wait">
                         {activeTab === 'broadcasts' ? (
                             selectedAnnouncement ? (
-                                <motion.div key={`view-${selectedAnnouncement.id}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col h-full">
-                                    <header className="p-10 border-b border-white/[0.05] bg-black/20 flex flex-col gap-4">
+                                <motion.div key={`view-${selectedAnnouncement.id}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col h-full uppercase">
+                                    <header className="p-8 md:p-10 border-b border-white/[0.05] bg-black/20 flex flex-col gap-4">
                                         <div className="flex justify-between items-center">
                                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em]">Official Handshake</span>
                                             <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">{formatTimeAgo(selectedAnnouncement.sent_at)}</span>
                                         </div>
-                                        <h2 className="text-3xl font-serif font-black text-white leading-tight tracking-tight uppercase">{selectedAnnouncement.subject}</h2>
+                                        <h2 className="text-2xl md:text-3xl font-serif font-black text-white leading-tight tracking-tight uppercase">{selectedAnnouncement.subject}</h2>
                                         <div className="flex items-center gap-2 pt-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
-                                            <span className="text-[11px] font-black text-white/40 uppercase tracking-widest">Authority: {selectedAnnouncement.sender_name || 'Central Command'}</span>
+                                            <span className="text-[11px] font-black text-white/40 uppercase tracking-widest leading-none">Authority: {selectedAnnouncement.sender_name || 'Central Command'}</span>
                                         </div>
                                     </header>
-                                    <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+                                    <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
                                         <div className="max-w-2xl mx-auto space-y-12">
                                             <div className="w-12 h-1.5 bg-primary/20 rounded-full"></div>
-                                            <p className="text-lg md:text-xl text-white/60 font-serif leading-relaxed italic border-l-2 border-white/5 pl-8">
+                                            <p className="text-base md:text-xl text-white/60 font-serif leading-relaxed italic border-l-2 border-white/5 pl-8 normal-case">
                                                 {selectedAnnouncement.body}
                                             </p>
-                                            <div className="pt-20 opacity-10 flex items-center gap-4 text-[10px] font-black grayscale">
-                                                <ShieldCheckIcon className="w-6 h-6" /> INTEGRITY LEDGER: {selectedAnnouncement.id}
+                                            <div className="pt-20 opacity-10 flex items-center gap-4 text-[10px] font-black grayscale flex-wrap">
+                                                <ShieldCheckIcon className="w-6 h-6 shrink-0" /> INTEGRITY LEDGER: {selectedAnnouncement.id}
                                             </div>
                                         </div>
                                     </div>
@@ -285,6 +301,7 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const isAtBottom = useRef(true);
 
     const loadTimeline = useCallback(async () => {
         setLoading(true);
@@ -301,9 +318,28 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
         return () => { supabase.removeChannel(sub); };
     }, [loadTimeline, enquiry.id]);
 
+    const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo({
+                top: scrollRef.current.scrollHeight,
+                behavior
+            });
+        }
+    };
+
     useEffect(() => {
-        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if (isAtBottom.current) {
+            scrollToBottom('auto');
+        }
     }, [messages]);
+
+    const handleScroll = () => {
+        if (scrollRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+            const threshold = 100;
+            isAtBottom.current = scrollHeight - scrollTop - clientHeight < threshold;
+        }
+    };
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -320,12 +356,12 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
             if (error) throw error;
 
             setText('');
+            isAtBottom.current = true;
             await loadTimeline();
             refresh(true);
         } catch (err: any) {
             console.error("Transmission Failure:", err);
-            const errorMsg = err.message || (typeof err === 'string' ? err : 'Node Handshake Refused');
-            alert(`Transmission Failure: ${errorMsg}`);
+            alert(`Transmission Failure: ${err.message || 'Node Handshake Refused'}`);
         } finally {
             setSending(false);
         }
@@ -334,71 +370,123 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col lg:flex-row h-full bg-transparent divide-x divide-white/[0.03]">
             {/* Chat Area */}
-            <div className="flex-grow flex flex-col min-w-0">
-                <header className="p-10 border-b border-white/[0.05] bg-black/20 flex flex-col gap-4">
-                    <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.5em]">Identity Handshake</span>
-                        <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
-                            <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">Live Link</span>
+            <div className="flex-1 flex flex-col min-w-0 h-full">
+                {/* Header - Fixed */}
+                <header className="px-6 md:px-10 py-6 border-b border-white/[0.05] bg-black/40 backdrop-blur-md shrink-0 z-10">
+                    <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.4em]">Identity Handshake</span>
+                                <div className="w-1 h-1 rounded-full bg-indigo-500/40"></div>
+                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest shrink-0">Live Link</span>
+                            </div>
+                            <h2 className="text-xl md:text-2xl font-serif font-black text-white leading-tight tracking-tight uppercase truncate">{enquiry.applicant_name}</h2>
+                        </div>
+                        <div className="flex items-center gap-3 md:hidden">
+                            <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                                <ShieldCheckIcon className="w-4 h-4 text-indigo-400" />
+                            </div>
                         </div>
                     </div>
-                    <h2 className="text-3xl font-serif font-black text-white leading-tight tracking-tight uppercase truncate">{enquiry.applicant_name}</h2>
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] italic">Established node connection: {String(enquiry.id).slice(0, 18).toUpperCase()}</p>
                 </header>
 
-                <div ref={scrollRef} className="flex-1 overflow-y-auto p-12 space-y-8 custom-scrollbar">
-                    {loading ? (
+                {/* Message Stream - Scrollable */}
+                <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar"
+                >
+                    {loading && messages.length === 0 ? (
                         <div className="h-full flex items-center justify-center opacity-10"><Spinner /></div>
                     ) : messages.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center opacity-5 select-none grayscale text-center">
-                            <RadarIcon className="w-20 h-20 mb-6" />
-                            <p className="text-[10px] font-black uppercase tracking-[1em]">Channel Standby</p>
-                            <p className="text-[8px] mt-4 max-w-[200px] leading-relaxed">System is awaiting official response from the institutional node.</p>
+                        <div className="h-full flex flex-col items-center justify-center opacity-10 select-none text-center">
+                            <div className="relative mb-6">
+                                <RadarIcon className="w-20 h-20" />
+                                <motion.div
+                                    animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                    className="absolute inset-0 bg-primary/20 rounded-full blur-xl"
+                                />
+                            </div>
+                            <p className="text-[12px] font-black uppercase tracking-[0.8em]">Channel Standby</p>
+                            <p className="text-[9px] mt-4 max-w-xs leading-relaxed font-serif italic text-white/40">"No enquiries yet. Verified conversations will appear here."</p>
                         </div>
                     ) : (
-                        <div className="max-w-3xl mx-auto space-y-6">
-                            {messages.map((item, i) => (
-                                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${item.is_admin ? 'justify-start' : 'justify-end'}`}>
-                                    <div className={`max-w-[85%] p-6 rounded-[2rem] text-sm md:text-base leading-relaxed border transition-all ${item.is_admin
-                                        ? 'bg-indigo-600 text-white border-white/10 rounded-bl-none shadow-2xl shadow-indigo-600/10'
-                                        : 'bg-white/[0.05] text-white/70 border-white/5 rounded-br-none backdrop-blur-sm shadow-xl'}`}>
-                                        <p className="font-medium">{item.details.message}</p>
-                                        <div className="mt-4 flex items-center gap-3 text-[9px] font-black uppercase tracking-widest opacity-40">
-                                            <span>{item.created_by_name}</span>
-                                            <div className="w-1 h-1 rounded-full bg-current opacity-20"></div>
-                                            <span>{formatTimeAgo(item.created_at)}</span>
+                        <div className="max-w-4xl mx-auto flex flex-col space-y-6">
+                            {messages.map((item, i) => {
+                                const isMe = !item.is_admin;
+                                return (
+                                    <motion.div
+                                        key={`${item.created_at}-${i}`}
+                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        className={`flex flex-col ${!isMe ? 'items-end' : 'items-start'}`}
+                                    >
+                                        <div className={`flex flex-col max-w-[90%] md:max-w-[80%] space-y-1 ${!isMe ? 'items-end' : 'items-start'}`}>
+                                            <div className="flex items-center gap-2 px-2">
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-white/20">
+                                                    {isMe ? 'Verified Parent' : 'School Response'}
+                                                </span>
+                                                <div className="w-0.5 h-0.5 rounded-full bg-white/10"></div>
+                                                <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest leading-none">
+                                                    {formatTimeAgo(item.created_at)}
+                                                </span>
+                                            </div>
+                                            <div className={`p-4 md:p-5 rounded-[1.5rem] md:rounded-[2rem] text-sm leading-relaxed border shadow-2xl transition-all hover:brightness-110 ${!isMe
+                                                ? 'bg-indigo-600/90 text-white border-indigo-400/20 rounded-tr-none shadow-indigo-500/10'
+                                                : 'bg-white/[0.04] text-white/90 border-white/5 rounded-tl-none backdrop-blur-md shadow-black/40'}
+                                                ${i === messages.length - 1 ? 'ring-2 ring-primary/20 bg-primary/5' : ''}`}
+                                            >
+                                                <p className="font-medium whitespace-pre-wrap break-words normal-case">
+                                                    {item.details.message}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
+                                    </motion.div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
 
-                <footer className="p-10 pt-4 border-t border-white/[0.05] bg-black/10">
-                    <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-4">
-                        <input
-                            type="text" value={text} onChange={e => setText(e.target.value)}
-                            placeholder="Establish encrypted uplink..."
-                            className="flex-grow h-16 px-8 rounded-[2rem] bg-black/60 border border-white/5 text-white placeholder:text-white/10 focus:border-primary/50 outline-none transition-all text-sm font-medium shadow-inner"
-                        />
-                        <button
-                            type="submit" disabled={!text.trim() || sending}
-                            className="w-16 h-16 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.8rem] transition-all active:scale-95 disabled:opacity-20 shadow-2xl"
-                        >
-                            {sending ? <Spinner size="sm" /> : <SendIcon className="w-6 h-6" />}
-                        </button>
-                    </form>
+                {/* Composer - Fixed Bottom */}
+                <footer className="px-6 md:px-10 py-6 border-t border-white/[0.05] bg-black/20 backdrop-blur-xl shrink-0">
+                    <div className="max-w-4xl mx-auto">
+                        <form onSubmit={handleSend} className="relative group">
+                            <div className="relative flex gap-3 p-2 bg-white/[0.03] border border-white/5 rounded-[2.5rem] focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-inner">
+                                <input
+                                    type="text"
+                                    value={text}
+                                    onChange={e => setText(e.target.value)}
+                                    placeholder="Establish encrypted uplink (Parent Response)..."
+                                    className="flex-grow h-12 md:h-14 px-6 md:px-8 bg-transparent text-white placeholder:text-white/10 outline-none text-sm font-medium normal-case"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!text.trim() || sending}
+                                    className="w-12 md:w-14 h-12 md:h-14 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 text-white rounded-full transition-all active:scale-90 disabled:opacity-20 shadow-2xl shrink-0"
+                                >
+                                    {sending ? <Spinner size="sm" /> : <SendIcon className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </form>
+                        <div className="mt-4 flex items-center justify-center gap-3 opacity-20">
+                            <ShieldCheckIcon className="w-3 h-3 text-emerald-400" />
+                            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white">Messages are encrypted and logged for institutional transparency.</span>
+                        </div>
+                    </div>
                 </footer>
             </div>
 
-            {/* Identity Profile (Right Side Pane) */}
-            <div className="w-full lg:w-80 flex-shrink-0 bg-black/20 p-10 space-y-12 overflow-y-auto hidden md:block border-l border-white/[0.05]">
+            {/* Profile Sidebar - Desktop Only */}
+            <div className="w-80 flex-shrink-0 bg-black/20 p-10 space-y-10 overflow-y-auto hidden xl:block">
                 <section className="space-y-6">
                     <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Registry Status</h3>
                     <div className={`p-6 rounded-3xl border ${statusConfig[enquiry.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enquiry.status as EnquiryStatus]?.color || 'text-white/20'} border-white/5 shadow-2xl flex flex-col items-center justify-center text-center gap-4`}>
-                        <ShieldCheckIcon className="w-10 h-10 opacity-80" />
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-current opacity-20 blur-xl"></div>
+                            <ShieldCheckIcon className="w-10 h-10 relative z-10" />
+                        </div>
                         <span className="text-[11px] font-black uppercase tracking-[0.3em] leading-none">
                             {enquiry.status.replace('ENQUIRY_', '')}
                         </span>
@@ -408,31 +496,20 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                 <section className="space-y-6">
                     <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Academic Context</h3>
                     <div className="space-y-4">
-                        <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl group transition-all hover:bg-white/[0.05]">
+                        <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
                             <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Grade Level</span>
                             <span className="text-xl font-serif font-black text-white/90">Grade {enquiry.grade}</span>
                         </div>
-                        <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl group transition-all hover:bg-white/[0.05]">
+                        <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
                             <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Institutional Target</span>
                             <span className="text-sm font-serif font-black text-white/90 uppercase truncate block">{enquiry.branch_name || 'Main Campus'}</span>
                         </div>
                     </div>
                 </section>
 
-                <section className="space-y-6 pt-6 border-t border-white/[0.05]">
-                    <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Sync Integrity</h3>
-                    <div className="flex items-center gap-4 p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-white/80 uppercase tracking-widest leading-none">Verified Stream</span>
-                            <span className="text-[8px] text-emerald-500/60 mt-1 uppercase tracking-widest font-bold">End-to-End Encryption</span>
-                        </div>
-                    </div>
-                </section>
-
-                <div className="pt-20 opacity-5 select-none grayscale">
-                    <TerminalIcon className="w-12 h-12 mx-auto" />
-                    <p className="text-[8px] font-black uppercase tracking-[0.5em] text-center mt-4 leading-relaxed">Authenticated Identity Node<br />Protocol V5.0.1</p>
+                <div className="pt-10 opacity-5 select-none grayscale text-center">
+                    <TerminalIcon className="w-10 h-10 mx-auto" />
+                    <p className="text-[8px] font-black uppercase tracking-[0.5em] mt-4 leading-relaxed">Identity Profile Node<br />Protocol V5.0.1</p>
                 </div>
             </div>
         </motion.div>
