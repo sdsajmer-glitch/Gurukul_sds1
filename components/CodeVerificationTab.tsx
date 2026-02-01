@@ -49,22 +49,56 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
         // Standardize: Remove all whitespace and handle formatting
         const cleanCode = code.replace(/\s+/g, '').toUpperCase();
         if (!cleanCode) return;
-        
+
         setVerifying(true);
         setError(null);
         setVerifiedData(null);
 
         try {
+            // PRIORITY: Branch Handshake Protocol
+            // If the user entered a Branch Access Key, we attempt to bind their identity immediately.
+            // This is the "Start Handshake" flow for disconnected admins.
+            const { data: handshakeData, error: handshakeError } = await supabase.rpc('verify_and_link_branch_admin', {
+                p_invitation_code: cleanCode
+            });
+
+            if (!handshakeError && handshakeData?.success) {
+                setImportSuccess(true);
+                // Show specific specific message for branch join
+                setVerifiedData({
+                    found: true,
+                    applicant_name: "Institutional Node",
+                    grade: "N/A",
+                    code_type: 'Admission', // Dummy type to satisfy type checker, visual only
+                    admission_id: "system-node",
+                    // We are hijacking the state slightly to show the specific success UI, 
+                    // or we can force a reload immediately.
+                } as any);
+
+                // Delay reload to show success animation
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+                return;
+            }
+
+            // Fallback: Check for Student/Admission Tokens
+            if (handshakeData?.message && !handshakeData.success && handshakeData.message.includes("Access Denied")) {
+                // Explicit email mismatch error from the branch handshake
+                throw new Error(handshakeData.message);
+            }
+
             // Step 1: Verify token context and retrieve node metadata
-            const { data, error: rpcError } = await supabase.rpc('admin_verify_share_code', { 
-                p_code: cleanCode 
+            const { data, error: rpcError } = await supabase.rpc('admin_verify_share_code', {
+                p_code: cleanCode
             });
 
             if (rpcError) throw rpcError;
-            
+
             if (data && data.found) {
                 setVerifiedData(data);
             } else {
+                // If both failed, show the relevant error (usually invalid token)
                 setError(data?.error || "Invalid or expired protocol token.");
             }
         } catch (err: any) {
@@ -74,16 +108,16 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
             setVerifying(false);
         }
     };
-    
+
     const handleImport = async () => {
         if (!verifiedData) return;
 
         setLoading(true);
         setError(null);
-        
+
         try {
             const branchToLink = branchId === undefined || branchId === null ? null : branchId;
-            
+
             // ARCHITECTURE FIX: Use unified ID-based RPC for all code types.
             // This bypasses the redundant string lookups that cause 'invalid token' errors.
             const { data, error: impError } = await supabase.rpc('admin_import_record_from_share_code', {
@@ -94,7 +128,7 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
             });
 
             if (impError) throw impError;
-            
+
             if (data && data.success) {
                 setImportSuccess(true);
                 const targetTab = verifiedData.code_type === 'Enquiry' ? 'Enquiries' : 'Admissions';
@@ -135,8 +169,8 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
                         disabled={verifying || importSuccess}
                         className="w-full bg-[#0d0f14]/80 backdrop-blur-3xl border-2 border-white/5 rounded-[3rem] pl-20 pr-44 py-8 text-3xl font-mono font-black tracking-[0.4em] focus:ring-[15px] focus:ring-primary/5 focus:border-primary/50 outline-none text-white transition-all shadow-2xl uppercase"
                     />
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         disabled={verifying || !code.trim() || importSuccess}
                         className="absolute right-4 top-4 bottom-4 bg-primary text-white font-black px-10 rounded-[2.2rem] shadow-xl hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-50"
                     >
@@ -153,8 +187,8 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
                     )}
                     {importSuccess && (
                         <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-8 py-6 rounded-[2rem] text-sm font-bold flex items-center gap-4 animate-in zoom-in-95">
-                            <CheckCircleIcon className="w-6 h-6" /> 
-                            <span>Node Identity Synchronized. Redirecting...</span>
+                            <CheckCircleIcon className="w-6 h-6" />
+                            <span>Handshake Verified. Synchronizing context...</span>
                         </div>
                     )}
                 </div>
@@ -171,17 +205,17 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
                             </div>
                         </div>
                         <div className="flex flex-col justify-center">
-                             <button onClick={handleImport} disabled={loading} className="w-full py-6 bg-primary hover:bg-primary/90 text-white font-black text-sm uppercase tracking-[0.4em] rounded-[2rem] shadow-2xl shadow-primary/20 transition-all transform active:scale-95 group">
-                                 {loading ? <Spinner size="sm" className="text-white"/> : (
+                            <button onClick={handleImport} disabled={loading} className="w-full py-6 bg-primary hover:bg-primary/90 text-white font-black text-sm uppercase tracking-[0.4em] rounded-[2rem] shadow-2xl shadow-primary/20 transition-all transform active:scale-95 group">
+                                {loading ? <Spinner size="sm" className="text-white" /> : (
                                     <div className="flex items-center justify-center gap-4">
                                         <span>Synchronize as {verifiedData.code_type}</span>
                                         <ChevronRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                     </div>
-                                 )}
-                             </button>
-                             <p className="text-[10px] text-white/20 text-center mt-6 font-bold uppercase tracking-widest leading-relaxed">
+                                )}
+                            </button>
+                            <p className="text-[10px] text-white/20 text-center mt-6 font-bold uppercase tracking-widest leading-relaxed">
                                 Proceeding will bind this identity node to your current branch context.
-                             </p>
+                            </p>
                         </div>
                     </div>
                 </div>
