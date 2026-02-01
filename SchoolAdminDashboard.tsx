@@ -165,7 +165,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
             case 'Finance': return <FinanceTab profile={profile} branchId={currentBranchId} branches={branches} />;
             case 'Communication': return <CommunicationTab profile={profile} />;
             case 'User Management': return <UserManagementTab profile={profile} isHeadOfficeAdmin={isHeadOfficeAdmin} />;
-            case 'Analytics': return <AnalyticsTab />;
+            case 'Analytics': return <AnalyticsTab branchId={currentBranchId} />;
             case 'Meetings': return <MeetingsTab />;
             case 'Homework': return <HomeworkTab />;
             case 'Facility Management': return <FacilityManagementTab />;

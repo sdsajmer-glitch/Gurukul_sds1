@@ -191,36 +191,81 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
             </div>
 
             {/* --- SCOPED TELEMETRY GRID --- */}
-            {loading ? (
-                <StatsSkeleton />
-            ) : (
-                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 transition-all duration-700 ${!currentBranch ? 'opacity-30 grayscale blur-[2px] pointer-events-none' : 'opacity-100'}`}>
-                    <StatCard title="Active Enrollment" value={stats.students.toString()} icon={<StudentsIcon className="h-6 w-6" />} trend="+5.2%" colorClass="bg-blue-500/10 text-blue-400" />
-                    <StatCard title="Faculty Assets" value={stats.teachers.toString()} icon={<TeacherIcon className="h-6 w-6" />} trend="+2 new" colorClass="bg-emerald-500/10 text-emerald-400" />
-                    <StatCard title="Live Courses" value={stats.courses.toString()} icon={<CoursesIcon className="h-6 w-6" />} trend="Stable" colorClass="bg-amber-500/10 text-amber-400" />
-                    <StatCard title="Revenue (YTD)" value="$0" icon={<FinanceIcon className="h-6 w-6" />} trend="--%" colorClass="bg-indigo-500/10 text-indigo-400" />
-                </div>
-            )}
+            <div className="relative group/telemetry">
+                <div className="absolute -inset-4 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-[4rem] opacity-0 group-hover/telemetry:opacity-100 transition-opacity duration-1000 pointer-events-none"></div>
+                {loading ? (
+                    <StatsSkeleton />
+                ) : (
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 transition-all duration-1000 ${!currentBranch ? 'opacity-30 grayscale blur-[2px] pointer-events-none' : 'opacity-100'}`}>
+                        <StatCard
+                            title="Active Enrollment"
+                            value={stats.students.toString()}
+                            icon={<StudentsIcon className="h-7 w-7" />}
+                            trend="+5.2%"
+                            colorClass="bg-blue-500/10 text-blue-400"
+                        />
+                        <StatCard
+                            title="Faculty Assets"
+                            value={stats.teachers.toString()}
+                            icon={<TeacherIcon className="h-7 w-7" />}
+                            trend="+2 new"
+                            colorClass="bg-emerald-500/10 text-emerald-400"
+                        />
+                        <StatCard
+                            title="Live Courses"
+                            value={stats.courses.toString()}
+                            icon={<CoursesIcon className="h-7 w-7" />}
+                            trend="Stable"
+                            colorClass="bg-amber-500/10 text-amber-400"
+                        />
+                        <StatCard
+                            title="Revenue (YTD)"
+                            value="$0"
+                            icon={<FinanceIcon className="h-7 w-7" />}
+                            trend="--%"
+                            colorClass="bg-indigo-500/10 text-indigo-400"
+                        />
+                    </div>
+                )}
+            </div>
 
             {/* --- ANALYTICS VISUALIZATION --- */}
-            <div className={`grid grid-cols-1 lg:grid-cols-5 gap-8 transition-all duration-700 ${!currentBranch ? 'opacity-20 blur-md pointer-events-none' : 'opacity-100'}`}>
-                <div className="lg:col-span-3 bg-card/60 backdrop-blur-xl border border-white/5 rounded-[3rem] shadow-2xl flex flex-col h-[480px] relative overflow-hidden ring-1 ring-black/10">
-                    <div className="p-8 md:p-10 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                        <div>
-                            <h3 className="font-bold text-xl text-white font-serif tracking-tight">Demographic Distribution</h3>
-                            <p className="text-xs text-white/30 mt-1 uppercase tracking-widest font-black">Grade Wise Breakdown</p>
+            <div className={`grid grid-cols-1 lg:grid-cols-5 gap-10 transition-all duration-1000 ${!currentBranch ? 'opacity-20 blur-xl pointer-events-none' : 'opacity-100'}`}>
+                <div className="lg:col-span-3 group/chart relative bg-[#0a0a0c]/80 backdrop-blur-2xl border border-white/5 rounded-[3.5rem] shadow-2xl flex flex-col h-[520px] overflow-hidden ring-1 ring-white/10 hover:ring-white/20 transition-all duration-700">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover/chart:opacity-100 transition-opacity duration-1000"></div>
+                    <div className="p-10 md:p-12 border-b border-white/5 flex justify-between items-center relative z-10">
+                        <div className="flex items-center gap-6">
+                            <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                                <TrendingUpIcon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-2xl text-white font-serif tracking-tight uppercase">Demographic Distribution</h3>
+                                <p className="text-[10px] text-white/30 mt-1 uppercase tracking-[0.3em] font-black italic">Intelligence Protocol: Enrollment Grade Sync</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Live Syncing</span>
                         </div>
                     </div>
-                    <div className="p-10 flex-grow"><AreaChart /></div>
+                    <div className="p-10 flex-grow relative z-10"><AreaChart /></div>
+                    <div className="absolute bottom-6 right-12 text-[8px] font-black text-white/10 uppercase tracking-[0.4em] select-none">Metric Stream v2.4</div>
                 </div>
-                <div className="lg:col-span-2 bg-card/60 backdrop-blur-xl border border-white/5 rounded-[3rem] shadow-2xl flex flex-col h-[480px] relative overflow-hidden ring-1 ring-black/10">
-                    <div className="p-8 md:p-10 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                        <div>
-                            <h3 className="font-bold text-xl text-white font-serif tracking-tight">Engagement Metric</h3>
-                            <p className="text-xs text-white/30 mt-1 uppercase tracking-widest font-black">Institutional Health</p>
+
+                <div className="lg:col-span-2 group/metric relative bg-[#0a0a0c]/80 backdrop-blur-2xl border border-white/5 rounded-[3.5rem] shadow-2xl flex flex-col h-[520px] overflow-hidden ring-1 ring-white/10 hover:ring-white/20 transition-all duration-700">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/5 via-transparent to-transparent opacity-0 group-hover/metric:opacity-100 transition-opacity duration-1000"></div>
+                    <div className="p-10 md:p-12 border-b border-white/5 flex justify-between items-center relative z-10">
+                        <div className="flex items-center gap-6">
+                            <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500 border border-amber-500/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                                <SparklesIcon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-2xl text-white font-serif tracking-tight uppercase">Engagement Metric</h3>
+                                <p className="text-[10px] text-white/30 mt-1 uppercase tracking-[0.3em] font-black italic">Institutional Health Index</p>
+                            </div>
                         </div>
                     </div>
-                    <div className="p-10 flex-grow"><BarChart /></div>
+                    <div className="p-10 flex-grow relative z-10"><BarChart /></div>
                 </div>
             </div>
         </div>
