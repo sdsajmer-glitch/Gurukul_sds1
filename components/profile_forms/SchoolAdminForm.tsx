@@ -46,35 +46,36 @@ const GRADES = [
 
 const PremiumInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string; icon?: React.ReactNode; action?: React.ReactNode; fullWidth?: boolean }> = ({ label, icon, action, fullWidth, className, ...props }) => (
     <div className={`relative group ${fullWidth ? 'w-full' : ''}`}>
-        <div className="absolute top-1/2 -translate-y-1/2 left-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors duration-300 z-10 pointer-events-none">
+        <div className="absolute top-[32px] -translate-y-1/2 left-[20px] text-muted-foreground/30 group-focus-within:text-primary transition-all duration-300 z-20 pointer-events-none group-focus-within:scale-110">
             {icon}
         </div>
         <input
             {...props}
             placeholder=" "
-            className={`peer block w-full h-[56px] rounded-xl border border-input/60 bg-background/50 px-4 ${icon ? 'pl-11' : 'pl-4'} ${action ? 'pr-12' : ''} pt-5 pb-1 text-sm text-foreground font-medium shadow-sm transition-all duration-200 hover:bg-background hover:border-primary/30 focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none placeholder-transparent ${className}`}
+            className={`peer block w-full h-[64px] rounded-2xl border-2 border-white/5 bg-black/40 px-6 ${icon ? 'pl-14' : 'pl-6'} ${action ? 'pr-14' : ''} pt-6 pb-2 text-[15px] text-foreground font-semibold shadow-inner transition-all duration-300 hover:bg-black/60 hover:border-white/10 focus:border-primary/50 focus:ring-8 focus:ring-primary/5 focus:outline-none placeholder-transparent ${className}`}
         />
-        <label className={`absolute left-4 top-4 z-10 origin-[0] -translate-y-2.5 scale-75 transform text-[10px] font-bold uppercase tracking-wider text-muted-foreground duration-200 
-            peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-placeholder-shown:text-xs peer-placeholder-shown:font-medium peer-placeholder-shown:normal-case
-            peer-focus:-translate-y-2.5 peer-focus:scale-75 peer-focus:text-[10px] peer-focus:font-bold peer-focus:uppercase peer-focus:text-primary ${icon ? 'peer-placeholder-shown:left-11' : ''}`}>
+        <label className={`absolute left-6 top-[32px] z-10 origin-[0] -translate-y-7 scale-75 transform text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 duration-300 pointer-events-none
+            peer-placeholder-shown:translate-y-[-50%] peer-placeholder-shown:scale-100 peer-placeholder-shown:text-sm peer-placeholder-shown:font-bold peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal
+            peer-focus:-translate-y-7 peer-focus:scale-75 peer-focus:text-[10px] peer-focus:font-black peer-focus:uppercase peer-focus:tracking-[0.2em] peer-focus:text-primary ${icon ? 'peer-placeholder-shown:left-14' : ''}`}>
             {label}
         </label>
         {action && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-30">
                 {action}
             </div>
         )}
+        <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none blur-xl"></div>
     </div>
 );
 
 const SectionHeader: React.FC<{ title: string, subtitle: string, icon: React.ReactNode, colorClass: string }> = ({ title, subtitle, icon, colorClass }) => (
-    <div className="flex items-start gap-4 mb-6">
-        <div className={`p-3 rounded-2xl ${colorClass} shadow-sm ring-1 ring-inset ring-black/5 dark:ring-white/10`}>
+    <div className="flex items-center gap-5 mb-10 pb-6 border-b border-white/5">
+        <div className={`p-4 rounded-[1.5rem] ${colorClass} shadow-[0_0_30px_rgba(0,0,0,0.2)] ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-500`}>
             {icon}
         </div>
         <div>
-            <h3 className="text-xl font-bold text-foreground tracking-tight">{title}</h3>
-            <p className="text-sm text-muted-foreground font-medium mt-0.5">{subtitle}</p>
+            <h3 className="text-2xl font-serif font-black text-white tracking-tight uppercase">{title}</h3>
+            <p className="text-[11px] text-muted-foreground font-bold tracking-widest uppercase opacity-60 mt-1">{subtitle}</p>
         </div>
     </div>
 );
@@ -359,18 +360,20 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                         />
 
                         {isInitialCreation && (
-                            <div className="bg-primary/5 border border-primary/10 rounded-2xl p-5 mb-8 flex items-start gap-4">
-                                <CheckCircleIcon className="w-6 h-6 text-primary mt-0.5 flex-shrink-0" />
+                            <div className="bg-primary/5 border border-primary/20 rounded-[2rem] p-6 mb-10 flex items-center gap-5 animate-in zoom-in duration-500">
+                                <div className="p-3 bg-primary/10 rounded-2xl">
+                                    <CheckCircleIcon className="w-8 h-8 text-primary" />
+                                </div>
                                 <div>
-                                    <p className="text-sm font-bold text-foreground">Pre-filled Information</p>
-                                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">We've automatically populated these fields using your account details. Please review them for accuracy.</p>
+                                    <p className="text-sm font-black uppercase tracking-widest text-primary">Identity Synchronized</p>
+                                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed font-medium">Your primary administrator details have been provisioned from your secure identity node.</p>
                                 </div>
                             </div>
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
                             <PremiumInput
-                                label="Full Name"
+                                label="Full Legal Name"
                                 name="admin_contact_name"
                                 value={formData.admin_contact_name || ''}
                                 onChange={handleChange}
@@ -379,18 +382,18 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                             />
 
                             <PremiumInput
-                                label="Designation"
+                                label="Official Designation"
                                 name="admin_designation"
                                 value={formData.admin_designation || ''}
                                 onChange={handleChange}
                                 required
-                                placeholder="e.g. Principal"
+                                placeholder="e.g. Director"
                                 icon={<CheckCircleIcon className="w-5 h-5" />}
                             />
 
                             <div className="md:col-span-2">
                                 <PremiumInput
-                                    label="Official Email"
+                                    label="Official Communication Email"
                                     type="email"
                                     name="admin_contact_email"
                                     value={formData.admin_contact_email || ''}
@@ -401,9 +404,9 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                             </div>
 
                             <div className="flex gap-4 md:col-span-2">
-                                <div className="w-[160px]">
+                                <div className="w-[140px] flex-shrink-0">
                                     <CustomSelect
-                                        label="Code"
+                                        label="Dial Code"
                                         placeholder="+91"
                                         options={countryCodes.map(c => ({ value: c.dial_code, label: `${c.code} ${c.dial_code}` }))}
                                         value={formData.admin_contact_phone_country_code || '+91'}
@@ -414,7 +417,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                 </div>
                                 <div className="flex-grow">
                                     <PremiumInput
-                                        label="Phone Number"
+                                        label="Primary Phone Number"
                                         type="tel"
                                         name="admin_contact_phone_local"
                                         value={formData.admin_contact_phone_local || ''}

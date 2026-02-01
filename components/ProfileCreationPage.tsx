@@ -51,13 +51,35 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
         }
 
         if (isMounted.current) {
-            setFormData({
+            const data: any = {
                 ...fetchedData,
-                phone: profile.phone || '',
-                display_name: profile.display_name || '',
-                email: profile.email || '',
+                phone: profile.phone || fetchedData.phone || '',
+                display_name: profile.display_name || fetchedData.display_name || '',
+                email: profile.email || fetchedData.email || '',
                 country: fetchedData.country || 'India'
-            });
+            };
+
+            // AUTO-FILL: School Admin specific contact details
+            if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+                data.admin_contact_name = data.admin_contact_name || profile.display_name || '';
+                data.admin_designation = data.admin_designation || 'Director';
+                data.admin_contact_email = data.admin_contact_email || profile.email || '';
+
+                // If phone exists, try to split it into country code and local
+                if (profile.phone && !data.admin_contact_phone_local) {
+                    const phoneStr = profile.phone;
+                    if (phoneStr.startsWith('+')) {
+                        // Simple split assumption: first 3 chars for code if it looks like +91
+                        data.admin_contact_phone_country_code = phoneStr.slice(0, 3);
+                        data.admin_contact_phone_local = phoneStr.slice(3);
+                    } else {
+                        data.admin_contact_phone_local = phoneStr;
+                        data.admin_contact_phone_country_code = '+91';
+                    }
+                }
+            }
+
+            setFormData(data);
             setIsFetchingInitialData(false);
         }
     }, [role, profile.id, profile.display_name, profile.phone, profile.email]);
