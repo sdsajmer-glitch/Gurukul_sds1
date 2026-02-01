@@ -158,9 +158,9 @@ const CollapsibleDocumentCard: React.FC<{
                 <div className="flex items-center gap-5">
                     {/* Status Icon Box */}
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner transition-colors ${isVerified ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                            isRejected ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                                isSubmitted ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                                    'bg-white/5 border-white/10 text-white/20'
+                        isRejected ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                            isSubmitted ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                'bg-white/5 border-white/10 text-white/20'
                         }`}>
                         {isVerified ? <CheckCircleIcon className="w-6 h-6" /> :
                             isRejected ? <AlertTriangleIcon className="w-6 h-6" /> :
@@ -190,9 +190,9 @@ const CollapsibleDocumentCard: React.FC<{
                 <div className="flex items-center gap-4">
                     {/* Status Pill */}
                     <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] border shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)] backdrop-blur-sm ${isVerified ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-900/20' :
-                            isRejected ? 'bg-red-500/10 border-red-500/30 text-red-100 shadow-red-900/20' :
-                                isSubmitted ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-blue-900/20' :
-                                    'bg-white/5 border-white/10 text-white/30'
+                        isRejected ? 'bg-red-500/10 border-red-500/30 text-red-100 shadow-red-900/20' :
+                            isSubmitted ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-blue-900/20' :
+                                'bg-white/5 border-white/10 text-white/30'
                         }`}>
                         {uploadProgress !== null ? 'Syncing...' : req.status}
                     </div>
@@ -513,16 +513,36 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end relative z-10">
-                                    <div className="flex items-center gap-6">
-                                        <div className="w-36 text-right">
+                                    <div className="flex items-center gap-8">
+                                        <div className="w-48 text-right hidden md:block">
                                             <div className="flex justify-between items-end mb-2">
-                                                <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Vault Sync</span>
-                                                <span className={`text-sm font-black ${percent === 100 ? 'text-emerald-500' : 'text-primary'}`}>{percent}%</span>
+                                                <div className="flex flex-col items-start">
+                                                    <span className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-0.5">Vault Status</span>
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wide ${percent === 100 ? 'text-emerald-500' : 'text-white/60'}`}>
+                                                        {percent === 100 ? 'Fully Synchronized' : percent > 75 ? 'Almost Complete' : percent > 0 ? 'Syncing in Progress' : 'Pending Initialization'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <span className={`text-xl font-black ${percent === 100 ? 'text-emerald-500' : 'text-white'}`}>{percent}%</span>
+                                                </div>
                                             </div>
-                                            <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5"><div className={`h-full rounded-full transition-all duration-1000 ease-out ${percent === 100 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]'}`} style={{ width: `${percent}%` }}></div></div>
+                                            <div className="h-2 bg-[#050608] rounded-full overflow-hidden border border-white/5 relative">
+                                                <div className="absolute inset-0 bg-white/[0.02]"></div>
+                                                <motion.div
+                                                    className={`h-full rounded-full relative overflow-hidden ${percent === 100 ? 'bg-emerald-500' : 'bg-primary'}`}
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${percent}%` }}
+                                                    transition={{ duration: 1, ease: "circOut" }}
+                                                >
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                                                </motion.div>
+                                            </div>
+                                            <p className="text-[9px] font-mono text-white/30 mt-2 text-right">
+                                                {verifiedCount} of {total} Artifacts Verified
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className={`p-4 rounded-full bg-white/5 border border-white/10 transition-all duration-500 ${isExpanded ? 'rotate-180 bg-primary/10 text-primary border-primary/20' : 'text-white/30 group-hover:text-white group-hover:bg-white/10'}`}>
+                                    <div className={`p-4 rounded-full bg-white/5 border border-white/10 transition-all duration-500 shadow-xl ${isExpanded ? 'rotate-180 bg-primary/10 text-primary border-primary/20 shadow-primary/10' : 'text-white/30 group-hover:text-white group-hover:bg-white/10'}`}>
                                         <ChevronDownIcon className="w-5 h-5" />
                                     </div>
                                 </div>
