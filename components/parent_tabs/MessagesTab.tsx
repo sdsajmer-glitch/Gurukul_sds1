@@ -141,7 +141,7 @@ export default function MessagesTab() {
                                             ? 'bg-primary/20 text-primary shadow-lg border border-primary/20'
                                             : 'text-white/20 hover:text-white/40'}`}
                                     >
-                                        {t}
+                                        {t.toUpperCase()}
                                     </button>
                                 ))}
                             </div>
