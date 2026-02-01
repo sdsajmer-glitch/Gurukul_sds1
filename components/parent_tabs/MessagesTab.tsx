@@ -33,6 +33,12 @@ const SendIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
+const RefreshIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+    </svg>
+);
+
 type Tab = 'broadcasts' | 'enquiries';
 
 const statusConfig: { [key in EnquiryStatus]: { color: string; bg: string } } = {
@@ -386,8 +392,15 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                             </div>
                             <h2 className="text-xl md:text-2xl font-serif font-black text-white leading-tight tracking-tight uppercase truncate">{enquiry.applicant_name}</h2>
                         </div>
-                        <div className="flex items-center gap-3 md:hidden">
-                            <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => loadTimeline()}
+                                className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                                title="Refresh Uplink"
+                            >
+                                <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            </button>
+                            <div className="md:hidden w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
                                 <ShieldCheckIcon className="w-4 h-4 text-indigo-400" />
                             </div>
                         </div>
@@ -424,10 +437,10 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                                         key={`${item.created_at}-${i}`}
                                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                                        className={`flex flex-col ${!isMe ? 'items-end' : 'items-start'}`}
+                                        className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                                     >
-                                        <div className={`flex flex-col max-w-[85%] md:max-w-[70%] space-y-1 ${!isMe ? 'items-end' : 'items-start'}`}>
-                                            <div className={`flex items-center gap-2 px-2 ${!isMe ? 'flex-row-reverse' : ''}`}>
+                                        <div className={`flex flex-col max-w-[85%] md:max-w-[70%] space-y-1 ${isMe ? 'items-end' : 'items-start'}`}>
+                                            <div className={`flex items-center gap-2 px-2 ${isMe ? 'flex-row-reverse' : ''}`}>
                                                 <span className={`text-[8px] font-black uppercase tracking-widest ${isMe ? 'text-indigo-300' : 'text-emerald-400'}`}>
                                                     {isMe ? 'Verified Parent' : 'School Official'}
                                                 </span>
@@ -437,8 +450,8 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                                                 </span>
                                             </div>
                                             <div className={`p-4 md:p-6 rounded-[2rem] text-sm leading-relaxed border shadow-2xl relative overflow-hidden group/bubble ${!isMe
-                                                ? 'bg-gradient-to-br from-[#1a1b26] to-[#0f1016] text-white/90 border-white/10 rounded-tr-none'
-                                                : 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-indigo-400/20 rounded-tl-none shadow-indigo-500/20'}`}
+                                                ? 'bg-gradient-to-br from-[#1a1b26] to-[#0f1016] text-white/90 border-white/10 rounded-tl-none'
+                                                : 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-indigo-400/20 rounded-tr-none shadow-indigo-500/20'}`}
                                             >
                                                 {/* Glossy effect */}
                                                 <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent pointer-events-none"></div>
