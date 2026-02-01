@@ -1,13 +1,15 @@
 -- ==============================================================================
--- FIX GENERATION LOGIC (Auto-Correct Entity Type)
+-- FIX GENERATION LOGIC (Strict Type Handling with Smart Lookup)
 -- ==============================================================================
--- 1. Updates `generate_admission_share_code` to automatically detect if the ID belongs to an Enquiry or Admission.
--- 2. Prevents creating "Enquiry" tokens for Admission IDs (which causes "Record not found" errors during verification).
+-- 1. Respects User's requested Token Type (Enquiry vs Admission).
+-- 2. Intelligently resolves IDs:
+--    - If requesting 'Enquiry' token for an 'Admission' ID, it finds the linked Enquiry ID.
+--    - If no linked record exists, it returns a clear error instead of creating a mismatch.
 
 CREATE OR REPLACE FUNCTION public.generate_admission_share_code(
-    p_admission_id uuid, -- This is the Entity ID provided by the UI
+    p_admission_id uuid, -- This is the Entity ID provided by the UI (could be Enquiry or Admission ID)
     p_purpose text,
-    p_code_type text -- The requested type (may be incorrect)
+    p_code_type text     -- The requested type ('Enquiry' or 'Admission')
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -16,16 +18,41 @@ AS $$
 DECLARE
     v_code text;
     v_exists boolean;
+    v_target_id uuid;
     v_id bigint;
-    v_actual_type text;
 BEGIN
-    -- 1. IDENTIFY ENTITY TYPE (Source of Truth)
-    IF EXISTS (SELECT 1 FROM public.admissions WHERE id = p_admission_id) THEN
-        v_actual_type := 'Admission';
-    ELSIF EXISTS (SELECT 1 FROM public.enquiries WHERE id = p_admission_id) THEN
-        v_actual_type := 'Enquiry';
+    -- 1. RESOLVE TARGET ID BASED ON REQUESTED TYPE
+    IF p_code_type = 'Enquiry' THEN
+        -- Case A: The provided ID is already an Enquiry ID
+        IF EXISTS (SELECT 1 FROM public.enquiries WHERE id = p_admission_id) THEN
+            v_target_id := p_admission_id;
+        
+        -- Case B: The provided ID is an Admission ID -> Find linked Enquiry
+        ELSE
+            SELECT id INTO v_target_id FROM public.enquiries WHERE admission_id = p_admission_id LIMIT 1;
+            
+            IF v_target_id IS NULL THEN
+                RETURN jsonb_build_object('success', false, 'error', 'Cannot create Enquiry Protocol: No Enquiry record found for this student.');
+            END IF;
+        END IF;
+
+    ELSIF p_code_type = 'Admission' THEN
+        -- Case A: The provided ID is already an Admission ID
+        IF EXISTS (SELECT 1 FROM public.admissions WHERE id = p_admission_id) THEN
+            v_target_id := p_admission_id;
+            
+        -- Case B: The provided ID is an Enquiry ID -> Find linked Admission (if converted)
+        ELSE
+            SELECT admission_id INTO v_target_id FROM public.enquiries WHERE id = p_admission_id LIMIT 1;
+
+            IF v_target_id IS NULL THEN
+                -- Check if it exists in admissions table directly (User mistake?)
+                -- Unlikely if we checked Exists above first.
+                RETURN jsonb_build_object('success', false, 'error', 'Cannot create Admission Protocol: This student is not yet admitted.');
+            END IF;
+        END IF;
     ELSE
-        RETURN jsonb_build_object('success', false, 'error', 'Target Identity Node not found in registry.');
+         RETURN jsonb_build_object('success', false, 'error', 'Invalid Protocol Type specified.');
     END IF;
 
     -- 2. GENERATE UNIQUE CODE
@@ -35,7 +62,7 @@ BEGIN
         IF NOT v_exists THEN EXIT; END IF;
     END LOOP;
 
-    -- 3. INSERT WITH CORRECT TYPE
+    -- 3. INSERT RECORD
     INSERT INTO public.admission_share_codes (
         code, 
         admission_id,
@@ -48,9 +75,9 @@ BEGIN
     )
     VALUES (
         v_code,
-        CASE WHEN v_actual_type = 'Admission' THEN p_admission_id ELSE NULL END,
-        CASE WHEN v_actual_type = 'Enquiry' THEN p_admission_id ELSE NULL END, 
-        v_actual_type, -- Use detected type, ignoring user mismatch
+        CASE WHEN p_code_type = 'Admission' THEN v_target_id ELSE NULL END,
+        CASE WHEN p_code_type = 'Enquiry' THEN v_target_id ELSE NULL END, 
+        p_code_type, -- Strictly respect requested type
         p_purpose,
         'Active',
         auth.uid(),
@@ -62,7 +89,7 @@ BEGIN
         'success', true,
         'code', v_code,
         'id', v_id,
-        'type', v_actual_type
+        'type', p_code_type
     );
 END;
 $$;
