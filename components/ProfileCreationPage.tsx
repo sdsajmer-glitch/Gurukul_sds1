@@ -180,42 +180,6 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
     const isLimitedBranchAdmin = role === BuiltInRoles.SCHOOL_ADMINISTRATION && !!profile.branch_id;
 
-    if (isLimitedBranchAdmin && !isFetchingInitialData) {
-        return (
-            <div className="w-full max-w-xl mx-auto py-20 animate-in fade-in duration-700">
-                <div className="bg-[#0c0e14] border border-white/5 rounded-[3rem] p-12 text-center shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
-
-                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-gray-800 to-black border-2 border-white/10 flex items-center justify-center text-4xl font-black text-white shadow-xl mb-8">
-                        {(profile.display_name || 'A').charAt(0).toUpperCase()}
-                    </div>
-
-                    <h2 className="text-3xl font-serif font-black text-white tracking-tight mb-2">
-                        {profile.display_name}
-                    </h2>
-                    <p className="text-white/40 font-medium mb-10">{profile.email}</p>
-
-                    <div className="space-y-4 mb-10">
-                        <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between border border-white/5">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Assigned Branch</span>
-                            <span className="text-sm font-bold text-white max-w-[200px] truncate">{formData.school_name || `Node #${profile.branch_id}`}</span>
-                        </div>
-                        <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between border border-white/5">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Access Level</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                <ShieldCheckIcon className="w-3 h-3" /> Limited
-                            </span>
-                        </div>
-                    </div>
-
-                    <button disabled className="w-full py-4 bg-white/5 text-white/20 font-bold uppercase tracking-widest text-[10px] rounded-xl cursor-not-allowed mb-4">
-                        Profile Locked by Institution
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="w-full max-w-2xl mx-auto space-y-8 pb-32 font-sans">
             {role !== BuiltInRoles.SCHOOL_ADMINISTRATION && (
@@ -267,7 +231,25 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     ) : role === BuiltInRoles.TEACHER ? (
                         <TeacherForm formData={formData} handleChange={handleFormChange} photoPreviewUrl={null} onPhotoChange={() => { }} currentUserId={profile.id} isRestrictedView={true} />
                     ) : role === BuiltInRoles.SCHOOL_ADMINISTRATION ? (
-                        <SchoolAdminForm formData={formData} handleChange={handleFormChange} isInitialCreation={false} />
+                        isLimitedBranchAdmin ? (
+                            <div className="space-y-8">
+                                <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl flex items-center gap-4 mb-4">
+                                    <div className="p-3 bg-primary/10 rounded-xl">
+                                        <ShieldCheckIcon className="w-8 h-8 text-primary" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Node Restricted Access</p>
+                                        <p className="text-sm text-foreground/60 font-medium">You are an authorized administrator for <strong>{formData.school_name || 'your assigned branch'}</strong>.</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <FloatingPremiumInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleFormChange} icon={<UserIcon className="w-4 h-4" />} />
+                                    <FloatingPremiumInput label="Contact Number" name="phone" value={formData.phone} onChange={handleFormChange} icon={<PhoneIcon className="w-4 h-4" />} />
+                                </div>
+                            </div>
+                        ) : (
+                            <SchoolAdminForm formData={formData} handleChange={handleFormChange} isInitialCreation={false} />
+                        )
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <FloatingPremiumInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleFormChange} icon={<UserIcon className="w-4 h-4" />} />

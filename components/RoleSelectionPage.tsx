@@ -99,13 +99,31 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
     const [joinError, setJoinError] = useState<string | null>(null);
     const [invitationCode, setInvitationCode] = useState('');
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
+    const [isBranchAdminEligible, setIsBranchAdminEligible] = useState(false);
+    const [isEligibilityLoading, setIsEligibilityLoading] = useState(true);
 
     // Filter roles based on the metadata we have defined
     const displayRoles = roles.filter(r => ROLE_META[r]);
 
+    useEffect(() => {
+        const checkEligibility = async () => {
+            try {
+                const { data, error } = await supabase.rpc('check_branch_admin_eligibility');
+                if (!error && data) {
+                    setIsBranchAdminEligible(data.eligible);
+                }
+            } catch (err) {
+                console.error("Eligibility Check Error:", err);
+            } finally {
+                setIsEligibilityLoading(false);
+            }
+        };
+        checkEligibility();
+    }, []);
+
     const handleRoleClick = (role: Role) => {
         if (selectedRole || createLoading || joinLoading) return;
-        
+
         setSelectedRole(role);
 
         if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
@@ -114,7 +132,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                 setSelectedRole(null);
             }, 300);
         } else {
-             Promise.resolve(onRoleSelect(role)).catch(() => setSelectedRole(null));
+            Promise.resolve(onRoleSelect(role)).catch(() => setSelectedRole(null));
         }
     };
 
@@ -132,19 +150,19 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
     const handleJoinBranch = async (e: React.MouseEvent) => {
         e.preventDefault();
         const code = invitationCode.trim().toUpperCase();
-        
+
         if (code.length < 8 || joinLoading) return;
 
         setJoinLoading(true);
         setJoinError(null);
-        
+
         try {
-            const { data, error } = await supabase.rpc('verify_and_link_branch_admin', { 
-                p_invitation_code: code 
+            const { data, error } = await supabase.rpc('verify_and_link_branch_admin', {
+                p_invitation_code: code
             });
-            
+
             if (error) throw error;
-            
+
             if (data.success) {
                 setJoinSuccess(true);
                 setInvitationCode('');
@@ -197,16 +215,16 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                             style={{ animationDelay: `${idx * 100}ms` }}
                             className={`
                                 group relative flex flex-col items-start text-left p-8 rounded-[2.5rem] border-2 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden animate-in fade-in slide-in-from-bottom-10
-                                ${isProcessing 
-                                    ? 'border-primary ring-4 ring-primary/10 bg-card scale-[0.98] shadow-2xl z-10' 
-                                    : isFaded 
-                                        ? 'opacity-30 scale-95 grayscale' 
+                                ${isProcessing
+                                    ? 'border-primary ring-4 ring-primary/10 bg-card scale-[0.98] shadow-2xl z-10'
+                                    : isFaded
+                                        ? 'opacity-30 scale-95 grayscale'
                                         : 'bg-card/60 backdrop-blur-xl border-white/5 hover:border-primary/40 hover:shadow-2xl hover:-translate-y-2'
                                 }
                             `}
                         >
                             <div className={`absolute inset-0 bg-gradient-to-br ${meta.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
-                            
+
                             <div className="relative z-10 w-full">
                                 <div className={`
                                     w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-inner transition-all duration-500 group-hover:scale-110 group-hover:rotate-3
@@ -233,23 +251,30 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex justify-center items-center z-[100] p-4 animate-in fade-in duration-300" onClick={() => !createLoading && !joinLoading && setIsSchoolAdminModalOpen(false)}>
                     <div className="bg-card w-full max-w-4xl rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden transform transition-all scale-100" onClick={e => e.stopPropagation()}>
                         <div className="flex flex-col md:flex-row h-full min-h-[500px]">
-                            
-                            <button 
+
+                            <button
                                 onClick={handleCreateNewSchool}
-                                disabled={createLoading || joinLoading}
-                                className="flex-1 p-12 text-center group relative overflow-hidden transition-all hover:bg-primary/5 disabled:opacity-50"
+                                disabled={createLoading || joinLoading || isBranchAdminEligible}
+                                className={`flex-1 p-12 text-center group relative overflow-hidden transition-all ${isBranchAdminEligible ? 'bg-muted/10 cursor-not-allowed grayscale-[0.5]' : 'hover:bg-primary/5 cursor-pointer'} disabled:opacity-50`}
                             >
                                 <div className="relative z-10 flex flex-col items-center">
-                                    <div className="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500 shadow-inner border border-primary/20">
-                                        {createLoading ? <Spinner size="lg" className="text-primary"/> : <SchoolIcon className="w-12 h-12 text-primary" />}
+                                    <div className={`w-24 h-24 ${isBranchAdminEligible ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'} rounded-3xl flex items-center justify-center mb-8 group-hover:${isBranchAdminEligible ? '' : 'scale-110'} transition-transform duration-500 shadow-inner border ${isBranchAdminEligible ? 'border-border' : 'border-primary/20'}`}>
+                                        {createLoading ? <Spinner size="lg" className="text-primary" /> : <SchoolIcon className="w-12 h-12" />}
                                     </div>
-                                    <h3 className="text-3xl font-serif font-black text-foreground tracking-tight mb-4">Establish New School</h3>
+                                    <h3 className={`text-3xl font-serif font-black ${isBranchAdminEligible ? 'text-muted-foreground' : 'text-foreground'} tracking-tight mb-4`}>Establish New School</h3>
                                     <p className="text-muted-foreground max-w-xs mx-auto text-sm font-medium leading-relaxed">
                                         Initialize a head office and set up global academic infrastructure.
                                     </p>
-                                    <div className={`mt-10 inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-xl transition-all ${createLoading ? 'bg-primary/70 animate-pulse cursor-wait' : 'bg-primary hover:scale-105 shadow-primary/25'}`}>
-                                        {createLoading ? 'Provisioning Hub...' : 'Get Started'}
-                                    </div>
+
+                                    {isBranchAdminEligible ? (
+                                        <div className="mt-10 px-6 py-4 bg-orange-500/10 border border-orange-500/20 text-orange-600 rounded-2xl text-[10px] font-black uppercase tracking-widest max-w-[240px]">
+                                            This action is restricted. Use "Join Existing Group" to access your assigned node.
+                                        </div>
+                                    ) : (
+                                        <div className={`mt-10 inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-xl transition-all ${createLoading ? 'bg-primary/70 animate-pulse cursor-wait' : 'bg-primary hover:scale-105 shadow-primary/25'}`}>
+                                            {createLoading ? 'Provisioning Hub...' : 'Get Started'}
+                                        </div>
+                                    )}
                                 </div>
                             </button>
 
@@ -262,7 +287,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                         {joinSuccess ? <CheckCircleIcon className="w-12 h-12 text-emerald-500 animate-in zoom-in" /> : <ShieldCheckIcon className="w-12 h-12 text-indigo-600" />}
                                     </div>
                                     <h3 className="text-3xl font-serif font-black text-foreground tracking-tight mb-4">Join Existing Group</h3>
-                                    
+
                                     {joinSuccess ? (
                                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                                             <p className="text-emerald-600 font-bold text-lg mb-2">Handshake Secured!</p>
@@ -278,7 +303,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
 
                                             <div className="w-full max-w-xs space-y-4">
                                                 <div className="relative group">
-                                                    <input 
+                                                    <input
                                                         type="text"
                                                         value={invitationCode}
                                                         onChange={e => setInvitationCode(e.target.value.toUpperCase())}
@@ -287,15 +312,15 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                                         className="w-full px-6 py-4 bg-background border-2 border-border rounded-2xl text-center font-mono font-black tracking-[0.2em] text-lg focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all disabled:opacity-50 placeholder:text-muted-foreground/30 placeholder:tracking-normal placeholder:font-sans placeholder:text-sm"
                                                     />
                                                 </div>
-                                                
-                                                <button 
+
+                                                <button
                                                     onClick={handleJoinBranch}
                                                     disabled={joinLoading || invitationCode.length < 8}
                                                     className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-600/25 hover:bg-indigo-500 transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95 disabled:grayscale"
                                                 >
-                                                    {joinLoading ? <Spinner size="sm" className="text-white"/> : 'Verify & Access Node'}
+                                                    {joinLoading ? <Spinner size="sm" className="text-white" /> : 'Verify & Access Node'}
                                                 </button>
-                                                
+
                                                 <div className="flex flex-col gap-3">
                                                     {joinError && (
                                                         <p className="text-red-500 text-[10px] font-black uppercase tracking-wider animate-in shake duration-300 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
@@ -311,7 +336,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                         </>
                                     )}
                                 </div>
-                                
+
                                 <p className="text-[9px] text-muted-foreground/30 uppercase tracking-[0.3em] mt-8 font-black text-center">
                                     Institutional Handshake Gateway
                                 </p>
