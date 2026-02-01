@@ -216,7 +216,7 @@ const CollapsibleDocumentCard: React.FC<{
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`group relative flex flex-col gap-3 p-5 rounded-[20px] border transition-all duration-300 overflow-hidden ${config.bg} ${config.border} ${config.glow}`}
+            className={`group relative flex flex-col gap-3 p-5 rounded-[20px] border transition-all duration-300 overflow-hidden ${config.bg} ${config.border} ${config.glow} hover:-translate-y-1 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]`}
             style={{ minHeight: '130px' }}
         >
             {/* Header: Icon + Badge */}
@@ -233,8 +233,8 @@ const CollapsibleDocumentCard: React.FC<{
 
             {/* Title & Meta */}
             <div className="relative z-10">
-                <h4 className="text-sm font-bold text-white leading-tight mb-1">{req.document_name}</h4>
-                <p className={`text-xs ${config.text} opacity-80 leading-relaxed`}>{config.subText}</p>
+                <h4 className="text-sm font-bold text-white leading-tight mb-1.5">{req.document_name}</h4>
+                <p className={`text-[11px] font-medium ${config.text} opacity-90 leading-relaxed`}>{config.subText}</p>
                 {docFile && (
                     <div className="flex items-center gap-2 mt-2">
                         <span className="w-1 h-1 rounded-full bg-white/20"></span>
@@ -259,7 +259,7 @@ const CollapsibleDocumentCard: React.FC<{
                                     className="flex-grow h-10 flex items-center justify-center gap-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white transition-all group/btn"
                                 >
                                     <EyeIcon className="w-3.5 h-3.5 opacity-60 group-hover/btn:opacity-100" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">View Artifact</span>
+                                    <span className="text-[11px] font-black uppercase tracking-widest">View Artifact</span>
                                 </button>
 
                                 {/* Secondary: Download */}
