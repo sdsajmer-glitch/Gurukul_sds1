@@ -128,7 +128,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
         try {
             const [appsRes, codesRes] = await Promise.all([
                 supabase.rpc('get_my_children_profiles'),
-                supabase.from('share_codes').select('*').order('created_at', { ascending: false })
+                supabase.from('admission_share_codes').select('*').order('created_at', { ascending: false })
             ]);
 
             if (appsRes.error) throw appsRes.error;
@@ -143,7 +143,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
 
             const mappedCodes = (codesRes.data || []).map((c: any) => ({
                 ...c,
-                applicant_name: c.applicant_name || apps.find((a: any) => a.id === c.admission_id)?.applicant_name || 'Unknown Applicant'
+                applicant_name: c.applicant_name || apps.find((a: any) => a.id === (c.admission_id || c.enquiry_id))?.applicant_name || 'Unknown Applicant'
             }));
 
             setCodes(mappedCodes);
