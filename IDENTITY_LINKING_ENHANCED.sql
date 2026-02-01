@@ -15,7 +15,7 @@ CREATE INDEX IF NOT EXISTS idx_enquiries_parent_phone ON public.enquiries (paren
 
 -- 2. RPC: admin_update_enquiry_status (Fixing legacy support)
 CREATE OR REPLACE FUNCTION public.admin_update_enquiry_status(
-    p_enquiry_id text,
+    p_enquiry_id uuid,
     p_status text,
     p_notes text
 )
@@ -29,7 +29,7 @@ BEGIN
         status = p_status,
         notes = p_notes,
         updated_at = now()
-    WHERE id::text = p_enquiry_id;
+    WHERE id = p_enquiry_id;
 END;
 $$;
 
