@@ -118,11 +118,11 @@ export default function MessagesTab() {
                 <div className="space-y-1">
                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em] opacity-80">Institutional Registry</span>
                     <h1 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-none">Inbox <span className="text-white/20 italic font-medium">Channel.</span></h1>
-                    <p className="text-sm text-white/40 mt-3 font-medium max-w-lg leading-relaxed italic">AI-synchronized communication layer. Unified terminal for authenticated school communications, intelligent routing, and verified inquiry exchange.</p>
+                    <p className="text-sm text-white/40 mt-3 font-medium max-w-lg leading-relaxed italic">Synchronized handshake terminal for all official school communications and enquiry payloads.</p>
                 </div>
                 <div className="flex items-center gap-3 bg-white/5 px-6 py-2 rounded-2xl border border-white/10 shadow-2xl">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></div>
-                    <span className="text-[10px] font-black text-white/60 tracking-[0.2em] uppercase">Identity Link: Secure & Active</span>
+                    <span className="text-[10px] font-black text-white/60 tracking-[0.2em] uppercase">Identity Link Secured</span>
                 </div>
             </div>
 
@@ -131,8 +131,7 @@ export default function MessagesTab() {
                 <div className="lg:col-span-4 flex flex-col space-y-6">
                     <div className="bg-[#0c0d12]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl h-full">
                         {/* Tab Switcher */}
-                        <div className="p-8 pb-4 space-y-4">
-                            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">🛰 Communication Streams</span>
+                        <div className="p-8 pb-4">
                             <div className="flex p-1.5 bg-black/40 rounded-[1.5rem] border border-white/5">
                                 {(['broadcasts', 'enquiries'] as Tab[]).map(t => (
                                     <button
@@ -207,12 +206,8 @@ export default function MessagesTab() {
                         </div>
 
                         {/* Static Footer */}
-                        <div className="p-8 border-t border-white/[0.03] space-y-4">
-                            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-left">
-                                <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">🛡 Assurance Layer</p>
-                                <p className="text-[8px] text-white/20 font-medium leading-relaxed uppercase">AI-verified access control enforced continuously. Immutable communication ledger active.</p>
-                            </div>
-                            <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em] text-center">Secure Node Registry Access</p>
+                        <div className="p-8 border-t border-white/[0.03] text-center">
+                            <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Secure Node Registry Access</p>
                         </div>
                     </div>
                 </div>
@@ -225,11 +220,14 @@ export default function MessagesTab() {
                                 <motion.div key={`view-${selectedAnnouncement.id}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col h-full">
                                     <header className="p-10 border-b border-white/[0.05] bg-black/20 flex flex-col gap-4">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em]">Broadcast Channel</span>
+                                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em]">Official Handshake</span>
                                             <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">{formatTimeAgo(selectedAnnouncement.sent_at)}</span>
                                         </div>
                                         <h2 className="text-3xl font-serif font-black text-white leading-tight tracking-tight uppercase">{selectedAnnouncement.subject}</h2>
-                                        <p className="text-[10px] text-white/40 font-medium uppercase tracking-widest">System-generated announcements, policy updates, and institutional intelligence alerts.</p>
+                                        <div className="flex items-center gap-2 pt-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
+                                            <span className="text-[11px] font-black text-white/40 uppercase tracking-widest">Authority: {selectedAnnouncement.sender_name || 'Central Command'}</span>
+                                        </div>
                                     </header>
                                     <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
                                         <div className="max-w-2xl mx-auto space-y-12">
@@ -238,16 +236,16 @@ export default function MessagesTab() {
                                                 {selectedAnnouncement.body}
                                             </p>
                                             <div className="pt-20 opacity-10 flex items-center gap-4 text-[10px] font-black grayscale">
-                                                <ShieldCheckIcon className="w-6 h-6" /> INTEGRITY LEDGER: {selectedAnnouncement.id?.toString().toUpperCase()}
+                                                <ShieldCheckIcon className="w-6 h-6" /> INTEGRITY LEDGER: {selectedAnnouncement.id}
                                             </div>
                                         </div>
                                     </div>
                                 </motion.div>
-                            ) : <ReadingStandby title="BROADCAST PAYLOAD STANDBY" subtitle="System-generated signals awaiting handshake." />
+                            ) : <ReadingStandby title="BROADCAST PAYLOAD STANDBY" />
                         ) : (
                             selectedEnquiry ? (
                                 <EnquiryHandshakeChannel enquiry={selectedEnquiry} refresh={fetchData} />
-                            ) : <ReadingStandby title="ENQUIRY PAYLOAD STANDBY" subtitle="One-to-one verified dialogues pending decryption." />
+                            ) : <ReadingStandby title="ENQUIRY PAYLOAD STANDBY" />
                         )}
                     </AnimatePresence>
                 </div>
@@ -260,12 +258,12 @@ function EmptyNode({ label }: { label: string }) {
     return (
         <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-6 opacity-30">
             <RadarIcon className="w-12 h-12 text-white/20" />
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] leading-relaxed">No active {label} signals detected. Verified communications will surface here.</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] leading-relaxed">No active {label} payloads detected in registry.</p>
         </div>
     );
 }
 
-function ReadingStandby({ title, subtitle }: { title: string, subtitle?: string }) {
+function ReadingStandby({ title }: { title: string }) {
     return (
         <div className="flex flex-col items-center justify-center h-full p-20 text-center animate-in fade-in duration-1000">
             <div className="relative mb-12">
@@ -273,7 +271,7 @@ function ReadingStandby({ title, subtitle }: { title: string, subtitle?: string 
                 <MegaphoneIcon className="w-24 h-24 text-white/5 relative z-10" />
             </div>
             <h3 className="text-2xl font-serif font-black text-white uppercase tracking-widest mb-4 opacity-60">{title}</h3>
-            <p className="text-sm font-serif italic text-white/20 max-w-xs leading-relaxed">{subtitle || 'Select a registry node to decrypt and initialize the institutional handshake channel.'}</p>
+            <p className="text-sm font-serif italic text-white/20 max-w-xs leading-relaxed">Select a registry node to decrypt and initialize the institutional handshake channel.</p>
             <div className="mt-16 pt-8 border-t border-white/[0.03] flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.5em] text-white/5">
                 <ShieldCheckIcon className="w-4 h-4" /> End-to-End Encrypted Payload
             </div>
@@ -335,35 +333,21 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
 
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col lg:flex-row h-full bg-transparent divide-x divide-white/[0.03]">
-            {/* Neural Conversation Feed */}
-            <div className="flex-grow flex flex-col min-w-0 font-sans">
+            {/* Chat Area */}
+            <div className="flex-grow flex flex-col min-w-0">
                 <header className="p-10 border-b border-white/[0.05] bg-black/20 flex flex-col gap-4">
-                    <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                            <span className="text-[9px] font-black text-primary uppercase tracking-[0.4em]">🧬 Identity Handshake</span>
-                            <h2 className="text-3xl font-serif font-black text-white leading-tight tracking-tight uppercase truncate">{enquiry.applicant_name}</h2>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Digital identity authenticated</span>
-                                <div className="w-1 h-1 rounded-full bg-white/10"></div>
-                                <span className="text-[10px] font-mono text-primary/60 uppercase tracking-widest">Registry Signature: {enquiry.id.toString().slice(0, 4).toUpperCase()}-{enquiry.id.toString().slice(24, 28).toUpperCase()}-{enquiry.id.toString().slice(14, 18).toUpperCase()}</span>
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-emerald-500 tracking-widest uppercase shadow-emerald-500/20 drop-shadow-sm">⚡ Live Session Established</span>
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_12px_#10b981] animate-pulse"></div>
-                            </div>
-                            <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Neural Sync Active</span>
+                    <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.5em]">Identity Handshake</span>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                            <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">Live Link</span>
                         </div>
                     </div>
+                    <h2 className="text-3xl font-serif font-black text-white leading-tight tracking-tight uppercase truncate">{enquiry.applicant_name}</h2>
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] italic">Established node connection: {String(enquiry.id).slice(0, 18).toUpperCase()}</p>
                 </header>
 
-                <div ref={scrollRef} className="flex-1 overflow-y-auto p-12 space-y-10 custom-scrollbar relative">
-                    <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-                        <div className="px-5 py-2 rounded-full bg-white/[0.02] border border-white/5 backdrop-blur-md">
-                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">AI trust layer confirms identity, context, and access scope in real time.</p>
-                        </div>
-                    </div>
+                <div ref={scrollRef} className="flex-1 overflow-y-auto p-12 space-y-8 custom-scrollbar">
                     {loading ? (
                         <div className="h-full flex items-center justify-center opacity-10"><Spinner /></div>
                     ) : messages.length === 0 ? (
@@ -375,10 +359,7 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                     ) : (
                         <div className="max-w-3xl mx-auto space-y-6">
                             {messages.map((item, i) => (
-                                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex flex-col ${item.is_admin ? 'items-start' : 'items-end'}`}>
-                                    <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] mb-2 px-6">
-                                        {item.is_admin ? '🛰 Incoming Signal' : '📡 Outgoing Response'}
-                                    </span>
+                                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${item.is_admin ? 'justify-start' : 'justify-end'}`}>
                                     <div className={`max-w-[85%] p-6 rounded-[2rem] text-sm md:text-base leading-relaxed border transition-all ${item.is_admin
                                         ? 'bg-indigo-600 text-white border-white/10 rounded-bl-none shadow-2xl shadow-indigo-600/10'
                                         : 'bg-white/[0.05] text-white/70 border-white/5 rounded-br-none backdrop-blur-sm shadow-xl'}`}>
@@ -391,20 +372,15 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                                     </div>
                                 </motion.div>
                             ))}
-                            {sending && (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-end pr-4">
-                                    <span className="text-[10px] font-black text-primary/40 uppercase tracking-[0.3em] animate-pulse">Neural response generation in progress…</span>
-                                </motion.div>
-                            )}
                         </div>
                     )}
                 </div>
 
-                <footer className="p-10 pt-4 border-t border-white/[0.05] bg-black/10 space-y-6">
+                <footer className="p-10 pt-4 border-t border-white/[0.05] bg-black/10">
                     <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-4">
                         <input
                             type="text" value={text} onChange={e => setText(e.target.value)}
-                            placeholder="Initialize assistance sequence..."
+                            placeholder="Establish encrypted uplink..."
                             className="flex-grow h-16 px-8 rounded-[2rem] bg-black/60 border border-white/5 text-white placeholder:text-white/10 focus:border-primary/50 outline-none transition-all text-sm font-medium shadow-inner"
                         />
                         <button
@@ -414,28 +390,18 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                             {sending ? <Spinner size="sm" /> : <SendIcon className="w-6 h-6" />}
                         </button>
                     </form>
-                    <div className="flex items-center justify-center gap-3 py-2 opacity-20 hover:opacity-40 transition-opacity cursor-default">
-                        <LockIcon className="w-3.5 h-3.5" />
-                        <p className="text-[9px] font-black uppercase tracking-[0.3em]">All message packets are encrypted, logged, and indexed by the institutional AI ledger.</p>
-                    </div>
                 </footer>
             </div>
 
-            {/* Registry Intelligence Panel */}
-            <div className="w-full lg:w-80 flex-shrink-0 bg-black/20 p-10 space-y-12 overflow-y-auto hidden md:block border-l border-white/[0.05] font-sans">
+            {/* Identity Profile (Right Side Pane) */}
+            <div className="w-full lg:w-80 flex-shrink-0 bg-black/20 p-10 space-y-12 overflow-y-auto hidden md:block border-l border-white/[0.05]">
                 <section className="space-y-6">
                     <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Registry Status</h3>
-                    <div className="group relative">
-                        <div className={`p-6 rounded-3xl border ${statusConfig[enquiry.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enquiry.status as EnquiryStatus]?.color || 'text-white/20'} border-white/5 shadow-2xl flex flex-col items-center justify-center text-center gap-4 transition-all hover:scale-[1.02] hover:bg-white/[0.04]`}>
-                            <ShieldCheckIcon className="w-10 h-10 opacity-80" />
-                            <span className="text-[11px] font-black uppercase tracking-[0.3em] leading-none">
-                                Verified Entity
-                            </span>
-                        </div>
-                        {/* Hover Micro-interaction */}
-                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-black border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-2xl">
-                            <p className="text-[9px] font-black text-white/60 uppercase tracking-widest">Identity authenticated via institutional AI registry</p>
-                        </div>
+                    <div className={`p-6 rounded-3xl border ${statusConfig[enquiry.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enquiry.status as EnquiryStatus]?.color || 'text-white/20'} border-white/5 shadow-2xl flex flex-col items-center justify-center text-center gap-4`}>
+                        <ShieldCheckIcon className="w-10 h-10 opacity-80" />
+                        <span className="text-[11px] font-black uppercase tracking-[0.3em] leading-none">
+                            {enquiry.status.replace('ENQUIRY_', '')}
+                        </span>
                     </div>
                 </section>
 
@@ -443,24 +409,24 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                     <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Academic Context</h3>
                     <div className="space-y-4">
                         <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl group transition-all hover:bg-white/[0.05]">
-                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Grade Node</span>
-                            <span className="text-xl font-serif font-black text-white/90">{enquiry.grade}</span>
+                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Grade Level</span>
+                            <span className="text-xl font-serif font-black text-white/90">Grade {enquiry.grade}</span>
                         </div>
                         <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl group transition-all hover:bg-white/[0.05]">
-                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Institutional Mapping</span>
-                            <span className="text-sm font-serif font-black text-white/90 uppercase truncate block">Branch: {enquiry.branch_name || 'CIS'}</span>
+                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Institutional Target</span>
+                            <span className="text-sm font-serif font-black text-white/90 uppercase truncate block">{enquiry.branch_name || 'Main Campus'}</span>
                         </div>
                     </div>
                 </section>
 
                 <section className="space-y-6 pt-6 border-t border-white/[0.05]">
-                    <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Data Sync Integrity</h3>
-                    <div className="flex flex-col gap-4 p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                        <div className="flex items-center gap-4">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                    <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Sync Integrity</h3>
+                    <div className="flex items-center gap-4 p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                        <div className="flex flex-col">
                             <span className="text-[10px] font-black text-white/80 uppercase tracking-widest leading-none">Verified Stream</span>
+                            <span className="text-[8px] text-emerald-500/60 mt-1 uppercase tracking-widest font-bold">End-to-End Encryption</span>
                         </div>
-                        <p className="text-[8px] text-emerald-500/60 uppercase tracking-widest font-bold font-sans">Zero-loss transmission • End-to-end encryption enabled</p>
                     </div>
                 </section>
 
