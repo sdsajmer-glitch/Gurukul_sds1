@@ -193,8 +193,8 @@ export default function MessagesTab() {
                                                 key={enq.id}
                                                 onClick={() => { setSelectedEnquiry(enq); setIsMobileMenuOpen(false); }}
                                                 className={`w-full p-5 rounded-[2rem] text-left transition-all duration-300 border group relative overflow-hidden ${selectedEnquiry?.id === enq.id
-                                                    ? 'bg-indigo-500/10 border-indigo-500/40 shadow-xl'
-                                                    : 'bg-white/[0.01] border-white/[0.02] hover:bg-white/[0.04] opacity-50 hover:opacity-100'}`}
+                                                    ? 'bg-gradient-to-r from-indigo-500/10 to-indigo-500/5 border-indigo-500/30 shadow-2xl shadow-indigo-500/5'
+                                                    : 'bg-white/[0.01] border-white/[0.02] hover:bg-white/[0.03] opacity-60 hover:opacity-100'}`}
                                             >
                                                 <div className="flex justify-between items-center mb-2">
                                                     <div className="flex items-center gap-2">
@@ -203,14 +203,14 @@ export default function MessagesTab() {
                                                     </div>
                                                     <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(enq.updated_at)}</span>
                                                 </div>
-                                                <h4 className="text-xs font-black text-white uppercase tracking-tight leading-none group-hover:text-indigo-400 transition-colors truncate">{enq.applicant_name}</h4>
-                                                <div className="mt-2 flex items-center gap-2">
-                                                    <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md border tracking-widest ${statusConfig[enq.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enq.status as EnquiryStatus]?.color || 'text-white/20 border-white/5'}`}>
+                                                <h4 className={`text-xs font-black uppercase tracking-tight leading-none transition-colors truncate mb-3 ${selectedEnquiry?.id === enq.id ? 'text-white' : 'text-white/80 group-hover:text-indigo-300'}`}>{enq.applicant_name}</h4>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-md border tracking-widest ${statusConfig[enq.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enq.status as EnquiryStatus]?.color || 'text-white/20 border-white/5'}`}>
                                                         {enq.status.replace('ENQUIRY_', '')}
                                                     </span>
                                                     <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">Grade {enq.grade}</span>
                                                 </div>
-                                                {selectedEnquiry?.id === enq.id && <div className="absolute top-5 right-5 animate-in zoom-in"><ShieldCheckIcon className="w-2.5 h-2.5 text-indigo-400" /></div>}
+                                                {selectedEnquiry?.id === enq.id && <div className="absolute top-5 right-5 animate-in zoom-in duration-300"><ShieldCheckIcon className="w-3 h-3 text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.5)]" /></div>}
                                             </button>
                                         ))}
                                     </motion.div>
@@ -306,7 +306,11 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
     const loadTimeline = useCallback(async () => {
         setLoading(true);
         const { data, error } = await supabase.rpc('get_enquiry_timeline_v3', { p_enquiry_id: String(enquiry.id) });
-        if (!error && data) setMessages(data);
+        if (!error && data) {
+            // Sort by created_at ascending (Oldest -> Newest) so new messages appear at the bottom
+            const sortedData = [...data].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            setMessages(sortedData);
+        }
         setLoading(false);
     }, [enquiry.id]);
 
@@ -422,22 +426,24 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         className={`flex flex-col ${!isMe ? 'items-end' : 'items-start'}`}
                                     >
-                                        <div className={`flex flex-col max-w-[90%] md:max-w-[80%] space-y-1 ${!isMe ? 'items-end' : 'items-start'}`}>
-                                            <div className="flex items-center gap-2 px-2">
-                                                <span className="text-[8px] font-black uppercase tracking-widest text-white/20">
-                                                    {isMe ? 'Verified Parent' : 'School Response'}
+                                        <div className={`flex flex-col max-w-[85%] md:max-w-[70%] space-y-1 ${!isMe ? 'items-end' : 'items-start'}`}>
+                                            <div className={`flex items-center gap-2 px-2 ${!isMe ? 'flex-row-reverse' : ''}`}>
+                                                <span className={`text-[8px] font-black uppercase tracking-widest ${isMe ? 'text-indigo-300' : 'text-emerald-400'}`}>
+                                                    {isMe ? 'Verified Parent' : 'School Official'}
                                                 </span>
                                                 <div className="w-0.5 h-0.5 rounded-full bg-white/10"></div>
                                                 <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest leading-none">
                                                     {formatTimeAgo(item.created_at)}
                                                 </span>
                                             </div>
-                                            <div className={`p-4 md:p-5 rounded-[1.5rem] md:rounded-[2rem] text-sm leading-relaxed border shadow-2xl transition-all hover:brightness-110 ${!isMe
-                                                ? 'bg-indigo-600/90 text-white border-indigo-400/20 rounded-tr-none shadow-indigo-500/10'
-                                                : 'bg-white/[0.04] text-white/90 border-white/5 rounded-tl-none backdrop-blur-md shadow-black/40'}
-                                                ${i === messages.length - 1 ? 'ring-2 ring-primary/20 bg-primary/5' : ''}`}
+                                            <div className={`p-4 md:p-6 rounded-[2rem] text-sm leading-relaxed border shadow-2xl relative overflow-hidden group/bubble ${!isMe
+                                                ? 'bg-gradient-to-br from-[#1a1b26] to-[#0f1016] text-white/90 border-white/10 rounded-tr-none'
+                                                : 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-indigo-400/20 rounded-tl-none shadow-indigo-500/20'}`}
                                             >
-                                                <p className="font-medium whitespace-pre-wrap break-words normal-case">
+                                                {/* Glossy effect */}
+                                                <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent pointer-events-none"></div>
+
+                                                <p className="font-medium whitespace-pre-wrap break-words normal-case relative z-10">
                                                     {item.details.message}
                                                 </p>
                                             </div>
