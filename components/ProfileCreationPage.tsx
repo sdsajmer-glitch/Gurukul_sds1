@@ -178,6 +178,44 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
     if (isFetchingInitialData) return <div className="flex justify-center p-20"><Spinner size="lg" /></div>;
 
+    const isLimitedBranchAdmin = role === BuiltInRoles.SCHOOL_ADMINISTRATION && !!profile.branch_id;
+
+    if (isLimitedBranchAdmin && !isFetchingInitialData) {
+        return (
+            <div className="w-full max-w-xl mx-auto py-20 animate-in fade-in duration-700">
+                <div className="bg-[#0c0e14] border border-white/5 rounded-[3rem] p-12 text-center shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+
+                    <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-gray-800 to-black border-2 border-white/10 flex items-center justify-center text-4xl font-black text-white shadow-xl mb-8">
+                        {(profile.display_name || 'A').charAt(0).toUpperCase()}
+                    </div>
+
+                    <h2 className="text-3xl font-serif font-black text-white tracking-tight mb-2">
+                        {profile.display_name}
+                    </h2>
+                    <p className="text-white/40 font-medium mb-10">{profile.email}</p>
+
+                    <div className="space-y-4 mb-10">
+                        <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between border border-white/5">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Assigned Branch</span>
+                            <span className="text-sm font-bold text-white max-w-[200px] truncate">{formData.school_name || `Node #${profile.branch_id}`}</span>
+                        </div>
+                        <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between border border-white/5">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Access Level</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                <ShieldCheckIcon className="w-3 h-3" /> Limited
+                            </span>
+                        </div>
+                    </div>
+
+                    <button disabled className="w-full py-4 bg-white/5 text-white/20 font-bold uppercase tracking-widest text-[10px] rounded-xl cursor-not-allowed mb-4">
+                        Profile Locked by Institution
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full max-w-2xl mx-auto space-y-8 pb-32 font-sans">
             {role !== BuiltInRoles.SCHOOL_ADMINISTRATION && (
