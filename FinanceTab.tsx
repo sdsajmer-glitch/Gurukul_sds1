@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase, formatError } from './services/supabase';
-import { 
-    FinanceData, FeeStructure, 
+import {
+    FinanceData, FeeStructure,
     StudentFeeSummary, UserProfile, SchoolBranch, CurrencyCode
 } from './types';
 import Spinner from './components/common/Spinner';
 import { PlusIcon } from './components/icons/PlusIcon';
 import { CheckCircleIcon } from './components/icons/CheckCircleIcon';
-import { TrendingUpIcon } from './components/icons/TrendingUpIcon';
+import { TrendingUpCustomIcon } from './components/icons/TrendingUpIcon';
 import { CreditCardIcon } from './components/icons/CreditCardIcon';
 import { UsersIcon } from './components/icons/UsersIcon';
 import { ChartBarIcon } from './components/icons/ChartBarIcon';
@@ -40,27 +40,27 @@ import PremiumAvatar from './components/common/PremiumAvatar';
 import FinanceWorkflowGuide from './components/finance/FinanceWorkflowGuide';
 
 const formatCurrency = (amount: number, currency: CurrencyCode = 'INR') => {
-    return new Intl.NumberFormat('en-IN', { 
-        style: 'currency', 
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
         currency,
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(amount || 0);
 };
 
-const TabButton: React.FC<{ 
-    id: string; 
-    label: string; 
-    icon: React.ReactNode; 
-    isActive: boolean; 
+const TabButton: React.FC<{
+    id: string;
+    label: string;
+    icon: React.ReactNode;
+    isActive: boolean;
     onClick: (id: any) => void;
 }> = ({ id, label, icon, isActive, onClick }) => (
     <button
         onClick={() => onClick(id)}
         className={`
             relative flex items-center gap-3 px-8 py-3 text-sm font-semibold transition-all duration-300
-            ${isActive 
-                ? 'text-white' 
+            ${isActive
+                ? 'text-white'
                 : 'text-white/40 hover:text-white'
             }
         `}
@@ -69,7 +69,7 @@ const TabButton: React.FC<{
             {icon} {label}
         </span>
         {isActive && (
-            <motion.span 
+            <motion.span
                 layoutId="tabUnderline"
                 className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-[3px] w-12 rounded-full bg-primary shadow-[0_0_12px_rgba(var(--primary),0.8)]"
             />
@@ -118,7 +118,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
     const [accountSearch, setAccountSearch] = useState('');
     const [riskOnly, setRiskOnly] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
+
     const [aiInsight, setAiInsight] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isReconciling, setIsReconciling] = useState(false);
@@ -142,7 +142,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
             const [finRes, structRes, ledgerRes] = await Promise.all([
                 supabase.rpc('get_finance_dashboard_data', { p_branch_id: bid }),
                 structQuery,
-                supabase.rpc('get_student_financial_nodes', { p_branch_id: bid }) 
+                supabase.rpc('get_student_financial_nodes', { p_branch_id: bid })
             ]);
 
             if (finRes.error) throw finRes.error;
@@ -152,7 +152,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
             setFinanceData(finRes.data || { revenue_ytd: 0, pending_dues: 0, collections_this_month: 0, online_payments: 0 });
             setFeeStructures(structRes.data || []);
             setStudentLedgers(Array.isArray(ledgerRes.data) ? ledgerRes.data : []);
-            
+
         } catch (err: any) {
             console.error("Finance Registry Sync Failure:", err);
             setError(formatError(err));
@@ -167,8 +167,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
         setIsReconciling(true);
         try {
             const bid = (branchId === undefined || branchId === null) ? null : Number(branchId);
-            const { error } = await supabase.rpc('reconcile_finance_registry_v2', { 
-                p_branch_id: bid 
+            const { error } = await supabase.rpc('reconcile_finance_registry_v2', {
+                p_branch_id: bid
             });
             if (error) throw error;
             await fetchAllData(true);
@@ -200,7 +200,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
     const handleExportRegistry = () => {
         if (studentLedgers.length === 0) return;
         const headers = "Name,Class,Billed,Paid,Outstanding,Integrity\n";
-        const csv = studentLedgers.map(s => 
+        const csv = studentLedgers.map(s =>
             `"${s.display_name}","${s.class_name || 'UNASSIGNED'}",${s.total_billed},${s.total_paid},${s.outstanding_balance},${s.integrity_score || 0}`
         ).join("\n");
         const blob = new Blob([headers + csv], { type: 'text/csv' });
@@ -213,22 +213,22 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
 
     const filteredAccounts = useMemo(() => {
         return studentLedgers.filter(s => {
-            const matchesSearch = !accountSearch || 
-                s.display_name.toLowerCase().includes(accountSearch.toLowerCase()) || 
+            const matchesSearch = !accountSearch ||
+                s.display_name.toLowerCase().includes(accountSearch.toLowerCase()) ||
                 (s.class_name && s.class_name.toLowerCase().includes(accountSearch.toLowerCase()));
-            
+
             const matchesRisk = !riskOnly || (s.integrity_score !== undefined && s.integrity_score < 70);
-            
+
             return matchesSearch && matchesRisk;
         });
     }, [studentLedgers, accountSearch, riskOnly]);
 
     if (selectedStudent) {
         return (
-            <StudentFinanceDetailView 
-                student={selectedStudent} 
+            <StudentFinanceDetailView
+                student={selectedStudent}
                 viewCurrency={viewCurrency}
-                onBack={() => setSelectedStudent(null)} 
+                onBack={() => setSelectedStudent(null)}
                 onUpdate={() => fetchAllData(true)}
                 onNavigateToMaster={() => { setSelectedStudent(null); setActiveView('master'); }}
             />
@@ -237,7 +237,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
 
     return (
         <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-24">
-            
+
             {/* 1. FINANCE CENTER HEADER */}
             <header className="relative mb-8 text-center pt-8">
                 <h1 className="text-6xl md:text-8xl font-serif font-black tracking-tighter text-white uppercase leading-none drop-shadow-2xl">
@@ -249,7 +249,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
 
                 {/* Tactical Action Ribbon */}
                 <div className="flex justify-center items-center gap-4 mt-8 no-print">
-                     <button 
+                    <button
                         onClick={handleForceReconcile}
                         disabled={isReconciling}
                         className="px-6 py-2.5 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-emerald-400 transition-all flex items-center gap-3 active:scale-95 shadow-2xl backdrop-blur-md"
@@ -257,7 +257,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                         <RefreshCwIcon className={`w-4 h-4 ${isReconciling ? 'animate-spin text-emerald-500' : 'opacity-40'}`} />
                         <span>Force Sync</span>
                     </button>
-                     <button 
+                    <button
                         onClick={() => setIsGuideOpen(true)}
                         className="px-6 py-2.5 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-primary/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-primary transition-all flex items-center gap-3 active:scale-95 shadow-2xl backdrop-blur-md"
                     >
@@ -269,15 +269,15 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 {/* Subtle divider glow */}
                 <div className="mx-auto mt-12 h-px w-64 bg-gradient-to-r 
                                 from-transparent via-primary/50 to-transparent shadow-[0_0_15px_rgba(var(--primary),0.5)] opacity-50" />
-                
+
                 {/* Tabs Indicator System */}
                 <div className="flex justify-center mt-12">
                     <nav className="flex items-center gap-1 bg-[#12141c]/60 p-1.5 rounded-full border border-white/5 backdrop-blur-xl shadow-[0_40px_80px_-24px_rgba(0,0,0,1)] ring-1 ring-white/5">
-                        <TabButton id="overview" label="Overview" icon={<ChartBarIcon className="w-4 h-4"/>} isActive={activeView === 'overview'} onClick={setActiveView} />
-                        <TabButton id="accounts" label="Accounts" icon={<UsersIcon className="w-4 h-4"/>} isActive={activeView === 'accounts'} onClick={setActiveView} />
-                        <TabButton id="expenses" label="Registry" icon={<BriefcaseIcon className="w-4 h-4"/>} isActive={activeView === 'expenses'} onClick={setActiveView} />
-                        <TabButton id="master" label="Master" icon={<BookIcon className="w-4 h-4"/>} isActive={activeView === 'master'} onClick={setActiveView} />
-                        <TabButton id="audit" label="Audit" icon={<ShieldCheckIcon className="w-4 h-4"/>} isActive={activeView === 'audit'} onClick={setActiveView} />
+                        <TabButton id="overview" label="Overview" icon={<ChartBarIcon className="w-4 h-4" />} isActive={activeView === 'overview'} onClick={setActiveView} />
+                        <TabButton id="accounts" label="Accounts" icon={<UsersIcon className="w-4 h-4" />} isActive={activeView === 'accounts'} onClick={setActiveView} />
+                        <TabButton id="expenses" label="Registry" icon={<BriefcaseIcon className="w-4 h-4" />} isActive={activeView === 'expenses'} onClick={setActiveView} />
+                        <TabButton id="master" label="Master" icon={<BookIcon className="w-4 h-4" />} isActive={activeView === 'master'} onClick={setActiveView} />
+                        <TabButton id="audit" label="Audit" icon={<ShieldCheckIcon className="w-4 h-4" />} isActive={activeView === 'audit'} onClick={setActiveView} />
                     </nav>
                 </div>
             </header>
@@ -301,44 +301,44 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     {activeView === 'overview' && financeData && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-16">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                                <FinanceStatCard 
-                                    title="Revenue (YTD)" 
-                                    value={formatCurrency(financeData.revenue_ytd, viewCurrency)} 
-                                    trend="+12.5%" 
-                                    trendUp={true} 
-                                    icon={<TrendingUpIcon className="w-8 h-8"/>}
+                                <FinanceStatCard
+                                    title="Revenue (YTD)"
+                                    value={formatCurrency(financeData.revenue_ytd, viewCurrency)}
+                                    trend="+12.5%"
+                                    trendUp={true}
+                                    icon={<TrendingUpCustomIcon className="w-8 h-8" />}
                                     color="bg-primary"
                                 />
-                                <FinanceStatCard 
-                                    title="Pending Ledger" 
-                                    value={formatCurrency(financeData.pending_dues, viewCurrency)} 
-                                    trend="2.4%" 
-                                    trendUp={false} 
-                                    icon={<AlertTriangleIcon className="w-8 h-8"/>}
+                                <FinanceStatCard
+                                    title="Pending Ledger"
+                                    value={formatCurrency(financeData.pending_dues, viewCurrency)}
+                                    trend="2.4%"
+                                    trendUp={false}
+                                    icon={<AlertTriangleIcon className="w-8 h-8" />}
                                     color="bg-red-500"
                                 />
-                                 <FinanceStatCard 
-                                    title="Digital Stream" 
-                                    value={formatCurrency(financeData.online_payments, viewCurrency)} 
-                                    icon={<CreditCardIcon className="w-8 h-8"/>}
+                                <FinanceStatCard
+                                    title="Digital Stream"
+                                    value={formatCurrency(financeData.online_payments, viewCurrency)}
+                                    icon={<CreditCardIcon className="w-8 h-8" />}
                                     color="bg-emerald-500"
                                 />
-                                <FinanceStatCard 
-                                    title="Institutional Burn" 
-                                    value={formatCurrency(financeData.collections_this_month * 0.4, viewCurrency)} 
-                                    icon={<BriefcaseIcon className="w-8 h-8"/>}
+                                <FinanceStatCard
+                                    title="Institutional Burn"
+                                    value={formatCurrency(financeData.collections_this_month * 0.4, viewCurrency)}
+                                    icon={<BriefcaseIcon className="w-8 h-8" />}
                                     color="bg-violet-500"
                                 />
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
                                 <div className="lg:col-span-8 space-y-10">
-                                     <div className="bg-[#0c0d12] border border-white/5 rounded-[4rem] p-8 md:p-16 shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] relative overflow-hidden h-[540px] ring-1 ring-white/10">
-                                          <RevenueTrendChart total={financeData.revenue_ytd} />
-                                     </div>
-                                     <div className="bg-primary/5 border border-primary/20 rounded-[3.5rem] p-8 md:p-12 relative overflow-hidden group shadow-2xl">
-                                         <div className="absolute top-0 right-0 p-16 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000"><SparklesIcon className="w-48 h-48 text-primary" /></div>
-                                         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+                                    <div className="bg-[#0c0d12] border border-white/5 rounded-[4rem] p-8 md:p-16 shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] relative overflow-hidden h-[540px] ring-1 ring-white/10">
+                                        <RevenueTrendChart total={financeData.revenue_ytd} />
+                                    </div>
+                                    <div className="bg-primary/5 border border-primary/20 rounded-[3.5rem] p-8 md:p-12 relative overflow-hidden group shadow-2xl">
+                                        <div className="absolute top-0 right-0 p-16 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000"><SparklesIcon className="w-48 h-48 text-primary" /></div>
+                                        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
                                             <div className="space-y-5 max-w-3xl">
                                                 <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight flex items-center gap-4">
                                                     <SparklesIcon className="w-8 h-8 text-primary animate-pulse" /> Financial Oracle
@@ -349,27 +349,27 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                                     <p className="text-lg text-white/30 font-medium font-serif italic">Consult the institutional core to synthesize liquidity trends and collection risks.</p>
                                                 )}
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={runFinancialOracle}
                                                 disabled={isAnalyzing}
                                                 className="px-12 py-6 bg-primary text-white font-black text-xs uppercase tracking-[0.4em] rounded-2xl shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-primary/20 ring-8 ring-primary/5 whitespace-nowrap"
                                             >
-                                                {isAnalyzing ? <Spinner size="sm" className="text-white"/> : 'Sync Intelligence'}
+                                                {isAnalyzing ? <Spinner size="sm" className="text-white" /> : 'Sync Intelligence'}
                                             </button>
-                                         </div>
-                                     </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                
+
                                 <div className="lg:col-span-4 bg-[#0c0d12] border border-white/5 rounded-[4rem] p-8 md:p-16 shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] flex flex-col relative overflow-hidden h-[740px] ring-1 ring-white/10">
-                                     <div className="absolute top-0 right-0 p-16 opacity-[0.01]"><ChartBarIcon className="w-64 h-64 text-primary"/></div>
-                                     <div className="relative z-10 h-full flex flex-col">
-                                         <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] mb-16">Collection Integrity</h4>
-                                         <CollectionDistributionChart 
-                                            paid={financeData.revenue_ytd} 
-                                            pending={financeData.pending_dues} 
-                                            overdue={financeData.pending_dues * 0.3} 
-                                         />
-                                     </div>
+                                    <div className="absolute top-0 right-0 p-16 opacity-[0.01]"><ChartBarIcon className="w-64 h-64 text-primary" /></div>
+                                    <div className="relative z-10 h-full flex flex-col">
+                                        <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] mb-16">Collection Integrity</h4>
+                                        <CollectionDistributionChart
+                                            paid={financeData.revenue_ytd}
+                                            pending={financeData.pending_dues}
+                                            overdue={financeData.pending_dues * 0.3}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
@@ -377,10 +377,10 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
 
                     {activeView === 'accounts' && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                            
+
                             {/* 3. SEARCH + ACTION BAR (Unified Control Panel) */}
                             <div className="flex flex-wrap items-center gap-3 rounded-[1.8rem] bg-white/5 backdrop-blur-xl border border-white/10 p-5 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-                                
+
                                 {/* Search */}
                                 <div className="flex-1 relative group">
                                     <input
@@ -401,7 +401,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                     className="h-14 px-8 rounded-2xl border border-white/5 bg-white/[0.02] text-sm font-black uppercase tracking-widest text-white/40 hover:text-white hover:bg-white/[0.05] hover:border-white/10 transition-all active:scale-95 shadow-xl flex items-center gap-3"
                                     title="Export account ledger"
                                 >
-                                    <DownloadIcon className="w-4 h-4"/>
+                                    <DownloadIcon className="w-4 h-4" />
                                     Export
                                 </button>
 
@@ -462,11 +462,10 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${health}%` }}
                                                         transition={{ duration: 2, ease: "easeOut" }}
-                                                        className={`h-full rounded-full ${
-                                                            health >= 80 ? 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' :
-                                                            isCritical ? 'bg-gradient-to-r from-red-600 to-red-400 shadow-[0_0_12px_rgba(239,68,68,0.6)]' :
-                                                            'bg-gradient-to-r from-amber-500 to-primary shadow-[0_0_12px_rgba(var(--primary),0.6)]'
-                                                        }`}
+                                                        className={`h-full rounded-full ${health >= 80 ? 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' :
+                                                                isCritical ? 'bg-gradient-to-r from-red-600 to-red-400 shadow-[0_0_12px_rgba(239,68,68,0.6)]' :
+                                                                    'bg-gradient-to-r from-amber-500 to-primary shadow-[0_0_12px_rgba(var(--primary),0.6)]'
+                                                            }`}
                                                     />
                                                 </div>
                                                 <p className={`mt-2 text-[10px] font-black uppercase tracking-wider ${health >= 80 ? 'text-emerald-400' : isCritical ? 'text-red-400' : 'text-primary'}`}>
@@ -485,11 +484,10 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
 
                                                 <div className="text-right">
                                                     <p className="text-[10px] font-black uppercase text-white/20 tracking-widest mb-1">Audit Status</p>
-                                                    <span className={`px-4 py-1 rounded-full text-[9px] font-black uppercase border tracking-widest ${
-                                                        account.outstanding_balance > 0 
-                                                        ? 'bg-red-500/10 text-red-500 border-red-500/20' 
-                                                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                                    }`}>
+                                                    <span className={`px-4 py-1 rounded-full text-[9px] font-black uppercase border tracking-widest ${account.outstanding_balance > 0
+                                                            ? 'bg-red-500/10 text-red-500 border-red-500/20'
+                                                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                        }`}>
                                                         {account.outstanding_balance > 0 ? 'Arrears' : 'Cleared'}
                                                     </span>
                                                 </div>
@@ -504,7 +502,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                                     Audit
                                                 </button>
                                                 <button className="h-10 w-10 rounded-xl border border-white/5 bg-white/[0.03] text-white/20 hover:text-primary transition-all flex items-center justify-center active:scale-90">
-                                                    <MoreVerticalIcon className="w-4 h-4"/>
+                                                    <MoreVerticalIcon className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </motion.div>
@@ -516,7 +514,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                         </div>
                                         <div className="space-y-4">
                                             <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">No accounts found matching your filters</h3>
-                                            <button onClick={() => {setAccountSearch(''); setRiskOnly(false);}} className="mt-4 px-10 py-4 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl active:scale-95">Reset Matrix Context</button>
+                                            <button onClick={() => { setAccountSearch(''); setRiskOnly(false); }} className="mt-4 px-10 py-4 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl active:scale-95">Reset Matrix Context</button>
                                         </div>
                                     </div>
                                 )}
@@ -525,9 +523,9 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     )}
 
                     {activeView === 'expenses' && (
-                         <div className="animate-in fade-in duration-700">
+                        <div className="animate-in fade-in duration-700">
                             <ExpenseDashboard branches={branches} branchId={branchId || null} data={financeData ? { total_expenses_month: 0, pending_approvals: 0, recent_expenses: (financeData as any).recent_expenses || [] } : { total_expenses_month: 0, pending_approvals: 0, recent_expenses: [] }} onRefresh={fetchAllData} viewCurrency={viewCurrency} />
-                         </div>
+                        </div>
                     )}
 
                     {activeView === 'master' && (
@@ -538,7 +536,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                     <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tight">Master Architect</h3>
                                     <p className="text-xl text-white/20 font-medium tracking-[0.2em] uppercase max-w-2xl leading-relaxed">Configure global institutional billing nodes and multi-tenant fee structures.</p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setIsWizardOpen(true)}
                                     className="px-16 py-8 bg-primary text-white font-black text-sm uppercase tracking-[0.5em] rounded-[2.5rem] shadow-[0_48px_96px_-16px_rgba(var(--primary),0.6)] hover:bg-primary/90 transition-all flex items-center gap-6 transform hover:-translate-y-2 active:scale-95 border border-white/10 ring-[12px] ring-primary/5 relative z-10"
                                 >
@@ -549,7 +547,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-12">
                                 {feeStructures.map((fs) => (
                                     <div key={fs.id} className="bg-[#0c0d12] border border-white/10 rounded-[4.5rem] p-12 md:p-16 shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] hover:border-primary/40 transition-all duration-1000 flex flex-col h-full group ring-1 ring-white/10 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-16 opacity-[0.01] pointer-events-none group-hover:opacity-[0.04] transition-opacity duration-1000"><BookIcon className="w-56 h-56 text-white"/></div>
+                                        <div className="absolute top-0 right-0 p-16 opacity-[0.01] pointer-events-none group-hover:opacity-[0.04] transition-opacity duration-1000"><BookIcon className="w-56 h-56 text-white" /></div>
                                         <div className="flex justify-between items-start mb-16 relative z-10">
                                             <div>
                                                 <h4 className="text-4xl font-serif font-black text-white group-hover:text-primary transition-colors tracking-tight uppercase leading-none">{fs.name}</h4>
@@ -561,7 +559,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                             </div>
                                             <span className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${fs.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-2xl' : 'bg-white/5 text-white/20 border-white/10'}`}>{fs.status}</span>
                                         </div>
-                                        
+
                                         <div className="space-y-8 mb-16 flex-grow relative z-10">
                                             {(fs.components || []).slice(0, 4).map((comp: any) => (
                                                 <div key={comp.id} className="flex justify-between items-center border-b border-white/[0.04] pb-8">
@@ -573,13 +571,13 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                                 </div>
                                             ))}
                                         </div>
-                                        
+
                                         <div className="pt-12 border-t border-white/[0.08] flex justify-between items-end mt-auto relative z-10">
-                                             <div>
+                                            <div>
                                                 <p className="text-[11px] font-black text-white/20 uppercase tracking-[0.5em] mb-3">Global Valuation (Annual)</p>
-                                                <span className="text-5xl font-black text-primary font-mono tracking-tighter drop-shadow-[0_0_20px_rgba(var(--primary),0.3)]">{formatCurrency(fs.components?.reduce((a,c)=>a+Number(c.amount),0)||0, fs.currency as CurrencyCode)}</span>
-                                             </div>
-                                             <button className="p-5 bg-white/5 text-white/20 rounded-2xl hover:text-white hover:bg-white/10 transition-all shadow-3xl border border-transparent hover:border-white/10 active:scale-90"><EditIcon className="w-8 h-8"/></button>
+                                                <span className="text-5xl font-black text-primary font-mono tracking-tighter drop-shadow-[0_0_20px_rgba(var(--primary),0.3)]">{formatCurrency(fs.components?.reduce((a, c) => a + Number(c.amount), 0) || 0, fs.currency as CurrencyCode)}</span>
+                                            </div>
+                                            <button className="p-5 bg-white/5 text-white/20 rounded-2xl hover:text-white hover:bg-white/10 transition-all shadow-3xl border border-transparent hover:border-white/10 active:scale-90"><EditIcon className="w-8 h-8" /></button>
                                         </div>
                                     </div>
                                 ))}
@@ -588,23 +586,23 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     )}
 
                     {activeView === 'audit' && (
-                         <div className="p-40 text-center flex flex-col items-center gap-10 opacity-20 animate-in fade-in duration-1000">
+                        <div className="p-40 text-center flex flex-col items-center gap-10 opacity-20 animate-in fade-in duration-1000">
                             <ShieldCheckIcon className="w-24 h-24 text-white" />
                             <h3 className="text-3xl font-black uppercase tracking-[0.6em]">Audit Matrix Standby</h3>
                             <p className="text-sm font-bold uppercase tracking-[0.3em] max-w-sm mx-auto">Access restricted to Head Office administrators. Verifying protocol clearances...</p>
-                         </div>
+                        </div>
                     )}
                 </AnimatePresence>
             )}
 
             {isWizardOpen && (
-                <FeeMasterWizard 
-                    onClose={() => setIsWizardOpen(false)} 
+                <FeeMasterWizard
+                    onClose={() => setIsWizardOpen(false)}
                     branchId={branchId || null}
                     onSuccess={() => {
                         setIsWizardOpen(false);
                         fetchAllData();
-                    }} 
+                    }}
                 />
             )}
 

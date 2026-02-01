@@ -16,6 +16,7 @@ import { SparklesIcon } from '../icons/SparklesIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
 import { KeyIcon } from '../icons/KeyIcon';
 import { ChevronRightIcon } from '../icons/ChevronRightIcon';
+import { TrendingUpCustomIcon } from '../icons/TrendingUpIcon';
 import { StatsSkeleton, Skeleton } from '../common/Skeleton';
 
 interface DashboardOverviewProps {
@@ -221,7 +222,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
                         <StatCard
                             title="Revenue (YTD)"
                             value="$0"
-                            icon={<FinanceIcon className="h-7 w-7" />}
+                            icon={<TrendingUpCustomIcon className="h-7 w-7" />}
                             trend="--%"
                             colorClass="bg-indigo-500/10 text-indigo-400"
                         />

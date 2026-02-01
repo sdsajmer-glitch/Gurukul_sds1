@@ -4,7 +4,7 @@ import { AdminAnalyticsStats } from '../types';
 import Spinner from './common/Spinner';
 
 // Icons
-import { TrendingUpIcon } from './icons/TrendingUpIcon';
+import { TrendingUpCustomIcon } from './icons/TrendingUpIcon';
 import { UsersIcon } from './icons/UsersIcon';
 import { ClipboardListIcon } from './icons/ClipboardListIcon';
 import { FinanceIcon } from './icons/FinanceIcon';
@@ -53,8 +53,8 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode; 
                     {icon}
                 </div>
                 <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-500 ${isPositive
-                        ? 'bg-emerald-500/5 text-emerald-400 border-emerald-500/20'
-                        : 'bg-red-500/5 text-red-400 border-red-500/20'
+                    ? 'bg-emerald-500/5 text-emerald-400 border-emerald-500/20'
+                    : 'bg-red-500/5 text-red-400 border-red-500/20'
                     }`}>
                     {isPositive ? '↑' : '↓'} {trend}
                 </div>
@@ -193,7 +193,7 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ branchId }) => {
                     <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                     <div className="p-10 md:p-14 border-b border-white/5 flex justify-between items-center bg-white/[0.02] relative z-10">
                         <div className="flex items-center gap-6">
-                            <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-500"><TrendingUpIcon className="w-6 h-6" /></div>
+                            <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-500"><TrendingUpCustomIcon className="w-6 h-6" /></div>
                             <div>
                                 <h3 className="font-black text-2xl text-white font-serif uppercase tracking-tight">Enrollment Momentum</h3>
                                 <p className="text-[10px] text-white/30 mt-1 uppercase tracking-[0.3em] font-black">Historical Growth Arc</p>
