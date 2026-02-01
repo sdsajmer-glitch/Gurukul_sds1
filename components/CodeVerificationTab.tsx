@@ -55,39 +55,6 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
         setVerifiedData(null);
 
         try {
-            // PRIORITY: Branch Handshake Protocol
-            // If the user entered a Branch Access Key, we attempt to bind their identity immediately.
-            // This is the "Start Handshake" flow for disconnected admins.
-            const { data: handshakeData, error: handshakeError } = await supabase.rpc('verify_and_link_branch_admin', {
-                p_invitation_code: cleanCode
-            });
-
-            if (!handshakeError && handshakeData?.success) {
-                setImportSuccess(true);
-                // Show specific specific message for branch join
-                setVerifiedData({
-                    found: true,
-                    applicant_name: "Institutional Node",
-                    grade: "N/A",
-                    code_type: 'Admission', // Dummy type to satisfy type checker, visual only
-                    admission_id: "system-node",
-                    // We are hijacking the state slightly to show the specific success UI, 
-                    // or we can force a reload immediately.
-                } as any);
-
-                // Delay reload to show success animation
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-                return;
-            }
-
-            // Fallback: Check for Student/Admission Tokens
-            if (handshakeData?.message && !handshakeData.success && handshakeData.message.includes("Access Denied")) {
-                // Explicit email mismatch error from the branch handshake
-                throw new Error(handshakeData.message);
-            }
-
             // Step 1: Verify token context and retrieve node metadata
             const { data, error: rpcError } = await supabase.rpc('admin_verify_share_code', {
                 p_code: cleanCode
@@ -98,7 +65,6 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
             if (data && data.found) {
                 setVerifiedData(data);
             } else {
-                // If both failed, show the relevant error (usually invalid token)
                 setError(data?.error || "Invalid or expired protocol token.");
             }
         } catch (err: any) {
@@ -188,7 +154,7 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
                     {importSuccess && (
                         <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-8 py-6 rounded-[2rem] text-sm font-bold flex items-center gap-4 animate-in zoom-in-95">
                             <CheckCircleIcon className="w-6 h-6" />
-                            <span>Handshake Verified. Synchronizing context...</span>
+                            <span>Node Identity Synchronized. Redirecting...</span>
                         </div>
                     )}
                 </div>
