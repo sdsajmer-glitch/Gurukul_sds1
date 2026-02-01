@@ -261,7 +261,10 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 if (error) throw error;
                 if (isMounted.current) handleBranchUpdate(data[0]);
             }
-            if (isMounted.current) setIsModalOpen(false);
+            if (isMounted.current) {
+                setIsModalOpen(false);
+                if (onNext) onNext();
+            }
         } catch (err: any) {
             if (isMounted.current) setModalError(formatError(err));
         } finally {
