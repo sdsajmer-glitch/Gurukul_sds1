@@ -307,15 +307,27 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!text.trim() || sending) return;
+        const msg = text.trim();
+        if (!msg || sending) return;
+
         setSending(true);
-        const { error } = await supabase.rpc('send_enquiry_message_v3', { p_enquiry_id: String(enquiry.id), p_message: text });
-        if (!error) {
+        try {
+            const { error } = await supabase.rpc('send_enquiry_message_v3', {
+                p_enquiry_id: String(enquiry.id),
+                p_message: msg
+            });
+
+            if (error) throw error;
+
             setText('');
-            loadTimeline();
+            await loadTimeline();
             refresh(true);
+        } catch (err) {
+            console.error("Transmission Failure:", err);
+            alert("Transmission Failure: Node handshake refused or connection lost.");
+        } finally {
+            setSending(false);
         }
-        setSending(false);
     };
 
     return (
