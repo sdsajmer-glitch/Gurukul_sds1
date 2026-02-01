@@ -319,64 +319,109 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
     };
 
     return (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col h-full bg-transparent">
-            <header className="p-10 border-b border-white/[0.05] bg-black/20 flex flex-col gap-4">
-                <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.5em]">Identity Handshake</span>
-                    <span className="text-[10px] font-black px-3 py-1 bg-white/5 rounded-lg border border-white/5 text-white/40 tracking-widest">{enquiry.status.replace('ENQUIRY_', '')}</span>
-                </div>
-                <h2 className="text-3xl font-serif font-black text-white leading-tight tracking-tight uppercase">{enquiry.applicant_name}</h2>
-                <div className="flex items-center gap-4 text-[10px] font-black text-white/20 uppercase tracking-widest pt-1">
-                    <span>Grade {enquiry.grade} Context</span>
-                    <div className="w-1 h-1 rounded-full bg-white/10"></div>
-                    <span>Synchronized: {formatTimeAgo(enquiry.updated_at)}</span>
-                </div>
-            </header>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col lg:flex-row h-full bg-transparent divide-x divide-white/[0.03]">
+            {/* Chat Area */}
+            <div className="flex-grow flex flex-col min-w-0">
+                <header className="p-10 border-b border-white/[0.05] bg-black/20 flex flex-col gap-4">
+                    <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.5em]">Identity Handshake</span>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                            <span className="text-[10px] font-black text-white/40 tracking-widest uppercase">Live Link</span>
+                        </div>
+                    </div>
+                    <h2 className="text-3xl font-serif font-black text-white leading-tight tracking-tight uppercase truncate">{enquiry.applicant_name}</h2>
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] italic">Established node connection: {String(enquiry.id).slice(0, 18).toUpperCase()}</p>
+                </header>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-12 space-y-8 custom-scrollbar">
-                {loading ? (
-                    <div className="h-full flex items-center justify-center opacity-10"><Spinner /></div>
-                ) : messages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center opacity-5 select-none grayscale">
-                        <TerminalIcon className="w-20 h-20 mb-6" />
-                        <p className="text-[10px] font-black uppercase tracking-[1em]">Channel Standby</p>
-                    </div>
-                ) : (
-                    <div className="max-w-3xl mx-auto space-y-6">
-                        {messages.map((item, i) => (
-                            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${item.is_admin ? 'justify-start' : 'justify-end'}`}>
-                                <div className={`max-w-[80%] p-6 rounded-[2rem] text-sm md:text-base leading-relaxed border transition-all ${item.is_admin
-                                    ? 'bg-indigo-600 text-white border-white/10 rounded-bl-none shadow-2xl shadow-indigo-600/10'
-                                    : 'bg-white/[0.05] text-white/70 border-white/5 rounded-br-none backdrop-blur-sm shadow-xl'}`}>
-                                    <p className="font-medium">{item.details.message}</p>
-                                    <div className="mt-4 flex items-center gap-3 text-[9px] font-black uppercase tracking-widest opacity-40">
-                                        <span>{item.created_by_name}</span>
-                                        <div className="w-1 h-1 rounded-full bg-current opacity-20"></div>
-                                        <span>{formatTimeAgo(item.created_at)}</span>
+                <div ref={scrollRef} className="flex-1 overflow-y-auto p-12 space-y-8 custom-scrollbar">
+                    {loading ? (
+                        <div className="h-full flex items-center justify-center opacity-10"><Spinner /></div>
+                    ) : messages.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center opacity-5 select-none grayscale text-center">
+                            <RadarIcon className="w-20 h-20 mb-6" />
+                            <p className="text-[10px] font-black uppercase tracking-[1em]">Channel Standby</p>
+                            <p className="text-[8px] mt-4 max-w-[200px] leading-relaxed">System is awaiting official response from the institutional node.</p>
+                        </div>
+                    ) : (
+                        <div className="max-w-3xl mx-auto space-y-6">
+                            {messages.map((item, i) => (
+                                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${item.is_admin ? 'justify-start' : 'justify-end'}`}>
+                                    <div className={`max-w-[85%] p-6 rounded-[2rem] text-sm md:text-base leading-relaxed border transition-all ${item.is_admin
+                                        ? 'bg-indigo-600 text-white border-white/10 rounded-bl-none shadow-2xl shadow-indigo-600/10'
+                                        : 'bg-white/[0.05] text-white/70 border-white/5 rounded-br-none backdrop-blur-sm shadow-xl'}`}>
+                                        <p className="font-medium">{item.details.message}</p>
+                                        <div className="mt-4 flex items-center gap-3 text-[9px] font-black uppercase tracking-widest opacity-40">
+                                            <span>{item.created_by_name}</span>
+                                            <div className="w-1 h-1 rounded-full bg-current opacity-20"></div>
+                                            <span>{formatTimeAgo(item.created_at)}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                )}
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <footer className="p-10 pt-4 border-t border-white/[0.05] bg-black/10">
+                    <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-4">
+                        <input
+                            type="text" value={text} onChange={e => setText(e.target.value)}
+                            placeholder="Establish encrypted uplink..."
+                            className="flex-grow h-16 px-8 rounded-[2rem] bg-black/60 border border-white/5 text-white placeholder:text-white/10 focus:border-primary/50 outline-none transition-all text-sm font-medium shadow-inner"
+                        />
+                        <button
+                            type="submit" disabled={!text.trim() || sending}
+                            className="w-16 h-16 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.8rem] transition-all active:scale-95 disabled:opacity-20 shadow-2xl"
+                        >
+                            {sending ? <Spinner size="sm" /> : <SendIcon className="w-6 h-6" />}
+                        </button>
+                    </form>
+                </footer>
             </div>
 
-            <footer className="p-10 pt-4 border-t border-white/[0.05] bg-black/10">
-                <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-4">
-                    <input
-                        type="text" value={text} onChange={e => setText(e.target.value)}
-                        placeholder="Establish encrypted uplink..."
-                        className="flex-grow h-16 px-8 rounded-[2rem] bg-black/60 border border-white/5 text-white placeholder:text-white/10 focus:border-primary/50 outline-none transition-all text-sm font-medium"
-                    />
-                    <button
-                        type="submit" disabled={!text.trim() || sending}
-                        className="w-16 h-16 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.8rem] transition-all active:scale-95 disabled:opacity-20 shadow-2xl"
-                    >
-                        {sending ? <Spinner size="sm" /> : <SendIcon className="w-6 h-6" />}
-                    </button>
-                </form>
-                <p className="text-[8px] font-black text-white/5 uppercase tracking-[0.5em] text-center mt-6">Secure Institutional Uplink Active • Node ID: {enquiry.id.slice(0, 18)}</p>
-            </footer>
+            {/* Identity Profile (Right Side Pane) */}
+            <div className="w-full lg:w-80 flex-shrink-0 bg-black/20 p-10 space-y-12 overflow-y-auto hidden md:block border-l border-white/[0.05]">
+                <section className="space-y-6">
+                    <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Registry Status</h3>
+                    <div className={`p-6 rounded-3xl border ${statusConfig[enquiry.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enquiry.status as EnquiryStatus]?.color || 'text-white/20'} border-white/5 shadow-2xl flex flex-col items-center justify-center text-center gap-4`}>
+                        <ShieldCheckIcon className="w-10 h-10 opacity-80" />
+                        <span className="text-[11px] font-black uppercase tracking-[0.3em] leading-none">
+                            {enquiry.status.replace('ENQUIRY_', '')}
+                        </span>
+                    </div>
+                </section>
+
+                <section className="space-y-6">
+                    <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Academic Context</h3>
+                    <div className="space-y-4">
+                        <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl group transition-all hover:bg-white/[0.05]">
+                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Grade Level</span>
+                            <span className="text-xl font-serif font-black text-white/90">Grade {enquiry.grade}</span>
+                        </div>
+                        <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl group transition-all hover:bg-white/[0.05]">
+                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Institutional Target</span>
+                            <span className="text-sm font-serif font-black text-white/90 uppercase truncate block">{enquiry.branch_name || 'Main Campus'}</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="space-y-6 pt-6 border-t border-white/[0.05]">
+                    <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Sync Integrity</h3>
+                    <div className="flex items-center gap-4 p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-white/80 uppercase tracking-widest leading-none">Verified Stream</span>
+                            <span className="text-[8px] text-emerald-500/60 mt-1 uppercase tracking-widest font-bold">End-to-End Encryption</span>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="pt-20 opacity-5 select-none grayscale">
+                    <TerminalIcon className="w-12 h-12 mx-auto" />
+                    <p className="text-[8px] font-black uppercase tracking-[0.5em] text-center mt-4 leading-relaxed">Authenticated Identity Node<br />Protocol V5.0.1</p>
+                </div>
+            </div>
         </motion.div>
     );
 }
