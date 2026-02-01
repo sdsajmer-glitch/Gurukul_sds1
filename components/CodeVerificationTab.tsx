@@ -47,7 +47,7 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
         // Standardize: Remove all whitespace and handle formatting
-        const cleanCode = code.replace(/\s+/g, '').toUpperCase();
+        const cleanCode = code.replace(/[\s-]+/g, '').toUpperCase();
         if (!cleanCode) return;
 
         setVerifying(true);
