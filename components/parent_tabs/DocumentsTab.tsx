@@ -107,7 +107,7 @@ const CollapsibleDocumentCard: React.FC<{
             subText: 'Document has expired',
             barColor: 'bg-[#F97316]'
         };
-        if (isReviewing || isSubmitted) return { // Reviewing or Submitted
+        if (isReviewing || isSubmitted) return { // Reviewing or Submitted - BLUE
             theme: 'blue',
             bg: 'bg-[#121B2E]',
             border: 'border-[#3B82F6]',
@@ -115,7 +115,7 @@ const CollapsibleDocumentCard: React.FC<{
             icon: <CheckCircleIcon className="w-6 h-6" />,
             label: 'SUBMITTED',
             text: 'text-[#3B82F6]',
-            subText: 'Typically verified in 24 hrs',
+            subText: 'Pending verification',
             barColor: 'bg-[#3B82F6]'
         };
         if (isPending && isMandatory) return { // Required
@@ -250,37 +250,19 @@ const CollapsibleDocumentCard: React.FC<{
             <div className="mt-auto relative z-10">
                 {!isExpanded ? (
                     <div className="flex items-center gap-2">
-                        {/* Primary Open/Upload Button */}
-                        <button
-                            onClick={toggleExpand}
-                            className={`flex-1 h-10 flex items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-lg group/btn ${hasFileRecord
-                                ? 'bg-white/[0.03] text-white hover:bg-white/[0.08] border-white/10'
-                                : 'bg-primary text-white hover:bg-primary/90 border-primary/50'
-                                }`}
-                        >
-                            {hasFileRecord ? (
-                                <>
-                                    <EyeIcon className="w-3.5 h-3.5 opacity-60 group-hover/btn:opacity-100" />
-                                    <span>View</span>
-                                </>
-                            ) : (
-                                <>
-                                    <UploadIcon className="w-3.5 h-3.5" />
-                                    <span>Upload</span>
-                                </>
-                            )}
-                        </button>
-
-                        {/* Action Buttons for Files */}
-                        {hasFileRecord && (
-                            <>
+                        {hasFileRecord ? (
+                            // --- Action Group when File Exists (View, Download, Replace) ---
+                            <div className="flex items-center w-full gap-2">
+                                {/* Primary: View */}
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white/40 hover:text-white transition-all"
-                                    title="Edit / Replace"
+                                    onClick={toggleExpand} // Using toggleExpand as View since it opens preview
+                                    className="flex-grow h-10 flex items-center justify-center gap-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white transition-all group/btn"
                                 >
-                                    <UploadIcon className="w-4 h-4" />
+                                    <EyeIcon className="w-3.5 h-3.5 opacity-60 group-hover/btn:opacity-100" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">View Artifact</span>
                                 </button>
+
+                                {/* Secondary: Download */}
                                 <button
                                     onClick={handleDownload}
                                     className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white/40 hover:text-white transition-all"
@@ -288,7 +270,30 @@ const CollapsibleDocumentCard: React.FC<{
                                 >
                                     <DownloadIcon className="w-4 h-4" />
                                 </button>
-                            </>
+
+                                {/* Secondary: Re-upload */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (window.confirm('Replace this artifact? The previous version will be archived.')) {
+                                            fileInputRef.current?.click();
+                                        }
+                                    }}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white/40 hover:text-white transition-all"
+                                    title="Re-upload"
+                                >
+                                    <UploadIcon className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            // --- Direct Upload CTA when Required/Pending ---
+                            <button
+                                onClick={toggleExpand}
+                                className={`w-full h-10 flex items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-lg group/btn bg-primary text-white hover:bg-primary/90 border-primary/50`}
+                            >
+                                <UploadIcon className="w-3.5 h-3.5" />
+                                <span>Upload</span>
+                            </button>
                         )}
                     </div>
                 ) : (
@@ -596,7 +601,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                 {Object.keys(groupedData).map(admId => {
                     const node = groupedData[admId];
                     const isExpanded = expandedIds.has(admId);
-                    const verifiedCount = node.requirements.filter(r => r.status === 'Verified').length;
+                    const verifiedCount = node.requirements.filter(r => ['Verified', 'Submitted', 'Uploaded', 'Reviewing'].includes(r.status || '')).length;
                     const total = node.requirements.length;
                     const percent = total > 0 ? Math.round((verifiedCount / total) * 100) : 0;
 
@@ -642,7 +647,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                                                 </motion.div>
                                             </div>
                                             <p className="text-[9px] font-mono text-white/30 mt-2 text-right">
-                                                {verifiedCount} of {total} required documents completed
+                                                {verifiedCount} of {total} documents submitted
                                             </p>
                                         </div>
                                     </div>
