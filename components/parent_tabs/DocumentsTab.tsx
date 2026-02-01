@@ -107,18 +107,7 @@ const CollapsibleDocumentCard: React.FC<{
             subText: 'Document has expired',
             barColor: 'bg-[#F97316]'
         };
-        if (isReviewing) return { // Reviewing
-            theme: 'purple',
-            bg: 'bg-[#1A1533]',
-            border: 'border-[#A855F7]',
-            glow: 'shadow-[0_0_20px_-5px_rgba(168,85,247,0.15)]',
-            icon: <EyeIcon className="w-6 h-6" />,
-            label: 'REVIEWING',
-            text: 'text-[#A855F7]',
-            subText: 'Verification in progress',
-            barColor: 'bg-[#A855F7]'
-        };
-        if (isSubmitted) return { // Submitted
+        if (isReviewing || isSubmitted) return { // Reviewing or Submitted
             theme: 'blue',
             bg: 'bg-[#121B2E]',
             border: 'border-[#3B82F6]',
@@ -227,8 +216,8 @@ const CollapsibleDocumentCard: React.FC<{
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`group relative flex flex-col gap-3 p-4 rounded-[14px] border transition-all duration-300 overflow-hidden ${config.bg} ${config.border} ${config.glow}`}
-            style={{ minHeight: '112px' }}
+            className={`group relative flex flex-col gap-3 p-5 rounded-[20px] border transition-all duration-300 overflow-hidden ${config.bg} ${config.border} ${config.glow}`}
+            style={{ minHeight: '130px' }}
         >
             {/* Header: Icon + Badge */}
             <div className="flex items-start justify-between w-full relative z-10">
@@ -261,27 +250,49 @@ const CollapsibleDocumentCard: React.FC<{
             <div className="mt-auto relative z-10">
                 {!isExpanded ? (
                     <div className="flex items-center gap-2">
+                        {/* Primary Open/Upload Button */}
                         <button
                             onClick={toggleExpand}
-                            className={`flex-1 py-2.5 rounded-[10px] text-xs font-bold uppercase tracking-wider transition-all border shadow-lg ${isVerified
-                                ? 'bg-[#0E1F16] text-[#22C55E] border-[#22C55E]/20 hover:bg-[#22C55E]/10'
-                                : isReviewing
-                                    ? 'bg-[#1A1533] text-[#A855F7] border-[#A855F7]/20 hover:bg-[#A855F7]/10'
-                                    : 'bg-[#8B5CF6] text-white border-[#8B5CF6] hover:bg-[#7C3AED] shadow-[#8B5CF6]/20'
+                            className={`flex-1 h-10 flex items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-lg group/btn ${hasFileRecord
+                                ? 'bg-white/[0.03] text-white hover:bg-white/[0.08] border-white/10'
+                                : 'bg-primary text-white hover:bg-primary/90 border-primary/50'
                                 }`}
                         >
-                            {isVerified ? 'Verified' : isRejected ? 'Re-upload' : isReviewing ? 'View Status' : docFile ? 'View' : 'Upload'}
+                            {hasFileRecord ? (
+                                <>
+                                    <EyeIcon className="w-3.5 h-3.5 opacity-60 group-hover/btn:opacity-100" />
+                                    <span>View</span>
+                                </>
+                            ) : (
+                                <>
+                                    <UploadIcon className="w-3.5 h-3.5" />
+                                    <span>Upload</span>
+                                </>
+                            )}
                         </button>
 
-                        {/* Secondary Action: Download (if verified) or Info */}
-                        {isVerified && (
-                            <button onClick={handleDownload} className="p-2.5 rounded-lg bg-white/5 text-white/40 hover:text-white border border-white/5 transition-colors" title="Download">
-                                <DownloadIcon className="w-4 h-4" />
-                            </button>
+                        {/* Action Buttons for Files */}
+                        {hasFileRecord && (
+                            <>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white/40 hover:text-white transition-all"
+                                    title="Edit / Replace"
+                                >
+                                    <UploadIcon className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={handleDownload}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white/40 hover:text-white transition-all"
+                                    title="Download"
+                                >
+                                    <DownloadIcon className="w-4 h-4" />
+                                </button>
+                            </>
                         )}
                     </div>
                 ) : (
-                    <button onClick={toggleExpand} className="w-full py-2 text-xs text-red-400/60 hover:text-red-400 font-bold uppercase tracking-wider transition-colors">Close View</button>
+                    <button onClick={toggleExpand} className="w-full py-3 text-[10px] text-red-400/60 hover:text-red-400 font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 bg-red-500/[0.05] rounded-xl hover:bg-red-500/10"><XIcon className="w-3 h-3" /> Close View</button>
                 )}
             </div>
 
