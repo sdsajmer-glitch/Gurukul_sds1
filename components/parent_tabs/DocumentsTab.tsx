@@ -263,11 +263,11 @@ const CollapsibleDocumentCard: React.FC<{
                     <div className="flex items-center gap-2">
                         <button
                             onClick={toggleExpand}
-                            className={`flex-1 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border shadow-lg ${isVerified ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20' :
-                                isRejected ? 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' :
-                                    isReviewing ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500/20' :
-                                        isMandatory && !docFile ? 'bg-[#FBBF24]/10 text-[#FBBF24] border-[#FBBF24]/20 hover:bg-[#FBBF24]/20' :
-                                            'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'
+                            className={`flex-1 py-2.5 rounded-[10px] text-xs font-bold uppercase tracking-wider transition-all border shadow-lg ${isVerified
+                                ? 'bg-[#0E1F16] text-[#22C55E] border-[#22C55E]/20 hover:bg-[#22C55E]/10'
+                                : isReviewing
+                                    ? 'bg-[#1A1533] text-[#A855F7] border-[#A855F7]/20 hover:bg-[#A855F7]/10'
+                                    : 'bg-[#8B5CF6] text-white border-[#8B5CF6] hover:bg-[#7C3AED] shadow-[#8B5CF6]/20'
                                 }`}
                         >
                             {isVerified ? 'Verified' : isRejected ? 'Re-upload' : isReviewing ? 'View Status' : docFile ? 'View' : 'Upload'}
@@ -494,9 +494,11 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                 if (focusOnAdmissionId && grouped[focusOnAdmissionId]) {
                     setExpandedIds(new Set([focusOnAdmissionId]));
                     onClearFocus();
-                } else if (Object.keys(grouped).length > 0 && expandedIds.size === 0) {
-                    setExpandedIds(new Set([Object.keys(grouped)[0]]));
                 }
+                // Auto-expand removed as per user request (Start Collapsed)
+                // else if (Object.keys(grouped).length > 0 && expandedIds.size === 0) {
+                //     setExpandedIds(new Set([Object.keys(grouped)[0]]));
+                // }
             }
         } catch (err: any) {
             setError(formatError(err));
