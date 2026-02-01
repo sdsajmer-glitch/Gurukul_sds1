@@ -56,8 +56,8 @@ const BranchCard: React.FC<{
             {/* Header / Status */}
             <div className="flex justify-between items-start mb-10">
                 <div className={`p-3.5 rounded-xl border transition-colors duration-200 ${isLinked ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500' :
-                        branch.is_main_branch ? 'bg-primary/5 border-primary/10 text-primary' :
-                            'bg-white/5 border-white/5 text-white/20'
+                    branch.is_main_branch ? 'bg-primary/5 border-primary/10 text-primary' :
+                        'bg-white/5 border-white/5 text-white/20'
                     }`}>
                     <SchoolIcon className="w-5 h-5" />
                 </div>
@@ -340,6 +340,7 @@ export const BranchManagementTab: React.FC<BranchManagementTabProps> = ({ isHead
                         <div className="p-6 md:p-8 overflow-y-auto max-h-[75vh] custom-scrollbar">
                             <BranchCreationPage
                                 hideHero
+                                initialBranch={branchToEdit}
                                 profile={branchToEdit ? undefined : (schoolProfile?.user_id ? { id: schoolProfile.user_id } as any : undefined)}
                                 onNext={() => { setIsCreateModalOpen(false); onBranchUpdate(); }}
                             />

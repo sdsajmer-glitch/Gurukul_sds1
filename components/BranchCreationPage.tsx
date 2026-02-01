@@ -17,6 +17,7 @@ import { GlobeIcon } from './icons/GlobeIcon';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { CheckoutIcon } from './icons/CheckoutIcon';
+import { EditIcon } from './icons/EditIcon';
 import { GoogleGenAI } from '@google/genai';
 
 interface BranchCreationPageProps {
@@ -24,6 +25,7 @@ interface BranchCreationPageProps {
     profile?: UserProfile;
     onBack?: () => void;
     hideHero?: boolean;
+    initialBranch?: SchoolBranch | null;
 }
 
 const FloatingLabelInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string, icon?: React.ReactNode, action?: React.ReactNode }> = ({ label, icon, action, className, ...props }) => (
@@ -69,7 +71,7 @@ const StyledSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement> & { l
     </div>
 );
 
-export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, profile, onBack, hideHero = false }) => {
+export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, profile, onBack, hideHero = false, initialBranch }) => {
     const [branches, setBranches] = useState<SchoolBranch[]>([]);
     const [schoolData, setSchoolData] = useState<SchoolAdminProfileData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -142,6 +144,31 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     useEffect(() => {
         fetchInitialData();
     }, [fetchInitialData]);
+
+    // Initialize Form Data from Prop (Critical for Edit Mode in Modal)
+    useEffect(() => {
+        if (initialBranch) {
+            setEditingBranch(initialBranch);
+            setFormData({
+                name: initialBranch.name,
+                address: initialBranch.address,
+                country: initialBranch.country || 'India',
+                state: initialBranch.state || '',
+                city: initialBranch.city || '',
+                adminName: initialBranch.admin_name || '',
+                adminPhone: initialBranch.admin_phone || '',
+                adminEmail: initialBranch.admin_email || '',
+                isMain: initialBranch.is_main_branch
+            });
+        } else if (hideHero) {
+            // Reset for "Create New" in modal
+            setEditingBranch(null);
+            setFormData({
+                name: '', address: '', country: 'India', city: '', state: '',
+                adminName: '', adminPhone: '', adminEmail: '', isMain: false
+            });
+        }
+    }, [initialBranch, hideHero]);
 
     const handleOpenCreate = (currentSchoolData: SchoolAdminProfileData | null = schoolData) => {
         if (!isMounted.current) return;
