@@ -34,7 +34,7 @@ BEGIN
     END IF;
 
     -- Generate a secure random code (simplified here, but robust enough)
-    v_code := encode(gen_random_bytes(6), 'hex'); -- 12 chars hex
+    v_code := upper(encode(gen_random_bytes(6), 'hex')); -- 12 chars hex, UPPERCASE
     v_expires_at := now() + interval '7 days';
 
     -- Invalidate old pending invitations for this branch to enforce "Single Use Protocol"
