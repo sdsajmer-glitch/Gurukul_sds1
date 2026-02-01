@@ -172,6 +172,23 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
         handleChange({ target: { name: 'city', value: '' } } as any);
     };
 
+    const handleGenerateCode = () => {
+        if (!formData.school_name) return;
+        // Take initials of school name + random 4 digits
+        const prefix = formData.school_name
+            .split(' ')
+            .filter(word => word.length > 0)
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 4);
+
+        const random = Math.floor(1000 + Math.random() * 9000);
+        const generatedCode = `${prefix}-${random}`;
+
+        handleChange({ target: { name: 'affiliation_number', value: generatedCode } } as any);
+    };
+
     return (
         <div className="space-y-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-5xl mx-auto pb-20">
 
@@ -465,8 +482,13 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-amber-500/70 tracking-[0.3em] pl-1">Affiliation Control</label>
+                                <div className="space-y-2 group/aff">
+                                    <div className="flex items-center justify-between mb-1 px-1">
+                                        <label className="text-[10px] font-black uppercase text-amber-500/70 tracking-[0.3em]">Affiliation Control</label>
+                                        {formData.school_name && !formData.affiliation_number && (
+                                            <span className="text-[9px] font-bold text-amber-500/40 animate-pulse">Synchronize with Identity?</span>
+                                        )}
+                                    </div>
                                     <PremiumInput
                                         label="Grant / School Code"
                                         name="affiliation_number"
@@ -474,7 +496,23 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                                         onChange={handleChange}
                                         placeholder="e.g. 830012"
                                         icon={<HashIcon className="w-5 h-5" />}
+                                        action={
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerateCode}
+                                                disabled={!formData.school_name}
+                                                className={`p-2 rounded-xl transition-all ${formData.school_name ? 'text-amber-500 hover:bg-amber-500/10 hover:scale-110 active:scale-95' : 'text-white/10 cursor-not-allowed'}`}
+                                                title="Generate from School Name"
+                                            >
+                                                <SparklesIcon className="w-5 h-5" />
+                                            </button>
+                                        }
                                     />
+                                    <div className="mt-4 p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 invisible group-hover/aff:visible animate-in fade-in duration-300">
+                                        <p className="text-[10px] text-amber-500/60 font-medium leading-relaxed italic">
+                                            Handshake Tip: Link your official Educational Board affiliation code to sync global records.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
