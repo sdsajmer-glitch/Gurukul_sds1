@@ -635,7 +635,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                                                     <span className={`text-xl font-black ${percent === 100 ? 'text-[#22C55E]' : 'text-white'}`}>{percent}%</span>
                                                 </div>
                                             </div>
-                                            <div className="h-1.5 bg-[#121622] rounded-full overflow-hidden border border-white/5 relative">
+                                            <div className="h-2 bg-[#121622] rounded-full overflow-hidden border border-white/5 relative">
                                                 <div className="absolute inset-0 bg-white/[0.02]"></div>
                                                 <motion.div
                                                     className={`h-full rounded-full relative overflow-hidden ${percent === 100 ? 'bg-[#22C55E]' : 'bg-[#8B5CF6]'}`}
