@@ -21,20 +21,20 @@ const AuthPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex bg-[#08090a] selection:bg-primary/20 selection:text-primary overflow-hidden relative font-sans">
+        <div className="min-h-screen flex bg-[#030304] selection:bg-primary/30 selection:text-white overflow-hidden relative font-sans">
             {/* Atmospheric Background Layers */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: `url("https://www.transparenttextures.com/patterns/carbon-fibre.png")` }}></div>
-                <motion.div 
-                    animate={{ 
+                <motion.div
+                    animate={{
                         scale: [1, 1.2, 1],
                         opacity: [0.1, 0.15, 0.1],
                     }}
                     transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
                     className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-primary/20 rounded-full blur-[140px] pointer-events-none"
                 ></motion.div>
-                <motion.div 
-                    animate={{ 
+                <motion.div
+                    animate={{
                         scale: [1, 1.1, 1],
                         opacity: [0.05, 0.1, 0.05],
                     }}
@@ -46,24 +46,27 @@ const AuthPage: React.FC = () => {
             {/* Left Column: Institutional Branding (Desktop Only) */}
             <div className="hidden lg:flex lg:w-[45%] xl:w-[50%] relative overflow-hidden bg-[#0c0d12] border-r border-white/5 shadow-2xl z-10">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50"></div>
-                
-                <div className="relative z-20 flex flex-col justify-between w-full p-16 xl:p-24 text-white h-full">
-                    <div className="flex items-center gap-4 group">
-                        <div className="p-3 bg-white/5 rounded-2xl backdrop-blur-3xl border border-white/10 shadow-2xl transition-transform group-hover:scale-110 duration-500">
-                            <SchoolIcon className="h-8 w-8 text-primary" />
+
+                <div className="relative z-20 flex flex-col justify-between w-full p-20 xl:p-32 text-white h-full">
+                    <div className="flex items-center gap-5 group">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+                            <div className="relative p-4 bg-white/5 rounded-2xl backdrop-blur-3xl border border-white/10 shadow-2xl transition-transform group-hover:scale-105 duration-500">
+                                <SchoolIcon className="h-8 w-8 text-primary" />
+                            </div>
                         </div>
-                        <span className="text-2xl font-serif font-black tracking-[0.3em] text-white uppercase">Gurukul</span>
+                        <span className="text-xl font-serif font-black tracking-[0.2em] text-white uppercase opacity-90">Gurukul</span>
                     </div>
-                    
+
                     <div className="max-w-xl">
-                        <motion.h1 
+                        <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-6xl xl:text-8xl font-serif font-black leading-[1.1] mb-8 tracking-tighter uppercase"
+                            className="text-6xl xl:text-8xl font-serif font-black leading-[1.1] mb-8 tracking-tighter uppercase text-white drop-shadow-2xl"
                         >
-                            Unified <br/> <span className="text-white/30 italic font-medium">Identity.</span>
+                            Unified <br /> <span className="text-white/50 italic font-medium">Identity.</span>
                         </motion.h1>
-                        <p className="text-xl text-white/40 leading-relaxed font-serif italic max-w-md border-l-2 border-primary/40 pl-8">
+                        <p className="text-xl text-white/60 leading-relaxed font-serif italic max-w-md border-l border-primary/40 pl-8 tracking-wide">
                             The high-fidelity administrative operating system for next-generation institutional orchestration.
                         </p>
                     </div>
@@ -88,7 +91,7 @@ const AuthPage: React.FC = () => {
                     <div className="w-full max-w-[480px] z-10 relative">
                         <AnimatePresence mode="wait">
                             {signupSuccess ? (
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
@@ -109,7 +112,7 @@ const AuthPage: React.FC = () => {
                                     </button>
                                 </motion.div>
                             ) : (
-                                <motion.div 
+                                <motion.div
                                     key={view}
                                     initial={{ opacity: 0, x: view === 'login' ? -20 : 20 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -118,20 +121,20 @@ const AuthPage: React.FC = () => {
                                     className="w-full"
                                 >
                                     {view === 'login' && (
-                                        <LoginForm 
-                                            onSwitchToSignup={() => setView('signup')} 
-                                            onForgotPassword={() => setView('forgot')} 
+                                        <LoginForm
+                                            onSwitchToSignup={() => setView('signup')}
+                                            onForgotPassword={() => setView('forgot')}
                                         />
                                     )}
                                     {view === 'signup' && (
-                                        <SignupForm 
-                                            onSuccess={handleSignupSuccess} 
-                                            onSwitchToLogin={() => setView('login')} 
+                                        <SignupForm
+                                            onSuccess={handleSignupSuccess}
+                                            onSwitchToLogin={() => setView('login')}
                                         />
                                     )}
                                     {view === 'forgot' && (
-                                        <ForgotPasswordForm 
-                                            onBack={() => setView('login')} 
+                                        <ForgotPasswordForm
+                                            onBack={() => setView('login')}
                                         />
                                     )}
                                 </motion.div>
