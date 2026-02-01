@@ -28,6 +28,21 @@ interface DashboardOverviewProps {
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, currentBranch, profile, onNavigate }) => {
     const [stats, setStats] = useState({ students: 0, teachers: 0, courses: 0 });
     const [loading, setLoading] = useState(true);
+    const [isBranchAdminEligible, setIsBranchAdminEligible] = useState(false);
+
+    useEffect(() => {
+        const checkEligibility = async () => {
+            try {
+                const { data, error } = await supabase.rpc('check_branch_admin_eligibility');
+                if (!error && data) {
+                    setIsBranchAdminEligible(data.eligible);
+                }
+            } catch (err) {
+                console.error("Eligibility Check Error:", err);
+            }
+        };
+        checkEligibility();
+    }, []);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -123,24 +138,35 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
                                     </div>
                                 </div>
                             </div>
-                        ) : !loading && (
-                            <div className="group relative bg-red-500/5 border border-red-500/20 rounded-[2.5rem] p-8 md:p-10 animate-in zoom-in duration-700 max-w-3xl overflow-hidden shadow-2xl shadow-red-500/5">
-                                <div className="absolute top-0 right-0 p-10 opacity-[0.03] transform rotate-12 group-hover:scale-110 transition-transform duration-1000"><ShieldCheckIcon className="w-48 h-48 text-red-500" /></div>
-                                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
-                                    <div className="flex items-start gap-6 text-center md:text-left flex-col md:flex-row items-center md:items-start">
-                                        <div className="w-20 h-20 bg-red-500 text-white rounded-[1.8rem] flex items-center justify-center flex-shrink-0 shadow-2xl shadow-red-500/30 transform group-hover:rotate-6 transition-transform duration-500">
-                                            <AlertTriangleIcon className="w-10 h-10" />
+                        ) : !loading && isBranchAdminEligible && (
+                            <div className="group relative bg-[#0a0a0c] border border-red-500/20 rounded-[3rem] p-8 md:p-12 animate-in zoom-in duration-1000 max-w-4xl overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.1)] ring-1 ring-red-500/10">
+                                <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-red-500/5 rounded-full filter blur-[100px] pointer-events-none"></div>
+                                <div className="absolute top-0 right-0 p-12 opacity-[0.03] transform rotate-12 group-hover:scale-110 transition-transform duration-1000"><ShieldCheckIcon className="w-64 h-64 text-red-500" /></div>
+
+                                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
+                                    <div className="flex items-start gap-8 text-center md:text-left flex-col md:flex-row items-center md:items-start max-w-2xl">
+                                        <div className="relative">
+                                            <div className="w-24 h-24 bg-red-600 text-white rounded-[2.2rem] flex items-center justify-center flex-shrink-0 shadow-2xl shadow-red-600/40 transform group-hover:rotate-12 transition-transform duration-700 ring-4 ring-red-600/20">
+                                                <AlertTriangleIcon className="w-12 h-12" />
+                                            </div>
+                                            <div className="absolute -top-2 -right-2 w-8 h-8 bg-black rounded-full border-2 border-red-600 flex items-center justify-center animate-bounce">
+                                                <span className="text-[10px] font-black text-red-600">!</span>
+                                            </div>
                                         </div>
                                         <div>
-                                            <p className="text-2xl font-black text-red-500 uppercase tracking-widest leading-none font-serif">Identity Disconnect</p>
-                                            <p className="text-sm text-white/40 mt-4 leading-relaxed font-medium max-w-sm">No active branch node detected for <strong className="text-white/80">{profile.email}</strong>. Enter your provisioned link code to activate this workstation.</p>
+                                            <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-4">Identity Disconnect</h3>
+                                            <p className="text-base text-white/40 leading-relaxed font-medium">
+                                                No active branch node detected for <strong className="text-white/80">{profile.email}</strong>.
+                                                <span className="block mt-2 text-white/30 italic">Handshake required: Enter your provisioned link code to activate this workstation and sync with the institutional registry.</span>
+                                            </p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => onNavigate('Code Verification')}
-                                        className="w-full md:w-auto px-10 py-5 bg-red-600 hover:bg-red-500 text-white font-black text-[10px] uppercase tracking-[0.25em] rounded-2xl shadow-2xl shadow-red-600/20 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 whitespace-nowrap ring-4 ring-red-600/10"
+                                        className="group/btn w-full md:w-auto px-12 py-6 bg-red-600 hover:bg-red-500 text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-red-600/30 transition-all transform hover:-translate-y-2 active:scale-95 flex items-center justify-center gap-4 whitespace-nowrap ring-4 ring-red-600/20"
                                     >
-                                        <KeyIcon className="w-5 h-5" /> Start Handshake
+                                        <KeyIcon className="w-6 h-6 group-hover/btn:rotate-45 transition-transform duration-500" />
+                                        Start Handshake
                                     </button>
                                 </div>
                             </div>
