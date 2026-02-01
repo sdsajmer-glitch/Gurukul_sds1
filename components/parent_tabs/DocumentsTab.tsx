@@ -258,7 +258,7 @@ const CollapsibleDocumentCard: React.FC<{
                                     onClick={toggleExpand} // Using toggleExpand as View since it opens preview
                                     className="flex-grow h-10 flex items-center justify-center gap-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white transition-all group/btn"
                                 >
-                                    <EyeIcon className="w-3.5 h-3.5 opacity-60 group-hover/btn:opacity-100" />
+                                    <EyeIcon className="w-4 h-4 opacity-60 group-hover/btn:opacity-100" />
                                     <span className="text-[11px] font-black uppercase tracking-widest">View Artifact</span>
                                 </button>
 
@@ -291,7 +291,7 @@ const CollapsibleDocumentCard: React.FC<{
                                 onClick={toggleExpand}
                                 className={`w-full h-10 flex items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-lg group/btn bg-primary text-white hover:bg-primary/90 border-primary/50`}
                             >
-                                <UploadIcon className="w-3.5 h-3.5" />
+                                <UploadIcon className="w-4 h-4" />
                                 <span>Upload</span>
                             </button>
                         )}
