@@ -57,13 +57,104 @@ const CollapsibleDocumentCard: React.FC<{
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const isVerified = req.status === 'Verified';
-    const isRejected = req.status === 'Rejected';
-    const isSubmitted = req.status === 'Submitted';
-
-    // Check if we actually have a file record
+    // --- 1. Status Matrix Logic ---
+    const status = req.status || 'Pending';
+    const isMandatory = req.is_mandatory;
     const docFile = req.admission_documents?.[0];
     const hasFileRecord = !!docFile;
+
+    // Derived States
+    const isVerified = status === 'Verified';
+    const isRejected = status === 'Rejected';
+    const isReviewing = status === 'Reviewing';
+    // Submitted is essentially "Under Review" effectively in this system if not explicit
+    const isSubmitted = status === 'Submitted' || status === 'Uploaded';
+    const isExpired = status === 'Expired';
+    const isPending = status === 'Pending';
+
+    // Matrix Configuration
+    const getConfig = () => {
+        if (isVerified) return {
+            theme: 'emerald',
+            bg: 'bg-[#051a10]',
+            border: 'border-emerald-500/30',
+            glow: 'shadow-[0_0_20px_-5px_rgba(16,185,129,0.15)]',
+            icon: <ShieldCheckIcon className="w-6 h-6" />,
+            label: 'VERIFIED',
+            text: 'text-emerald-400',
+            subText: 'Verified and secured.',
+            barColor: 'bg-emerald-500'
+        };
+        if (isRejected) return {
+            theme: 'red',
+            bg: 'bg-[#1a0505]',
+            border: 'border-red-500/30',
+            glow: 'shadow-[0_0_20px_-5px_rgba(239,68,68,0.15)]',
+            icon: <XIcon className="w-6 h-6" />,
+            label: 'REJECTED',
+            text: 'text-red-400',
+            subText: 'Action Required: Re-upload',
+            barColor: 'bg-red-500'
+        };
+        if (isExpired) return {
+            theme: 'orange',
+            bg: 'bg-[#1a0f05]',
+            border: 'border-orange-500/30',
+            glow: 'shadow-[0_0_20px_-5px_rgba(249,115,22,0.15)]',
+            icon: <AlertTriangleIcon className="w-6 h-6" />,
+            label: 'EXPIRED',
+            text: 'text-orange-400',
+            subText: 'Document has expired',
+            barColor: 'bg-orange-500'
+        };
+        if (isReviewing) return {
+            theme: 'purple',
+            bg: 'bg-[#11051a]',
+            border: 'border-purple-500/30',
+            glow: 'shadow-[0_0_20px_-5px_rgba(168,85,247,0.15)]',
+            icon: <EyeIcon className="w-6 h-6" />,
+            label: 'REVIEWING',
+            text: 'text-purple-400',
+            subText: 'Verification in progress',
+            barColor: 'bg-purple-500'
+        };
+        if (isSubmitted) return {
+            theme: 'blue',
+            bg: 'bg-[#080b14]',
+            border: 'border-blue-500/30',
+            glow: 'shadow-[0_0_20px_-5px_rgba(59,130,246,0.15)]',
+            icon: <CheckCircleIcon className="w-6 h-6" />,
+            label: 'SUBMITTED',
+            text: 'text-blue-400',
+            subText: 'Typically verified in 24 hrs',
+            barColor: 'bg-blue-500'
+        };
+        if (isPending && isMandatory) return {
+            theme: 'amber',
+            bg: 'bg-[#1a1405]',
+            border: 'border-amber-500/30',
+            glow: 'shadow-[0_0_20px_-5px_rgba(245,158,11,0.15)]',
+            icon: <AlertTriangleIcon className="w-6 h-6" />,
+            label: 'REQUIRED',
+            text: 'text-amber-400',
+            subText: 'Mandatory for enrollment',
+            barColor: 'bg-amber-500'
+        };
+        // Optional / Default
+        return {
+            theme: 'gray',
+            bg: 'bg-[#0c0d12]',
+            border: 'border-white/5',
+            glow: '',
+            icon: <DocumentTextIcon className="w-6 h-6" />,
+            label: 'OPTIONAL',
+            text: 'text-white/30',
+            subText: 'Not mandatory',
+            barColor: 'bg-white/20'
+        };
+    };
+
+    const config = getConfig();
 
     const toggleExpand = () => setIsExpanded(!isExpanded);
 
@@ -129,26 +220,18 @@ const CollapsibleDocumentCard: React.FC<{
         }
     };
 
-    // Card Styles based on status
-    const cardBaseStyle = "group relative rounded-[1.5rem] border transition-all duration-500 overflow-hidden";
-    const cardStatusStyle = isVerified
-        ? 'bg-[#051a10] border-emerald-500/30 shadow-[0_0_20px_-5px_rgba(16,185,129,0.15)]'
-        : isRejected
-            ? 'bg-[#1a0505] border-red-500/30'
-            : isSubmitted
-                ? 'bg-[#080b14] border-blue-500/30 shadow-[0_0_20px_-5px_rgba(59,130,246,0.15)]'
-                : 'bg-[#0c0d12] border-white/5 hover:border-white/10 hover:bg-[#111318]';
+    // Card Styles based on status (Handled by config now)
 
     return (
         <motion.div
             layout
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`${cardBaseStyle} ${cardStatusStyle}`}
+            className={`group relative rounded-[1.5rem] border transition-all duration-500 overflow-hidden ${config.bg} ${config.border} ${config.glow}`}
+            onClick={(!isExpanded && !isVerified) ? toggleExpand : undefined}
         >
-            {/* Status Glow Line (Left) */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${isVerified ? 'bg-emerald-500' : isRejected ? 'bg-red-500' : isSubmitted ? 'bg-blue-500' : 'bg-transparent'
-                } opacity-50`}></div>
+            {/* Status sidebar line */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${config.barColor} opacity-50`}></div>
 
             {/* --- Header --- */}
             <div
@@ -157,44 +240,34 @@ const CollapsibleDocumentCard: React.FC<{
             >
                 <div className="flex items-center gap-5">
                     {/* Status Icon Box */}
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner transition-colors ${isVerified ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                        isRejected ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                            isSubmitted ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                                'bg-white/5 border-white/10 text-white/20'
-                        }`}>
-                        {isVerified ? <CheckCircleIcon className="w-6 h-6" /> :
-                            isRejected ? <AlertTriangleIcon className="w-6 h-6" /> :
-                                isSubmitted ? <CheckCircleIcon className="w-6 h-6" /> :
-                                    <DocumentTextIcon className="w-6 h-6" />}
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner transition-colors ${config.text} ${config.bg} border-white/5`}>
+                        <div className="brightness-125 contrast-125">{config.icon}</div>
                     </div>
 
                     <div>
-                        <h4 className={`text-base font-bold leading-tight ${isVerified ? 'text-emerald-100' : isRejected ? 'text-red-100' : 'text-white'
-                            }`}>{req.document_name}</h4>
+                        <h4 className={`text-base font-bold leading-tight text-white group-hover:text-primary transition-colors`}>{req.document_name}</h4>
 
                         <div className="flex items-center gap-2 mt-1.5 h-5">
-                            {req.is_mandatory && (
-                                <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 tracking-wider">MANDATORY</span>
+                            <span className={`text-[10px] font-medium tracking-wide ${config.text} opacity-80 uppercase`}>
+                                {config.subText}
+                            </span>
+
+                            {docFile && (
+                                <>
+                                    <span className="w-1 h-1 rounded-full bg-white/10"></span>
+                                    <span className="text-[10px] font-mono text-white/40 flex items-center gap-1">
+                                        <PaperClipIcon className="w-3 h-3" /> {formatFileSize(docFile.file_size || 0)}
+                                    </span>
+                                </>
                             )}
-                            {docFile ? (
-                                <span className="text-[10px] font-mono text-white/40 flex items-center gap-1">
-                                    <PaperClipIcon className="w-3 h-3" /> {formatFileSize(docFile.file_size || 0)}
-                                </span>
-                            ) : isSubmitted ? (
-                                <span className="text-[10px] text-blue-400/60 font-medium italic">Synced (Metadata)</span>
-                            ) : null}
                         </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* Status Pill */}
-                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] border shadow-[0_2px_10px_-2px_rgba(0,0,0,0.5)] backdrop-blur-sm ${isVerified ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-900/20' :
-                        isRejected ? 'bg-red-500/10 border-red-500/30 text-red-100 shadow-red-900/20' :
-                            isSubmitted ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-blue-900/20' :
-                                'bg-white/5 border-white/10 text-white/30'
-                        }`}>
-                        {uploadProgress !== null ? 'Syncing...' : req.status}
+                    {/* Status Pill Badge */}
+                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] border shadow-sm backdrop-blur-md ${config.text} ${config.border} bg-white/5`}>
+                        {uploadProgress !== null ? 'SYNCING...' : config.label}
                     </div>
 
                     <div className={`p-2 rounded-full transition-colors ${isExpanded ? 'bg-white/10 text-white' : 'text-white/20 group-hover:text-white hover:bg-white/5'}`}>
