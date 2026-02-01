@@ -1,269 +1,372 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from './services/supabase';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { supabase, formatError } from './services/supabase';
 import { ShareCode, ShareCodeStatus, AdmissionApplication, ShareCodeType } from './types';
 import Spinner from './components/common/Spinner';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// --- Icons (as they are not in separate files) ---
-const CopyIcon: React.FC<{className?: string}> = ({className = "h-5 w-5"}) => (
+// --- Authoritative Icons ---
+const ShieldLockIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+);
+const KeyIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+    </svg>
+);
+const UserGroupIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+);
+const TerminalIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+);
+const CopyIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
     </svg>
 );
-const CheckIcon: React.FC<{className?: string}> = ({className = "h-5 w-5"}) => (
+const CheckIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
 );
-const ShareIcon: React.FC<{className?: string}> = ({className = "h-5 w-5"}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-    </svg>
-);
-const RefreshIcon: React.FC<React.SVGProps<SVGSVGElement> & { onClick?: () => void }> = (props) => (
-     <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.18-3.185m-3.181 9.348a8.25 8.25 0 00-11.664 0l-3.18 3.185m3.181-9.348l-3.18-3.183a8.25 8.25 0 00-11.664 0l-3.18 3.185" />
-    </svg>
-);
-const statusConfig: { [key in ShareCodeStatus]: { text: string; bg: string; border: string; } } = {
-  'Active': { text: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30', border: 'border-emerald-200 dark:border-emerald-800' },
-  'Expired': { text: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-slate-800', border: 'border-slate-200 dark:border-slate-700' },
-  'Revoked': { text: 'text-red-700 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/30', border: 'border-red-200 dark:border-red-900' },
-  'Redeemed': { text: 'text-blue-700 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30', border: 'border-blue-200 dark:border-blue-900' },
-};
 
 export default function ShareCodesTab() {
-  const [codes, setCodes] = useState<ShareCode[]>([]);
-  const [myApplications, setMyApplications] = useState<AdmissionApplication[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    const [codes, setCodes] = useState<ShareCode[]>([]);
+    const [myApplications, setMyApplications] = useState<AdmissionApplication[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  const [selectedAdmission, setSelectedAdmission] = useState<string>('');
-  const [purpose, setPurpose] = useState('');
-  const [codeType, setCodeType] = useState<ShareCodeType>('Enquiry');
-  const [generating, setGenerating] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
-  const [isCopied, setIsCopied] = useState(false);
+    const [selectedAdmission, setSelectedAdmission] = useState<string>('');
+    const [purpose, setPurpose] = useState('');
+    const [codeType, setCodeType] = useState<ShareCodeType | null>(null);
+    const [generating, setGenerating] = useState(false);
+    const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+    const [isCopied, setIsCopied] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    const [appsRes, codesRes] = await Promise.all([
-        supabase.rpc('get_my_children_profiles'),
-        supabase.rpc('get_my_share_codes')
-    ]);
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        const [appsRes, codesRes] = await Promise.all([
+            supabase.rpc('get_my_children_profiles'),
+            supabase.rpc('get_my_share_codes')
+        ]);
+        if (appsRes.error) setError(formatError(appsRes.error));
+        else setMyApplications(appsRes.data || []);
+        if (codesRes.error) setError(formatError(codesRes.error));
+        else setCodes(codesRes.data || []);
+        setLoading(false);
+    }, []);
 
-    if (appsRes.error) {
-      setError(`Failed to fetch applications: ${appsRes.error.message}`);
-    } else {
-      setMyApplications(appsRes.data || []);
-      if (appsRes.data && appsRes.data.length > 0 && !selectedAdmission) {
-        setSelectedAdmission(String(appsRes.data[0].id));
-      }
-    }
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    if (codesRes.error) {
-      setError(`Failed to fetch codes: ${codesRes.error.message}`);
-    } else {
-      setCodes(codesRes.data || []);
-    }
-
-    setLoading(false);
-  }, [selectedAdmission]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleGenerateCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedAdmission) {
-      alert('Please select an application.');
-      return;
-    }
-    
-    setGenerating(true);
-    setGeneratedCode(null);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase.rpc('generate_admission_share_code', {
-        p_admission_id: selectedAdmission,
-        p_purpose: purpose,
-        p_code_type: codeType,
-      });
-
-      if (error) throw error;
-
-      setGeneratedCode(data);
-      setPurpose('');
-      await fetchData();
-
-    } catch (err: any) {
-      setError(`Failed to generate code: ${err.message}`);
-    } finally {
-        setGenerating(false);
-    }
-  };
-  
-  const handleRevokeCode = async (id: number) => {
-    if (window.confirm('Are you sure you want to revoke this code?')) {
-        const { error } = await supabase.rpc('revoke_my_share_code', { p_code_id: id });
-        if (error) {
-            alert(`Failed to revoke code: ${error.message}`);
-        } else {
+    const handleGenerateCode = async () => {
+        if (!selectedAdmission || !codeType || generating) return;
+        setGenerating(true);
+        setGeneratedCode(null);
+        setError(null);
+        try {
+            const { data, error } = await supabase.rpc('generate_admission_share_code', {
+                p_admission_id: selectedAdmission,
+                p_purpose: purpose,
+                p_code_type: codeType,
+            });
+            if (error) throw error;
+            setGeneratedCode(data);
+            setPurpose('');
             await fetchData();
+        } catch (err: any) {
+            setError(formatError(err));
+        } finally {
+            setGenerating(false);
         }
-    }
-  };
-  
-  const handleCopyCode = (code: string) => {
-    if (isCopied) return;
-    navigator.clipboard.writeText(code).then(() => {
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-    });
-  };
-  
-  const handleShareCode = (code: string) => {
-      if (navigator.share) {
-          navigator.share({ title: 'School Share Code', text: `Here is my share code for school verification: ${code}` }).catch(console.error);
-      } else {
-          handleCopyCode(code);
-      }
-  };
+    };
 
-  const renderHistory = () => {
-    if (loading) return <div className="flex justify-center p-8"><Spinner size="lg" /></div>;
-    if (error && codes.length === 0) return <p className="text-center text-destructive p-8 bg-destructive/10 rounded-lg">{error}</p>;
-    if (codes.length === 0) return (
-        <div className="text-center py-16 text-muted-foreground bg-muted/20 rounded-2xl border-2 border-dashed border-border flex flex-col items-center">
-            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-muted-foreground/50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
-            <p className="font-medium text-foreground">No codes active</p>
-            <p className="text-sm mt-1 max-w-xs">Generate a code to allow the school to access your child's application.</p>
-        </div>
-    );
+    const handleRevokeCode = async (id: number) => {
+        const { error } = await supabase.rpc('revoke_my_share_code', { p_code_id: id });
+        if (error) alert(formatError(error));
+        else await fetchData();
+    };
+
+    const handleCopyCode = (code: string) => {
+        navigator.clipboard.writeText(code).then(() => {
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        });
+    };
+
+    const isReadyForAuth = selectedAdmission && codeType && !generating;
+    const selectedChild = useMemo(() => myApplications.find(a => String(a.id) === selectedAdmission), [myApplications, selectedAdmission]);
+
+    // Masked identifier for UI list
+    const maskCode = (code: string) => `****${code.slice(-4)}`;
 
     return (
-        <div className="space-y-4">
-            {codes.map(code => (
-                <div key={code.id} className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow group">
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                        <div>
-                            <p className="font-bold text-foreground">{code.applicant_name}</p>
-                            <span className="font-mono font-semibold text-primary bg-primary/10 px-2 py-1 rounded border border-primary/20 text-sm mt-1 inline-block">{code.code}</span>
+        <div className="max-w-[1400px] mx-auto py-8 space-y-12 animate-in fade-in duration-700">
+            {/* 1. Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/[0.05] pb-10">
+                <div className="space-y-1">
+                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em] opacity-80">Secure Orchestration</span>
+                    <h1 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-none">Access <span className="text-white/20 italic font-medium">Protocols.</span></h1>
+                    <p className="text-sm text-white/40 mt-3 font-medium max-w-lg leading-relaxed italic">Govern and manage encrypted access layers for institutional identity infrastructure.</p>
+                </div>
+                <button onClick={fetchData} className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-95 shadow-xl">Sync Vault</button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch h-full">
+                {/* 2. Control Panel (Left) */}
+                <div className="lg:col-span-4 space-y-6">
+                    {/* Card 1: Provision Key Selector */}
+                    <div className="bg-[#0c0d12]/60 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 space-y-8 shadow-2xl relative overflow-hidden group">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-primary/10 rounded-2xl text-primary border border-primary/20"><KeyIcon className="w-5 h-5" /></div>
+                            <div>
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest">Provision Key</h3>
+                                <p className="text-[9px] text-white/20 font-black uppercase tracking-[0.3em] mt-0.5">Identity Authorization Node</p>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <span className={`px-2.5 py-1 inline-flex text-xs font-bold rounded-full border ${statusConfig[code.status].bg} ${statusConfig[code.status].text} ${statusConfig[code.status].border}`}>{code.status}</span>
-                            <button 
-                                onClick={() => handleRevokeCode(code.id)} 
-                                disabled={code.status !== 'Active'} 
-                                className="text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-md transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+
+                        <div className="space-y-4">
+                            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-1">1. Select Target Node</p>
+                            <div className="space-y-2">
+                                {myApplications.length === 0 ? (
+                                    <div className="p-6 rounded-2xl bg-white/5 border border-dashed border-white/10 text-center animate-pulse">
+                                        <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">No Child Profiles Detected</p>
+                                    </div>
+                                ) : (
+                                    myApplications.map(app => (
+                                        <button
+                                            key={app.id}
+                                            onClick={() => setSelectedAdmission(String(app.id))}
+                                            className={`w-full p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group/item ${selectedAdmission === String(app.id)
+                                                ? 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/5 scale-[0.98]'
+                                                : 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04] opacity-40 hover:opacity-100'}`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`p-2 rounded-xl transition-colors ${selectedAdmission === String(app.id) ? 'bg-primary text-white' : 'bg-white/5 text-white/20 group-hover/item:text-white/40'}`}><TerminalIcon className="w-4 h-4" /></div>
+                                                <div className="text-left">
+                                                    <p className="text-xs font-black text-white uppercase tracking-tight leading-none group-hover/item:text-primary transition-colors">{app.applicant_name}</p>
+                                                    <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-1">Grade {app.grade}</p>
+                                                </div>
+                                            </div>
+                                            {selectedAdmission === String(app.id) && <CheckIcon className="w-4 h-4 text-primary animate-in zoom-in" />}
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Card 2: Access Protocol Type */}
+                        <div className="space-y-4 pt-4 border-t border-white/[0.03]">
+                            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-1">2. Access Protocol</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => setCodeType('Enquiry')}
+                                    className={`p-6 rounded-2xl border transition-all duration-300 text-left relative group/btn ${codeType === 'Enquiry'
+                                        ? 'bg-primary/10 border-primary/40 shadow-xl'
+                                        : 'bg-white/[0.02] border-white/5 hover:border-white/10 opacity-40 hover:opacity-100 h-full'}`}
+                                >
+                                    <div className="h-full flex flex-col justify-between gap-4">
+                                        <ShieldLockIcon className={`w-5 h-5 ${codeType === 'Enquiry' ? 'text-primary' : 'text-white/20'}`} />
+                                        <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${codeType === 'Enquiry' ? 'text-primary' : 'text-white/40'}`}>Enquiry</span>
+                                    </div>
+                                    {codeType === 'Enquiry' && <div className="absolute top-4 right-4 animate-in zoom-in"><CheckIcon className="w-3 h-3 text-primary" /></div>}
+                                </button>
+                                <button
+                                    onClick={() => setCodeType('Admission')}
+                                    className={`p-6 rounded-2xl border transition-all duration-300 text-left relative group/btn ${codeType === 'Admission'
+                                        ? 'bg-primary/10 border-primary/40 shadow-xl'
+                                        : 'bg-white/[0.02] border-white/5 hover:border-white/10 opacity-40 hover:opacity-100 h-full'}`}
+                                >
+                                    <div className="h-full flex flex-col justify-between gap-4">
+                                        <TerminalIcon className={`w-5 h-5 ${codeType === 'Admission' ? 'text-primary' : 'text-white/20'}`} />
+                                        <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${codeType === 'Admission' ? 'text-primary' : 'text-white/40'}`}>Admission</span>
+                                    </div>
+                                    {codeType === 'Admission' && <div className="absolute top-4 right-4 animate-in zoom-in"><CheckIcon className="w-3 h-3 text-primary" /></div>}
+                                </button>
+                            </div>
+                            <p className="text-[9px] text-white/20 font-medium italic mt-2 px-1">“This protocol defines the scope of authorization.”</p>
+                        </div>
+
+                        {/* Card 3: Payload Context */}
+                        <div className="space-y-4 pt-4 border-t border-white/[0.03]">
+                            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-1">3. Payload Context</p>
+                            <input
+                                type="text"
+                                placeholder="Purpose of access..."
+                                value={purpose}
+                                onChange={(e) => setPurpose(e.target.value)}
+                                className="w-full h-12 px-6 rounded-xl bg-black/40 border border-white/5 text-white placeholder:text-white/10 focus:border-primary/50 focus:bg-black/60 outline-none transition-all text-[11px] font-medium"
+                            />
+                        </div>
+
+                        {/* Authorize Action */}
+                        <div className="pt-4">
+                            <button
+                                onClick={handleGenerateCode}
+                                disabled={!isReadyForAuth}
+                                className={`w-full py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.4em] transition-all duration-300 flex items-center justify-center gap-4 ${isReadyForAuth
+                                    ? 'bg-primary text-primary-foreground shadow-2xl shadow-primary/20 hover:-translate-y-1 active:scale-95'
+                                    : 'bg-white/5 text-white/10 border border-white/[0.02] grayscale opacity-50'}`}
                             >
-                                Revoke
+                                {generating ? <Spinner size="sm" /> : <><ShieldLockIcon className="w-5 h-5" /> Authorize & Seal</>}
                             </button>
                         </div>
                     </div>
-                    <div className="flex flex-wrap justify-between items-center text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-                         <span className={`px-2.5 py-0.5 inline-flex text-[10px] font-bold rounded uppercase tracking-wide ${code.code_type === 'Enquiry' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-purple-50 text-purple-700 border border-purple-100'}`}>{code.code_type}</span>
-                         <span>Expires: {new Date(code.expires_at).toLocaleDateString()}</span>
+                </div>
+
+                {/* 3. Protocol State Panel (Right - Hero) */}
+                <div className="lg:col-span-8 flex flex-col">
+                    <div className="flex-1 bg-[#0c0d12]/40 backdrop-blur-3xl rounded-[3.5rem] border border-white/5 relative overflow-hidden flex flex-col items-center justify-center text-center p-10 md:p-20 group">
+                        {/* Animated Background Gradients */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/5 rounded-full blur-[140px] pointer-events-none transition-all duration-700 group-hover:scale-110 opacity-30"></div>
+
+                        <AnimatePresence mode="wait">
+                            {generatedCode ? (
+                                <motion.div
+                                    key="active-state"
+                                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, y: 20 }}
+                                    className="relative z-10 w-full max-w-lg space-y-12"
+                                >
+                                    <div className="space-y-4">
+                                        <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner border border-emerald-500/20 animate-in zoom-in duration-500">
+                                            <CheckIcon className="w-10 h-10 text-emerald-500" />
+                                        </div>
+                                        <h3 className="text-4xl font-serif font-black text-white tracking-widest uppercase leading-none">Identity <span className="text-white/20 italic">Authorized.</span></h3>
+                                        <p className="text-[11px] text-emerald-500/60 font-black uppercase tracking-[0.5em]">Protocol Active & Synced</p>
+                                    </div>
+
+                                    <div className="bg-black/60 border border-white/5 rounded-[2.5rem] p-10 space-y-8 relative overflow-hidden group/code overflow-hidden active:scale-[0.99] transition-transform cursor-pointer" onClick={() => handleCopyCode(generatedCode)}>
+                                        <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent animate-scanner-move opacity-20"></div>
+                                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Protocol Identifier</p>
+                                        <div className="text-6xl md:text-7xl font-mono font-black text-primary tracking-[0.3em] select-all shadow-primary/20 drop-shadow-2xl">
+                                            {generatedCode}
+                                        </div>
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/80 opacity-0 group-hover/code:opacity-100 transition-opacity backdrop-blur-sm">
+                                            <span className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3">
+                                                {isCopied ? <><CheckIcon className="w-5 h-5 text-emerald-500" /> Identity Copied</> : <><CopyIcon className="w-5 h-5" /> Confirm & Copy</>}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-8 text-left border-t border-white/[0.05] pt-10">
+                                        <div>
+                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Target Scope</p>
+                                            <p className="text-sm font-black text-white uppercase tracking-tight">{selectedChild?.applicant_name || 'Individual Node'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Authorization Mode</p>
+                                            <p className="text-sm font-black text-primary uppercase tracking-tight">{codeType} Layer</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-[9px] text-white/10 font-black uppercase tracking-[0.5em] pt-4 selection:bg-transparent">Expires in 24 hours • One-time use protocol</p>
+                                </motion.div>
+                            ) : isReadyForAuth ? (
+                                <motion.div
+                                    key="ready-state"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="relative z-10 space-y-8"
+                                >
+                                    <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-10 border-2 border-primary/20 animate-pulse">
+                                        <ShieldLockIcon className="w-10 h-10 text-primary" />
+                                    </div>
+                                    <h3 className="text-3xl font-serif font-black text-white tracking-widest uppercase leading-none">Protocol <span className="text-white/20 italic">Ready.</span></h3>
+                                    <p className="text-base text-white/40 font-serif italic max-w-sm mx-auto leading-relaxed">Seal the orchestration to generate the identity provision key for the selected scope.</p>
+                                    <div className="pt-10 flex items-center justify-center gap-4 text-[10px] font-black text-primary uppercase tracking-[0.4em] animate-bounce">
+                                        Authorize Below <ShieldLockIcon className="w-4 h-4" />
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="idle-state"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="relative z-10 space-y-8"
+                                >
+                                    <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-10 border-2 border-white/5 opacity-50">
+                                        <ShieldLockIcon className="w-10 h-10 text-white/20" />
+                                    </div>
+                                    <h3 className="text-3xl font-serif font-black text-white/60 tracking-widest uppercase leading-none">Protocol <span className="text-white/10 italic">Idle.</span></h3>
+                                    <p className="text-base text-white/20 font-serif italic max-w-sm mx-auto leading-relaxed">Select a provision key and protocol layer to initialize institutional authorization.</p>
+                                    <div className="pt-10 flex items-center justify-center gap-3 text-[10px] font-black text-white/5 uppercase tracking-[0.4em] border-t border-white/[0.03]">
+                                        Secure channel waiting for initialization
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
-            ))}
-        </div>
-    );
-  };
-
-  return (
-    <div className="space-y-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border pb-6">
-            <div>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">Access Codes</h2>
-                <p className="text-muted-foreground mt-1">Securely share your child's profile with school administrators.</p>
-            </div>
-            <button onClick={fetchData} className="text-sm font-medium text-primary hover:text-primary/80 flex items-center gap-2 bg-background px-4 py-2 rounded-xl border border-border hover:bg-muted transition-all shadow-sm">
-                <RefreshIcon className="w-4 h-4" /> Refresh History
-            </button>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-5 space-y-6">
-                 <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
-                    <div className="mb-6"><h3 className="font-bold text-lg text-foreground">Create New Code</h3><p className="text-sm text-muted-foreground">Generate a temporary access key.</p></div>
-                    <form onSubmit={handleGenerateCode} className="space-y-5">
-                        <div>
-                            <label className="block text-sm font-semibold text-foreground mb-2">Select Child Profile</label>
-                            <div className="relative">
-                                <select value={selectedAdmission} onChange={(e) => setSelectedAdmission(e.target.value)} required className="w-full p-3 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none text-sm shadow-sm" disabled={myApplications.length === 0}>
-                                    {myApplications.length === 0 ? <option disabled>No profiles found</option> : <option value="" disabled>Select Child...</option>}
-                                    {myApplications.map(app => <option key={app.id} value={app.id}>{app.applicant_name} (Grade {app.grade})</option>)}
-                                </select>
-                                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-muted-foreground"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></div>
-                            </div>
-                            {myApplications.length === 0 && !loading && <p className="text-xs text-destructive mt-2 font-medium bg-destructive/10 p-2 rounded-lg">Please add a child in the 'My Children' tab first.</p>}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-foreground mb-3">Access Type</label>
-                            <div className="grid grid-cols-2 gap-4">
-                                <button type="button" onClick={() => setCodeType('Enquiry')} className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 group ${codeType === 'Enquiry' ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 ring-1 ring-blue-500/30' : 'border-border bg-card hover:border-blue-300/50 hover:bg-blue-50/30'}`}>
-                                    <div className={`w-4 h-4 rounded-full border-2 absolute top-4 right-4 flex items-center justify-center ${codeType === 'Enquiry' ? 'border-blue-500' : 'border-muted-foreground/30'}`}>{codeType === 'Enquiry' && <div className="w-2 h-2 bg-blue-500 rounded-full" />}</div>
-                                    <span className="block font-bold text-sm mb-1 text-foreground">Enquiry</span><span className="block text-xs text-muted-foreground group-hover:text-foreground/70">For initial questions & desk visits</span>
-                                </button>
-                                <button type="button" onClick={() => setCodeType('Admission')} className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 group ${codeType === 'Admission' ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-900/20 ring-1 ring-purple-500/30' : 'border-border bg-card hover:border-purple-300/50 hover:bg-blue-50/30'}`}>
-                                    <div className={`w-4 h-4 rounded-full border-2 absolute top-4 right-4 flex items-center justify-center ${codeType === 'Admission' ? 'border-purple-500' : 'border-muted-foreground/30'}`}>{codeType === 'Admission' && <div className="w-2 h-2 bg-purple-500 rounded-full" />}</div>
-                                    <span className="block font-bold text-sm mb-1 text-foreground">Admission</span><span className="block text-xs text-muted-foreground group-hover:text-foreground/70">Share full documents for review</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label className="block text-sm font-semibold text-foreground mb-2">Note <span className="font-normal text-muted-foreground">(Optional)</span></label>
-                            <input type="text" placeholder="e.g. For Principal meeting" value={purpose} onChange={(e) => setPurpose(e.target.value)} className="w-full p-3 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm shadow-sm" />
-                        </div>
-
-                        <button type="submit" disabled={generating || myApplications.length === 0} className="w-full py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all transform active:scale-[0.98] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none">
-                            {generating ? <Spinner size="sm" className="text-primary-foreground" /> : 'Generate Secure Code'}
-                        </button>
-                    </form>
-                    {error && !generatedCode && (<div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-center animate-in fade-in zoom-in-95"><p className="text-sm text-destructive font-semibold">Error</p><p className="text-xs text-destructive/90 mt-1">{error.replace('Failed to generate code:', '')}</p></div>)}
-                </div>
             </div>
 
-            <div className="lg:col-span-7 space-y-8">
-                {generatedCode && (
-                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="bg-slate-900 text-white rounded-3xl shadow-2xl overflow-hidden border border-slate-800 relative max-w-md mx-auto lg:mx-0 lg:max-w-full">
-                            <div className="p-8 pb-6 text-center relative z-10 bg-gradient-to-b from-slate-800 to-slate-900">
-                                <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20 animate-bounce"><CheckIcon className="w-8 h-8 text-white" /></div>
-                                <h3 className="text-2xl font-bold mb-1 text-white tracking-tight">Code Generated!</h3><p className="text-slate-400 text-sm font-medium">Share this with the school admin.</p>
-                            </div>
-                            <div className="relative flex items-center justify-between px-6 bg-slate-900"><div className="w-6 h-6 bg-background rounded-full -ml-9"></div><div className="flex-1 border-b-2 border-dashed border-slate-700 mx-2 opacity-50"></div><div className="w-6 h-6 bg-background rounded-full -mr-9"></div></div>
-                            <div className="p-8 pt-6 relative z-10 bg-slate-900">
-                                <div className="border-2 border-dashed border-slate-700 bg-slate-800/50 rounded-2xl p-8 text-center mb-8 relative group cursor-pointer transition-colors hover:border-slate-600 hover:bg-slate-800" onClick={() => handleCopyCode(generatedCode)}>
-                                     <p className="text-xs text-slate-500 uppercase tracking-[0.2em] font-bold mb-3">Verification Code</p>
-                                     <div className="text-5xl sm:text-6xl font-mono font-bold text-blue-400 tracking-widest select-all drop-shadow-lg">{generatedCode}</div>
-                                     <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl backdrop-blur-sm"><span className="text-white font-bold text-sm flex items-center gap-2"><CopyIcon className="w-5 h-5"/> Click to Copy</span></div>
-                                </div>
-                                <div className="flex gap-4">
-                                     <button type="button" onClick={() => handleCopyCode(generatedCode)} className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${isCopied ? 'bg-emerald-600 text-white cursor-default ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-900' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/30 hover:-translate-y-0.5'}`} disabled={isCopied}>
-                                        {isCopied ? <CheckIcon className="w-5 h-5" /> : <CopyIcon className="w-5 h-5" />}{isCopied ? 'Copied to Clipboard' : 'Copy Code'}
-                                    </button>
-                                    <button type="button" onClick={() => handleShareCode(generatedCode)} className="flex-1 py-3.5 rounded-xl text-sm font-bold bg-slate-800 hover:bg-slate-700 text-white transition-all flex items-center justify-center gap-2 border border-slate-700 hover:border-slate-600"><ShareIcon className="w-5 h-5" /> Share</button>
-                                </div>
-                                <p className="text-[10px] text-slate-500 text-center mt-6 uppercase tracking-wider font-medium">Valid for 24 hours • One-time use</p>
-                            </div>
+            {/* 4. Registry Ledger (Bottom Section) */}
+            <div className="space-y-8 pt-12 border-t border-white/[0.05]">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="p-2.5 bg-white/5 rounded-xl text-white/20 border border-white/10"><TerminalIcon className="w-5 h-5" /></div>
+                        <div>
+                            <h2 className="text-lg font-black text-white uppercase tracking-widest">Registry Ledger</h2>
+                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mt-0.5">Historical Authorization Log</p>
                         </div>
                     </div>
-                )}
-                <div>
-                    <div className="flex items-center gap-2 mb-4"><h3 className="font-bold text-lg text-foreground">History</h3>{codes.length > 0 && <span className="text-xs font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border">{codes.length}</span>}</div>
-                    {renderHistory()}
+                    {codes.length > 0 && <span className="text-[10px] font-black text-white/40 bg-white/5 px-4 py-1.5 rounded-full border border-white/10 tracking-widest">{codes.length} NODES</span>}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {loading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="h-44 bg-white/[0.02] border border-white/5 rounded-[2rem] animate-pulse"></div>
+                        ))
+                    ) : codes.length === 0 ? (
+                        <div className="col-span-full py-20 bg-white/[0.02] border border-dashed border-white/5 rounded-[2.5rem] text-center">
+                            <p className="text-xs font-black text-white/10 uppercase tracking-[0.6em]">Ledger Empty • No Protocols Recorded</p>
+                        </div>
+                    ) : (
+                        codes.map(code => (
+                            <div
+                                key={code.id}
+                                className="bg-[#0c0d12]/40 backdrop-blur-md p-8 rounded-[2rem] border border-white/5 group/card transition-all hover:bg-[#0c0d12]/60 hover:border-white/10 shadow-xl space-y-6 relative overflow-hidden"
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-black text-white uppercase tracking-tight truncate max-w-[180px] leading-none group-hover/card:text-primary transition-colors">{code.applicant_name || 'Node Unknown'}</p>
+                                        <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">{code.code_type} Provision</p>
+                                    </div>
+                                    <div className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all ${code.status === 'Active' ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 group-hover/card:bg-emerald-500/20' :
+                                            code.status === 'Redeemed' ? 'bg-indigo-500/10 border-indigo-500/40 text-indigo-400' :
+                                                'bg-red-500/10 border-red-500/40 text-red-400'
+                                        }`}>
+                                        {code.status}
+                                    </div>
+                                </div>
+
+                                <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex items-center justify-between group/code-line hover:border-white/10 transition-all">
+                                    <span className="font-mono text-base font-black text-white/30 tracking-[0.3em] uppercase group-hover/card:text-white/60 transition-colors">{maskCode(code.code)}</span>
+                                    <button onClick={() => handleCopyCode(code.code)} className="p-2 text-white/10 hover:text-primary transition-all rounded-lg hover:bg-white/5"><CopyIcon className="w-4 h-4" /></button>
+                                </div>
+
+                                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest pt-2">
+                                    <span className="text-white/20">Exp: {new Date(code.expires_at).toLocaleDateString()}</span>
+                                    {code.status === 'Active' && (
+                                        <button
+                                            onClick={() => handleRevokeCode(code.id)}
+                                            className="text-red-500/40 hover:text-red-500 transition-colors"
+                                        >
+                                            Terminate
+                                        </button>
+                                    )}
+                                    {code.status === 'Redeemed' && <span className="text-indigo-500/40">Verified</span>}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </div>
     );
 }
+
