@@ -45,8 +45,8 @@ const formatFileSize = (bytes: number) => {
 
 // --- Sub-Components ---
 
-const CollapsibleDocumentCard: React.FC<{ 
-    req: RequirementWithDocs; 
+const CollapsibleDocumentCard: React.FC<{
+    req: RequirementWithDocs;
     onUpload: (file: File, reqId: number, admId: string, onProgress: (progress: number) => void) => Promise<void>;
 }> = ({ req, onUpload }) => {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -54,7 +54,7 @@ const CollapsibleDocumentCard: React.FC<{
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
-    
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const isVerified = req.status === 'Verified';
@@ -67,7 +67,7 @@ const CollapsibleDocumentCard: React.FC<{
     const handleFileSelect = async (files: FileList | null) => {
         if (!files?.length || uploadProgress !== null) return;
         const selectedFile = files[0];
-        if (selectedFile.size > 10 * 1024 * 1024) { 
+        if (selectedFile.size > 10 * 1024 * 1024) {
             setError("File size exceeds 10MB limit.");
             return;
         }
@@ -80,10 +80,10 @@ const CollapsibleDocumentCard: React.FC<{
             setError(formatError(err));
         } finally {
             setUploadProgress(null);
-            if(fileInputRef.current) fileInputRef.current.value = '';
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
-    
+
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
@@ -128,31 +128,29 @@ const CollapsibleDocumentCard: React.FC<{
     };
 
     return (
-        <motion.div 
+        <motion.div
             layout
-            className={`group relative rounded-[2rem] border transition-all duration-300 overflow-hidden ${
-                isVerified 
-                    ? 'bg-emerald-950/10 border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.05)]' 
-                    : isRejected 
-                        ? 'bg-red-950/10 border-red-500/20' 
-                        : 'bg-[#13151a] border-white/5 hover:border-white/10 hover:bg-[#16181d]'
-            }`}
+            className={`group relative rounded-[2rem] border transition-all duration-300 overflow-hidden ${isVerified
+                ? 'bg-emerald-950/10 border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.05)]'
+                : isRejected
+                    ? 'bg-red-950/10 border-red-500/20'
+                    : 'bg-[#13151a] border-white/5 hover:border-white/10 hover:bg-[#16181d]'
+                }`}
         >
             {/* --- Header --- */}
-            <div 
+            <div
                 onClick={toggleExpand}
                 className="p-5 flex items-center justify-between cursor-pointer"
             >
                 <div className="flex items-center gap-4">
-                    <div className={`p-2.5 rounded-xl transition-colors ${
-                        isVerified ? 'bg-emerald-500/10 text-emerald-400' : 
-                        isRejected ? 'bg-red-500/10 text-red-400' : 
-                        hasSubmission ? 'bg-blue-500/10 text-blue-400' :
-                        'bg-white/5 text-white/30'
-                    }`}>
-                        {isVerified ? <CheckCircleIcon className="w-5 h-5" /> : 
-                         isRejected ? <AlertTriangleIcon className="w-5 h-5" /> :
-                         <DocumentTextIcon className="w-5 h-5" />}
+                    <div className={`p-2.5 rounded-xl transition-colors ${isVerified ? 'bg-emerald-500/10 text-emerald-400' :
+                        isRejected ? 'bg-red-500/10 text-red-400' :
+                            hasSubmission ? 'bg-blue-500/10 text-blue-400' :
+                                'bg-white/5 text-white/30'
+                        }`}>
+                        {isVerified ? <CheckCircleIcon className="w-5 h-5" /> :
+                            isRejected ? <AlertTriangleIcon className="w-5 h-5" /> :
+                                <DocumentTextIcon className="w-5 h-5" />}
                     </div>
                     <div>
                         <h4 className="text-sm font-bold text-white leading-tight">{req.document_name}</h4>
@@ -167,30 +165,29 @@ const CollapsibleDocumentCard: React.FC<{
                     {/* Primary Action Buttons (Visible if uploaded) */}
                     {hasSubmission && !isRejected && (
                         <div className="flex items-center gap-1 mr-2">
-                             <button 
+                            <button
                                 onClick={handleDownload}
                                 disabled={isDownloading}
                                 className="p-2 rounded-lg text-white/30 hover:text-primary hover:bg-white/5 transition-colors"
                                 title="Download"
-                             >
-                                 {isDownloading ? <Spinner size="sm"/> : <DownloadIcon className="w-4 h-4"/>}
-                             </button>
-                             <button 
+                            >
+                                {isDownloading ? <Spinner size="sm" /> : <DownloadIcon className="w-4 h-4" />}
+                            </button>
+                            <button
                                 onClick={handleView}
                                 className="p-2 rounded-lg text-white/30 hover:text-primary hover:bg-white/5 transition-colors"
                                 title="Preview"
-                             >
-                                 <EyeIcon className="w-4 h-4"/>
-                             </button>
+                            >
+                                <EyeIcon className="w-4 h-4" />
+                            </button>
                         </div>
                     )}
-                    
-                    <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm ${
-                        isVerified ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+
+                    <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm ${isVerified ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                         isRejected ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                        hasSubmission ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                        'bg-white/5 border-white/10 text-white/30'
-                    }`}>
+                            hasSubmission ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                'bg-white/5 border-white/10 text-white/30'
+                        }`}>
                         {uploadProgress !== null ? 'Uploading...' : req.status}
                     </div>
                     <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -202,7 +199,7 @@ const CollapsibleDocumentCard: React.FC<{
             {/* --- Expanded Content --- */}
             <AnimatePresence>
                 {isExpanded && (
-                    <motion.div 
+                    <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
@@ -219,9 +216,9 @@ const CollapsibleDocumentCard: React.FC<{
 
                             {hasSubmission && docFile && !isRejected ? (
                                 <div className="space-y-4">
-                                     <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
+                                    <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5">
                                         <div className="p-2 bg-black/40 rounded-xl text-white/40 border border-white/5">
-                                            {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-4 h-4"/> : <PaperClipIcon className="w-4 h-4"/>}
+                                            {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-4 h-4" /> : <PaperClipIcon className="w-4 h-4" />}
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <p className="text-xs text-white/80 font-bold truncate" title={docFile.file_name}>{docFile.file_name}</p>
@@ -233,7 +230,7 @@ const CollapsibleDocumentCard: React.FC<{
                                     )}
                                 </div>
                             ) : (
-                                <div 
+                                <div
                                     onClick={() => fileInputRef.current?.click()}
                                     onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                                     onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
@@ -255,7 +252,7 @@ const CollapsibleDocumentCard: React.FC<{
 
                             {uploadProgress !== null && (
                                 <div className="mt-4 relative h-8 w-full bg-black/40 rounded-xl overflow-hidden border border-white/5">
-                                    <motion.div 
+                                    <motion.div
                                         className="absolute top-0 left-0 bottom-0 bg-primary/20"
                                         initial={{ width: 0 }}
                                         animate={{ width: `${uploadProgress}%` }}
@@ -266,9 +263,9 @@ const CollapsibleDocumentCard: React.FC<{
                                     </div>
                                 </div>
                             )}
-                            
+
                             {error && (
-                                 <p className="text-[10px] text-red-400 font-bold mt-3 text-center bg-red-500/10 p-2 rounded-lg border border-red-500/20">{error}</p>
+                                <p className="text-[10px] text-red-400 font-bold mt-3 text-center bg-red-500/10 p-2 rounded-lg border border-red-500/20">{error}</p>
                             )}
                             <input ref={fileInputRef} type="file" className="hidden" onChange={e => handleFileSelect(e.target.files)} />
                         </div>
@@ -296,7 +293,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
             if (reqsErr) throw reqsErr;
 
             const grouped: Record<string, GroupedRequirementData> = {};
-            
+
             (children || []).forEach((child: AdmissionApplication) => {
                 grouped[child.id] = {
                     admissionId: child.id,
@@ -323,7 +320,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
             });
 
             setGroupedData(grouped);
-            
+
             if (!isSilent) {
                 if (focusOnAdmissionId && grouped[focusOnAdmissionId]) {
                     setExpandedIds(new Set([focusOnAdmissionId]));
@@ -343,16 +340,16 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
 
     const handleUpload = async (file: File, reqId: number, admId: string, onProgress: (progress: number) => void) => {
         if (!profile.id) throw new Error("Identity context missing.");
-        
+
         // Simulating upload progress for better UX
         const interval = setInterval(() => {
-           onProgress(Math.random() * 50 + 20); 
+            onProgress(Math.random() * 50 + 20);
         }, 300);
 
         try {
             const path = StorageService.getDocumentPath(profile.id, admId, reqId, file.name);
             const { error: upErr } = await supabase.storage.from(BUCKETS.DOCUMENTS).upload(path, file, { upsert: true });
-            
+
             clearInterval(interval);
             onProgress(100);
 
@@ -366,10 +363,10 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                 p_file_size: file.size,
                 p_mime_type: file.type
             });
-            
+
             if (dbErr) throw dbErr;
-            
-            await new Promise(resolve => setTimeout(resolve, 500)); 
+
+            await new Promise(resolve => setTimeout(resolve, 500));
             await fetchData(true);
         } catch (error) {
             clearInterval(interval);
@@ -388,11 +385,11 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
 
     if (loading) return (
         <div className="py-40 flex flex-col items-center justify-center gap-6">
-            <Spinner size="lg" className="text-primary"/>
+            <Spinner size="lg" className="text-primary" />
             <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 animate-pulse">Synchronizing Security Vault</p>
         </div>
     );
-    
+
     if (error) return <div className="p-6 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center font-bold">{error}</div>;
 
     return (
@@ -402,7 +399,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                 <div className="absolute -right-40 -top-40 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none opacity-40"></div>
                 <div className="relative z-10">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.15)]"><ShieldCheckIcon className="w-6 h-6"/></div>
+                        <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.15)]"><ShieldCheckIcon className="w-6 h-6" /></div>
                         <span className="text-[11px] font-black uppercase text-emerald-500 tracking-[0.4em] drop-shadow-sm">Integrity Center</span>
                     </div>
                     <h2 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-none">Artifact <span className="text-white/20 italic">Vault.</span></h2>
@@ -444,11 +441,11 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                                                 <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Vault Sync</span>
                                                 <span className={`text-sm font-black ${percent === 100 ? 'text-emerald-500' : 'text-primary'}`}>{percent}%</span>
                                             </div>
-                                            <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5"><div className={`h-full rounded-full transition-all duration-1000 ease-out ${percent === 100 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]'}`} style={{width: `${percent}%`}}></div></div>
+                                            <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5"><div className={`h-full rounded-full transition-all duration-1000 ease-out ${percent === 100 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]'}`} style={{ width: `${percent}%` }}></div></div>
                                         </div>
                                     </div>
                                     <div className={`p-4 rounded-full bg-white/5 border border-white/10 transition-all duration-500 ${isExpanded ? 'rotate-180 bg-primary/10 text-primary border-primary/20' : 'text-white/30 group-hover:text-white group-hover:bg-white/10'}`}>
-                                        <ChevronDownIcon className="w-5 h-5"/>
+                                        <ChevronDownIcon className="w-5 h-5" />
                                     </div>
                                 </div>
                             </header>
@@ -456,31 +453,99 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                             {/* Collapsible Content */}
                             <AnimatePresence>
                                 {isExpanded && (
-                                    <motion.section 
-                                        initial={{ height: 0, opacity: 0 }} 
-                                        animate={{ height: 'auto', opacity: 1 }} 
-                                        exit={{ height: 0, opacity: 0 }} 
-                                        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }} 
+                                    <motion.section
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
                                         className="overflow-hidden bg-[#0a0c10]/50 shadow-inner"
                                     >
                                         <div className="p-8 md:p-10 border-t border-white/[0.04]">
                                             {node.requirements.length === 0 ? (
-                                                <div className="text-center py-16 text-white/20 border-2 border-dashed border-white/5 rounded-[2rem] flex flex-col items-center">
-                                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4"><DocumentTextIcon className="w-8 h-8 opacity-40"/></div>
-                                                    <p className="font-bold text-sm uppercase tracking-widest mb-1">Vault Empty</p>
-                                                    <p className="text-xs opacity-50">Upload a custom document to initialize.</p>
+                                                <div className="text-center py-12 md:py-16 text-white/20 border-2 border-dashed border-white/5 rounded-[2rem] flex flex-col items-center bg-[#0c0d12]/50 relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-grid-white/[0.02] [mask-image:linear-gradient(0deg,white,transparent)]"></div>
+                                                    <div className="relative z-10 mb-8">
+                                                        <div className="w-20 h-20 bg-gradient-to-tr from-white/10 to-transparent rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-2xl ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-500">
+                                                            <DocumentTextIcon className="w-10 h-10 opacity-60 text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.5)]" />
+                                                        </div>
+                                                        <h4 className="font-serif font-black text-2xl text-white/60 tracking-tight">Initialize Vault</h4>
+                                                        <p className="text-sm font-medium text-white/30 max-w-sm mx-auto mt-3 leading-relaxed">Select a standard artifact type to begin the institutional synchronization process.</p>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl px-4 relative z-10">
+                                                        {['Birth Certificate', 'Transfer Certificate', 'Report Card', 'Identity Proof', 'Medical Record', 'Other Artifact'].map((type) => (
+                                                            <button
+                                                                key={type}
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    let name = type;
+                                                                    if (type === 'Other Artifact') {
+                                                                        const customName = window.prompt("Enter the designation for this artifact:");
+                                                                        if (!customName) return;
+                                                                        name = customName;
+                                                                    }
+
+                                                                    try {
+                                                                        const { error } = await supabase.from('document_requirements').insert({
+                                                                            admission_id: admId,
+                                                                            document_name: name,
+                                                                            is_mandatory: false,
+                                                                            status: 'Pending'
+                                                                        });
+                                                                        if (error) throw error;
+                                                                        await fetchData(true);
+                                                                    } catch (err: any) {
+                                                                        alert("Protocol Interrupted: " + err.message);
+                                                                    }
+                                                                }}
+                                                                className="group/btn relative flex flex-col items-center justify-center p-6 rounded-2xl bg-[#13151a] border border-white/5 hover:border-primary/40 hover:bg-[#1a1c24] transition-all duration-300 overflow-hidden shadow-lg hover:shadow-primary/10"
+                                                            >
+                                                                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
+                                                                <PlusIcon className="w-6 h-6 text-white/20 group-hover/btn:text-primary mb-3 transition-colors duration-300 group-hover/btn:scale-110" />
+                                                                <span className="text-[11px] font-black text-white/40 group-hover/btn:text-white uppercase tracking-widest relative z-10">{type}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             ) : (
-                                                <motion.div 
-                                                    initial="hidden" 
-                                                    animate="visible" 
-                                                    variants={{ visible: { transition: { staggerChildren: 0.06 } } }} 
-                                                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-                                                >
-                                                    {node.requirements.map(req => (
-                                                        <CollapsibleDocumentCard key={req.id} req={req} onUpload={handleUpload} />
-                                                    ))}
-                                                </motion.div>
+                                                <div className="space-y-6">
+                                                    {/* Add New Button (Top Right of Grid) */}
+                                                    <div className="flex justify-end">
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                const name = prompt("Enter artifact name:");
+                                                                if (!name) return;
+                                                                try {
+                                                                    const { error } = await supabase.from('document_requirements').insert({
+                                                                        admission_id: admId,
+                                                                        document_name: name,
+                                                                        is_mandatory: false,
+                                                                        status: 'Pending'
+                                                                    });
+                                                                    if (error) throw error;
+                                                                    await fetchData(true);
+                                                                } catch (err: any) {
+                                                                    alert("Failed to add slot: " + err.message);
+                                                                }
+                                                            }}
+                                                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 hover:border-white/20 transition-all text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-primary"
+                                                        >
+                                                            <PlusIcon className="w-3 h-3" /> Add Artifact
+                                                        </button>
+                                                    </div>
+
+                                                    <motion.div
+                                                        initial="hidden"
+                                                        animate="visible"
+                                                        variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+                                                        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                                                    >
+                                                        {node.requirements.map(req => (
+                                                            <CollapsibleDocumentCard key={req.id} req={req} onUpload={handleUpload} />
+                                                        ))}
+                                                    </motion.div>
+                                                </div>
                                             )}
                                         </div>
                                     </motion.section>
@@ -490,8 +555,8 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                     );
                 })}
             </div>
-            
-             {Object.keys(groupedData).length === 0 && !loading && (
+
+            {Object.keys(groupedData).length === 0 && !loading && (
                 <div className="py-32 text-center border-2 border-dashed border-white/10 rounded-[4rem] shadow-2xl flex flex-col items-center bg-[#0c0d12]">
                     <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 shadow-inner"><DocumentTextIcon className="w-10 h-10 text-white/20" /></div>
                     <h3 className="text-xl font-bold text-white/60">No Active Enrollments</h3>
