@@ -46,15 +46,15 @@ BEGIN
     WHERE 
         (e.user_id = auth.uid())
         OR 
-        (e.parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid()))
+        (LOWER(e.parent_email) = LOWER((SELECT email FROM public.profiles WHERE id = auth.uid())))
         OR
-        (e.parent_email = (SELECT auth.jwt() ->> 'email'))
+        (LOWER(e.parent_email) = LOWER((SELECT auth.jwt() ->> 'email')))
         OR
         (e.admission_id IN (
             SELECT a.id FROM public.admissions a 
             WHERE a.parent_id = auth.uid() 
-            OR a.parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid())
-            OR a.parent_email = (SELECT auth.jwt() ->> 'email')
+            OR LOWER(a.parent_email) = LOWER((SELECT email FROM public.profiles WHERE id = auth.uid()))
+            OR LOWER(a.parent_email) = LOWER((SELECT auth.jwt() ->> 'email'))
         ))
     ORDER BY e.updated_at DESC;
 END;
