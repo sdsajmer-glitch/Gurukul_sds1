@@ -237,7 +237,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
                     <div className="p-10 md:p-12 border-b border-white/5 flex justify-between items-center relative z-10">
                         <div className="flex items-center gap-6">
                             <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
-                                <TrendingUpIcon className="w-6 h-6" />
+                                <TrendingUpCustomIcon className="w-6 h-6" />
                             </div>
                             <div>
                                 <h3 className="font-black text-2xl text-white font-serif tracking-tight uppercase">Demographic Distribution</h3>
