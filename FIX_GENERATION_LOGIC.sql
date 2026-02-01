@@ -1,10 +1,9 @@
 -- ==============================================================================
--- FIX GENERATION LOGIC (Strict Type Handling with Smart Lookup)
+-- FIX GENERATION LOGIC (Smart Lookup + Fuzzy Fallback)
 -- ==============================================================================
--- 1. Respects User's requested Token Type (Enquiry vs Admission).
--- 2. Intelligently resolves IDs:
---    - If requesting 'Enquiry' token for an 'Admission' ID, it finds the linked Enquiry ID.
---    - If no linked record exists, it returns a clear error instead of creating a mismatch.
+-- 1. Updates generation to strictly respect requested Type (Enquiry/Admission).
+-- 2. Adds "Fuzzy Matching" (Name + Email) to find linked Enquiries when explicit DB links (FKs) are missing.
+--    This resolves the "Unable to create enquiry code" issue for students who were admitted but not explicitly linked.
 
 CREATE OR REPLACE FUNCTION public.generate_admission_share_code(
     p_admission_id uuid, -- This is the Entity ID provided by the UI (could be Enquiry or Admission ID)
@@ -29,10 +28,22 @@ BEGIN
         
         -- Case B: The provided ID is an Admission ID -> Find linked Enquiry
         ELSE
+            -- 1. Try direct link (admission_id column)
             SELECT id INTO v_target_id FROM public.enquiries WHERE admission_id = p_admission_id LIMIT 1;
             
+            -- 2. Try Fuzzy Link (Matching Name + Parent Email) if direct link fails
             IF v_target_id IS NULL THEN
-                RETURN jsonb_build_object('success', false, 'error', 'Cannot create Enquiry Protocol: No Enquiry record found for this student.');
+                SELECT e.id INTO v_target_id 
+                FROM public.enquiries e
+                JOIN public.admissions a ON a.id = p_admission_id
+                WHERE lower(e.applicant_name) = lower(a.applicant_name) 
+                  AND (lower(e.parent_email) = lower(a.parent_email) OR lower(e.parent_email) IS NULL)
+                ORDER BY e.received_at DESC
+                LIMIT 1;
+            END IF;
+
+            IF v_target_id IS NULL THEN
+                RETURN jsonb_build_object('success', false, 'error', 'Cannot create Enquiry Protocol: No Enquiry record found matching this student.');
             END IF;
         END IF;
 
@@ -45,10 +56,18 @@ BEGIN
         ELSE
             SELECT admission_id INTO v_target_id FROM public.enquiries WHERE id = p_admission_id LIMIT 1;
 
+            -- Try Fuzzy Link (Name + Email) if direct link fails
+             IF v_target_id IS NULL THEN
+                SELECT a.id INTO v_target_id 
+                FROM public.admissions a
+                JOIN public.enquiries e ON e.id = p_admission_id
+                WHERE lower(a.applicant_name) = lower(e.applicant_name) 
+                  AND lower(a.parent_email) = lower(e.parent_email)
+                LIMIT 1;
+            END IF;
+
             IF v_target_id IS NULL THEN
-                -- Check if it exists in admissions table directly (User mistake?)
-                -- Unlikely if we checked Exists above first.
-                RETURN jsonb_build_object('success', false, 'error', 'Cannot create Admission Protocol: This student is not yet admitted.');
+                RETURN jsonb_build_object('success', false, 'error', 'Cannot create Admission Protocol: This student has not been admitted yet.');
             END IF;
         END IF;
     ELSE
@@ -77,7 +96,7 @@ BEGIN
         v_code,
         CASE WHEN p_code_type = 'Admission' THEN v_target_id ELSE NULL END,
         CASE WHEN p_code_type = 'Enquiry' THEN v_target_id ELSE NULL END, 
-        p_code_type, -- Strictly respect requested type
+        p_code_type, 
         p_purpose,
         'Active',
         auth.uid(),
