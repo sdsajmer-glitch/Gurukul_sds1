@@ -139,8 +139,24 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
     useEffect(() => {
         isMounted.current = true;
         fetchTimeline();
-        return () => { isMounted.current = false; };
-    }, [fetchTimeline]);
+
+        // REAL-TIME SYNC: Listen for incoming messages/handshakes
+        const channel = supabase.channel(`admin-enquiry-sync-${String(enquiry.id)}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'enquiry_messages',
+                filter: `enquiry_id=eq.${String(enquiry.id)}`
+            }, () => {
+                if (isMounted.current) fetchTimeline(true);
+            })
+            .subscribe();
+
+        return () => {
+            isMounted.current = false;
+            supabase.removeChannel(channel);
+        };
+    }, [fetchTimeline, enquiry.id]);
 
     useEffect(() => {
         if (commsEndRef.current) {
