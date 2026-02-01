@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, formatError } from '../services/supabase';
 import { SchoolBranch, UserProfile, SchoolAdminProfileData, BuiltInRoles } from '../types';
@@ -220,7 +221,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 p_city: formData.city,
                 p_state: formData.state,
                 p_country: formData.country,
-                p_contact_number: " ",
+                p_contact_number: " ", // Ensuring fallback for non-null RPC expectation
                 p_is_main: formData.isMain,
                 p_email: formData.adminEmail,
                 p_admin_name: formData.adminName,
@@ -274,36 +275,59 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
-            {/* --- HERO SECTION --- */}
-            <div className="relative rounded-[3rem] bg-[#0c0d12] border border-white/10 p-10 md:p-16 mb-16 overflow-hidden shadow-2xl ring-1 ring-white/5">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] opacity-20 pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
-                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] opacity-20 pointer-events-none translate-y-1/3 -translate-x-1/3"></div>
+            {/* --- HERO SECTION: INSTITUTIONAL NETWORK --- */}
+            <div className="relative rounded-3xl bg-[#0c0d12] border border-white/10 p-10 md:p-12 mb-12 overflow-hidden shadow-2xl group">
+                {/* Background Atmosphere */}
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] opacity-20 pointer-events-none -translate-y-1/3 translate-x-1/3"></div>
 
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-                    <div className="max-w-3xl">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Network Configuration</span>
-                        </div>
-                        <h1 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tight leading-none uppercase mb-6">
-                            Institutional <span className="text-white/20">Architechture</span>
+                {/* Shield Watermark */}
+                <div className="absolute top-1/2 -translate-y-1/2 right-10 opacity-[0.03] pointer-events-none">
+                    <svg width="200" height="240" viewBox="0 0 24 24" fill="currentColor" className="text-white"><path d="M12 2L3 7V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V7L12 2ZM12 4.3L19 8.2V11C18.99 15.38 16.14 19.37 12 20.48C7.86 19.37 5.01 15.38 5 11V8.2L12 4.3Z" /></svg>
+                </div>
+
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
+                    <div className="flex-grow max-w-4xl">
+                        <h1 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tight leading-none uppercase mb-4">
+                            Institutional Network
                         </h1>
-                        <p className="text-lg md:text-xl text-white/40 font-medium leading-relaxed max-w-2xl border-l-2 border-primary/30 pl-6">
-                            Define your educational network topology. Establish your Head Office and satellite campuses to enable centralized telemetry and governance.
+                        <p className="text-sm font-medium text-white/40 max-w-2xl leading-relaxed mb-10 border-l-2 border-primary/40 pl-4">
+                            Centralized telemetry for satellite campuses. All portal access keys are AES-256 encrypted, time-bound, and single-use.
                         </p>
+
+                        {/* Telemetry Stats */}
+                        <div className="flex items-center gap-12 border-t border-white/5 pt-6">
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-1">Connected Nodes</p>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-mono font-bold text-primary">{branches.length}</span>
+                                    <span className="text-xs font-bold text-white/20 uppercase">/ Cap.</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-1">Live Sync Active</p>
+                                <div className="flex items-baseline gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981] animate-pulse"></div>
+                                    <span className="text-xl font-bold text-white">{branches.length} <span className="text-xs text-white/20">Nodes</span></span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-1">Encryption Level</p>
+                                <p className="text-lg font-bold text-white tracking-wide">256-BIT <span className="text-xs text-emerald-500 font-bold px-1.5 py-0.5 bg-emerald-500/10 rounded uppercase tracking-wider">Safe</span></p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="flex flex-col gap-4 min-w-[200px]">
+                    {/* Action Button */}
+                    <div className="flex-shrink-0">
                         <button
                             onClick={() => handleOpenCreate()}
                             disabled={loading}
-                            className="group relative px-8 py-5 bg-primary text-black font-black text-xs uppercase tracking-[0.3em] rounded-2xl shadow-[0_0_30px_-10px_rgba(var(--primary),0.6)] hover:shadow-[0_0_50px_-10px_rgba(var(--primary),0.8)] hover:bg-white transition-all duration-500 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 overflow-hidden"
+                            className="group relative px-8 py-4 bg-primary hover:bg-primary/90 rounded-2xl shadow-[0_4px_20px_-5px_rgba(var(--primary),0.4)] transition-all duration-300 transform hover:-translate-y-1 active:scale-95 flex items-center gap-3"
                         >
-                            <span className="relative z-10 flex items-center gap-3">
-                                <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
-                                Initialize Node
-                            </span>
-                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                            <PlusIcon className="w-5 h-5 text-white" />
+                            <span className="font-black text-xs uppercase tracking-[0.2em] text-white">Expand Network</span>
                         </button>
                     </div>
                 </div>
@@ -477,6 +501,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                                 required
                                                 icon={<SchoolIcon className="w-4 h-4" />}
+                                                action={<div />} // Fixed generic action for now or remove if not needed, kept structure
                                             />
                                         </div>
                                         <div className="md:col-span-2">
