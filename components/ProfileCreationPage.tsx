@@ -77,6 +77,14 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                         data.admin_contact_phone_country_code = '+91';
                     }
                 }
+
+                // ACADEMIC DEFAULTS: Fast-track typical Indian school setups
+                data.academic_board = data.academic_board || 'CBSE';
+                data.school_type = data.school_type || 'Co-Educational';
+                data.academic_year_start = data.academic_year_start || 'July';
+                data.academic_year_end = data.academic_year_end || 'March';
+                data.grade_range_start = data.grade_range_start || 'Pre-K';
+                data.grade_range_end = data.grade_range_end || '12';
             }
 
             setFormData(data);

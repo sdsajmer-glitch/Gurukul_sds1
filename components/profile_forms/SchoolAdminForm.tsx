@@ -431,106 +431,127 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                 )}
 
                 {currentTab === 'academic' && (
-                    <div className="bg-card rounded-3xl border border-border/60 shadow-sm p-8 md:p-10 animate-in fade-in slide-in-from-right-4 duration-500">
+                    <div className="bg-card rounded-[3rem] border border-white/5 shadow-2xl p-10 md:p-14 animate-in fade-in slide-in-from-right-10 duration-700 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full filter blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-amber-500/10 transition-colors duration-700"></div>
+
                         <SectionHeader
-                            title="Academic Configuration"
-                            subtitle="Set up boards, affiliation, and grade structures."
-                            icon={<DocumentTextIcon className="w-6 h-6 text-amber-600 dark:text-amber-400" />}
-                            colorClass="bg-amber-50 dark:bg-amber-900/20"
+                            title="Academic Protocol"
+                            subtitle="Configure global education boards, institutional session, and grade bandwidth."
+                            icon={<DocumentTextIcon className="w-8 h-8 text-amber-500" />}
+                            colorClass="bg-amber-500/10"
                         />
 
-                        <div className="space-y-8 max-w-4xl">
+                        <div className="space-y-12 max-w-5xl relative z-10">
                             {/* Board & Affiliation */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <CustomSelect
-                                    label="Education Board"
-                                    placeholder="Select Board"
-                                    options={[
-                                        { value: 'CBSE', label: 'CBSE (Central Board)' },
-                                        { value: 'ICSE', label: 'ICSE (Indian Certificate)' },
-                                        { value: 'IB', label: 'IB (International Baccalaureate)' },
-                                        { value: 'IGCSE', label: 'Cambridge (IGCSE)' },
-                                        { value: 'State Board', label: 'State Board' },
-                                        { value: 'Other', label: 'Other' },
-                                    ]}
-                                    value={formData.academic_board || ''}
-                                    onChange={(val) => handleChange({ target: { name: 'academic_board', value: val } } as any)}
-                                    icon={<BookIcon className="w-4 h-4" />}
-                                    required
-                                    searchable
-                                />
-
-                                <PremiumInput
-                                    label="Affiliation / School Code"
-                                    name="affiliation_number"
-                                    value={formData.affiliation_number || ''}
-                                    onChange={handleChange}
-                                    placeholder="e.g. 830012"
-                                    icon={<HashIcon className="w-5 h-5" />}
-                                />
-                            </div>
-
-                            <div className="h-px bg-border/50 w-full"></div>
-
-                            {/* School Type & Session */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                <CustomSelect
-                                    label="Institution Type"
-                                    placeholder="Select Type"
-                                    options={[
-                                        { value: 'Co-Educational', label: 'Co-Educational' },
-                                        { value: 'Boys', label: 'Boys School' },
-                                        { value: 'Girls', label: 'Girls School' },
-                                    ]}
-                                    value={formData.school_type || ''}
-                                    onChange={(val) => handleChange({ target: { name: 'school_type', value: val } } as any)}
-                                    icon={<UsersIcon className="w-4 h-4" />}
-                                />
-
-                                <div className="md:col-span-2 grid grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-amber-500/70 tracking-[0.3em] pl-1">Education Board</label>
                                     <CustomSelect
-                                        label="Academic Year Start"
-                                        placeholder="Start Month"
-                                        options={MONTHS}
-                                        value={formData.academic_year_start || ''}
-                                        onChange={(val) => handleChange({ target: { name: 'academic_year_start', value: val } } as any)}
-                                        icon={<CalendarIcon className="w-4 h-4" />}
+                                        label=""
+                                        placeholder="Select Board"
+                                        options={[
+                                            { value: 'CBSE', label: 'CBSE (Central Board)' },
+                                            { value: 'ICSE', label: 'ICSE (Indian Certificate)' },
+                                            { value: 'IB', label: 'IB (International Baccalaureate)' },
+                                            { value: 'IGCSE', label: 'Cambridge (IGCSE)' },
+                                            { value: 'State Board', label: 'State Board' },
+                                            { value: 'Other', label: 'Other' },
+                                        ]}
+                                        value={formData.academic_board || ''}
+                                        onChange={(val) => handleChange({ target: { name: 'academic_board', value: val } } as any)}
+                                        icon={<BookIcon className="w-4 h-4 text-amber-500/50" />}
+                                        required
                                         searchable
                                     />
-                                    <CustomSelect
-                                        label="Academic Year End"
-                                        placeholder="End Month"
-                                        options={MONTHS}
-                                        value={formData.academic_year_end || ''}
-                                        onChange={(val) => handleChange({ target: { name: 'academic_year_end', value: val } } as any)}
-                                        icon={<CalendarIcon className="w-4 h-4" />}
-                                        searchable
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-amber-500/70 tracking-[0.3em] pl-1">Affiliation Control</label>
+                                    <PremiumInput
+                                        label="Grant / School Code"
+                                        name="affiliation_number"
+                                        value={formData.affiliation_number || ''}
+                                        onChange={handleChange}
+                                        placeholder="e.g. 830012"
+                                        icon={<HashIcon className="w-5 h-5" />}
                                     />
                                 </div>
                             </div>
 
-                            {/* Grades */}
-                            <div className="bg-muted/30 rounded-2xl p-6 border border-border/50">
-                                <h4 className="text-xs font-extrabold text-foreground mb-6 flex items-center gap-2 uppercase tracking-widest">
-                                    <LayersIcon className="w-4 h-4 text-primary" /> Grade Levels Offered
+                            <div className="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent w-full"></div>
+
+                            {/* School Type & Session */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] pl-1">Institution Type</label>
+                                    <CustomSelect
+                                        label=""
+                                        placeholder="Select Type"
+                                        options={[
+                                            { value: 'Co-Educational', label: 'Co-Educational' },
+                                            { value: 'Boys', label: 'Boys School' },
+                                            { value: 'Girls', label: 'Girls School' },
+                                        ]}
+                                        value={formData.school_type || ''}
+                                        onChange={(val) => handleChange({ target: { name: 'school_type', value: val } } as any)}
+                                        icon={<UsersIcon className="w-4 h-4 text-white/20" />}
+                                    />
+                                </div>
+
+                                <div className="lg:col-span-2 space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em] pl-1">Academic Session Cycle</label>
+                                    <div className="grid grid-cols-2 gap-6 p-4 bg-white/[0.02] rounded-3xl border border-white/5 shadow-inner">
+                                        <CustomSelect
+                                            label="Session Start"
+                                            placeholder="Start Month"
+                                            options={MONTHS}
+                                            value={formData.academic_year_start || ''}
+                                            onChange={(val) => handleChange({ target: { name: 'academic_year_start', value: val } } as any)}
+                                            icon={<CalendarIcon className="w-4 h-4 text-primary/50" />}
+                                            searchable
+                                        />
+                                        <CustomSelect
+                                            label="Session End"
+                                            placeholder="End Month"
+                                            options={MONTHS}
+                                            value={formData.academic_year_end || ''}
+                                            onChange={(val) => handleChange({ target: { name: 'academic_year_end', value: val } } as any)}
+                                            icon={<CalendarIcon className="w-4 h-4 text-primary/50" />}
+                                            searchable
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Grades BANDWIDTH */}
+                            <div className="relative group/grades p-8 bg-black/40 rounded-[2.5rem] border border-white/5 shadow-2xl transition-all hover:bg-black/50 overflow-hidden">
+                                <div className="absolute top-0 left-0 w-2 h-full bg-primary/20"></div>
+                                <h4 className="text-[10px] font-black text-primary/80 mb-8 flex items-center gap-3 uppercase tracking-[0.4em]">
+                                    <LayersIcon className="w-4 h-4" /> Operational Grade Bandwidth
                                 </h4>
-                                <div className="grid grid-cols-2 gap-8">
-                                    <CustomSelect
-                                        label="Lowest Grade"
-                                        placeholder="Start Grade"
-                                        options={GRADES}
-                                        value={formData.grade_range_start || ''}
-                                        onChange={(val) => handleChange({ target: { name: 'grade_range_start', value: val } } as any)}
-                                        searchable
-                                    />
-                                    <CustomSelect
-                                        label="Highest Grade"
-                                        placeholder="End Grade"
-                                        options={GRADES}
-                                        value={formData.grade_range_end || ''}
-                                        onChange={(val) => handleChange({ target: { name: 'grade_range_end', value: val } } as any)}
-                                        searchable
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest pl-1">Starting Milestone</p>
+                                        <CustomSelect
+                                            label="Lowest Grade"
+                                            placeholder="Start Grade"
+                                            options={GRADES}
+                                            value={formData.grade_range_start || ''}
+                                            onChange={(val) => handleChange({ target: { name: 'grade_range_start', value: val } } as any)}
+                                            searchable
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest pl-1">Terminal Milestone</p>
+                                        <CustomSelect
+                                            label="Highest Grade"
+                                            placeholder="End Grade"
+                                            options={GRADES}
+                                            value={formData.grade_range_end || ''}
+                                            onChange={(val) => handleChange({ target: { name: 'grade_range_end', value: val } } as any)}
+                                            searchable
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
