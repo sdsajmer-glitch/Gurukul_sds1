@@ -24,18 +24,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // --- ADVANCED DESIGN TOKENS ---
 const TOKENS = {
-    glass: 'backdrop-blur-3xl bg-white/[0.015] border border-white/[0.05] shadow-2xl',
-    card: 'bg-[#0A0B0F] border border-white/[0.04] shadow-[0_32px_80px_-20px_rgba(0,0,0,0.5)] overflow-hidden',
-    panel: 'bg-[#060709] border border-white/[0.03]',
-    input: 'bg-black/60 border border-white/10 rounded-2xl focus:border-primary/40 focus:ring-4 focus:ring-primary/10 transition-all outline-none text-white placeholder:text-white/20 text-sm font-medium px-5 py-4',
+    glass: 'backdrop-blur-3xl bg-white/[0.01] border border-white/[0.04] shadow-2xl',
+    card: 'bg-[#0A0B0F] border border-white/[0.03] shadow-2xl overflow-hidden rounded-[2.5rem]',
+    container: 'max-w-[1400px] mx-auto px-6 md:px-12 lg:px-16',
+    spacing: {
+        xs: 'gap-2',
+        sm: 'gap-4',
+        md: 'gap-8',
+        lg: 'gap-12',
+    },
+    input: 'bg-[#050608] border border-white/5 rounded-2xl focus:border-primary/40 focus:ring-4 focus:ring-primary/5 transition-all outline-none text-white placeholder:text-white/20 text-sm font-medium px-6 py-5',
     text: {
-        h: 'font-serif font-medium tracking-tight uppercase select-none',
-        h_bold: 'font-serif font-black tracking-tight uppercase select-none',
-        label: 'text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mb-2 block',
+        h1: 'font-serif font-black text-4xl md:text-5xl lg:text-6xl text-white tracking-tight leading-none',
+        h3: 'font-serif font-bold text-xl md:text-2xl text-white tracking-tight',
+        label: 'text-[10px] font-black uppercase tracking-[0.4em] text-white/30 block mb-2',
         body: 'text-sm text-white/40 leading-relaxed font-medium',
     },
     success: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_30px_-10px_rgba(16,185,129,0.2)]',
-    action: 'hover:scale-[1.02] active:scale-[0.98] transition-all duration-300',
+    action: 'hover:scale-[1.02] active:scale-[0.98] focus:ring-2 focus:ring-primary/20 transition-all duration-300',
 };
 
 const statusMap: { [key: string]: { label: string; color: string; bg: string; border: string } } = {
@@ -79,67 +85,67 @@ const RegistryCard: React.FC<{
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`group p-8 rounded-[2.5rem] ${TOKENS.card} transition-all duration-500 border-white/[0.04] hover:bg-white/[0.01] hover:border-white/[0.08]`}
+            className={`flex flex-col p-8 ${TOKENS.card} transition-all duration-500 hover:border-white/10 group`}
         >
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                     <PremiumAvatar
                         name={code.applicant_name}
                         src={code.profile_photo_url}
                         size="xs"
-                        className="w-12 h-12 ring-2 ring-white/5 shadow-2xl"
+                        className="w-12 h-12 border-2 border-white/5 shadow-xl"
                     />
-                    <div>
-                        <h4 className="text-[13px] font-black text-white uppercase tracking-wider">{code.applicant_name}</h4>
+                    <div className="flex flex-col">
+                        <h4 className="text-[13px] font-black text-white uppercase tracking-wider line-clamp-1">{code.applicant_name}</h4>
                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mt-0.5">{code.code_type} PROTOCOL</p>
                     </div>
                 </div>
-                <div className={`px-3 py-1.5 rounded-xl border ${status.bg} ${status.border} ${status.color} text-[9px] font-black uppercase tracking-widest shadow-sm`}>
+                <div className={`shrink-0 px-3 py-1.5 rounded-lg border ${status.bg} ${status.border} ${status.color} text-[9px] font-black uppercase tracking-widest`}>
                     {status.label}
                 </div>
             </div>
 
             <button
                 onClick={() => onCopy(code.code, String(code.id))}
-                aria-label="Copy Protocol Key"
-                className="w-full bg-black/40 border border-white/[0.04] rounded-2xl p-5 flex items-center justify-between group/code-well cursor-pointer hover:border-primary/40 transition-all mb-6 shadow-inner focus:ring-2 focus:ring-primary/20 outline-none"
+                aria-label={`Copy protocol for ${code.applicant_name}`}
+                className={`flex items-center justify-between p-5 mb-8 bg-[#050608] border border-white/5 rounded-2xl group/code focus:ring-2 focus:ring-primary/20 outline-none transition-all ${TOKENS.action}`}
             >
                 <div className="flex items-baseline gap-2 overflow-hidden px-1">
                     {codeChars.map((char, i) => (
-                        <span key={i} className={`font-mono font-black text-xl md:text-2xl ${code.status === 'Active' ? 'text-white/40 group-hover/code-well:text-white' : 'text-white/10'} transition-all duration-500`}>
+                        <span key={i} className={`font-mono font-black text-xl md:text-2xl transition-all duration-500 ${code.status === 'Active' ? 'text-white/40 group-hover/code:text-white' : 'text-white/10'}`}>
                             {char}
                         </span>
                     ))}
                 </div>
-                <div className={`p-2.5 rounded-xl transition-all duration-500 ${isCopied ? 'bg-emerald-500/10 text-emerald-400' : 'text-white/10 group-hover/code-well:text-primary group-hover/code-well:scale-110'}`}>
+                <div className={`p-2.5 rounded-xl transition-all duration-500 ${isCopied ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'text-white/10 group-hover/code:text-primary'}`}>
                     {isCopied ? <CheckCircleIcon className="w-5 h-5" /> : <CopyIcon className="w-5 h-5" />}
                 </div>
             </button>
 
-            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/10 pt-2 border-t border-white/[0.03]">
-                <div className="flex items-center gap-2.5">
-                    <ClockIcon className="w-3.5 h-3.5" />
-                    <span>Expires: {new Date(code.expires_at).toLocaleDateString()}</span>
+            <div className="flex items-center justify-between pt-4 border-t border-white/[0.04] mt-auto">
+                <div className="flex items-center gap-3 text-[10px] font-black text-white/20 uppercase tracking-widest">
+                    <ClockIcon className="w-4 h-4" />
+                    <span>Exp: {new Date(code.expires_at).toLocaleDateString()}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {code.status === 'Active' ? (
                         <button
                             onClick={(e) => { e.stopPropagation(); onRevoke(code.id); }}
-                            className="p-2 text-white/10 hover:text-rose-400 hover:bg-rose-500/5 rounded-lg transition-all"
-                            title="Revoke Protocol"
+                            className="p-3 text-white/10 hover:text-rose-400 hover:bg-rose-500/5 rounded-xl transition-all"
+                            title="Terminate Access"
                         >
-                            <TrashIcon className="w-4.2 h-4.2" />
+                            <TrashIcon className="w-5 h-5" />
                         </button>
                     ) : (
                         <button
                             onClick={(e) => { e.stopPropagation(); onRefetch(code); }}
-                            className="p-2 text-white/10 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
-                            title="Refetch Protocol"
+                            className="p-3 text-white/10 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
+                            title="Re-provision"
                         >
-                            <RotateCcwIcon className="w-4.2 h-4.2" />
+                            <RotateCcwIcon className="w-5 h-5" />
                         </button>
                     )}
                 </div>
@@ -270,10 +276,10 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10 border-b border-white/[0.03] pb-10">
                 <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                        <div className="h-[1px] w-12 bg-primary/40" />
+                        <div className="h-[2px] w-12 bg-primary/40 rounded-full" />
                         <span className={TOKENS.text.label}>Secure Orchestration</span>
                     </div>
-                    <h1 className={`${TOKENS.text.h_bold} text-4xl md:text-5xl lg:text-6xl text-white leading-none tracking-tight`}>
+                    <h1 className={TOKENS.text.h1}>
                         Access <span className="text-white/20 italic font-medium">Protocols.</span>
                     </h1>
                     <p className={TOKENS.text.body}>
@@ -429,7 +435,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                                 <CheckCircleIcon className="w-7 h-7" />
                                             </motion.div>
                                         </div>
-                                        <h2 className={`${TOKENS.text.h_bold} text-4xl lg:text-5xl text-white tracking-tight leading-none`}>
+                                        <h2 className={TOKENS.text.h1}>
                                             Identity <span className="text-white/20 italic font-medium">Provisioned.</span>
                                         </h2>
                                         <p className="text-emerald-500/50 text-[10px] font-black uppercase tracking-[0.5em] animate-pulse">Transmission Secured & Signed</p>
@@ -478,7 +484,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                         <LockIcon className="w-10 h-10 text-white/20 group-hover:text-white/40 transition-colors" />
                                     </div>
                                     <div className="space-y-3">
-                                        <h3 className={`${TOKENS.text.h} text-3xl text-white`}>Protocol <span className="text-white/5 italic font-medium">Idle.</span></h3>
+                                        <h3 className={`${TOKENS.text.h3} text-3xl`}>Protocol <span className="text-white/5 italic font-medium">Idle.</span></h3>
                                         <p className="text-xs text-white/30 font-serif italic max-w-xs mx-auto leading-relaxed">
                                             Select target node and protocol layer to initialize authentication.
                                         </p>
