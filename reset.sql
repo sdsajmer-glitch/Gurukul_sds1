@@ -444,6 +444,13 @@ CREATE TABLE public.school_admin_profiles (
   admin_contact_name text,
   admin_contact_phone text,
   admin_contact_email text,
+  admin_designation text DEFAULT 'Director',
+  academic_board text,
+  school_type text,
+  academic_year_start text,
+  academic_year_end text,
+  grade_range_start text,
+  grade_range_end text,
   onboarding_step text DEFAULT 'profile',
   plan_id text,
   created_at timestamp with time zone DEFAULT now()
