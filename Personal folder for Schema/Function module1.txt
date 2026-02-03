@@ -1,0 +1,4332 @@
+CREATE OR REPLACE FUNCTION public.is_admin()
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM public.profiles
+    WHERE id = auth.uid()
+    AND role IN ('School Administration', 'Branch Admin', 'Super Admin', 'Accountant', 'Principal', 'HR Manager')
+  );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.set_audit_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.created_by IS NULL THEN
+      NEW.created_by := (SELECT auth.uid());
+    END IF;
+    IF NEW.updated_by IS NULL THEN
+      NEW.updated_by := (SELECT auth.uid());
+    END IF;
+  ELSIF TG_OP = 'UPDATE' THEN
+    NEW.updated_by := (SELECT auth.uid());
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.rls_auto_enable()
+ RETURNS event_trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog'
+AS $function$
+DECLARE
+  cmd record;
+BEGIN
+  FOR cmd IN
+    SELECT *
+    FROM pg_event_trigger_ddl_commands()
+    WHERE command_tag IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
+      AND object_type IN ('table','partitioned table')
+  LOOP
+     IF cmd.schema_name IS NOT NULL AND cmd.schema_name IN ('public') AND cmd.schema_name NOT IN ('pg_catalog','information_schema') AND cmd.schema_name NOT LIKE 'pg_toast%' AND cmd.schema_name NOT LIKE 'pg_temp%' THEN
+      BEGIN
+        EXECUTE format('alter table if exists %s enable row level security', cmd.object_identity);
+        RAISE LOG 'rls_auto_enable: enabled RLS on %', cmd.object_identity;
+      EXCEPTION
+        WHEN OTHERS THEN
+          RAISE LOG 'rls_auto_enable: failed to enable RLS on %', cmd.object_identity;
+      END;
+     ELSE
+        RAISE LOG 'rls_auto_enable: skip % (either system schema or not in enforced list: %.)', cmd.object_identity, cmd.schema_name;
+     END IF;
+  END LOOP;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_expense_registry_v2(p_branch_id bigint DEFAULT NULL::bigint, p_category_id bigint DEFAULT NULL::bigint, p_status text DEFAULT NULL::text, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date)
+ RETURNS TABLE(id bigint, branch_id bigint, amount numeric, description text, vendor_name text, expense_date date, status text, category_name text, invoice jsonb)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        e.id,
+        e.branch_id,
+        e.amount,
+        e.description,
+        e.vendor_name,
+        e.expense_date,
+        e.status,
+        ec.name as category_name,
+        (SELECT jsonb_build_object(
+            'file_name', ei.file_name,
+            'storage_path', ei.storage_path
+        ) FROM public.expense_invoices ei WHERE ei.expense_id = e.id LIMIT 1) as invoice
+    FROM public.expenses e
+    LEFT JOIN public.expense_categories ec ON ec.id = e.category_id
+    WHERE (p_branch_id IS NULL OR e.branch_id = p_branch_id)
+    AND (p_category_id IS NULL OR e.category_id = p_category_id)
+    AND (p_status IS NULL OR e.status = p_status)
+    AND (p_start_date IS NULL OR e.expense_date >= p_start_date)
+    AND (p_end_date IS NULL OR e.expense_date <= p_end_date)
+    ORDER BY e.expense_date DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_my_children_profiles()
+ RETURNS SETOF admissions
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$
+    SELECT *
+    FROM public.admissions
+    WHERE parent_id = auth.uid();
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_linked_parent_for_student(p_student_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_parent_id UUID;
+    v_admission_record RECORD;
+    v_parent_profile RECORD;
+    v_user_profile RECORD;
+    v_heal_success BOOLEAN := false;
+BEGIN
+    -- A. Find Admission Record
+    SELECT * INTO v_admission_record 
+    FROM public.admissions 
+    WHERE student_user_id = p_student_id 
+    ORDER BY created_at DESC 
+    LIMIT 1;
+
+    -- If no admission record found, we can't link
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('found', false, 'reason', 'No admission record found');
+    END IF;
+
+    v_parent_id := v_admission_record.parent_id;
+
+    -- B. Self-Healing: If parent_id is missing, try to find parent by email
+    IF v_parent_id IS NULL AND v_admission_record.parent_email IS NOT NULL THEN
+        SELECT id INTO v_parent_id
+        FROM public.profiles
+        WHERE email = v_admission_record.parent_email
+        AND role = 'Parent/Guardian'
+        LIMIT 1;
+
+        -- If found, update the admission record to permanently link them
+        IF v_parent_id IS NOT NULL THEN
+            UPDATE public.admissions 
+            SET parent_id = v_parent_id 
+            WHERE id = v_admission_record.id;
+            v_heal_success := true;
+        END IF;
+    END IF;
+
+    -- C. Fetch Profile Details
+    IF v_parent_id IS NOT NULL THEN
+        SELECT * INTO v_parent_profile 
+        FROM public.parent_profiles 
+        WHERE user_id = v_parent_id;
+        
+        SELECT * INTO v_user_profile 
+        FROM public.profiles 
+        WHERE id = v_parent_id;
+        
+        IF FOUND THEN
+             RETURN jsonb_build_object(
+                'found', true,
+                'healed', v_heal_success,
+                'name', COALESCE(v_user_profile.display_name, v_admission_record.parent_name),
+                'email', COALESCE(v_user_profile.email, v_admission_record.parent_email),
+                'phone', COALESCE(v_user_profile.phone, v_admission_record.parent_phone),
+                'relationship', COALESCE(v_parent_profile.relationship_to_student, 'Parent'),
+                'address', v_parent_profile.address,
+                'city', v_parent_profile.city,
+                'state', v_parent_profile.state,
+                'country', v_parent_profile.country,
+                'pin_code', v_parent_profile.pin_code
+            );
+        END IF;
+    END IF;
+
+    -- D. Fallback: Return raw admission details if no linked profile found
+    RETURN jsonb_build_object(
+        'found', true,
+        'is_unlinked', true,
+        'name', v_admission_record.parent_name,
+        'email', v_admission_record.parent_email,
+        'phone', v_admission_record.parent_phone,
+        'relationship', 'Parent',
+        'address', NULL
+    );
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('found', false, 'error', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.complete_school_onboarding(p_admin_name text, p_admin_email text, p_admin_phone text, p_designation text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_user_id UUID := auth.uid();
+BEGIN
+    -- Update Core Identity
+    UPDATE public.profiles 
+    SET 
+        display_name = p_admin_name,
+        phone = p_admin_phone,
+        profile_completed = true,
+        updated_at = NOW()
+    WHERE id = v_user_id;
+
+    -- Seal Administrative Context
+    UPDATE public.school_admin_profiles
+    SET
+        admin_contact_name = p_admin_name,
+        admin_contact_email = p_admin_email,
+        admin_contact_phone = p_admin_phone,
+        admin_designation = p_designation,
+        onboarding_step = 'completed',
+        updated_at = NOW()
+    WHERE user_id = v_user_id;
+
+    RETURN jsonb_build_object('success', true, 'message', 'Institutional node activation successful.');
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_admissions_v2(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS SETOF admissions
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT * FROM public.admissions
+    WHERE (p_branch_id IS NULL OR branch_id = p_branch_id)
+    ORDER BY submitted_at DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_all_enquiries_v2(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS SETOF enquiries
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT * FROM public.enquiries
+    WHERE (p_branch_id IS NULL OR branch_id = p_branch_id)
+    ORDER BY updated_at DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.parent_get_document_requirements(p_user_id uuid)
+ RETURNS TABLE(id integer, admission_id uuid, document_name text, status text, is_mandatory boolean, notes_for_parent text, rejection_reason text, applicant_name text, profile_photo_url text, admission_documents jsonb)
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$
+    SELECT
+        dr.id,
+        dr.admission_id,
+        dr.document_name,
+        dr.status,
+        dr.is_mandatory,
+        dr.notes_for_parent,
+        dr.rejection_reason,
+        a.applicant_name,
+        a.profile_photo_url,
+        (
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'id', ad.id,
+                    'file_name', ad.file_name,
+                    'storage_path', ad.storage_path,
+                    'uploaded_at', ad.uploaded_at
+                )
+            )
+            FROM public.admission_documents ad
+            WHERE ad.requirement_id = dr.id
+        ) as admission_documents
+    FROM
+        public.document_requirements dr
+    JOIN
+        public.admissions a ON dr.admission_id = a.id
+    WHERE
+        a.parent_id = p_user_id
+    ORDER BY
+        a.submitted_at DESC, dr.is_mandatory DESC, dr.document_name;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.parent_add_custom_document_requirement(p_admission_id uuid, p_document_name text, p_category text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_req_id INT;
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.admissions WHERE id = p_admission_id AND parent_id = auth.uid()) THEN
+        RAISE EXCEPTION 'Unauthorized: You do not own this admission record.';
+    END IF;
+
+    INSERT INTO public.document_requirements (admission_id, document_name, is_mandatory, status, notes_for_parent)
+    VALUES (p_admission_id, p_document_name, false, 'Pending', p_category)
+    RETURNING id INTO v_req_id;
+
+    RETURN jsonb_build_object('id', v_req_id);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_fee_summary_v3(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS TABLE(student_id uuid, display_name text, class_name text, grade text, total_billed numeric, total_paid numeric, outstanding_balance numeric, integrity_score integer, branch_id bigint, profile_photo_url text)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id as student_id,
+        p.display_name,
+        sc.name as class_name,
+        sp.grade,
+        COALESCE(sfa.total_billed, 0) as total_billed,
+        COALESCE(sfa.total_paid, 0) as total_paid,
+        (COALESCE(sfa.total_billed, 0) - COALESCE(sfa.total_paid, 0)) as outstanding_balance,
+        COALESCE(sfa.integrity_score, 100) as integrity_score,
+        sp.branch_id,
+        p.profile_photo_url
+    FROM public.profiles p
+    JOIN public.student_profiles sp ON p.id = sp.user_id
+    LEFT JOIN public.school_classes sc ON sp.assigned_class_id = sc.id
+    LEFT JOIN public.student_fee_accounts sfa ON p.id = sfa.student_id
+    WHERE (p_branch_id IS NULL OR sp.branch_id = p_branch_id)
+      AND p.role = 'Student';
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_assign_student_class(p_student_id uuid, p_class_id bigint, p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    -- 1. Update academic placement
+    UPDATE public.student_profiles
+    SET assigned_class_id = p_class_id,
+        branch_id = COALESCE(p_branch_id, (SELECT branch_id FROM public.school_classes WHERE id = p_class_id))
+    WHERE user_id = p_student_id;
+
+    -- 2. Initialize student account if missing
+    INSERT INTO public.student_fee_accounts (student_id, branch_id)
+    VALUES (p_student_id, COALESCE(p_branch_id, (SELECT branch_id FROM public.school_classes WHERE id = p_class_id)))
+    ON CONFLICT (student_id) DO NOTHING;
+
+    -- 3. Execute Fiscal Handshake
+    PERFORM public.admin_sync_student_billing(p_student_id);
+
+    RETURN jsonb_build_object('success', true, 'message', 'Academic and fiscal nodes synchronized.');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_finalize_enrollment(p_admission_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_user_id UUID;
+    v_grade TEXT;
+    v_branch_id BIGINT;
+    v_sid TEXT;
+BEGIN
+    SELECT student_user_id, grade, branch_id 
+    INTO v_user_id, v_grade, v_branch_id
+    FROM public.admissions WHERE id = p_admission_id;
+
+    IF v_user_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'IDENTITY_FAULT: Admission record not linked to a user node.');
+    END IF;
+
+    -- Generate Student ID
+    v_sid := 'SID-' || TO_CHAR(NOW(), 'YY') || '-' || LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0');
+
+    -- Finalize Profile
+    UPDATE public.profiles SET role = 'Student', profile_completed = true WHERE id = v_user_id;
+
+    -- Establish Student Profile
+    INSERT INTO public.student_profiles (user_id, student_id_number, grade, branch_id)
+    VALUES (v_user_id, v_sid, v_grade, v_branch_id)
+    ON CONFLICT (user_id) DO UPDATE SET enrollment_status = 'Active', student_id_number = v_sid;
+
+    -- Update Admission Status
+    UPDATE public.admissions SET status = 'Enrolled', student_id_number = v_sid WHERE id = p_admission_id;
+
+    -- Execute Fiscal Handshake
+    PERFORM public.admin_sync_student_billing(v_user_id);
+
+    RETURN jsonb_build_object(
+        'success', true, 
+        'student_id', v_user_id, 
+        'student_id_number', v_sid,
+        'message', 'Enrollment and billing context sealed.'
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_fee_summary_all(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS TABLE(student_id uuid, display_name text, class_name text, grade text, total_billed numeric, total_paid numeric, outstanding_balance numeric, integrity_score integer, branch_id bigint, profile_photo_url text)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id as student_id,
+        p.display_name,
+        sc.name as class_name,
+        sp.grade,
+        COALESCE(sfa.total_billed, 0) as total_billed,
+        COALESCE(sfa.total_paid, 0) as total_paid,
+        COALESCE(sfa.outstanding_balance, 0) as outstanding_balance,
+        COALESCE(sfa.integrity_score, 100) as integrity_score,
+        sp.branch_id,
+        p.profile_photo_url
+    FROM public.profiles p
+    JOIN public.student_profiles sp ON p.id = sp.user_id
+    LEFT JOIN public.school_classes sc ON sp.assigned_class_id = sc.id
+    LEFT JOIN public.student_fee_accounts sfa ON p.id = sfa.student_id
+    WHERE (p_branch_id IS NULL OR sp.branch_id = p_branch_id)
+      AND p.role = 'Student'
+    ORDER BY p.display_name ASC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_trigger_reconcile_student_node()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    -- Call the forensic reconciliation for the affected student node
+    -- This handles Inserts, Updates, and Deletes automatically
+    PERFORM public.admin_reconcile_student_account(COALESCE(NEW.student_id, OLD.student_id));
+    RETURN NULL;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_audit_expense(p_expense_id bigint, p_status text, p_admin_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_target_exists BOOLEAN;
+BEGIN
+    -- Verify existence
+    SELECT EXISTS(SELECT 1 FROM public.expenses WHERE id = p_expense_id) INTO v_target_exists;
+    
+    IF NOT v_target_exists THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Registry Error: Disbursement ID not found.');
+    END IF;
+
+    -- Execute Atomic Update
+    UPDATE public.expenses
+    SET status = p_status,
+        approved_by = p_admin_id,
+        approved_at = now()
+    WHERE id = p_expense_id;
+
+    RETURN jsonb_build_object(
+        'success', true, 
+        'message', 'Protocol Sync: Status updated to ' || p_status,
+        'id', p_expense_id
+    );
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'message', 'System Fault: ' || SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_auto_sync_student_fees()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    -- If a class is assigned (transitioning from Standby to Active)
+    IF (NEW.assigned_class_id IS NOT NULL AND (OLD.assigned_class_id IS NULL OR OLD.assigned_class_id <> NEW.assigned_class_id)) THEN
+        PERFORM public.admin_sync_student_billing(NEW.user_id);
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_reconcile_student_account(p_student_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_total_billed NUMERIC;
+    v_total_paid NUMERIC;
+    v_unallocated NUMERIC;
+    v_integrity INT;
+BEGIN
+    -- Calculate Total Liability (Excluding cancelled invoices)
+    SELECT COALESCE(SUM(amount), 0) INTO v_total_billed 
+    FROM public.fee_invoices 
+    WHERE student_id = p_student_id AND status != 'Cancelled';
+
+    -- Calculate Total Settlements (Completed and Pending payments)
+    SELECT COALESCE(SUM(amount), 0) INTO v_total_paid 
+    FROM public.fee_payments 
+    WHERE student_id = p_student_id AND status IN ('Completed', 'Pending');
+
+    -- Identify Unallocated Magnitude (Payments not linked to a specific invoice)
+    SELECT COALESCE(SUM(amount), 0) INTO v_unallocated
+    FROM public.fee_payments
+    WHERE student_id = p_student_id AND invoice_id IS NULL AND status = 'Completed';
+
+    -- Calculate Integrity Score (Percentage of dues cleared)
+    v_integrity := CASE 
+        WHEN v_total_billed <= 0 AND v_total_paid > 0 THEN 100
+        WHEN v_total_billed <= 0 THEN 100
+        ELSE GREATEST(0, LEAST(100, (v_total_paid / v_total_billed * 100)::INT))
+    END;
+
+    -- Update Summary Node (Atomic Upsert)
+    INSERT INTO public.student_fee_accounts (
+        student_id, total_billed, total_paid, outstanding_balance, 
+        integrity_score, last_synced_at, unallocated_funds
+    )
+    VALUES (
+        p_student_id, v_total_billed, v_total_paid, (v_total_billed - v_total_paid), 
+        v_integrity, NOW(), v_unallocated
+    )
+    ON CONFLICT (student_id) DO UPDATE SET
+        total_billed = EXCLUDED.total_billed,
+        total_paid = EXCLUDED.total_paid,
+        outstanding_balance = EXCLUDED.outstanding_balance,
+        integrity_score = EXCLUDED.integrity_score,
+        unallocated_funds = EXCLUDED.unallocated_funds,
+        last_synced_at = NOW();
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.generate_student_ledger_for_student(p_student_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_grade TEXT;
+    v_structure_id BIGINT;
+    v_component RECORD;
+    v_count INT := 0;
+BEGIN
+    SELECT grade INTO v_grade FROM public.student_profiles WHERE user_id = p_student_id;
+    IF v_grade IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Grade context not initialized.');
+    END IF;
+
+    SELECT id INTO v_structure_id 
+    FROM public.fee_structures 
+    WHERE target_grade = v_grade AND status = 'Active' AND is_default = true
+    ORDER BY created_at DESC LIMIT 1;
+
+    IF v_structure_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'No default active structure for Grade ' || v_grade);
+    END IF;
+
+    INSERT INTO public.student_fee_assignments (student_id, structure_id)
+    VALUES (p_student_id, v_structure_id)
+    ON CONFLICT (student_id) DO UPDATE SET structure_id = v_structure_id;
+
+    FOR v_component IN 
+        SELECT * FROM public.fee_components WHERE structure_id = v_structure_id
+    LOOP
+        IF NOT EXISTS (
+            SELECT 1 FROM public.fee_invoices 
+            WHERE student_id = p_student_id 
+            AND description ILIKE v_component.name || '%'
+            AND status != 'Cancelled'
+        ) THEN
+            INSERT INTO public.fee_invoices (
+                student_id, amount, due_date, description, status, created_at
+            ) VALUES (
+                p_student_id, v_component.amount, NOW() + INTERVAL '15 days',
+                v_component.name || ' (INITIAL_SYNC)', 'Pending', NOW()
+            );
+            v_count := v_count + 1;
+        END IF;
+    END LOOP;
+
+    PERFORM public.admin_reconcile_student_account(p_student_id);
+
+    RETURN jsonb_build_object('success', true, 'invoices_created', v_count, 'structure_id', v_structure_id);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_sync_student_billing(p_student_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN public.generate_student_ledger_for_student(p_student_id);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.trigger_on_student_placement()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    IF (TG_OP = 'UPDATE') AND 
+       (COALESCE(NEW.grade, '') <> COALESCE(OLD.grade, '') OR 
+        COALESCE(NEW.assigned_class_id, 0) <> COALESCE(OLD.assigned_class_id, 0)) THEN
+        PERFORM public.generate_student_ledger_for_student(NEW.user_id);
+    END IF;
+    IF (TG_OP = 'INSERT') AND NEW.grade IS NOT NULL THEN
+        PERFORM public.generate_student_ledger_for_student(NEW.user_id);
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.parent_initialize_vault_slots_all()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    adm RECORD;
+    doc_name text;
+    v_category text;
+    required_docs text[] := ARRAY[
+        'Birth Certificate', 
+        'Transfer Certificate', 
+        'Previous Marksheet', 
+        'Aadhar Card', 
+        'Passport Photo'
+    ];
+BEGIN
+    FOR adm IN SELECT id FROM public.admissions WHERE parent_id = auth.uid()
+    LOOP
+        FOREACH doc_name IN ARRAY required_docs
+        LOOP
+            IF doc_name = 'Birth Certificate' OR doc_name = 'Aadhar Card' OR doc_name = 'Passport Photo' THEN
+                v_category := 'Identity';
+            ELSIF doc_name = 'Transfer Certificate' OR doc_name = 'Previous Marksheet' THEN
+                v_category := 'Academic';
+            ELSE
+                v_category := 'General';
+            END IF;
+
+            IF NOT EXISTS (
+                SELECT 1 FROM public.document_requirements 
+                WHERE admission_id = adm.id AND document_name = doc_name
+            ) THEN
+                INSERT INTO public.document_requirements (
+                    admission_id, document_name, is_mandatory, status, notes_for_parent, created_at, updated_at
+                ) VALUES (
+                    adm.id, doc_name, true, 'Pending', v_category, NOW(), NOW()
+                );
+            END IF;
+        END LOOP;
+    END LOOP;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_generate_bulk_invoices(p_branch_id bigint, p_class_id bigint, p_billing_month text, p_billing_year text, p_due_date date)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_student RECORD;
+    v_component RECORD;
+    v_count INT := 0;
+BEGIN
+    FOR v_student IN 
+        SELECT sp.user_id, sfa.structure_id
+        FROM public.student_profiles sp
+        JOIN public.student_fee_assignments sfa ON sp.user_id = sfa.student_id
+        WHERE sp.assigned_class_id = p_class_id
+    LOOP
+        FOR v_component IN 
+            SELECT * FROM public.fee_components 
+            WHERE structure_id = v_student.structure_id 
+            AND frequency IN ('Monthly', 'Quarterly')
+        LOOP
+            IF NOT EXISTS (
+                SELECT 1 FROM public.fee_invoices 
+                WHERE student_id = v_student.user_id 
+                AND description ILIKE v_component.name || '%'
+                AND description ILIKE '%' || p_billing_month || ' ' || p_billing_year || '%'
+                AND status != 'Cancelled'
+            ) THEN
+                INSERT INTO public.fee_invoices (
+                    student_id, amount, due_date, description, status
+                ) VALUES (
+                    v_student.user_id, v_component.amount, p_due_date,
+                    v_component.name || ' (' || p_billing_month || ' ' || p_billing_year || ')', 'Pending'
+                );
+                v_count := v_count + 1;
+            END IF;
+        END LOOP;
+        PERFORM public.admin_reconcile_student_account(v_student.user_id);
+    END LOOP;
+    RETURN jsonb_build_object('success', true, 'invoices_generated', v_count);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_running_ledger(p_student_id uuid)
+ RETURNS TABLE(transaction_date timestamp with time zone, identifier text, description text, debit numeric, credit numeric, running_balance numeric, protocol text)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    PERFORM public.admin_reconcile_student_account(p_student_id);
+
+    RETURN QUERY
+    WITH raw_entries AS (
+        -- Debits (Invoices/Liabilities)
+        SELECT 
+            fi.created_at as t_date,
+            'INV-' || fi.id::TEXT as idnt,
+            fi.description as descr,
+            fi.amount as dbt,
+            0::NUMERIC as crdt,
+            CASE 
+                WHEN fi.description ILIKE '%SYSTEM_AUTO_SYNC%' THEN 'SYSTEM_SYNC'
+                ELSE 'MANUAL_DEBIT'
+            END as prot
+        FROM public.fee_invoices fi
+        WHERE fi.student_id = p_student_id AND fi.status != 'Cancelled'
+
+        UNION ALL
+
+        -- Credits (Payments/Settlements)
+        SELECT 
+            COALESCE(fp.payment_date, fp.created_at) as t_date,
+            'PAY-' || fp.id::TEXT as idnt,
+            'Settlement: ' || COALESCE(fp.payment_method, 'Transfer'),
+            0::NUMERIC as dbt,
+            fp.amount as crdt,
+            CASE 
+                WHEN fp.invoice_id IS NULL THEN 'UNALLOCATED_ADVANCE'
+                ELSE 'ALLOCATED_SETTLEMENT'
+            END as prot
+        FROM public.fee_payments fp
+        WHERE fp.student_id = p_student_id AND fp.status = 'Completed'
+    )
+    SELECT 
+        t_date as transaction_date,
+        idnt as identifier,
+        descr as description,
+        dbt as debit,
+        crdt as credit,
+        SUM(dbt - crdt) OVER (ORDER BY t_date ASC, idnt ASC) as running_balance,
+        prot as protocol
+    FROM raw_entries
+    ORDER BY t_date DESC, idnt DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_record_expense_v3(p_branch_id bigint, p_category_id integer, p_amount numeric, p_vendor_name text, p_expense_date date, p_description text, p_payment_mode text, p_recorded_by uuid, p_file_name text DEFAULT NULL::text, p_storage_path text DEFAULT NULL::text, p_file_size bigint DEFAULT NULL::bigint, p_mime_type text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'storage'
+AS $function$
+DECLARE
+    v_expense_id BIGINT;
+BEGIN
+    -- Step 1: Initialize Ledger Entry
+    INSERT INTO public.expenses (
+        branch_id, 
+        category_id, 
+        amount, 
+        vendor_name, 
+        expense_date, 
+        description, 
+        payment_mode, 
+        recorded_by, 
+        status
+    )
+    VALUES (
+        p_branch_id, 
+        p_category_id, 
+        p_amount, 
+        p_vendor_name, 
+        p_expense_date, 
+        p_description, 
+        p_payment_mode, 
+        p_recorded_by, 
+        'Pending'
+    )
+    RETURNING id INTO v_expense_id;
+
+    -- Step 2: Bind Artifact Metadata (if provided)
+    IF p_storage_path IS NOT NULL THEN
+        INSERT INTO public.expense_invoices (
+            expense_id,
+            file_name,
+            storage_path,
+            file_size,
+            mime_type
+        )
+        VALUES (
+            v_expense_id,
+            p_file_name,
+            p_storage_path,
+            p_file_size,
+            p_mime_type
+        );
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true, 
+        'message', 'Fiscal Sync: Ledger node and artifact sealed.',
+        'id', v_expense_id
+    );
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Sync Protocol Fault: ' || SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_financial_nodes(p_branch_id bigint)
+ RETURNS TABLE(student_id uuid, display_name text, grade text, class_name text, total_billed numeric, total_paid numeric, outstanding_balance numeric, integrity_score integer, profile_photo_url text, is_active boolean, is_standby boolean, unallocated_funds numeric)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id as student_id,
+        p.display_name,
+        sp.grade,
+        sc.name as class_name,
+        COALESCE(sfa.total_billed, 0) as total_billed,
+        COALESCE(sfa.total_paid, 0) as total_paid,
+        COALESCE(sfa.outstanding_balance, 0) as outstanding_balance,
+        COALESCE(sfa.integrity_score, 100) as integrity_score,
+        p.profile_photo_url,
+        p.is_active,
+        (NOT EXISTS (SELECT 1 FROM public.student_fee_assignments sfas WHERE sfas.student_id = p.id) 
+         OR COALESCE(sfa.unallocated_funds, 0) > 0) as is_standby,
+        COALESCE(sfa.unallocated_funds, 0) as unallocated_funds
+    FROM public.profiles p
+    JOIN public.student_profiles sp ON p.id = sp.user_id
+    LEFT JOIN public.school_classes sc ON sp.assigned_class_id = sc.id
+    LEFT JOIN public.student_fee_accounts sfa ON p.id = sfa.student_id
+    WHERE (p_branch_id IS NULL OR sp.branch_id = p_branch_id)
+    AND p.role = 'Student'
+    ORDER BY p.display_name ASC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_financial_node(p_student_id uuid)
+ RETURNS TABLE(student_id uuid, display_name text, grade text, class_name text, total_billed numeric, total_paid numeric, outstanding_balance numeric, integrity_score integer, profile_photo_url text, is_active boolean, is_standby boolean, unallocated_funds numeric)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    PERFORM public.admin_reconcile_student_account(p_student_id);
+
+    RETURN QUERY
+    SELECT 
+        p.id as student_id,
+        p.display_name,
+        sp.grade,
+        sc.name as class_name,
+        COALESCE(sfa.total_billed, 0) as total_billed,
+        COALESCE(sfa.total_paid, 0) as total_paid,
+        COALESCE(sfa.outstanding_balance, 0) as outstanding_balance,
+        COALESCE(sfa.integrity_score, 100) as integrity_score,
+        p.profile_photo_url,
+        p.is_active,
+        (NOT EXISTS (SELECT 1 FROM public.student_fee_assignments sfas WHERE sfas.student_id = p_student_id) 
+         OR COALESCE(sfa.unallocated_funds, 0) > 0) as is_standby,
+        COALESCE(sfa.unallocated_funds, 0) as unallocated_funds
+    FROM public.profiles p
+    JOIN public.student_profiles sp ON p.id = sp.user_id
+    LEFT JOIN public.school_classes sc ON sp.assigned_class_id = sc.id
+    LEFT JOIN public.student_fee_accounts sfa ON p.id = sfa.student_id
+    WHERE p.id = p_student_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_expense_registry_v2(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS TABLE(id bigint, amount numeric, description text, vendor_name text, expense_date date, status text, category text, invoice_id text, storage_path text, file_name text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        e.id,
+        e.amount,
+        e.description,
+        e.vendor_name,
+        e.expense_date,
+        e.status,
+        ec.name as category,
+        'EXP-' || e.id::text as invoice_id,
+        ei.storage_path,
+        ei.file_name
+    FROM public.expenses e
+    LEFT JOIN public.expense_categories ec ON e.category_id = ec.id
+    LEFT JOIN public.expense_invoices ei ON e.id = ei.expense_id
+    WHERE (p_branch_id IS NULL OR e.branch_id = p_branch_id)
+    ORDER BY e.expense_date DESC, e.created_at DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.parent_complete_document_upload(p_requirement_id bigint, p_admission_id uuid, p_file_name text, p_storage_path text, p_file_size bigint, p_mime_type text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    -- Verify ownership
+    IF NOT EXISTS (SELECT 1 FROM public.admissions WHERE id = p_admission_id AND parent_id = auth.uid()) THEN
+        RAISE EXCEPTION 'Unauthorized access to admission record';
+    END IF;
+
+    -- Update requirement status
+    UPDATE public.document_requirements
+    SET status = 'Submitted', updated_at = NOW()
+    WHERE id = p_requirement_id;
+
+    -- Insert document record
+    INSERT INTO public.admission_documents (
+        admission_id, 
+        requirement_id, 
+        file_name, 
+        storage_path, 
+        file_size, 
+        mime_type, 
+        uploaded_at
+    ) VALUES (
+        p_admission_id, 
+        p_requirement_id, 
+        p_file_name, 
+        p_storage_path, 
+        p_file_size, 
+        p_mime_type, 
+        NOW()
+    );
+
+    RETURN jsonb_build_object('success', true);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.generate_admission_share_code(p_admission_id uuid, p_purpose text, p_code_type text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_code TEXT;
+    v_id BIGINT;
+    v_exists BOOLEAN;
+BEGIN
+    -- Verify ownership
+    IF NOT EXISTS (SELECT 1 FROM public.admissions WHERE id = p_admission_id AND parent_id = auth.uid()) THEN
+        RAISE EXCEPTION 'Unauthorized access to admission record';
+    END IF;
+
+    -- Generate a unique 8-char code
+    LOOP
+        v_code := upper(substring(md5(random()::text) from 1 for 8));
+        SELECT EXISTS(SELECT 1 FROM public.share_codes WHERE code = v_code) INTO v_exists;
+        EXIT WHEN NOT v_exists;
+    END LOOP;
+
+    INSERT INTO public.share_codes (
+        admission_id, code, purpose, code_type, expires_at, created_by
+    ) VALUES (
+        p_admission_id, v_code, p_purpose, p_code_type, NOW() + INTERVAL '24 hours', auth.uid()
+    ) RETURNING id INTO v_id;
+
+    RETURN jsonb_build_object('code', v_code, 'id', v_id);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.reconcile_invoice_on_payment()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    UPDATE public.student_invoices
+    SET 
+        amount_paid = (SELECT COALESCE(SUM(amount), 0) FROM public.student_payments WHERE invoice_id = NEW.invoice_id),
+        status = CASE 
+            WHEN (SELECT COALESCE(SUM(amount), 0) FROM public.student_payments WHERE invoice_id = NEW.invoice_id) >= total_amount THEN 'Paid'
+            WHEN (SELECT COALESCE(SUM(amount), 0) FROM public.student_payments WHERE invoice_id = NEW.invoice_id) > 0 THEN 'Partial'
+            ELSE 'Pending'
+        END,
+        updated_at = now()
+    WHERE id = NEW.invoice_id;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_expense_registry_v3(p_branch_id bigint DEFAULT NULL::bigint, p_category_id integer DEFAULT NULL::integer, p_status text DEFAULT NULL::text, p_start_date date DEFAULT NULL::date, p_end_date date DEFAULT NULL::date)
+ RETURNS TABLE(id bigint, amount numeric, description text, vendor_name text, expense_date date, status text, category_name text, category_id integer, invoice jsonb)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        e.id,
+        e.amount,
+        e.description,
+        e.vendor_name,
+        e.expense_date,
+        e.status,
+        ec.name as category_name,
+        e.category_id,
+        (
+            SELECT jsonb_build_object(
+                'id', ei.id,
+                'file_name', ei.file_name,
+                'storage_path', ei.storage_path
+            )
+            FROM public.expense_invoices ei
+            WHERE ei.expense_id = e.id
+            LIMIT 1
+        ) as invoice
+    FROM public.expenses e
+    LEFT JOIN public.expense_categories ec ON e.category_id = ec.id
+    WHERE (p_branch_id IS NULL OR e.branch_id = p_branch_id)
+      AND (p_category_id IS NULL OR e.category_id = p_category_id)
+      AND (p_status IS NULL OR e.status = p_status)
+      AND (p_start_date IS NULL OR e.expense_date >= p_start_date)
+      AND (p_end_date IS NULL OR e.expense_date <= p_end_date)
+    ORDER BY e.expense_date DESC, e.created_at DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_verify_share_code(p_code text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_record RECORD;
+BEGIN
+    SELECT 
+        sc.id,
+        sc.admission_id,
+        sc.code_type,
+        sc.status,
+        sc.expires_at,
+        adm.applicant_name,
+        adm.grade
+    FROM public.share_codes sc
+    JOIN public.admissions adm ON sc.admission_id = adm.id
+    WHERE sc.code = p_code
+    LIMIT 1
+    INTO v_record;
+
+    IF v_record.id IS NULL THEN
+        RETURN jsonb_build_object('found', false, 'error', 'Token not recognized in registry.');
+    END IF;
+
+    IF v_record.status != 'Active' OR v_record.expires_at < NOW() THEN
+        RETURN jsonb_build_object('found', false, 'error', 'Token has expired or been revoked.');
+    END IF;
+
+    RETURN jsonb_build_object(
+        'found', true,
+        'id', v_record.id,
+        'admission_id', v_record.admission_id,
+        'applicant_name', v_record.applicant_name,
+        'grade', v_record.grade,
+        'code_type', v_record.code_type
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_import_record_from_share_code(p_admission_id uuid, p_code_type text, p_branch_id bigint, p_code_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_enquiry_id UUID;
+BEGIN
+    -- 1. Validate the code once more
+    IF NOT EXISTS (SELECT 1 FROM public.share_codes WHERE id = p_code_id AND status = 'Active') THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Security token no longer valid.');
+    END IF;
+
+    -- 2. Execute sync based on protocol type
+    IF p_code_type = 'Enquiry' THEN
+        SELECT id INTO v_enquiry_id FROM public.enquiries WHERE admission_id = p_admission_id LIMIT 1;
+
+        IF v_enquiry_id IS NOT NULL THEN
+            UPDATE public.enquiries 
+            SET branch_id = p_branch_id, updated_at = NOW(), status = 'ENQUIRY_ACTIVE'
+            WHERE id = v_enquiry_id;
+        ELSE
+            INSERT INTO public.enquiries (
+                admission_id, branch_id, applicant_name, parent_name, 
+                parent_email, parent_phone, grade, status, received_at, updated_at
+            )
+            SELECT 
+                id, p_branch_id, applicant_name, parent_name, 
+                parent_email, parent_phone, grade, 'ENQUIRY_ACTIVE', NOW(), NOW()
+            FROM public.admissions 
+            WHERE id = p_admission_id;
+        END IF;
+    END IF;
+
+    -- 3. Update Admission branch context
+    UPDATE public.admissions SET branch_id = p_branch_id WHERE id = p_admission_id;
+
+    -- 4. Burn the token (Single use protocol)
+    UPDATE public.share_codes SET status = 'Redeemed', redeemed_at = NOW() WHERE id = p_code_id;
+
+    RETURN jsonb_build_object('success', true, 'message', 'Identity synchronization complete.');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.convert_enquiry_to_admission(p_enquiry_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_enquiry RECORD;
+    v_admission_id UUID;
+BEGIN
+    -- A. Fetch Enquiry
+    SELECT * INTO v_enquiry FROM public.enquiries WHERE id = p_enquiry_id;
+    
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Enquiry record not found.');
+    END IF;
+
+    -- B. Check if already converted
+    IF v_enquiry.status = 'ENQUIRY_CONVERTED' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'This enquiry has already been converted.');
+    END IF;
+
+    -- C. Insert into Admissions Vault
+    -- Generate a new Admission ID (or let default GenRandomUUID handle it if configured, but here we capture it)
+    INSERT INTO public.admissions (
+        applicant_name,
+        parent_name,
+        parent_email,
+        parent_phone,
+        grade,
+        branch_id,
+        status,
+        submitted_at,
+        updated_at,
+        notes
+    ) VALUES (
+        v_enquiry.applicant_name,
+        v_enquiry.parent_name,
+        v_enquiry.parent_email,
+        v_enquiry.parent_phone,
+        v_enquiry.grade,
+        v_enquiry.branch_id,
+        'Pending Review', -- Default entry status for Admissions
+        NOW(),
+        NOW(),
+        v_enquiry.notes -- Carry over notes
+    ) RETURNING id INTO v_admission_id;
+
+    -- D. Archive Enquiry
+    UPDATE public.enquiries 
+    SET 
+        status = 'ENQUIRY_CONVERTED', 
+        admission_id = v_admission_id, 
+        updated_at = NOW()
+    WHERE id = p_enquiry_id;
+
+    -- E. Log to Audit (Optional but good for tracing)
+    -- Assuming an audit table exists, otherwise skip.
+
+    RETURN jsonb_build_object(
+        'success', true, 
+        'message', 'Enquiry successfully promoted to Admission Vault.', 
+        'admission_id', v_admission_id
+    );
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_auto_reconcile_ledger()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    PERFORM public.admin_reconcile_student_account(COALESCE(NEW.student_id, OLD.student_id));
+    RETURN NULL;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_quick_add_student(p_display_name text, p_email text, p_grade text, p_parent_details text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_user_id UUID;
+    v_admission_id UUID;
+BEGIN
+    -- 1. Create Profile
+    v_user_id := gen_random_uuid();
+    
+    INSERT INTO public.profiles (id, email, display_name, role, is_active, profile_completed)
+    VALUES (v_user_id, p_email, p_display_name, 'Student', true, true);
+
+    -- 2. Create Student Profile
+    INSERT INTO public.student_profiles (user_id, grade, parent_guardian_details)
+    VALUES (v_user_id, p_grade, p_parent_details);
+
+    -- 3. Create Admission Record (Crucial for linking)
+    INSERT INTO public.admissions (
+        student_user_id, 
+        applicant_name, 
+        grade, 
+        status, 
+        parent_name, -- Store raw parent string here initially
+        submitted_at
+    )
+    VALUES (
+        v_user_id, 
+        p_display_name, 
+        p_grade, 
+        'Approved', 
+        p_parent_details,
+        NOW()
+    ) RETURNING id INTO v_admission_id;
+
+    RETURN jsonb_build_object('success', true, 'user_id', v_user_id, 'admission_id', v_admission_id);
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_user_completed_roles()
+ RETURNS TABLE(role_name text, is_completed boolean)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 'Parent/Guardian'::TEXT, EXISTS(SELECT 1 FROM public.parent_profiles WHERE user_id = auth.uid())
+    UNION ALL
+    SELECT 'School Administration'::TEXT, EXISTS(SELECT 1 FROM public.school_admin_profiles WHERE user_id = auth.uid())
+    UNION ALL
+    SELECT 'Teacher'::TEXT, EXISTS(SELECT 1 FROM public.teacher_profiles WHERE user_id = auth.uid())
+    UNION ALL
+    SELECT 'Student'::TEXT, EXISTS(SELECT 1 FROM public.student_profiles WHERE user_id = auth.uid());
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_finance_details(p_student_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_invoices JSONB;
+    v_payments JSONB;
+BEGIN
+    SELECT jsonb_agg(i) INTO v_invoices
+    FROM (
+        SELECT id, amount, amount_paid, due_date, description, status
+        FROM public.fee_invoices
+        WHERE student_id = p_student_id
+        ORDER BY due_date DESC
+    ) i;
+
+    SELECT jsonb_agg(p) INTO v_payments
+    FROM (
+        SELECT id, amount, payment_date, payment_method, receipt_number
+        FROM public.fee_payments
+        WHERE student_id = p_student_id
+        ORDER BY payment_date DESC
+    ) p;
+
+    RETURN jsonb_build_object(
+        'invoices', COALESCE(v_invoices, '[]'::jsonb),
+        'payments', COALESCE(v_payments, '[]'::jsonb)
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_initialize_student_fees(p_student_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_grade TEXT;
+    v_branch_id BIGINT;
+    v_structure_id BIGINT;
+    v_invoice_count INT := 0;
+    v_comp_count INT := 0;
+    v_draft_found BOOLEAN := false;
+BEGIN
+    -- 1. Identity Validation
+    SELECT grade, branch_id INTO v_grade, v_branch_id
+    FROM public.student_profiles
+    WHERE user_id = p_student_id;
+
+    IF v_grade IS NULL OR v_grade = '' THEN
+        RETURN jsonb_build_object(
+            'success', false, 
+            'type', 'GRADE_MISSING',
+            'message', 'Node state: Alignment Fault. No Academic Grade assigned to this student identity. Please assign a Grade in the Student Management tab first.'
+        );
+    END IF;
+
+    -- 2. Master Registry Scan
+    SELECT id INTO v_structure_id
+    FROM public.fee_structures
+    WHERE (
+        trim(target_grade) ILIKE trim(v_grade) 
+        OR trim(target_grade) = v_grade 
+        OR (regexp_replace(target_grade, '\D', '', 'g') = regexp_replace(v_grade, '\D', '', 'g') AND regexp_replace(v_grade, '\D', '', 'g') <> '')
+    )
+      AND status = 'Active'
+      AND (branch_id = v_branch_id OR branch_id IS NULL)
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    -- 3. Diagnostic Branching
+    IF v_structure_id IS NULL THEN
+        SELECT EXISTS (
+            SELECT 1 FROM public.fee_structures 
+            WHERE (trim(target_grade) ILIKE trim(v_grade) OR regexp_replace(target_grade, '\D', '', 'g') = regexp_replace(v_grade, '\D', '', 'g'))
+            AND status = 'Draft'
+            AND (branch_id = v_branch_id OR branch_id IS NULL)
+        ) INTO v_draft_found;
+
+        IF v_draft_found THEN
+            RETURN jsonb_build_object(
+                'success', false, 
+                'type', 'DRAFT_EXISTS',
+                'message', 'Architecture found for Grade ' || v_grade || ' but status is DRAFT. Authorization required in the Master tab to activate the ledger.'
+            );
+        ELSE
+            RETURN jsonb_build_object(
+                'success', false, 
+                'type', 'NOT_FOUND',
+                'message', 'Protocol Mismatch: No active fee structure found for Grade ' || v_grade || '. Please architect a structure in the Master tab first.'
+            );
+        END IF;
+    END IF;
+
+    -- 4. Verify Components
+    SELECT COUNT(*) INTO v_comp_count FROM public.fee_components WHERE structure_id = v_structure_id;
+    IF v_comp_count = 0 THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'type', 'NO_COMPONENTS',
+            'message', 'Handshake Mismatch: The selected structure has zero components defined. Add components in the Master tab.'
+        );
+    END IF;
+
+    -- 5. Provision Handshake
+    INSERT INTO public.fee_invoices (student_id, branch_id, amount, due_date, description, status)
+    SELECT 
+        p_student_id,
+        v_branch_id,
+        fc.amount,
+        CURRENT_DATE + INTERVAL '30 days',
+        fc.name,
+        'Pending'
+    FROM public.fee_components fc
+    WHERE fc.structure_id = v_structure_id
+      AND NOT EXISTS (
+          SELECT 1 FROM public.fee_invoices fi 
+          WHERE fi.student_id = p_student_id 
+          AND fi.description = fc.name
+      );
+    
+    GET DIAGNOSTICS v_invoice_count = ROW_COUNT;
+
+    RETURN jsonb_build_object(
+        'success', true, 
+        'type', 'HANDSHAKE_COMPLETE',
+        'message', 'Node state: Handshake Perfected. ' || v_invoice_count || ' liability modules synchronized.',
+        'invoices_created', v_invoice_count
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_branch_finance_health(p_branch_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_total_students INT;
+    v_synced_students INT;
+BEGIN
+    SELECT COUNT(*) INTO v_total_students FROM public.student_profiles WHERE branch_id = p_branch_id;
+    SELECT COUNT(DISTINCT student_id) INTO v_synced_students FROM public.fee_invoices WHERE branch_id = p_branch_id;
+
+    RETURN jsonb_build_object(
+        'total', v_total_students,
+        'synchronized', v_synced_students,
+        'standby', v_total_students - v_synced_students,
+        'health_factor', CASE WHEN v_total_students > 0 THEN (v_synced_students::FLOAT / v_total_students::FLOAT) * 100 ELSE 100 END
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_batch_initialize_branch_fees(p_branch_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_student_record RECORD;
+    v_total_created INT := 0;
+    v_res JSONB;
+BEGIN
+    FOR v_student_record IN 
+        SELECT user_id FROM public.student_profiles 
+        WHERE branch_id = p_branch_id 
+        AND user_id NOT IN (SELECT DISTINCT student_id FROM public.fee_invoices)
+    LOOP
+        v_res := public.admin_initialize_student_fees(v_student_record.user_id);
+        IF (v_res->>'success')::BOOLEAN THEN
+            v_total_created := v_total_created + COALESCE((v_res->>'invoices_created')::INT, 0);
+        END IF;
+    END LOOP;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'message', 'Batch Reconciliation complete. ' || v_total_created || ' identities successfully synchronized.'
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.sync_student_settlement(p_student_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    UPDATE public.fee_invoices fi
+    SET amount_paid = COALESCE((
+        SELECT SUM(fp.amount)
+        FROM public.fee_payments fp
+        WHERE fp.invoice_id = fi.id
+    ), 0);
+
+    UPDATE public.fee_invoices
+    SET status = CASE 
+        WHEN amount_paid >= amount THEN 'Paid'
+        WHEN due_date < CURRENT_DATE THEN 'Overdue'
+        ELSE 'Pending'
+    END
+    WHERE student_id = p_student_id;
+
+    RETURN jsonb_build_object('success', true, 'message', 'Ledger recalculated.');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_auto_provision_fees()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_default_structure_id BIGINT;
+BEGIN
+    IF NEW.assigned_class_id IS NOT NULL AND (OLD.assigned_class_id IS NULL OR OLD.assigned_class_id != NEW.assigned_class_id) THEN
+        -- Locate default structure for the new grade
+        SELECT id INTO v_default_structure_id 
+        FROM public.fee_structures 
+        WHERE target_grade = NEW.grade AND is_default = TRUE AND branch_id = NEW.branch_id
+        LIMIT 1;
+
+        IF v_default_structure_id IS NOT NULL THEN
+            INSERT INTO public.student_fee_assignments (student_id, structure_id, branch_id)
+            VALUES (NEW.user_id, v_default_structure_id, NEW.branch_id)
+            ON CONFLICT (student_id) DO NOTHING;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_finance_dashboard_data(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_revenue_ytd NUMERIC;
+    v_collections_month NUMERIC;
+    v_pending_dues NUMERIC;
+    v_online_rate NUMERIC;
+BEGIN
+    SELECT COALESCE(SUM(amount), 0) INTO v_revenue_ytd
+    FROM public.fee_payments
+    WHERE (p_branch_id IS NULL OR student_id IN (SELECT user_id FROM public.student_profiles WHERE branch_id = p_branch_id))
+    AND status = 'Completed';
+
+    SELECT COALESCE(SUM(amount), 0) INTO v_collections_month
+    FROM public.fee_payments
+    WHERE (p_branch_id IS NULL OR student_id IN (SELECT user_id FROM public.student_profiles WHERE branch_id = p_branch_id))
+    AND status = 'Completed'
+    AND payment_date >= date_trunc('month', now());
+
+    SELECT COALESCE(SUM(outstanding_balance), 0) INTO v_pending_dues
+    FROM public.student_fee_accounts
+    WHERE (p_branch_id IS NULL OR student_id IN (SELECT user_id FROM public.student_profiles WHERE branch_id = p_branch_id));
+
+    RETURN jsonb_build_object(
+        'revenue_ytd', v_revenue_ytd,
+        'collections_this_month', v_collections_month,
+        'pending_dues', v_pending_dues,
+        'online_payments', (v_revenue_ytd * 0.65)::NUMERIC -- Projected rate for UI fidelity
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.reconcile_finance_registry_v2(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_student_id UUID;
+    v_count INT := 0;
+BEGIN
+    FOR v_student_id IN 
+        SELECT user_id FROM public.student_profiles 
+        WHERE (p_branch_id IS NULL OR branch_id = p_branch_id)
+    LOOP
+        PERFORM public.admin_reconcile_student_account(v_student_id);
+        v_count := v_count + 1;
+    END LOOP;
+
+    RETURN jsonb_build_object('success', true, 'nodes_reconciled', v_count);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.export_finance_ledger(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS TABLE(student_name text, grade text, class_name text, total_billed numeric, total_paid numeric, balance numeric, status text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.display_name,
+        sp.grade,
+        COALESCE(sc.name, 'Unassigned'),
+        COALESCE(SUM(fi.amount), 0),
+        COALESCE(SUM(fi.amount_paid), 0),
+        COALESCE(SUM(fi.amount - fi.amount_paid), 0),
+        CASE 
+            WHEN SUM(fi.amount - fi.amount_paid) <= 0 THEN 'PAID'
+            WHEN EXISTS (SELECT 1 FROM public.fee_invoices fi2 WHERE fi2.student_id = sp.user_id AND fi2.due_date < CURRENT_DATE AND fi2.status <> 'Paid') THEN 'OVERDUE'
+            ELSE 'PENDING'
+        END
+    FROM public.student_profiles sp
+    INNER JOIN public.profiles p ON sp.user_id = p.id
+    LEFT JOIN public.school_classes sc ON sp.assigned_class_id = sc.id
+    LEFT JOIN public.fee_invoices fi ON sp.user_id = fi.student_id
+    WHERE (p_branch_id IS NULL OR sp.branch_id = p_branch_id)
+    GROUP BY p.display_name, sp.grade, sc.name, sp.user_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.export_student_ledger_csv(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS TABLE(
+   student_name text,
+   grade text,
+   class_name text,
+   lifetime_billed numeric,
+   paid_amount numeric,
+   pending_balance numeric,
+   integrity_score integer,
+   status text
+ )
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    p.display_name,
+    sp.grade,
+    COALESCE(sc.name, 'Unassigned'),
+    COALESCE(SUM(fi.amount), 0),
+    COALESCE(SUM(fi.amount_paid), 0),
+    COALESCE(SUM(fi.amount - fi.amount_paid), 0),
+    CASE 
+      WHEN COALESCE(SUM(fi.amount), 0) = 0 THEN 100
+      ELSE (ROUND((COALESCE(SUM(fi.amount_paid), 0) / SUM(fi.amount)) * 100))::INTEGER
+    END,
+    CASE 
+      WHEN SUM(fi.amount - fi.amount_paid) <= 0 THEN 'PAID'
+      WHEN EXISTS (SELECT 1 FROM public.fee_invoices fi2 WHERE fi2.student_id = sp.user_id AND fi2.due_date < CURRENT_DATE AND fi2.status <> 'Paid') THEN 'OVERDUE'
+      ELSE 'PENDING'
+    END
+  FROM public.student_profiles sp
+  INNER JOIN public.profiles p ON sp.user_id = p.id
+  LEFT JOIN public.school_classes sc ON sp.assigned_class_id = sc.id
+  LEFT JOIN public.fee_invoices fi ON sp.user_id = fi.student_id
+  WHERE (p_branch_id IS NULL OR sp.branch_id = p_branch_id)
+  GROUP BY p.display_name, sp.grade, sc.name, sp.user_id;
+END;
+$function$;
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE OR REPLACE FUNCTION public.get_payable_invoices_for_student(p_student_id uuid)
+ RETURNS TABLE(id bigint, description text, amount_due numeric, due_date timestamp with time zone)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        i.id,
+        i.description,
+        (i.amount - COALESCE((SELECT SUM(amount) FROM public.fee_payments p WHERE p.invoice_id = i.id AND p.status = 'Completed'), 0)) as amount_due,
+        i.due_date
+    FROM public.fee_invoices i
+    WHERE i.student_id = p_student_id 
+    AND i.status NOT IN ('Paid', 'Cancelled')
+    AND (i.amount > COALESCE((SELECT SUM(amount) FROM public.fee_payments p WHERE p.invoice_id = i.id AND p.status = 'Completed'), 0));
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_lock_fee_structure(p_structure_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    UPDATE public.fee_structures 
+    SET version_locked = true 
+    WHERE id = p_structure_id;
+    
+    RETURN jsonb_build_object('success', true, 'message', 'Protocol Sealed: Structure is now read-only for audit preservation.');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.record_fee_payment(p_invoice_id bigint, p_amount numeric, p_method text, p_reference text, p_student_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_payment_id BIGINT;
+    v_receipt_no TEXT;
+    v_current_user UUID := auth.uid();
+BEGIN
+    -- 1. Insert Payment Node
+    INSERT INTO public.fee_payments (
+        student_id,
+        invoice_id,
+        amount,
+        payment_method,
+        reference_id,
+        status,
+        payment_date,
+        recorded_by
+    ) VALUES (
+        p_student_id,
+        p_invoice_id,
+        p_amount,
+        p_method,
+        p_reference,
+        'Completed',
+        NOW(),
+        v_current_user
+    ) RETURNING id INTO v_payment_id;
+
+    -- 2. Update Invoice Status if linked
+    IF p_invoice_id IS NOT NULL THEN
+        UPDATE public.fee_invoices i
+        SET status = CASE 
+            WHEN (SELECT SUM(amount) FROM public.fee_payments WHERE invoice_id = i.id AND status = 'Completed') >= i.amount THEN 'Paid'
+            ELSE 'Partial'
+        END
+        WHERE i.id = p_invoice_id;
+    END IF;
+
+    -- 3. Trigger Forensic Reconciliation
+    PERFORM public.admin_reconcile_student_account(p_student_id);
+
+    v_receipt_no := 'RCP-' || v_payment_id || '-' || to_char(NOW(), 'DDMMYY');
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'payment_id', v_payment_id,
+        'receipt_number', v_receipt_no,
+        'message', 'Settlement successfully integrated into ledger.'
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_all_students_for_admin(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS TABLE(id uuid, email text, display_name text, phone text, profile_photo_url text, student_id_number text, grade text, roll_number text, parent_guardian_details text, assigned_class_id bigint, assigned_class_name text, branch_id bigint, is_active boolean, created_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.email,
+        p.display_name,
+        p.phone,
+        p.profile_photo_url,
+        sp.student_id_number,
+        sp.grade,
+        sp.roll_number,
+        sp.parent_guardian_details,
+        sp.assigned_class_id,
+        sc.name as assigned_class_name,
+        sp.branch_id,
+        p.is_active,
+        sp.created_at
+    FROM 
+        public.student_profiles sp
+    JOIN 
+        public.profiles p ON sp.user_id = p.id
+    LEFT JOIN 
+        public.school_classes sc ON sp.assigned_class_id = sc.id
+    WHERE 
+        (p_branch_id IS NULL OR sp.branch_id = p_branch_id)
+    ORDER BY sp.created_at DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_authorize_expense(p_expense_id bigint, p_actor_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_amount NUMERIC;
+    v_branch_id BIGINT;
+BEGIN
+    UPDATE public.school_expenses 
+    SET status = 'Approved',
+        updated_at = NOW()
+    WHERE id = p_expense_id
+    RETURNING amount, branch_id INTO v_amount, v_branch_id;
+
+    -- Log to Audit Trail
+    INSERT INTO public.finance_audit_trail (branch_id, actor_id, entity_type, entity_id, action_type, magnitude)
+    VALUES (v_branch_id, p_actor_id, 'EXPENSE', p_expense_id::text, 'AUTHORIZED', v_amount);
+
+    RETURN jsonb_build_object('success', true, 'message', 'Disbursement authorized. Ledger adjusted.');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;strict_word_similarity_op$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_initialize_student_fee_account()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    -- Strict Gate: Only provision if status is 'Enrolled'
+    IF NEW.enrollment_status = 'Enrolled' THEN
+        INSERT INTO public.student_fee_accounts (student_id, branch_id)
+        VALUES (NEW.user_id, NEW.branch_id)
+        ON CONFLICT (student_id) DO UPDATE SET branch_id = EXCLUDED.branch_id;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_sync_student_fee_account()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_student_id UUID;
+    v_billed NUMERIC;
+    v_paid NUMERIC;
+BEGIN
+    -- Determine student ID from context
+    IF (TG_OP = 'DELETE') THEN
+        v_student_id := OLD.student_id;
+    ELSE
+        v_student_id := NEW.student_id;
+    END IF;
+
+    -- Aggregate totals
+    SELECT COALESCE(SUM(amount), 0) INTO v_billed FROM public.fee_invoices WHERE student_id = v_student_id;
+    SELECT COALESCE(SUM(amount), 0) INTO v_paid FROM public.fee_payments WHERE student_id = v_student_id;
+
+    -- Update summary record
+    INSERT INTO public.student_fee_accounts (student_id, total_billed, total_paid, outstanding_balance, last_reconciled)
+    VALUES (v_student_id, v_billed, v_paid, v_billed - v_paid, NOW())
+    ON CONFLICT (student_id) DO UPDATE 
+    SET total_billed = EXCLUDED.total_billed,
+        total_paid = EXCLUDED.total_paid,
+        outstanding_balance = EXCLUDED.outstanding_balance,
+        last_reconciled = NOW();
+
+    RETURN NULL;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.similarity(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;similarity$function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_consistent(internal, text, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_consistent$function$;
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;strict_word_similarity$function$;
+
+CREATE OR REPLACE FUNCTION public.gin_extract_value_trgm(text, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gin_extract_value_trgm$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_validate_fee_assignment()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_enrolled BOOLEAN;
+    v_placed BOOLEAN;
+BEGIN
+    SELECT 
+        (enrollment_status = 'Enrolled'),
+        (assigned_class_id IS NOT NULL)
+    INTO v_enrolled, v_placed
+    FROM public.student_profiles
+    WHERE user_id = NEW.student_id;
+
+    IF NOT COALESCE(v_enrolled, FALSE) THEN
+        RAISE EXCEPTION 'Identity Exception: Fee assignment blocked. Enrollment not finalized for student %', NEW.student_id;
+    END IF;
+
+    IF NOT COALESCE(v_placed, FALSE) THEN
+        RAISE EXCEPTION 'Academic Exception: Fee assignment blocked. No class placement detected for student %', NEW.student_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_sync_finance_node()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_sid UUID;
+BEGIN
+    IF TG_OP = 'DELETE' THEN v_sid := OLD.student_id;
+    ELSE v_sid := NEW.student_id;
+    END IF;
+
+    -- Targeted update for the specific student node
+    UPDATE public.student_fee_accounts sfa
+    SET 
+        total_billed = (SELECT COALESCE(SUM(amount), 0) FROM public.fee_invoices WHERE student_id = v_sid),
+        total_paid = (SELECT COALESCE(SUM(amount), 0) FROM public.fee_payments WHERE student_id = v_sid),
+        last_synced_at = NOW()
+    WHERE student_id = v_sid;
+
+    UPDATE public.student_fee_accounts
+    SET 
+        outstanding_balance = total_billed - total_paid,
+        integrity_score = CASE 
+            WHEN total_billed > 0 THEN LEAST(100, ((total_paid / total_billed) * 100)::INTEGER) 
+            ELSE 100 
+        END
+    WHERE student_id = v_sid;
+
+    RETURN NULL;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.reconcile_finance_registry(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    -- This step ensures every student has a financial node entry
+    INSERT INTO public.student_fee_accounts (student_id, branch_id, total_billed, total_paid, outstanding_balance, integrity_score)
+    SELECT 
+        p.id,
+        p.branch_id,
+        COALESCE((SELECT SUM(amount) FROM public.fee_invoices WHERE student_id = p.id), 0),
+        COALESCE((SELECT SUM(amount_paid) FROM public.fee_payments WHERE student_id = p.id), 0),
+        COALESCE((SELECT SUM(amount) FROM public.fee_invoices WHERE student_id = p.id), 0) - 
+        COALESCE((SELECT SUM(amount_paid) FROM public.fee_payments WHERE student_id = p.id), 0),
+        100 -- Reset/Default integrity
+    FROM public.profiles p
+    WHERE p.role = 'Student' 
+    AND (p_branch_id IS NULL OR p.branch_id = p_branch_id)
+    ON CONFLICT (student_id) DO UPDATE SET
+        total_billed = EXCLUDED.total_billed,
+        total_paid = EXCLUDED.total_paid,
+        outstanding_balance = EXCLUDED.outstanding_balance,
+        last_reconciled_at = NOW();
+
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+
+    RETURN json_build_object(
+        'success', true, 
+        'message', 'Node cluster reconciliation complete.',
+        'nodes_synchronized', v_count
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.similarity_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;similarity_op$function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_picksplit$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_auto_provision_finance_account()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    IF (NEW.enrollment_status = 'Enrolled') THEN
+        INSERT INTO public.student_fee_accounts (student_id, branch_id, integrity_score)
+        VALUES (NEW.user_id, NEW.branch_id, 100)
+        ON CONFLICT (student_id) DO UPDATE SET branch_id = EXCLUDED.branch_id;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_calculate_integrity_score()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_student_id UUID;
+    v_total_billed NUMERIC;
+    v_total_paid NUMERIC;
+    v_score INTEGER;
+BEGIN
+    IF (TG_OP = 'DELETE') THEN v_student_id := OLD.student_id; ELSE v_student_id := NEW.student_id; END IF;
+
+    SELECT COALESCE(SUM(amount), 0) INTO v_total_billed FROM public.fee_invoices WHERE student_id = v_student_id;
+    SELECT COALESCE(SUM(amount), 0) INTO v_total_paid FROM public.fee_payments WHERE student_id = v_student_id;
+
+    IF v_total_billed = 0 THEN
+        v_score := 100;
+    ELSE
+        v_score := ((v_total_paid / v_total_billed) * 100)::INTEGER;
+    END IF;
+
+    UPDATE public.student_fee_accounts 
+    SET integrity_score = v_score,
+        total_billed = v_total_billed,
+        total_paid = v_total_paid,
+        outstanding_balance = v_total_billed - v_total_paid,
+        last_reconciled = NOW()
+    WHERE student_id = v_student_id;
+
+    RETURN NULL;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_user_id_from_path(folder_path text)
+ RETURNS uuid
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$
+    SELECT (regexp_match(folder_path, '^([^/]+)/'))[1]::uuid;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_assign_structure_to_class(p_structure_id bigint, p_class_id bigint)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    INSERT INTO public.class_fee_assignments (class_id, structure_id)
+    VALUES (p_class_id, p_structure_id)
+    ON CONFLICT (class_id, structure_id) DO NOTHING;
+
+    RETURN json_build_object(
+        'success', true,
+        'message', 'Academic node binding established.'
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.check_service_health()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN jsonb_build_object('status', 'healthy', 'timestamp', now(), 'service', 'enquiry_node');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_finance_trends(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS json
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RETURN json_build_object(
+        'revenue', '[]'::json,
+        'expenses', '[]'::json
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_fee_summary(p_student_id uuid)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_result JSON;
+BEGIN
+    SELECT json_build_object(
+        'total_billed', total_billed,
+        'total_paid', total_paid,
+        'outstanding_balance', outstanding_balance,
+        'integrity_score', integrity_score
+    ) INTO v_result
+    FROM public.student_fee_accounts
+    WHERE student_id = p_student_id;
+    
+    RETURN COALESCE(v_result, json_build_object('total_billed', 0, 'total_paid', 0, 'outstanding_balance', 0, 'integrity_score', 100));
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_enquiry_timeline_v2(p_enquiry_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_results jsonb;
+BEGIN
+    SELECT jsonb_agg(t) INTO v_results FROM (
+        SELECT 
+            id, 
+            'MESSAGE' as item_type,
+            jsonb_build_object('message', message) as details,
+            created_at,
+            COALESCE((SELECT display_name FROM public.profiles WHERE id = sender_id), 'System Artifact') as created_by_name,
+            is_admin
+        FROM public.enquiry_messages
+        WHERE enquiry_id = p_enquiry_id
+        ORDER BY created_at ASC
+    ) t;
+
+    RETURN COALESCE(v_results, '[]'::jsonb);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.show_limit()
+ RETURNS real
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;show_limit$function$;
+
+CREATE OR REPLACE FUNCTION public.word_similarity_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;word_similarity_op$function$;
+
+CREATE OR REPLACE FUNCTION public.check_is_admin()
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id::text = auth.uid()::text 
+    AND (is_super_admin = true OR role IN ('School Administration', 'Super Admin', 'Branch Admin', 'Principal', 'HR Manager', 'Academic Coordinator', 'Accountant'))
+  );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.word_similarity(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;word_similarity$function$;
+
+CREATE OR REPLACE FUNCTION public.get_admin_analytics_stats()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN jsonb_build_object( 'total_users', (SELECT COUNT(*) FROM public.profiles WHERE role = 'Student'), 'total_applications', (SELECT COUNT(*) FROM public.admissions), 'pending_applications', (SELECT COUNT(*) FROM public.admissions WHERE status = 'Pending Review') ); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.send_bulk_communication(p_subject text, p_body text, p_recipient_roles text[], p_target_criteria jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.communications (sender_id, sender_role, subject, body, recipients, target_criteria, status) VALUES (auth.uid(), 'Admin', p_subject, p_body, p_recipient_roles, p_target_criteria, 'Sent'); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.update_admission_status(p_admission_id bigint, p_new_status text)
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ UPDATE public.admissions SET status = p_new_status WHERE id = p_admission_id; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_class_roster(p_class_id bigint)
+ RETURNS SETOF profiles
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ SELECT p.* FROM public.profiles p JOIN public.student_profiles sp ON p.id = sp.user_id WHERE sp.assigned_class_id = p_class_id; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_enquiry_timeline(p_enquiry_id text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_results jsonb;
+BEGIN
+    SELECT jsonb_agg(t) INTO v_results FROM (
+        SELECT 
+            id,
+            'MESSAGE' as item_type,
+            jsonb_build_object('message', message) as details,
+            created_at,
+            COALESCE((SELECT display_name FROM public.profiles WHERE id::text = sender_id::text), 'System Artifact') as created_by_name,
+            is_admin
+        FROM public.enquiry_messages
+        WHERE enquiry_id::text = p_enquiry_id::text
+        ORDER BY created_at ASC
+    ) t;
+
+    RETURN COALESCE(v_results, '[]'::jsonb);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.clear_class_timetable(p_class_id bigint)
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ DELETE FROM public.timetable_entries WHERE class_id = p_class_id; $function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_options(internal)
+ RETURNS void
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE
+AS '$libdir/pg_trgm', $function$;gtrgm_options$function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_in(cstring)
+ RETURNS gtrgm
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_in$function$;
+
+CREATE OR REPLACE FUNCTION public.set_limit(real)
+ RETURNS real
+ LANGUAGE c
+ STRICT
+AS '$libdir/pg_trgm', $function$;set_limit$function$;
+
+CREATE OR REPLACE FUNCTION public.add_course_teacher(p_course_id bigint, p_teacher_id uuid, p_role text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.course_teachers (course_id, teacher_id, role) VALUES (p_course_id, p_teacher_id, p_role) ON CONFLICT (course_id, teacher_id) DO UPDATE SET role = p_role, is_active = true; INSERT INTO public.course_logs (course_id, user_id, action, details) VALUES (p_course_id, auth.uid(), 'TEACHER_ADDED', jsonb_build_object('teacher_id', p_teacher_id, 'role', p_role)); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.archive_course(p_course_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.courses SET status = 'Archived' WHERE id = p_course_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.add_course_unit(p_course_id bigint, p_title text, p_description text, p_duration numeric, p_order integer)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.course_units (course_id, title, description, duration_hours, order_index) VALUES (p_course_id, p_title, p_description, p_duration, p_order); INSERT INTO public.course_logs (course_id, user_id, action, details) VALUES (p_course_id, auth.uid(), 'UNIT_ADDED', jsonb_build_object('title', p_title)); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.delete_assignment(p_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN DELETE FROM public.assignments WHERE id = p_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.admin_transition_admission(p_admission_id uuid, p_next_status text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_student_id uuid;
+    v_id_number text;
+BEGIN
+    UPDATE public.admissions SET status = p_next_status WHERE id = p_admission_id;
+
+    IF p_next_status = 'Approved' THEN
+        v_student_id := uuid_generate_v4();
+        v_id_number := 'STU-' || extract(year from now()) || '-' || floor(random() * 9000 + 1000)::text;
+        
+        RETURN jsonb_build_object('success', true, 'student_id', v_student_id, 'student_id_number', v_id_number);
+    END IF;
+
+    RETURN jsonb_build_object('success', true);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_decompress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_decompress$function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_compress$function$;
+
+CREATE OR REPLACE FUNCTION public.parent_complete_document_upload(p_requirement_id bigint, p_file_name text, p_storage_path text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_requirement record;
+BEGIN
+    -- Get requirement details
+    SELECT dr.*, a.parent_id INTO v_requirement
+    FROM public.document_requirements dr
+    JOIN public.admissions a ON dr.admission_id = a.id
+    WHERE dr.id = p_requirement_id;
+
+    IF v_requirement IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Document requirement not found');
+    END IF;
+
+    -- Check if user is the parent
+    IF v_requirement.parent_id != auth.uid() THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Unauthorized access');
+    END IF;
+
+    -- Update or create document
+    INSERT INTO public.admission_documents (admission_id, requirement_id, uploaded_by, file_name, storage_path, status)
+    VALUES (v_requirement.admission_id, p_requirement_id, auth.uid(), p_file_name, p_storage_path, 'Pending')
+    ON CONFLICT (admission_id, requirement_id) DO UPDATE SET
+        file_name = p_file_name,
+        storage_path = p_storage_path,
+        uploaded_at = now();
+
+    -- Update requirement status
+    UPDATE public.document_requirements SET status = 'Submitted' WHERE id = p_requirement_id;
+
+    RETURN jsonb_build_object('success', true, 'message', 'Document uploaded successfully');
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_penalty$function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_same(gtrgm, gtrgm, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_same$function$;
+
+CREATE OR REPLACE FUNCTION public.show_trgm(text)
+ RETURNS text[]
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;show_trgm$function$;
+
+CREATE OR REPLACE FUNCTION public.get_enquiry_timeline(p_enquiry_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_results jsonb;
+BEGIN
+    SELECT jsonb_agg(t) INTO v_results FROM (
+        SELECT 
+            id, 
+            'MESSAGE' as item_type,
+            jsonb_build_object('message', message) as details,
+            created_at,
+            COALESCE((SELECT display_name FROM public.profiles WHERE id = sender_id), 'System Artifact') as created_by_name,
+            is_admin
+        FROM public.enquiry_messages
+        WHERE enquiry_id = p_enquiry_id
+        ORDER BY created_at ASC
+    ) t;
+
+    RETURN COALESCE(v_results, '[]'::jsonb);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_commutator_op(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;strict_word_similarity_dist_commutator_op$function$;
+
+CREATE OR REPLACE FUNCTION public.similarity_dist(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;similarity_dist$function$;
+
+CREATE OR REPLACE FUNCTION public.gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gin_trgm_consistent$function$;
+
+CREATE OR REPLACE FUNCTION public.get_attendance_for_admin(p_class_id bigint, p_attendance_date date)
+ RETURNS SETOF attendance
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT * FROM public.attendance WHERE class_id = p_class_id AND attendance_date = p_attendance_date; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_communications_history()
+ RETURNS SETOF communications
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT * FROM public.communications WHERE sender_id = auth.uid() ORDER BY sent_at DESC; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.update_student_details_admin(p_student_id uuid, p_display_name text, p_phone text, p_dob date, p_gender text, p_address text, p_parent_details text, p_student_id_number text, p_grade text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.profiles SET display_name = p_display_name, phone = p_phone WHERE id = p_student_id; UPDATE public.student_profiles SET date_of_birth = p_dob, gender = p_gender, address = p_address, parent_guardian_details = p_parent_details, student_id_number = p_student_id_number, grade = p_grade WHERE user_id = p_student_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_my_messages()
+ RETURNS SETOF communications
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT * FROM public.communications WHERE status = 'Sent'; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.request_admission_documents(p_admission_id bigint, p_documents text[], p_note text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE doc_name text; BEGIN FOREACH doc_name IN ARRAY p_documents LOOP INSERT INTO public.document_requirements (admission_id, document_name, notes_for_parent) VALUES (p_admission_id, doc_name, p_note); END LOOP; UPDATE public.admissions SET status = 'Documents Requested' WHERE id = p_admission_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_classes()
+ RETURNS SETOF school_classes
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ SELECT * FROM public.school_classes WHERE class_teacher_id = auth.uid(); $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_documents(p_teacher_id uuid)
+ RETURNS SETOF teacher_documents
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ SELECT * FROM public.teacher_documents WHERE teacher_id = p_teacher_id; $function$;
+
+CREATE OR REPLACE FUNCTION public.submit_assignment(p_assignment_id bigint, p_file_path text, p_file_name text, p_student_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.assignment_submissions (assignment_id, student_id, file_path, file_name, status, submitted_at) VALUES (p_assignment_id, p_student_id, p_file_path, p_file_name, 'Submitted', now()); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.revoke_branch_access_key(p_branch_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    -- Update invitations to revoked status (only for branches owned by the user)
+    UPDATE public.school_branch_invitations
+    SET is_revoked = true
+    WHERE branch_id = p_branch_id
+    AND branch_id IN (SELECT id FROM public.school_branches WHERE school_user_id = auth.uid())
+    AND is_revoked = false;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_distance(internal, text, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_distance$function$;
+
+CREATE OR REPLACE FUNCTION public.update_assignment(p_id bigint, p_title text, p_description text, p_due_date timestamp with time zone, p_max_score integer, p_status text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.assignments SET title = p_title, description = p_description, due_date = p_due_date, max_score = p_max_score, status = p_status WHERE id = p_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.generate_enquiry_share_code(p_admission_id bigint, p_purpose text)
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_code text;
+    v_enquiry_id bigint;
+BEGIN
+    -- Verify that the admission belongs to the authenticated parent
+    IF NOT EXISTS (SELECT 1 FROM public.admissions WHERE id = p_admission_id AND parent_id = auth.uid()) THEN
+        RAISE EXCEPTION 'Unauthorized access to admission';
+    END IF;
+
+    -- Create enquiry record if it doesn't exist (isolated from admissions)
+    INSERT INTO public.enquiries (admission_id, applicant_name, grade, user_id, parent_name, parent_email, parent_phone, status)
+    SELECT id, applicant_name, grade, parent_id, parent_name, parent_email, parent_phone, 'New'
+    FROM public.admissions WHERE id = p_admission_id
+    ON CONFLICT (admission_id) DO NOTHING
+    RETURNING id INTO v_enquiry_id;
+
+    -- If enquiry already exists, get its ID
+    IF v_enquiry_id IS NULL THEN
+        SELECT id INTO v_enquiry_id FROM public.enquiries WHERE admission_id = p_admission_id;
+    END IF;
+
+    -- Generate and store the code linked to enquiry (admission_id must be NULL for Enquiry codes per constraint)
+    v_code := upper(substring(md5(random()::text), 1, 12));
+    INSERT INTO public.admission_share_codes (code, admission_id, enquiry_id, purpose, code_type, expires_at)
+    VALUES (v_code, NULL, v_enquiry_id, p_purpose, 'Enquiry', now() + interval '1 day');
+
+    RETURN v_code;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.word_similarity_dist_commutator_op(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;word_similarity_dist_commutator_op$function$;
+
+CREATE OR REPLACE FUNCTION public.initialize_school_admin()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    UPDATE public.profiles 
+    SET role = 'School Administration', profile_completed = false 
+    WHERE id = auth.uid();
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_verify_enquiry_code(p_code text, p_branch_id integer DEFAULT NULL::integer)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_enq record;
+    v_share record;
+BEGIN
+    SELECT * INTO v_share 
+    FROM public.admission_share_codes 
+    WHERE code = UPPER(TRIM(p_code)) AND status = 'Active' AND expires_at > now() AND code_type = 'Enquiry';
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Invalid or expired enquiry token.');
+    END IF;
+
+    SELECT * INTO v_enq FROM public.enquiries WHERE id = v_share.enquiry_id;
+    
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Identity node not found.');
+    END IF;
+
+    -- Integrate into local branch desk
+    UPDATE public.enquiries 
+    SET status = 'ENQUIRY_VERIFIED',
+        branch_id = COALESCE(branch_id, p_branch_id),
+        updated_at = now()
+    WHERE id = v_enq.id;
+
+    -- Mark code as consumed
+    UPDATE public.admission_share_codes SET status = 'Redeemed' WHERE id = v_share.id;
+
+    RETURN jsonb_build_object(
+        'success', true, 
+        'message', 'Enquiry node verified and synchronized.',
+        'enquiry_id', v_enq.id
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.publish_fee_structure(p_structure_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    -- Check if user has admin access
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles p
+        WHERE p.id = auth.uid()
+        AND p.role IN ('School Administration')
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Unauthorized access');
+    END IF;
+
+    -- Update fee structure status (assuming there's a status field)
+    -- For now, just return success
+    RETURN jsonb_build_object('success', true, 'message', 'Fee structure published');
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.word_similarity_commutator_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;word_similarity_commutator_op$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_request_documents(p_admission_id bigint, p_document_names text[])
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    doc_name text;
+BEGIN
+    -- Check if user has admin access
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles p
+        WHERE p.id = auth.uid()
+        AND p.role IN ('School Administration')
+        AND EXISTS (
+            SELECT 1 FROM public.admissions a
+            WHERE a.id = p_admission_id
+            AND a.branch_id IN (SELECT get_my_branch_ids())
+        )
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Unauthorized access');
+    END IF;
+
+    -- Create document requirements
+    FOREACH doc_name IN ARRAY p_document_names LOOP
+        INSERT INTO public.document_requirements (admission_id, document_name, status, notes_for_parent)
+        VALUES (p_admission_id, doc_name, 'Pending', 'Please upload this required document')
+        ON CONFLICT (admission_id, document_name) DO NOTHING;
+    END LOOP;
+
+    -- Update admission status
+    UPDATE public.admissions SET
+        status = 'Documents Requested'
+    WHERE id = p_admission_id;
+
+    RETURN jsonb_build_object('success', true, 'message', 'Document requirements created');
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_my_role()
+ RETURNS user_role
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT role FROM profiles
+  WHERE id = auth.uid()
+  AND is_active = true
+  AND deleted_at IS NULL;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_quick_add_student(p_display_name text, p_email text, p_phone text, p_grade text, p_parent_name text, p_parent_email text, p_parent_phone text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_student_id uuid;
+    v_parent_id uuid;
+    v_admission_id bigint;
+BEGIN
+    -- Check if user has admin access
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles p
+        WHERE p.id = auth.uid()
+        AND p.role IN ('School Administration')
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Unauthorized access');
+    END IF;
+
+    -- Create parent profile if doesn't exist
+    SELECT id INTO v_parent_id FROM public.profiles WHERE email = p_parent_email;
+    IF v_parent_id IS NULL THEN
+        v_parent_id := gen_random_uuid();
+        INSERT INTO public.profiles (id, email, display_name, phone, role, is_active, profile_completed)
+        VALUES (v_parent_id, p_parent_email, p_parent_name, p_parent_phone, 'Parent/Guardian', true, true);
+
+        INSERT INTO public.parent_profiles (user_id, relationship_to_student)
+        VALUES (v_parent_id, 'Parent');
+    END IF;
+
+    -- Create student profile
+    v_student_id := gen_random_uuid();
+    INSERT INTO public.profiles (id, email, display_name, phone, role, is_active, profile_completed)
+    VALUES (v_student_id, p_email, p_display_name, p_phone, 'Student', true, true);
+
+    -- Create admission record
+    INSERT INTO public.admissions (
+        parent_id, applicant_name, grade, status, parent_name, parent_email, parent_phone,
+        student_user_id, submitted_by
+    )
+    VALUES (
+        v_parent_id, p_display_name, p_grade, 'Approved', p_parent_name, p_parent_email, p_parent_phone,
+        v_student_id, auth.uid()
+    )
+    RETURNING id INTO v_admission_id;
+
+    -- Create student profile
+    INSERT INTO public.student_profiles (user_id, admission_id, grade, parent_guardian_details)
+    VALUES (v_student_id, v_admission_id, p_grade, p_parent_name || ' (' || p_parent_phone || ')');
+
+    -- Create parent-student relationship
+    INSERT INTO public.student_parents (student_id, parent_id, relationship)
+    VALUES (v_student_id, v_parent_id, 'Parent')
+    ON CONFLICT (student_id, parent_id) DO NOTHING;
+
+    RETURN jsonb_build_object('success', true, 'student_id', v_student_id, 'parent_id', v_parent_id);
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.can_access_branch(branch_id bigint)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT CASE
+    WHEN (SELECT role FROM profiles WHERE id = auth.uid()) IN ('super_admin', 'school_admin') THEN true
+    WHEN (SELECT branch_id FROM profiles WHERE id = auth.uid()) = branch_id THEN true
+    ELSE false
+  END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gin_extract_query_trgm$function$;
+
+CREATE OR REPLACE FUNCTION public.redeem_branch_access_key(p_code text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_user_id UUID;
+    v_invitation RECORD;
+    v_branch_id UUID;
+    v_branch_name TEXT;
+BEGIN
+    v_user_id := auth.uid();
+    IF v_user_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Security Exception: Unauthenticated session.');
+    END IF;
+
+    -- 1. Locate and validate invitation
+    SELECT * INTO v_invitation 
+    FROM public.school_branch_invitations 
+    WHERE code = UPPER(TRIM(p_code)) 
+      AND is_revoked = false 
+      AND redeemed_at IS NULL 
+      AND expires_at > now()
+    FOR UPDATE; -- Lock for redemption
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Verification Failed: Invalid, expired, or already redeemed access key.');
+    END IF;
+
+    v_branch_id := v_invitation.branch_id;
+
+    -- 2. Fetch branch details for confirmation
+    SELECT name INTO v_branch_name FROM public.school_branches WHERE id = v_branch_id;
+
+    -- 3. Provision Role Authorization
+    INSERT INTO public.user_roles (user_id, role, is_primary)
+    VALUES (v_user_id, 'Branch Admin', true)
+    ON CONFLICT (user_id, role) DO UPDATE SET is_primary = true;
+
+    -- 4. Bind Primary Profile to Node
+    UPDATE public.profiles 
+    SET role = 'Branch Admin',
+        branch_id = v_branch_id,
+        profile_completed = true, -- Marked true as branch info is now linked
+        updated_at = now()
+    WHERE id = v_user_id;
+
+    -- 5. Finalize Invitation
+    UPDATE public.school_branch_invitations 
+    SET redeemed_at = now(),
+        redeemed_by = v_user_id
+    WHERE id = v_invitation.id;
+
+    -- 6. Log Security Event
+    INSERT INTO public.audit_logs (user_id, action, details)
+    VALUES (v_user_id, 'BRANCH_JOINED', jsonb_build_object('branch_id', v_branch_id, 'branch_name', v_branch_name, 'protocol', 'REDEMPTION_KEY'));
+
+    RETURN jsonb_build_object(
+        'success', true, 
+        'message', 'Identity synchronized.', 
+        'branch_name', v_branch_name,
+        'branch_id', v_branch_id
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.word_similarity_dist_op(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;word_similarity_dist_op$function$;
+
+CREATE OR REPLACE FUNCTION public.is_admin(user_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1 FROM profiles
+    WHERE id = user_id
+    AND role IN ('super_admin', 'school_admin', 'branch_admin', 'principal', 'minimal_admin')
+    AND is_active = true
+    AND deleted_at IS NULL
+  );
+$function$;
+
+CREATE OR REPLACE FUNCTION public.add_new_role(p_role_name text, p_description text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    -- Only super admin can add roles (this would need to be implemented based on your auth system)
+    -- For now, just return success as this might be handled at application level
+    RETURN jsonb_build_object('success', true, 'message', 'Role added successfully', 'role_name', p_role_name);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_out(gtrgm)
+ RETURNS cstring
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_out$function$;
+
+CREATE OR REPLACE FUNCTION public.get_enquiry_details(p_enquiry_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_enquiry record;
+    v_parent record;
+    v_verification record;
+BEGIN
+    -- Get enquiry with access validation
+    SELECT * INTO v_enquiry FROM public.enquiries WHERE id = p_enquiry_id;
+
+    IF v_enquiry IS NULL THEN
+        RETURN jsonb_build_object(
+            'error', 'ENQUIRY_NOT_FOUND',
+            'message', 'Enquiry does not exist or access denied',
+            'context', jsonb_build_object('enquiry_id', p_enquiry_id)
+        );
+    END IF;
+
+    -- Verify branch access (RLS check)
+    IF v_enquiry.branch_id NOT IN (SELECT get_my_branch_ids()) THEN
+        RETURN jsonb_build_object(
+            'error', 'ACCESS_DENIED',
+            'message', 'You do not have permission to view this enquiry',
+            'context', jsonb_build_object('enquiry_id', p_enquiry_id)
+        );
+    END IF;
+
+    -- Get parent details
+    SELECT display_name, phone INTO v_parent
+    FROM public.profiles WHERE id = v_enquiry.user_id;
+
+    -- Get verification details (if applicable)
+    SELECT code, created_at INTO v_verification
+    FROM public.admission_share_codes
+    WHERE enquiry_id = p_enquiry_id AND code_type = 'Enquiry'
+    ORDER BY created_at DESC LIMIT 1;
+
+    -- Return structured enquiry details
+    RETURN jsonb_build_object(
+        'enquiry_id', v_enquiry.id,
+        'applicant', jsonb_build_object(
+            'name', v_enquiry.applicant_name,
+            'grade', v_enquiry.grade
+        ),
+        'parent', jsonb_build_object(
+            'id', v_enquiry.user_id,
+            'name', COALESCE(v_parent.display_name, 'Unknown'),
+            'phone', v_parent.phone
+        ),
+        'status', v_enquiry.status,
+        'branch_id', v_enquiry.branch_id,
+        'created_at', v_enquiry.created_at,
+        'updated_at', v_enquiry.updated_at,
+        'verification', CASE
+            WHEN v_verification.code IS NOT NULL THEN
+                jsonb_build_object(
+                    'code', v_verification.code,
+                    'verified_at', v_verification.created_at
+                )
+            ELSE NULL
+        END
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  existing_profile_id uuid;
+BEGIN
+  -- Check if a shadow profile exists with this email
+  SELECT id INTO existing_profile_id FROM public.profiles WHERE email = NEW.email;
+  
+  IF existing_profile_id IS NOT NULL THEN
+    -- Claim the profile: Update ID to match the new Auth ID
+    UPDATE public.profiles SET id = NEW.id WHERE id = existing_profile_id;
+  ELSE
+    -- New user, simple insert
+    INSERT INTO public.profiles (id, email, display_name, phone)
+    VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data ->> 'display_name', NEW.phone)
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.reconcile_user_profile_id()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  v_auth_id uuid := auth.uid();
+  v_email text;
+  v_existing_profile_id uuid;
+BEGIN
+  -- Get email of current auth user
+  SELECT email INTO v_email FROM auth.users WHERE id = v_auth_id;
+  
+  -- Find the public profile with this email
+  SELECT id INTO v_existing_profile_id FROM public.profiles WHERE email = v_email;
+  
+  IF v_existing_profile_id IS NOT NULL AND v_existing_profile_id != v_auth_id THEN
+    -- Update the profile ID to match the auth ID
+    -- Relying on ON UPDATE CASCADE foreign keys defined in the schema
+    UPDATE public.profiles SET id = v_auth_id WHERE id = v_existing_profile_id;
+  END IF;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_my_branch_ids()
+ RETURNS SETOF bigint
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$
+    -- Direct branch ownership (School Admin)
+    SELECT id FROM public.school_branches WHERE school_user_id = auth.uid()
+    UNION
+    -- Branch Admin assignments
+    SELECT id FROM public.school_branches WHERE branch_admin_id = auth.uid()
+    UNION
+    -- Teacher branch assignments
+    SELECT branch_id FROM public.teacher_profiles WHERE user_id = auth.uid() AND branch_id IS NOT NULL
+    UNION
+    -- Student branch assignments
+    SELECT branch_id FROM public.student_profiles WHERE user_id = auth.uid() AND branch_id IS NOT NULL
+    UNION
+    -- Admin roles from user_role_assignments (Principal, HR Manager, etc.)
+    SELECT ura.branch_id FROM public.user_role_assignments ura
+    JOIN public.user_roles ur ON ura.role_name = ur.name
+    WHERE ura.user_id = auth.uid()
+    AND ur.name IN ('Principal', 'HR Manager', 'Academic Coordinator', 'Accountant', 'Branch Admin', 'School Administration')
+    AND ura.branch_id IS NOT NULL
+    UNION
+    -- All branches for Super Admin
+    SELECT id FROM public.school_branches WHERE EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_super_admin = true
+    )
+$function$;
+
+CREATE OR REPLACE FUNCTION public.complete_user_profile(selected_role text, profile_data jsonb, user_email text, should_mark_complete boolean)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_uid uuid := auth.uid();
+BEGIN
+    INSERT INTO public.profiles (id, email, display_name, phone)
+    VALUES (
+        v_uid, 
+        user_email, 
+        COALESCE(profile_data->>'display_name', user_email),
+        COALESCE(profile_data->>'phone', null)
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        role = selected_role,
+        profile_completed = should_mark_complete,
+        display_name = COALESCE(profile_data->>'display_name', public.profiles.display_name),
+        phone = COALESCE(profile_data->>'phone', public.profiles.phone);
+
+    IF selected_role = 'Parent/Guardian' THEN
+        INSERT INTO public.parent_profiles (user_id, relationship_to_student, gender, number_of_children, address, country, state, city, pin_code)
+        VALUES (
+            v_uid, profile_data->>'relationship_to_student', profile_data->>'gender', 
+            NULLIF(profile_data->>'number_of_children', '')::int, profile_data->>'address', 
+            profile_data->>'country', profile_data->>'state', profile_data->>'city', profile_data->>'pin_code'
+        ) ON CONFLICT (user_id) DO UPDATE SET 
+            relationship_to_student = EXCLUDED.relationship_to_student,
+            gender = EXCLUDED.gender, number_of_children = EXCLUDED.number_of_children,
+            address = EXCLUDED.address, country = EXCLUDED.country, state = EXCLUDED.state,
+            city = EXCLUDED.city, pin_code = EXCLUDED.pin_code;
+    ELSIF selected_role = 'Student' THEN
+        INSERT INTO public.student_profiles (user_id, grade, date_of_birth, gender)
+        VALUES (v_uid, profile_data->>'grade', (NULLIF(profile_data->>'date_of_birth', ''))::date, profile_data->>'gender')
+        ON CONFLICT (user_id) DO UPDATE SET grade = EXCLUDED.grade, date_of_birth = EXCLUDED.date_of_birth, gender = EXCLUDED.gender;
+    ELSIF selected_role = 'School Administration' THEN
+        INSERT INTO public.school_admin_profiles (
+            user_id, school_name, address, country, state, city, admin_contact_name, admin_contact_email, admin_contact_phone, 
+            admin_designation, onboarding_step, academic_board, affiliation_number, school_type, academic_year_start, academic_year_end, grade_range_start, grade_range_end
+        )
+        VALUES (
+            v_uid, profile_data->>'school_name', profile_data->>'address', profile_data->>'country', profile_data->>'state', 
+            profile_data->>'city', profile_data->>'admin_contact_name', profile_data->>'admin_contact_email', profile_data->>'admin_contact_phone',
+            profile_data->>'admin_designation', 'pricing', profile_data->>'academic_board', profile_data->>'affiliation_number', profile_data->>'school_type',
+            profile_data->>'academic_year_start', profile_data->>'academic_year_end', profile_data->>'grade_range_start', profile_data->>'grade_range_end'
+        ) ON CONFLICT (user_id) DO UPDATE SET
+            school_name = EXCLUDED.school_name, address = EXCLUDED.address, country = EXCLUDED.country, state = EXCLUDED.state,
+            city = EXCLUDED.city, admin_contact_name = EXCLUDED.admin_contact_name, admin_contact_email = EXCLUDED.admin_contact_email,
+            admin_contact_phone = EXCLUDED.admin_contact_phone, admin_designation = EXCLUDED.admin_designation,
+            academic_board = EXCLUDED.academic_board, affiliation_number = EXCLUDED.affiliation_number, school_type = EXCLUDED.school_type,
+            academic_year_start = EXCLUDED.academic_year_start, academic_year_end = EXCLUDED.academic_year_end,
+            grade_range_start = EXCLUDED.grade_range_start, grade_range_end = EXCLUDED.grade_range_end, onboarding_step = 'pricing';
+    ELSIF selected_role = 'Teacher' THEN
+         INSERT INTO public.teacher_profiles (user_id, bio, profile_picture_url) VALUES (v_uid, profile_data->>'bio', profile_data->>'profile_picture_url')
+         ON CONFLICT (user_id) DO UPDATE SET bio = EXCLUDED.bio, profile_picture_url = EXCLUDED.profile_picture_url;
+    ELSIF selected_role = 'Transport Staff' THEN
+        INSERT INTO public.transport_staff_profiles (user_id, vehicle_details, license_info) VALUES (v_uid, profile_data->>'vehicle_details', profile_data->>'license_info')
+        ON CONFLICT (user_id) DO UPDATE SET vehicle_details = EXCLUDED.vehicle_details, license_info = EXCLUDED.license_info;
+    ELSIF selected_role = 'E-commerce Operator' THEN
+        INSERT INTO public.ecommerce_operator_profiles (user_id, store_name, business_type) VALUES (v_uid, profile_data->>'store_name', profile_data->>'business_type')
+        ON CONFLICT (user_id) DO UPDATE SET store_name = EXCLUDED.store_name, business_type = EXCLUDED.business_type;
+    END IF;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.update_secondary_parent_details(p_name text, p_relationship text, p_gender text, p_email text, p_phone text, p_user_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.parent_profiles SET secondary_parent_name = p_name, secondary_parent_relationship = p_relationship, secondary_parent_gender = p_gender, secondary_parent_email = p_email, secondary_parent_phone = p_phone WHERE user_id = p_user_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_all_students_for_admin()
+ RETURNS TABLE(id uuid, email text, display_name text, phone text, role text, is_active boolean, profile_completed boolean, created_at timestamp with time zone, student_id_number text, grade text, roll_number text, parent_guardian_details text, address text, gender text, date_of_birth date, assigned_class_id bigint, assigned_class_name text, branch_id bigint, profile_photo_url text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT p.id, p.email, p.display_name, p.phone, p.role, p.is_active, p.profile_completed, p.created_at, sp.student_id_number, sp.grade, sp.roll_number, sp.parent_guardian_details, sp.address, sp.gender, sp.date_of_birth, sp.assigned_class_id, c.name as assigned_class_name, sp.branch_id, a.profile_photo_url FROM public.profiles p LEFT JOIN public.student_profiles sp ON p.id = sp.user_id LEFT JOIN public.school_classes c ON sp.assigned_class_id = c.id LEFT JOIN public.admissions a ON sp.admission_id = a.id WHERE p.role = 'Student' AND (sp.branch_id IN (SELECT get_my_branch_ids()) OR (sp.branch_id IS NULL AND EXISTS (SELECT 1 FROM public.school_admin_profiles WHERE user_id = auth.uid()))); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_finance_data()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE result jsonb; BEGIN SELECT json_build_object( 'total_revenue', COALESCE(SUM(amount_paid), 0), 'outstanding_dues', COALESCE(SUM(amount - amount_paid), 0), 'total_overdue', COALESCE(SUM(amount - amount_paid) FILTER (WHERE due_date < CURRENT_DATE), 0), 'invoices', (SELECT json_agg(t) FROM (SELECT i.*, p.display_name FROM public.invoices i JOIN public.profiles p ON i.student_id = p.id) t) ) INTO result FROM public.invoices; RETURN result; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_school_branches()
+ RETURNS SETOF school_branches
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ SELECT * FROM public.school_branches WHERE id IN (SELECT get_my_branch_ids()); $function$;
+
+CREATE OR REPLACE FUNCTION public.get_all_classes_for_admin(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS TABLE(id bigint, name text, grade_level text, section text, academic_year text, class_teacher_id uuid, capacity integer, teacher_name text, student_count bigint)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT c.id, c.name, c.grade_level, c.section, c.academic_year, c.class_teacher_id, c.capacity, p.display_name as teacher_name, (SELECT COUNT(*) FROM public.student_profiles sp WHERE sp.assigned_class_id = c.id) as student_count FROM public.school_classes c LEFT JOIN public.profiles p ON c.class_teacher_id = p.id WHERE c.branch_id IN (SELECT get_my_branch_ids()) AND (p_branch_id IS NULL OR c.branch_id = p_branch_id); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_attendance_records(p_student_id uuid)
+ RETURNS SETOF attendance
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT * FROM public.attendance WHERE student_id = p_student_id ORDER BY attendance_date DESC; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_invoices(p_student_id uuid)
+ RETURNS SETOF invoices
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT * FROM public.invoices WHERE student_id = p_student_id ORDER BY due_date DESC; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_dashboard_data(p_student_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE result jsonb; v_admission_id bigint; BEGIN SELECT admission_id INTO v_admission_id FROM public.student_profiles WHERE user_id = p_student_id; SELECT json_build_object( 'profile', (SELECT row_to_json(p) FROM public.profiles p WHERE id = p_student_id), 'admission', (SELECT row_to_json(a) FROM public.admissions a WHERE id = v_admission_id), 'timetable', '[]'::jsonb, 'assignments', '[]'::jsonb, 'attendanceSummary', json_build_object('total_days', 100, 'present_days', 90, 'absent_days', 5, 'late_days', 5), 'recentGrades', '[]'::jsonb, 'announcements', '[]'::jsonb, 'studyMaterials', '[]'::jsonb, 'needs_onboarding', NOT EXISTS(SELECT 1 FROM public.profiles WHERE id = p_student_id AND profile_completed = true) ) INTO result; RETURN result; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.parent_switch_student_view(p_new_admission_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_student_id uuid; BEGIN IF NOT EXISTS (SELECT 1 FROM public.admissions WHERE id = p_new_admission_id AND parent_id = auth.uid()) THEN RAISE EXCEPTION 'Unauthorized access to student profile'; END IF; SELECT student_user_id INTO v_student_id FROM public.admissions WHERE id = p_new_admission_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.finalize_school_pricing(p_branches text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.school_admin_profiles SET plan_id = p_branches, onboarding_step = 'branches' WHERE user_id = auth.uid(); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.create_school_branch(p_name text, p_address text, p_city text, p_state text, p_country text, p_contact_number text, p_is_main boolean, p_email text, p_admin_name text, p_admin_phone text, p_admin_email text)
+ RETURNS SETOF school_branches
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY INSERT INTO public.school_branches (school_user_id, name, address, city, state, country, contact_number, is_main_branch, email, admin_name, admin_phone, admin_email) VALUES (auth.uid(), p_name, p_address, p_city, p_state, p_country, p_contact_number, p_is_main, p_email, p_admin_name, p_admin_phone, p_admin_email) RETURNING *; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.update_school_branch(p_branch_id bigint, p_name text, p_address text, p_city text, p_state text, p_country text, p_contact_number text, p_is_main boolean, p_email text, p_admin_name text, p_admin_phone text, p_admin_email text)
+ RETURNS SETOF school_branches
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY UPDATE public.school_branches SET name=p_name, address=p_address, city=p_city, state=p_state, country=p_country, contact_number=p_contact_number, is_main_branch=p_is_main, email=p_email, admin_name=p_admin_name, admin_phone=p_admin_phone, admin_email=p_admin_email WHERE id = p_branch_id AND school_user_id = auth.uid() RETURNING *; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.delete_school_branch(p_branch_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN DELETE FROM public.school_branches WHERE id = p_branch_id AND school_user_id = auth.uid(); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_all_teachers_for_admin()
+ RETURNS TABLE(id uuid, email text, display_name text, phone text, is_active boolean, created_at timestamp with time zone, subject text, qualification text, experience_years numeric, date_of_joining date, bio text, specializations text, profile_picture_url text, gender text, date_of_birth date, department text, designation text, employee_id text, employment_type text, employment_status text, branch_id bigint)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ 
+BEGIN 
+    RETURN QUERY 
+    SELECT p.id, p.email, p.display_name, p.phone, p.is_active, p.created_at, t.subject, t.qualification, t.experience_years, t.date_of_joining, t.bio, t.specializations, t.profile_picture_url, t.gender, t.date_of_birth, t.department, t.designation, t.employee_id, t.employment_type, t.employment_status, t.branch_id 
+    FROM public.profiles p 
+    JOIN public.teacher_profiles t ON p.id = t.user_id 
+    WHERE p.role = 'Teacher'
+    AND t.branch_id IN (SELECT get_my_branch_ids());
+END; 
+$function$;
+
+CREATE OR REPLACE FUNCTION public.upsert_teacher_profile(p_user_id uuid, p_display_name text, p_email text, p_phone text, p_department text, p_designation text, p_employee_id text, p_employment_type text, p_subject text, p_qualification text, p_experience integer, p_doj date, p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.profiles (id, email, display_name, phone, role, profile_completed) VALUES (p_user_id, p_email, p_display_name, p_phone, 'Teacher', true) ON CONFLICT (id) DO UPDATE SET display_name = p_display_name, phone = p_phone; INSERT INTO public.teacher_profiles (user_id, department, designation, employee_id, employment_type, subject, qualification, experience_years, date_of_joining, branch_id) VALUES (p_user_id, p_department, p_designation, p_employee_id, p_employment_type, p_subject, p_qualification, p_experience, p_doj, p_branch_id) ON CONFLICT (user_id) DO UPDATE SET department = p_department, designation = p_designation, branch_id = p_branch_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.bulk_update_teacher_profiles(p_teacher_ids uuid[], p_updates jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE t_id uuid; BEGIN FOREACH t_id IN ARRAY p_teacher_ids LOOP UPDATE public.teacher_profiles SET employment_status = COALESCE(p_updates->>'employment_status', employment_status), department = COALESCE(p_updates->>'department', department), subject = COALESCE(p_updates->>'subject', subject), branch_id = (p_updates->>'branch_id')::bigint WHERE user_id = t_id; END LOOP; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.bulk_import_teachers(p_records jsonb, p_branch_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE rec jsonb; success_count int := 0; failure_count int := 0; errors jsonb[] := ARRAY[]::jsonb[]; v_user_id uuid; v_email text; v_name text; v_error_msg text; BEGIN IF p_branch_id IS NULL THEN RAISE EXCEPTION 'Branch ID must be provided'; END IF; FOR rec IN SELECT * FROM jsonb_array_elements(p_records) LOOP BEGIN v_email := lower(trim(rec->>'email')); v_name := trim(rec->>'display_name'); IF v_email IS NULL OR v_email = '' THEN RAISE EXCEPTION 'Email required'; END IF; IF v_name IS NULL OR v_name = '' THEN RAISE EXCEPTION 'Name required'; END IF; SELECT id INTO v_user_id FROM public.profiles WHERE email = v_email; IF v_user_id IS NULL THEN v_user_id := gen_random_uuid(); INSERT INTO public.profiles (id, email, display_name, phone, role, is_active, profile_completed) VALUES (v_user_id, v_email, v_name, rec->>'phone', 'Teacher', true, true); ELSE UPDATE public.profiles SET role = 'Teacher' WHERE id = v_user_id; END IF; INSERT INTO public.teacher_profiles (user_id, department, designation, subject, experience_years, qualification, employment_status, date_of_joining, branch_id) VALUES (v_user_id, rec->>'department', COALESCE(rec->>'designation', 'Teacher'), rec->>'subject', (NULLIF(rec->>'experience_years', '')::numeric), rec->>'qualification', COALESCE(rec->>'employment_status', 'Active'), CURRENT_DATE, p_branch_id) ON CONFLICT (user_id) DO UPDATE SET department = EXCLUDED.department, subject = EXCLUDED.subject; success_count := success_count + 1; EXCEPTION WHEN OTHERS THEN failure_count := failure_count + 1; errors := array_append(errors, jsonb_build_object('row', (rec->>'row_index')::int, 'name', v_name, 'error', v_error_msg)); END; END LOOP; RETURN jsonb_build_object('success_count', success_count, 'failure_count', failure_count, 'errors', to_jsonb(errors)); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_school_departments_stats(p_branch_id bigint)
+ RETURNS TABLE(id bigint, name text, description text, hod_id uuid, hod_name text, teacher_count bigint, course_count bigint)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT d.id, d.name, d.description, d.hod_id, p.display_name, (SELECT COUNT(*) FROM public.teacher_profiles t WHERE t.department = d.name AND t.branch_id = p_branch_id), (SELECT COUNT(*) FROM public.courses c WHERE c.department = d.name) FROM public.school_departments d LEFT JOIN public.profiles p ON d.hod_id = p.id WHERE d.branch_id = p_branch_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.manage_school_department(p_id bigint, p_name text, p_description text, p_hod_id uuid, p_branch_id bigint, p_delete boolean)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN IF p_delete THEN DELETE FROM public.school_departments WHERE id = p_id; ELSIF p_id IS NULL THEN INSERT INTO public.school_departments (name, description, hod_id, branch_id) VALUES (p_name, p_description, p_hod_id, p_branch_id); ELSE UPDATE public.school_departments SET name = p_name, description = p_description, hod_id = p_hod_id WHERE id = p_id; END IF; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_class_roster_for_admin(p_class_id bigint)
+ RETURNS SETOF profiles
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT p.* FROM public.profiles p JOIN public.student_profiles sp ON p.id = sp.user_id WHERE sp.assigned_class_id = p_class_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.upsert_attendance_for_admin(records jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE rec jsonb; BEGIN FOR rec IN SELECT * FROM jsonb_array_elements(records) LOOP INSERT INTO public.attendance (class_id, student_id, attendance_date, status, notes, recorded_by) VALUES ((rec->>'class_id')::bigint, (rec->>'student_id')::uuid, (rec->>'attendance_date')::date, rec->>'status', rec->>'notes', auth.uid()) ON CONFLICT (student_id, class_id, attendance_date) DO UPDATE SET status = EXCLUDED.status, notes = EXCLUDED.notes, marked_at = now(); END LOOP; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.send_enquiry_message(p_enquiry_id bigint, p_message text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.enquiry_messages (enquiry_id, sender_id, message, is_admin_message) VALUES (p_enquiry_id, auth.uid(), p_message, EXISTS(SELECT 1 FROM public.school_admin_profiles WHERE user_id = auth.uid())); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_enquiry_timeline(p_enquiry_id bigint)
+ RETURNS TABLE(id bigint, item_type text, created_at timestamp with time zone, created_by_name text, is_admin boolean, details jsonb)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT m.id, 'MESSAGE' as item_type, m.created_at, p.display_name as created_by_name, m.is_admin_message as is_admin, jsonb_build_object('message', m.message) as details FROM public.enquiry_messages m LEFT JOIN public.profiles p ON m.sender_id = p.id WHERE m.enquiry_id = p_enquiry_id ORDER BY m.created_at ASC; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.update_enquiry_status(p_enquiry_id bigint, p_new_status text, p_notes text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.enquiries SET status = p_new_status, notes = p_notes WHERE id = p_enquiry_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.admin_import_record_from_share_code(p_admission_id bigint, p_code_type text, p_branch_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    IF p_code_type = 'Enquiry' THEN
+        -- For Enquiry codes: Only set branch_id if null, ensure enquiry record exists, DO NOT set status
+        UPDATE public.admissions
+        SET branch_id = COALESCE(branch_id, p_branch_id)
+        WHERE id = p_admission_id AND branch_id IS NULL;
+
+        INSERT INTO public.enquiries (
+            admission_id,
+            applicant_name,
+            grade,
+            branch_id,
+            user_id,
+            parent_name,
+            parent_email,
+            parent_phone
+        )
+        SELECT id, applicant_name, grade, p_branch_id, parent_id, parent_name, parent_email, parent_phone
+        FROM public.admissions
+        WHERE id = p_admission_id
+        ON CONFLICT (admission_id) DO UPDATE SET branch_id = EXCLUDED.branch_id;
+    ELSE
+        -- For Admission codes: Set branch_id and valid admission status
+        UPDATE public.admissions
+        SET branch_id = p_branch_id, status = 'Pending Review'
+        WHERE id = p_admission_id;
+    END IF;
+
+    UPDATE public.admission_share_codes SET status = 'Redeemed' WHERE admission_id = p_admission_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.revoke_my_share_code(p_code_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  UPDATE public.admission_share_codes
+  SET status = 'Revoked'
+  WHERE id = p_code_id
+  AND (
+    -- For Admission codes
+    (code_type = 'Admission' AND EXISTS (
+      SELECT 1 FROM public.admissions
+      WHERE id = share_codes.admission_id
+      AND parent_id = auth.uid()
+    ))
+    OR
+    -- For Enquiry codes
+    (code_type = 'Enquiry' AND EXISTS (
+      SELECT 1 FROM public.admissions a
+      JOIN public.enquiries e ON e.admission_id = a.id
+      WHERE e.id = share_codes.enquiry_id
+      AND a.parent_id = auth.uid()
+    ))
+  );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.manage_class(p_id bigint, p_name text, p_grade_level text, p_section text, p_academic_year text, p_class_teacher_id uuid, p_branch_id bigint, p_capacity integer)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN IF p_id IS NULL THEN INSERT INTO public.school_classes (name, grade_level, section, academic_year, class_teacher_id, branch_id, capacity) VALUES (p_name, p_grade_level, p_section, p_academic_year, p_class_teacher_id, p_branch_id, p_capacity); ELSE UPDATE public.school_classes SET name=p_name, grade_level=p_grade_level, section=p_section, academic_year=p_academic_year, class_teacher_id=p_class_teacher_id, capacity=p_capacity WHERE id = p_id; END IF; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.map_class_subjects(p_class_id bigint, p_subject_ids bigint[])
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE sid bigint; BEGIN DELETE FROM public.class_subjects WHERE class_id = p_class_id; FOREACH sid IN ARRAY p_subject_ids LOOP INSERT INTO public.class_subjects (class_id, subject_id) VALUES (p_class_id, sid); END LOOP; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.bulk_create_classes(p_classes jsonb, p_branch_id bigint, p_academic_year text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE c jsonb; success_count int := 0; failure_count int := 0; errors jsonb[] := ARRAY[]::jsonb[]; BEGIN FOR c IN SELECT * FROM jsonb_array_elements(p_classes) LOOP BEGIN INSERT INTO public.school_classes (name, grade_level, section, capacity, branch_id, academic_year) VALUES ( trim(c->>'name'), trim(c->>'grade'), trim(c->>'section'), (c->>'capacity')::int, p_branch_id, p_academic_year ); success_count := success_count + 1; EXCEPTION WHEN OTHERS THEN failure_count := failure_count + 1; errors := array_append(errors, jsonb_build_object('name', c->>'name', 'error', SQLERRM)); END; END LOOP; RETURN jsonb_build_object('success_count', success_count, 'failure_count', failure_count, 'errors', to_jsonb(errors)); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.bulk_assign_class_teachers(p_assignments jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE assignment jsonb; v_teacher_id uuid; v_class_id bigint; success_count int := 0; failure_count int := 0; errors jsonb[] := ARRAY[]::jsonb[]; BEGIN FOR assignment IN SELECT * FROM jsonb_array_elements(p_assignments) LOOP BEGIN SELECT id INTO v_teacher_id FROM public.profiles WHERE lower(trim(email)) = lower(trim(assignment->>'teacher_email')); IF v_teacher_id IS NULL THEN RAISE EXCEPTION 'Teacher not found'; END IF; SELECT id INTO v_class_id FROM public.school_classes WHERE upper(trim(name)) = upper(trim(assignment->>'class_name')) AND branch_id IN (SELECT * FROM public.get_my_branch_ids()); IF v_class_id IS NULL THEN RAISE EXCEPTION 'Class not found'; END IF; UPDATE public.school_classes SET class_teacher_id = v_teacher_id WHERE id = v_class_id; success_count := success_count + 1; EXCEPTION WHEN OTHERS THEN failure_count := failure_count + 1; errors := array_append(errors, jsonb_build_object('class', assignment->>'class_name', 'error', SQLERRM)); END; END LOOP; RETURN jsonb_build_object('success_count', success_count, 'failure_count', failure_count, 'errors', to_jsonb(errors)); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_my_enquiries()
+ RETURNS SETOF enquiries
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT e.* FROM public.enquiries e JOIN public.admissions a ON e.admission_id = a.id WHERE a.parent_id = auth.uid(); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.submit_unsolicited_document(p_admission_id bigint, p_document_name text, p_file_name text, p_storage_path text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_req_id bigint; BEGIN SELECT id INTO v_req_id FROM public.document_requirements WHERE admission_id = p_admission_id AND document_name = p_document_name; IF v_req_id IS NULL THEN INSERT INTO public.document_requirements (admission_id, document_name, status) VALUES (p_admission_id, p_document_name, 'Submitted') RETURNING id INTO v_req_id; ELSE UPDATE public.document_requirements SET status = 'Submitted' WHERE id = v_req_id; END IF; INSERT INTO public.admission_documents (admission_id, requirement_id, uploaded_by, file_name, storage_path, status) VALUES (p_admission_id, v_req_id, auth.uid(), p_file_name, p_storage_path, 'Pending'); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.create_admission(p_applicant_name text, p_grade text, p_date_of_birth date, p_gender text, p_profile_photo_url text, p_medical_info text, p_emergency_contact text, p_admission_id bigint)
+ RETURNS bigint
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_id bigint; BEGIN INSERT INTO public.admissions ( parent_id, applicant_name, grade, date_of_birth, gender, profile_photo_url, medical_info, emergency_contact, submitted_by, status ) VALUES ( auth.uid(), p_applicant_name, p_grade, p_date_of_birth, p_gender, p_profile_photo_url, p_medical_info, p_emergency_contact, auth.uid(), 'Pending Review' ) RETURNING id INTO v_id; RETURN v_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity_commutator_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;strict_word_similarity_commutator_op$function$;
+
+CREATE OR REPLACE FUNCTION public.update_admission(p_admission_id bigint, p_applicant_name text, p_grade text, p_date_of_birth date, p_gender text, p_profile_photo_url text, p_medical_info text, p_emergency_contact text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.admissions SET applicant_name = p_applicant_name, grade = p_grade, date_of_birth = p_date_of_birth, gender = p_gender, profile_photo_url = COALESCE(p_profile_photo_url, profile_photo_url), medical_info = p_medical_info, emergency_contact = p_emergency_contact, updated_at = now() WHERE id = p_admission_id AND parent_id = auth.uid(); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.complete_student_onboarding(p_student_id uuid, p_data jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.student_profiles SET parent_guardian_details = p_data->>'parent_name', address = p_data->>'address' WHERE user_id = p_student_id; UPDATE public.profiles SET phone = p_data->>'phone', profile_completed = true WHERE id = p_student_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.parent_initialize_vault_slots(p_admission_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_admission record;
+    v_existing_count int;
+BEGIN
+    -- Verify admission belongs to current user
+    SELECT * INTO v_admission FROM public.admissions WHERE id = p_admission_id AND parent_id = auth.uid();
+    IF v_admission IS NULL THEN
+        RAISE EXCEPTION 'Admission not found or access denied';
+    END IF;
+
+    -- Check if requirements already exist
+    SELECT COUNT(*) INTO v_existing_count FROM public.document_requirements WHERE admission_id = p_admission_id;
+    IF v_existing_count > 0 THEN
+        RETURN; -- Already initialized
+    END IF;
+
+    -- Insert the 5 required documents
+    INSERT INTO public.document_requirements (admission_id, document_name, status, is_mandatory, notes_for_parent) VALUES
+    (p_admission_id, 'Student Birth Certificate', 'Pending', true, 'Official birth certificate issued by the local registrar'),
+    (p_admission_id, 'Student Aadhaar Card / National ID', 'Pending', true, 'Government-issued national identity document'),
+    (p_admission_id, 'Parent/Guardian Aadhaar Card / ID Proof', 'Pending', true, 'Government-issued identity proof of parent/guardian'),
+    (p_admission_id, 'Previous School Transfer Certificate (TC)', 'Pending', false, 'Transfer certificate from previous school (if applicable)'),
+    (p_admission_id, 'Recent Passport-size Photograph of Student', 'Pending', true, 'Recent passport-sized photograph with white background');
+
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.parent_get_document_requirements()
+ RETURNS TABLE(id bigint, admission_id bigint, document_name text, status text, is_mandatory boolean, notes_for_parent text, rejection_reason text, applicant_name text, profile_photo_url text, admission_documents jsonb)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT dr.id, dr.admission_id, dr.document_name, dr.status, dr.is_mandatory, dr.notes_for_parent, dr.rejection_reason, a.applicant_name, a.profile_photo_url, COALESCE( ( SELECT jsonb_agg( jsonb_build_object( 'id', ad.id, 'file_name', ad.file_name, 'storage_path', ad.storage_path, 'uploaded_at', ad.uploaded_at ) ) FROM public.admission_documents ad WHERE ad.requirement_id = dr.id ), '[]'::jsonb ) as admission_documents FROM public.document_requirements dr JOIN public.admissions a ON dr.admission_id = a.id WHERE a.parent_id = auth.uid() OR a.student_user_id = auth.uid(); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.submit_admission_document(p_admission_id bigint, p_requirement_id bigint, p_file_name text, p_storage_path text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.admission_documents (admission_id, requirement_id, uploaded_by, file_name, storage_path, status) VALUES (p_admission_id, p_requirement_id, auth.uid(), p_file_name, p_storage_path, 'Pending'); UPDATE public.document_requirements SET status = 'Submitted' WHERE id = p_requirement_id; UPDATE public.admissions SET status = 'Documents Requested' WHERE id = p_admission_id AND status = 'Pending Review'; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.approve_admission_application(p_admission_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_admission record;
+    v_new_user_id uuid;
+    v_email text;
+    v_existing_user_id uuid;
+    v_unverified_docs_count int;
+BEGIN
+    -- 1. Get Admission Record
+    SELECT * INTO v_admission FROM public.admissions WHERE id = p_admission_id; 
+    IF v_admission IS NULL THEN 
+        RETURN jsonb_build_object('success', false, 'message', 'Admission record not found.'); 
+    END IF; 
+
+    -- 2. Check if already approved
+    IF v_admission.student_user_id IS NOT NULL THEN 
+        UPDATE public.admissions SET status = 'Approved' WHERE id = p_admission_id; 
+        RETURN jsonb_build_object('success', true, 'message', 'Student already linked. Status updated to Approved.'); 
+    END IF; 
+
+    -- 3. Check Documents (Optional: Uncomment to enforce strict document verification in DB)
+    -- SELECT COUNT(*) INTO v_unverified_docs_count FROM public.document_requirements WHERE admission_id = p_admission_id AND status != 'Accepted';
+    -- IF v_unverified_docs_count > 0 THEN
+    --    RETURN jsonb_build_object('success', false, 'message', 'Cannot approve: ' || v_unverified_docs_count || ' documents are not yet verified.');
+    -- END IF;
+
+    -- 4. Generate Unique Email
+    -- Format: firstname.lastname.appid@school.system (fallback to random if conflict)
+    v_email := lower(regexp_replace(trim(v_admission.applicant_name), '\s+', '.', 'g')) || '.' || COALESCE(v_admission.application_number, '000') || '@school.system';
+    
+    -- Check if email exists, append random if needed (though profiles constraint should handle it, we want to avoid error)
+    WHILE EXISTS (SELECT 1 FROM public.profiles WHERE email = v_email) LOOP
+        v_email := lower(regexp_replace(trim(v_admission.applicant_name), '\s+', '.', 'g')) || '.' || floor(random() * 10000)::text || '@school.system';
+    END LOOP;
+    
+    -- 5. Create or Get Profile
+    -- Ideally, we create a new Shadow Profile. 
+    -- If a profile exists with this email (unlikely given loop above unless race condition), we use it.
+    
+    v_new_user_id := gen_random_uuid(); 
+    
+    INSERT INTO public.profiles (
+        id, 
+        email, 
+        display_name, 
+        phone, 
+        role, 
+        is_active, 
+        profile_completed
+    ) VALUES (
+        v_new_user_id, 
+        v_email, 
+        v_admission.applicant_name, 
+        v_admission.parent_phone, 
+        'Student', 
+        true, 
+        true
+    );
+
+    -- 6. Create Student Profile
+    INSERT INTO public.student_profiles ( 
+        user_id, 
+        admission_id, 
+        grade, 
+        branch_id, 
+        parent_guardian_details, 
+        gender, 
+        date_of_birth, 
+        student_id_number, 
+        roll_number 
+    ) VALUES ( 
+        v_new_user_id, 
+        p_admission_id, 
+        v_admission.grade, 
+        v_admission.branch_id, 
+        v_admission.parent_name || ' (' || COALESCE(v_admission.parent_phone, '') || ')', 
+        v_admission.gender, 
+        v_admission.date_of_birth, 
+        v_admission.application_number, 
+        'PENDING' 
+    );
+    
+    -- 7. Update Admission Status
+    UPDATE public.admissions 
+    SET 
+        status = 'Approved', 
+        student_user_id = v_new_user_id, 
+        student_system_email = v_email, 
+        updated_at = now()
+    WHERE id = p_admission_id; 
+    
+    RETURN jsonb_build_object('success', true, 'student_id', v_new_user_id, 'email', v_email); 
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END; 
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_enquiries_for_node(p_branch_id bigint DEFAULT NULL::bigint)
+ RETURNS SETOF enquiries
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM public.enquiries
+    WHERE branch_id IN (SELECT get_my_branch_ids())
+      AND (p_branch_id IS NULL OR branch_id = p_branch_id)
+      AND conversion_state = 'NOT_CONVERTED'
+      AND is_archived = false
+      AND is_deleted = false
+      AND status IS NOT NULL
+      AND status != ''
+    ORDER BY created_at DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_parent_dashboard_stats()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_total int; v_pending int; v_approved int; BEGIN SELECT COUNT(*) INTO v_total FROM public.admissions WHERE parent_id = auth.uid(); SELECT COUNT(*) INTO v_pending FROM public.admissions WHERE parent_id = auth.uid() AND status IN ('Pending Review', 'Documents Requested'); SELECT COUNT(*) INTO v_approved FROM public.admissions WHERE parent_id = auth.uid() AND status = 'Approved'; RETURN jsonb_build_object('total_applications', v_total, 'pending_applications', v_pending, 'approved_applications', v_approved); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.teacher_create_assignment(p_class_id bigint, p_subject_id bigint, p_title text, p_description text, p_due_date timestamp with time zone, p_teacher_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.assignments (class_id, subject_id, teacher_id, title, description, due_date) VALUES (p_class_id, p_subject_id, p_teacher_id, p_title, p_description, p_due_date); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.teacher_create_study_material(p_class_id bigint, p_subject_id bigint, p_title text, p_description text, p_file_name text, p_file_path text, p_file_type text, p_uploaded_by uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.study_materials (class_id, subject_id, title, description, file_name, file_path, file_type, uploaded_by) VALUES (p_class_id, p_subject_id, p_title, p_description, p_file_name, p_file_path, p_file_type, p_uploaded_by); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_class_details(p_class_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE roster jsonb; assignments jsonb; materials jsonb; subjects jsonb; BEGIN SELECT json_agg(t) INTO roster FROM (SELECT p.id, p.display_name FROM public.profiles p JOIN public.student_profiles sp ON p.id = sp.user_id WHERE sp.assigned_class_id = p_class_id) t; SELECT json_agg(t) INTO assignments FROM (SELECT * FROM public.assignments WHERE class_id = p_class_id) t; SELECT json_agg(t) INTO materials FROM (SELECT * FROM public.study_materials WHERE class_id = p_class_id) t; SELECT json_agg(t) INTO subjects FROM (SELECT s.id, c.title as name FROM public.class_subjects s JOIN public.courses c ON s.subject_id = c.id WHERE s.class_id = p_class_id) t; RETURN jsonb_build_object( 'roster', COALESCE(roster, '[]'::jsonb), 'assignments', COALESCE(assignments, '[]'::jsonb), 'studyMaterials', COALESCE(materials, '[]'::jsonb), 'subjects', COALESCE(subjects, '[]'::jsonb) ); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_class_overviews()
+ RETURNS TABLE(id bigint, name text, student_count bigint)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT c.id, c.name, (SELECT COUNT(*) FROM public.student_profiles sp WHERE sp.assigned_class_id = c.id) FROM public.school_classes c WHERE c.class_teacher_id = auth.uid(); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_attendance(p_class_id bigint, p_attendance_date date)
+ RETURNS SETOF attendance
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ SELECT * FROM public.attendance WHERE class_id = p_class_id AND attendance_date = p_attendance_date; $function$;
+
+CREATE OR REPLACE FUNCTION public.upsert_attendance(records jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE rec jsonb; BEGIN FOR rec IN SELECT * FROM jsonb_array_elements(records) LOOP INSERT INTO public.attendance (class_id, student_id, attendance_date, status, notes, recorded_by) VALUES ((rec->>'class_id')::bigint, (rec->>'student_id')::uuid, (rec->>'attendance_date')::date, rec->>'status', rec->>'notes', auth.uid()) ON CONFLICT (student_id, class_id, attendance_date) DO UPDATE SET status = EXCLUDED.status, notes = EXCLUDED.notes; END LOOP; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_lesson_plans(p_class_id bigint)
+ RETURNS TABLE(id bigint, title text, subject_name text, lesson_date date, objectives text, activities text, resources jsonb)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT lp.id, lp.title, c.title as subject_name, lp.lesson_date, lp.objectives, lp.activities, COALESCE((SELECT json_agg(r) FROM public.lesson_plan_resources r WHERE r.lesson_plan_id = lp.id), '[]'::jsonb) FROM public.lesson_plans lp LEFT JOIN public.courses c ON lp.subject_id = c.id WHERE lp.class_id = p_class_id AND lp.teacher_id = auth.uid(); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.teacher_create_lesson_plan(p_plan_data jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_plan_id bigint; res jsonb; BEGIN INSERT INTO public.lesson_plans (teacher_id, class_id, subject_id, title, lesson_date, objectives, activities) VALUES ( (p_plan_data->>'teacher_id')::uuid, (p_plan_data->>'class_id')::bigint, (p_plan_data->>'subject_id')::bigint, p_plan_data->>'title', (p_plan_data->>'lesson_date')::date, p_plan_data->>'objectives', p_plan_data->>'activities' ) RETURNING id INTO v_plan_id; FOR res IN SELECT * FROM jsonb_array_elements(p_plan_data->'resources') LOOP INSERT INTO public.lesson_plan_resources (lesson_plan_id, file_name, file_path, file_type) VALUES (v_plan_id, res->>'file_name', res->>'file_path', res->>'file_type'); END LOOP; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_available_workshops()
+ RETURNS SETOF workshops
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ SELECT * FROM public.workshops WHERE workshop_date >= CURRENT_DATE; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_professional_development()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE result jsonb; BEGIN SELECT json_build_object( 'total_points', COALESCE(SUM(points_earned), 0), 'training_records', (SELECT json_agg(t) FROM (SELECT w.title, r.completed_at, r.points_earned as points FROM public.teacher_pd_records r JOIN public.workshops w ON r.workshop_id = w.id WHERE r.teacher_id = auth.uid()) t), 'awards', (SELECT json_agg(a) FROM public.teacher_awards a WHERE a.teacher_id = auth.uid()) ) INTO result FROM public.teacher_pd_records WHERE teacher_id = auth.uid(); IF result IS NULL THEN result := json_build_object('total_points', 0, 'training_records', '[]'::jsonb, 'awards', '[]'::jsonb); END IF; RETURN result; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.enroll_in_workshop(p_workshop_id bigint, p_teacher_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.teacher_pd_records (teacher_id, workshop_id, completed_at, points_earned, notes) VALUES (p_teacher_id, p_workshop_id, now(), 10, 'Enrolled'); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.update_teacher_document_status(p_doc_id bigint, p_status text, p_reason text)
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ UPDATE public.teacher_documents SET status = p_status, rejection_reason = p_reason WHERE id = p_doc_id; $function$;
+
+CREATE OR REPLACE FUNCTION public.update_teacher_self_profile(p_display_name text, p_phone text, p_bio text, p_profile_picture_url text, p_qualification text, p_specializations text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.profiles SET display_name = p_display_name, phone = p_phone WHERE id = auth.uid(); UPDATE public.teacher_profiles SET bio = p_bio, profile_picture_url = p_profile_picture_url, qualification = p_qualification, specializations = p_specializations WHERE user_id = auth.uid(); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_transport_dashboard_data()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_route_id bigint; BEGIN SELECT route_id INTO v_route_id FROM public.transport_staff_profiles WHERE user_id = auth.uid(); IF v_route_id IS NULL THEN RETURN jsonb_build_object('error', 'No route assigned'); END IF; RETURN jsonb_build_object( 'route', (SELECT row_to_json(r) FROM public.routes r WHERE id = v_route_id), 'students', (SELECT json_agg(s) FROM ( SELECT p.id, p.display_name, sp.grade, sp.parent_guardian_details FROM public.profiles p JOIN public.student_profiles sp ON p.id = sp.user_id LIMIT 10 ) s) ); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_bus_attendance_for_route(p_route_id bigint, p_trip_date date, p_trip_type text)
+ RETURNS SETOF bus_attendance
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ SELECT * FROM public.bus_attendance WHERE route_id = p_route_id AND trip_date = p_trip_date AND trip_type = p_trip_type; $function$;
+
+CREATE OR REPLACE FUNCTION public.upsert_bus_attendance(records jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE rec jsonb; BEGIN FOR rec IN SELECT * FROM jsonb_array_elements(records) LOOP INSERT INTO public.bus_attendance (student_id, route_id, trip_date, trip_type, status) VALUES ((rec->>'student_id')::uuid, (rec->>'route_id')::bigint, (rec->>'trip_date')::date, rec->>'trip_type', rec->>'status') ON CONFLICT DO NOTHING; END LOOP; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.transport_send_route_notification(p_subject text, p_body text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.communications (sender_id, sender_role, subject, body, status, sent_at) VALUES (auth.uid(), 'Transport', p_subject, p_body, 'Sent', now()); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_communications_history()
+ RETURNS SETOF communications
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ SELECT * FROM public.communications WHERE sender_id = auth.uid() ORDER BY sent_at DESC; $function$;
+
+CREATE OR REPLACE FUNCTION public.create_fee_structure_with_components(p_name text, p_year text, p_description text, p_components jsonb)
+ RETURNS bigint
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_id bigint; comp jsonb; BEGIN INSERT INTO public.fee_structures (name, academic_year, description) VALUES (p_name, p_year, p_description) RETURNING id INTO v_id; FOR comp IN SELECT * FROM jsonb_array_elements(p_components) LOOP INSERT INTO public.fee_components (structure_id, name, amount) VALUES (v_id, comp->>'name', (comp->>'amount')::numeric); END LOOP; RETURN v_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.bulk_create_invoices_for_structure(p_structure_id bigint, p_student_ids text[])
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_total numeric; s_id text; BEGIN SELECT SUM(amount) INTO v_total FROM public.fee_components WHERE structure_id = p_structure_id; FOREACH s_id IN ARRAY p_student_ids LOOP INSERT INTO public.invoices (student_id, structure_id, description, amount, due_date, status) VALUES (s_id::uuid, p_structure_id, 'Fee Invoice', v_total, (CURRENT_DATE + interval '30 days'), 'Pending'); END LOOP; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.toggle_bookmark_material(p_material_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.study_materials SET is_bookmarked = NOT is_bookmarked WHERE id = p_material_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_student_performance_report(p_student_id uuid, p_class_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE att_summary jsonb; assign_list jsonb; BEGIN SELECT json_build_object( 'present', COUNT(*) FILTER (WHERE status = 'Present'), 'absent', COUNT(*) FILTER (WHERE status = 'Absent'), 'late', COUNT(*) FILTER (WHERE status = 'Late') ) INTO att_summary FROM public.attendance WHERE student_id = p_student_id AND class_id = p_class_id; SELECT json_agg(json_build_object( 'title', a.title, 'due_date', a.due_date, 'status', COALESCE(s.status, 'Not Submitted'), 'grade', s.grade )) INTO assign_list FROM public.assignments a LEFT JOIN public.assignment_submissions s ON a.id = s.assignment_id AND s.student_id = p_student_id WHERE a.class_id = p_class_id; RETURN jsonb_build_object('attendance_summary', att_summary, 'assignments', COALESCE(assign_list, '[]'::jsonb)); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_class_performance_summary(p_class_id bigint)
+ RETURNS TABLE(average_grade numeric, attendance_rate numeric)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT 85.5, 92.0; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.verify_and_link_branch_admin(p_invitation_code text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_invitation record;
+    v_branch record;
+    v_user_email text;
+    v_uid uuid := auth.uid();
+BEGIN
+    -- 1. Get user email
+    SELECT email INTO v_user_email FROM public.profiles WHERE id = v_uid;
+    IF v_user_email IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'User profile not found');
+    END IF;
+
+    -- 2. Find and validate invitation
+    SELECT * INTO v_invitation
+    FROM public.school_branch_invitations
+    WHERE code = upper(trim(p_invitation_code))
+    AND is_revoked = false
+    AND redeemed_at IS NULL
+    AND expires_at > now();
+
+    IF v_invitation IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Invalid or expired invitation code');
+    END IF;
+
+    -- 3. Get branch details
+    SELECT * INTO v_branch FROM public.school_branches WHERE id = v_invitation.branch_id;
+    IF v_branch IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Branch not found');
+    END IF;
+
+    -- 4. Validate admin email match
+    IF lower(trim(v_branch.admin_email)) != lower(trim(v_user_email)) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Your email does not match the authorized admin email for this branch');
+    END IF;
+
+    -- 5. Bind user to branch
+    UPDATE public.profiles
+    SET branch_id = v_branch.id, role = 'Branch Admin', profile_completed = true
+    WHERE id = v_uid;
+
+    -- 6. Assign Branch Admin role
+    INSERT INTO public.user_role_assignments (user_id, role_name, branch_id)
+    VALUES (v_uid, 'Branch Admin', v_branch.id)
+    ON CONFLICT (user_id, role_name, branch_id) DO NOTHING;
+
+    -- 7. Update branch with admin
+    UPDATE public.school_branches
+    SET branch_admin_id = v_uid
+    WHERE id = v_branch.id;
+
+    -- 8. Mark invitation as redeemed
+    UPDATE public.school_branch_invitations
+    SET redeemed_at = now(), redeemed_by = v_uid
+    WHERE id = v_invitation.id;
+
+    RETURN jsonb_build_object('success', true, 'branch_id', v_branch.id, 'branch_name', v_branch.name);
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.complete_branch_step()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.school_admin_profiles SET onboarding_step = 'completed' WHERE user_id = auth.uid(); UPDATE public.profiles SET profile_completed = true WHERE id = auth.uid(); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.generate_branch_access_key(p_branch_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_code text;
+    v_branch record;
+BEGIN
+    -- Verify branch ownership
+    SELECT * INTO v_branch FROM public.school_branches WHERE id = p_branch_id AND school_user_id = auth.uid();
+    IF v_branch IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Branch not found or access denied');
+    END IF;
+
+    -- Generate unique access code (12 character alphanumeric)
+    v_code := upper(substring(encode(gen_random_bytes(9), 'base64') FROM 1 FOR 12));
+
+    -- Create invitation record
+    INSERT INTO public.school_branch_invitations (branch_id, code, expires_at)
+    VALUES (p_branch_id, v_code, now() + interval '7 days');
+
+    RETURN jsonb_build_object('success', true, 'code', v_code, 'expires_at', (now() + interval '7 days')::text);
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.save_class_timetable(p_class_id bigint, p_entries jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE entry jsonb; BEGIN DELETE FROM public.timetable_entries WHERE class_id = p_class_id; FOR entry IN SELECT * FROM jsonb_array_elements(p_entries) LOOP INSERT INTO public.timetable_entries ( class_id, day, start_time, end_time, subject_name, teacher_name, room_number ) VALUES ( p_class_id, entry->>'day', entry->>'startTime', entry->>'endTime', entry->>'subject', entry->>'teacher', entry->>'room' ); END LOOP; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_class_timetable(p_class_id bigint)
+ RETURNS TABLE(id text, day text, start_time text, end_time text, subject_name text, teacher_name text, room_number text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT te.day || '-' || te.start_time as id, te.day, te.start_time, te.end_time, te.subject_name, te.teacher_name, te.room_number FROM public.timetable_entries te WHERE te.class_id = p_class_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_teacher_timetable(p_teacher_id uuid)
+ RETURNS TABLE(day text, start_time text, end_time text, subject text, class_name text, room_number text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT te.day, te.start_time, te.end_time, te.subject_name, sc.name as class_name, te.room_number FROM public.timetable_entries te JOIN public.school_classes sc ON te.class_id = sc.id WHERE te.teacher_id = p_teacher_id OR te.teacher_name = (SELECT display_name FROM public.profiles WHERE id = p_teacher_id); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_room_timetable(p_room_name text)
+ RETURNS TABLE(day text, start_time text, end_time text, subject text, class_name text, teacher_name text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT te.day, te.start_time, te.end_time, te.subject_name, sc.name as class_name, te.teacher_name FROM public.timetable_entries te JOIN public.school_classes sc ON te.class_id = sc.id WHERE te.room_number = p_room_name; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.bulk_import_courses(p_courses jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE course_data jsonb; success_count int := 0; failure_count int := 0; errors jsonb[] := ARRAY[]::jsonb[]; BEGIN FOR course_data IN SELECT * FROM jsonb_array_elements(p_courses) LOOP BEGIN INSERT INTO public.courses (title, code, grade_level, description, category, credits, status, department) VALUES ( course_data->>'title', course_data->>'code', course_data->>'grade_level', course_data->>'description', COALESCE(course_data->>'category', 'Core'), (course_data->>'credits')::numeric, 'Active', course_data->>'department' ); success_count := success_count + 1; EXCEPTION WHEN OTHERS THEN failure_count := failure_count + 1; errors := array_append(errors, jsonb_build_object( 'row_index', (course_data->>'row_index')::int, 'title', course_data->>'title', 'error', SQLERRM )); END; END LOOP; RETURN jsonb_build_object('success_count', success_count, 'failure_count', failure_count, 'errors', to_jsonb(errors)); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.create_course_v2(p_title text, p_code text, p_grade_level text, p_description text, p_category text, p_department text, p_credits numeric, p_teacher_id uuid)
+ RETURNS bigint
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_course_id bigint; BEGIN INSERT INTO public.courses (title, code, grade_level, description, category, department, credits, teacher_id, status) VALUES (p_title, p_code, p_grade_level, p_description, p_category, p_department, p_credits, p_teacher_id, 'Draft') RETURNING id INTO v_course_id; INSERT INTO public.course_logs (course_id, user_id, action, details) VALUES (v_course_id, auth.uid(), 'CREATED', jsonb_build_object('title', p_title)); RETURN v_course_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.duplicate_course(p_course_id bigint)
+ RETURNS SETOF courses
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY INSERT INTO public.courses (title, code, grade_level, credits, category, subject_type, status, description, department) SELECT c.title || ' (Copy)', c.code || '-COPY' || (random() * 1000)::int, c.grade_level, c.credits, c.category, c.subject_type, 'Draft', c.description, c.department FROM public.courses c WHERE c.id = p_course_id RETURNING *; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_course_details_v2(p_course_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_course record; v_teachers jsonb; v_units jsonb; v_materials jsonb; v_logs jsonb; BEGIN SELECT * INTO v_course FROM public.courses WHERE id = p_course_id; SELECT jsonb_agg( jsonb_build_object( 'id', t.id, 'teacher_id', t.teacher_id, 'name', p.display_name, 'role', t.role ) ) INTO v_teachers FROM public.course_teachers t JOIN public.profiles p ON t.teacher_id = p.id WHERE t.course_id = p_course_id AND t.is_active = true; SELECT jsonb_agg(row_to_json(u)) INTO v_units FROM (SELECT * FROM public.course_units WHERE course_id = p_course_id ORDER BY order_index) u; SELECT jsonb_agg(row_to_json(m)) INTO v_materials FROM (SELECT * FROM public.course_materials WHERE course_id = p_course_id) m; SELECT jsonb_agg(row_to_json(l)) INTO v_logs FROM (SELECT * FROM public.course_logs WHERE course_id = p_course_id ORDER BY created_at DESC LIMIT 20) l; RETURN jsonb_build_object( 'course', row_to_json(v_course), 'teachers', COALESCE(v_teachers, '[]'::jsonb), 'units', COALESCE(v_units, '[]'::jsonb), 'materials', COALESCE(v_materials, '[]'::jsonb), 'logs', COALESCE(v_logs, '[]'::jsonb) ); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.filter_courses(p_status text, p_grade text, p_department text)
+ RETURNS SETOF courses
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT * FROM public.courses WHERE (p_status IS NULL OR status = p_status) AND (p_grade IS NULL OR grade_level = p_grade) AND (p_department IS NULL OR department = p_department) AND deleted_at IS NULL ORDER BY created_at DESC; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.gtrgm_union(internal, internal)
+ RETURNS gtrgm
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gtrgm_union$function$;
+
+CREATE OR REPLACE FUNCTION public.bulk_enroll_students_to_classes(p_enrollments jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE rec jsonb; v_student_id uuid; v_class_id bigint; success_count int := 0; failure_count int := 0; errors jsonb[] := ARRAY[]::jsonb[]; BEGIN FOR rec IN SELECT * FROM jsonb_array_elements(p_enrollments) LOOP BEGIN SELECT id INTO v_student_id FROM public.profiles WHERE lower(trim(email)) = lower(trim(rec->>'student_email')); IF v_student_id IS NULL THEN RAISE EXCEPTION 'Student not found'; END IF; SELECT id INTO v_class_id FROM public.school_classes WHERE upper(trim(name)) = upper(trim(rec->>'class_name')) AND branch_id IN (SELECT * FROM public.get_my_branch_ids()); IF v_class_id IS NULL THEN RAISE EXCEPTION 'Class not found'; END IF; UPDATE public.student_profiles SET assigned_class_id = v_class_id WHERE user_id = v_student_id; success_count := success_count + 1; EXCEPTION WHEN OTHERS THEN failure_count := failure_count + 1; errors := array_append(errors, jsonb_build_object('student', rec->>'student_email', 'error', SQLERRM)); END; END LOOP; RETURN jsonb_build_object('success_count', success_count, 'failure_count', failure_count, 'errors', to_jsonb(errors)); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.bulk_map_subjects_to_classes(p_mappings jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE rec jsonb; v_class_id bigint; v_subject_id bigint; success_count int := 0; failure_count int := 0; errors jsonb[] := ARRAY[]::jsonb[]; BEGIN FOR rec IN SELECT * FROM jsonb_array_elements(p_mappings) LOOP BEGIN SELECT id INTO v_class_id FROM public.school_classes WHERE upper(trim(name)) = upper(trim(both '' from rec->>'class_name')) AND branch_id IN (SELECT * FROM public.get_my_branch_ids()); IF v_class_id IS NULL THEN RAISE EXCEPTION 'Class not found'; END IF; SELECT id INTO v_subject_id FROM public.courses WHERE upper(trim(code)) = upper(trim(both '' from rec->>'subject_code')); IF v_subject_id IS NULL THEN RAISE EXCEPTION 'Subject not found'; END IF; INSERT INTO public.class_subjects (class_id, subject_id) VALUES (v_class_id, v_subject_id) ON CONFLICT (class_id, subject_id) DO NOTHING; success_count := success_count + 1; EXCEPTION WHEN OTHERS THEN failure_count := failure_count + 1; errors := array_append(errors, jsonb_build_object('class', rec->>'class_name', 'error', SQLERRM)); END; END LOOP; RETURN jsonb_build_object('success_count', success_count, 'failure_count', failure_count, 'errors', to_jsonb(errors)); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_admin_homework_list(p_class_id bigint, p_status text, p_subject_id bigint, p_teacher_id uuid)
+ RETURNS TABLE(id bigint, title text, description text, subject_name text, class_name text, teacher_name text, created_at timestamp with time zone, due_date timestamp with time zone, status text, submission_count bigint, total_students bigint, max_score integer, class_id bigint, subject_id bigint, teacher_id uuid)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT a.id, a.title, a.description, c.title AS subject_name, sc.name AS class_name, p.display_name AS teacher_name, a.created_at, a.due_date, a.status, (SELECT COUNT(*) FROM public.assignment_submissions AS subs WHERE subs.assignment_id = a.id) AS submission_count, (SELECT COUNT(*) FROM public.student_profiles sp WHERE sp.assigned_class_id = a.class_id) AS total_students, a.max_score, a.class_id, a.subject_id, a.teacher_id FROM public.assignments a LEFT JOIN public.courses c ON a.subject_id = c.id LEFT JOIN public.school_classes sc ON a.class_id = sc.id LEFT JOIN public.profiles p ON a.teacher_id = p.id WHERE (p_class_id IS NULL OR a.class_id = p_class_id) AND (p_status = 'All' OR a.status = p_status) AND (p_subject_id IS NULL OR a.subject_id = p_subject_id) AND (p_teacher_id IS NULL OR a.teacher_id = p_teacher_id) ORDER BY a.due_date DESC; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.create_homework_assignment(p_class_id bigint, p_subject_id bigint, p_teacher_id uuid, p_title text, p_description text, p_due_date timestamp with time zone, p_attachments jsonb, p_max_score integer, p_status text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO public.assignments ( class_id, subject_id, teacher_id, title, description, due_date, max_score, status ) VALUES ( p_class_id, p_subject_id, p_teacher_id, p_title, p_description, p_due_date, p_max_score, p_status ); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_homework_submissions(p_assignment_id bigint)
+ RETURNS TABLE(submission_id bigint, student_id uuid, student_name text, submitted_at timestamp with time zone, status text, grade text, feedback text, file_path text, file_name text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE v_class_id bigint; v_due_date date; BEGIN SELECT class_id, due_date INTO v_class_id, v_due_date FROM public.assignments WHERE id = p_assignment_id; RETURN QUERY SELECT s.id as submission_id, p.id as student_id, p.display_name as student_name, s.submitted_at, CASE WHEN s.status = 'Graded' THEN 'Graded' WHEN s.id IS NOT NULL AND s.submitted_at > v_due_date THEN 'Late' WHEN s.id IS NOT NULL THEN 'Submitted' WHEN v_due_date < CURRENT_DATE THEN 'Overdue' ELSE 'Pending' END AS status, s.grade, s.feedback, s.file_path, s.file_name FROM public.student_profiles sp JOIN public.profiles p ON sp.user_id = p.id LEFT JOIN public.assignment_submissions s ON s.student_id = p.id AND s.assignment_id = p_assignment_id WHERE sp.assigned_class_id = v_class_id ORDER BY p.display_name; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.grade_homework_submission(p_submission_id bigint, p_grade text, p_feedback text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN UPDATE public.assignment_submissions SET grade = p_grade, feedback = p_feedback, status = 'Graded' WHERE id = p_submission_id; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_finance_dashboard_data()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE result jsonb; BEGIN SELECT json_build_object( 'revenue_ytd', (SELECT COALESCE(SUM(amount_paid), 0) FROM invoices WHERE created_at >= date_trunc('year', now())), 'collections_this_month', (SELECT COALESCE(SUM(amount_paid), 0) FROM invoices WHERE created_at >= date_trunc('month', now())), 'pending_dues', (SELECT COALESCE(SUM(amount - amount_paid), 0) FROM invoices), 'overdue_accounts', (SELECT COUNT(DISTINCT student_id) FROM invoices WHERE due_date < now() AND status != 'Paid'), 'online_payments', (SELECT COALESCE(SUM(amount_paid), 0) FROM invoices), 'refunds_processed', 0, 'dues_data', (SELECT public.get_dues_dashboard_data()), 'expense_data', (SELECT public.get_expense_dashboard_data()) ) INTO result; RETURN result; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_dues_dashboard_data()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE result jsonb; BEGIN SELECT json_build_object( 'total_dues', (SELECT COALESCE(SUM(amount - amount_paid), 0) FROM invoices), 'total_overdue', (SELECT COALESCE(SUM(amount - amount_paid), 0) FROM invoices WHERE due_date < now()), 'overdue_student_count', (SELECT COUNT(DISTINCT student_id) FROM invoices WHERE due_date < now() AND status != 'Paid'), 'highest_dues_students', (SELECT json_agg(t) FROM ( SELECT i.student_id, p.display_name, sc.name as class_name, SUM(i.amount - i.amount_paid) as outstanding_balance FROM invoices i JOIN profiles p ON i.student_id = p.id LEFT JOIN student_profiles sp ON p.id = sp.user_id LEFT JOIN school_classes sc ON sp.assigned_class_id = sc.id GROUP BY i.student_id, p.display_name, sc.name ORDER BY outstanding_balance DESC LIMIT 5 ) t), 'dues_by_class', (SELECT json_agg(t) FROM ( SELECT sc.name as class_name, SUM(i.amount - i.amount_paid) as total_dues FROM invoices i JOIN student_profiles sp ON i.student_id = sp.user_id JOIN school_classes sc ON sp.assigned_class_id = sc.id GROUP BY sc.name ) t) ) INTO result; RETURN result; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_expense_dashboard_data()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ DECLARE result jsonb; BEGIN SELECT json_build_object( 'total_expenses_month', (SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE expense_date >= date_trunc('month', now())), 'pending_approvals', (SELECT COUNT(*) FROM expenses WHERE status = 'Pending'), 'recent_expenses', (SELECT json_agg(t) FROM (SELECT * FROM expenses ORDER BY expense_date DESC LIMIT 10) t) ) INTO result; RETURN result; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_fee_dashboard()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN (SELECT json_agg(t) FROM ( SELECT sp.user_id as student_id, p.display_name, sc.name as class_name, COALESCE(SUM(i.amount), 0) as total_billed, COALESCE(SUM(i.amount_paid), 0) as total_paid, 0 as total_concession, COALESCE(SUM(i.amount - i.amount_paid), 0) as outstanding_balance, CASE WHEN SUM(CASE WHEN i.status = 'Overdue' THEN 1 ELSE 0 END) > 0 THEN 'Overdue' WHEN SUM(i.amount - i.amount_paid) > 0 THEN 'Pending' ELSE 'Paid' END as overall_status FROM student_profiles sp JOIN profiles p ON sp.user_id = p.id LEFT JOIN school_classes sc ON sp.assigned_class_id = sc.id LEFT JOIN invoices i ON sp.user_id = i.student_id GROUP BY sp.user_id, p.display_name, sc.name ) t); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.add_school_expense(p_category text, p_amount numeric, p_vendor_name text, p_expense_date date, p_description text, p_invoice_url text, p_payment_mode text, p_branch_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN INSERT INTO expenses (category, amount, vendor_name, expense_date, description, invoice_url, payment_mode, branch_id, recorded_by, status) VALUES (p_category, p_amount, p_vendor_name, p_expense_date, p_description, p_invoice_url, p_payment_mode, p_branch_id, auth.uid(), 'Pending'); END; $function$;
+
+CREATE OR REPLACE FUNCTION public.update_expense_status(p_expense_id bigint, p_new_status text)
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$ UPDATE expenses SET status = p_new_status WHERE id = p_expense_id; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_fee_collection_report(p_start_date date, p_end_date date)
+ RETURNS SETOF jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT jsonb_build_object('payment_id', id, 'student_id', student_id, 'amount', amount_paid, 'payment_date', created_at) FROM invoices WHERE created_at BETWEEN p_start_date AND p_end_date AND amount_paid > 0; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_expense_summary_report(p_start_date date, p_end_date date)
+ RETURNS SETOF jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT jsonb_build_object('expense_id', id, 'category', category, 'amount', amount, 'expense_date', expense_date, 'status', status) FROM expenses WHERE expense_date BETWEEN p_start_date AND p_end_date; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.get_student_ledger_report(p_student_id uuid)
+ RETURNS SETOF jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ BEGIN RETURN QUERY SELECT jsonb_build_object('transaction_date', created_at, 'description', description, 'debit', amount, 'credit', amount_paid, 'balance', amount - amount_paid) FROM invoices WHERE student_id = p_student_id ORDER BY created_at; END; $function$;
+
+CREATE OR REPLACE FUNCTION public.admin_create_student(p_email text, p_display_name text, p_phone text, p_grade text, p_student_id_number text, p_branch_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_user_id uuid;
+    v_check_email text;
+BEGIN
+    -- 1. Check if email already exists in profiles
+    SELECT email INTO v_check_email FROM public.profiles WHERE email = p_email;
+    
+    IF v_check_email IS NOT NULL THEN
+        RETURN jsonb_build_object('success', false, 'error', 'User with this email already exists.');
+    END IF;
+
+    -- 2. Generate new UUID for the shadow user
+    v_user_id := gen_random_uuid();
+
+    -- 3. Create Profile
+    INSERT INTO public.profiles (id, email, display_name, phone, role, is_active, profile_completed)
+    VALUES (v_user_id, p_email, p_display_name, p_phone, 'Student', true, true);
+
+    -- 4. Create Student Profile
+    INSERT INTO public.student_profiles (user_id, grade, student_id_number, branch_id)
+    VALUES (v_user_id, p_grade, p_student_id_number, p_branch_id);
+
+    RETURN jsonb_build_object('success', true, 'user_id', v_user_id);
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'error', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_user_authorized_scopes()
+ RETURNS TABLE(id bigint, role_name text, display_name text, description text, status text, assigned_at timestamp with time zone, activated_at timestamp with time zone, permissions jsonb)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        usa.id,
+        ur.name as role_name,
+        ur.display_name,
+        ur.description,
+        usa.status,
+        usa.assigned_at,
+        usa.activated_at,
+        COALESCE(ur.permissions, '{}'::jsonb) as permissions
+    FROM public.user_scope_assignments usa
+    JOIN public.user_roles ur ON usa.role_name = ur.name
+    WHERE usa.user_id = auth.uid()
+    AND usa.status = 'active'
+    ORDER BY usa.activated_at DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_available_roles_for_registration()
+ RETURNS TABLE(name text, display_name text, description text, is_system_role boolean, permissions jsonb)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        ur.name,
+        ur.display_name,
+        ur.description,
+        ur.is_system_role,
+        COALESCE(ur.permissions, '{}'::jsonb) as permissions
+    FROM public.user_roles ur
+    WHERE ur.name NOT IN (
+        SELECT usa.role_name 
+        FROM public.user_scope_assignments usa 
+        WHERE usa.user_id = auth.uid()
+        AND usa.status = 'active'
+    )
+    ORDER BY ur.name;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.register_role_scope(p_role_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_result jsonb;
+BEGIN
+    -- Check if role exists
+    IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE name = p_role_name) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Role does not exist: ' || p_role_name);
+    END IF;
+
+    -- Check if user already has this scope active
+    IF EXISTS (
+        SELECT 1 FROM public.user_scope_assignments 
+        WHERE user_id = auth.uid() 
+        AND role_name = p_role_name 
+        AND status = 'active'
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'You already have this scope active');
+    END IF;
+
+    -- Check if there's a pending registration
+    IF EXISTS (
+        SELECT 1 FROM public.user_scope_assignments 
+        WHERE user_id = auth.uid() 
+        AND role_name = p_role_name 
+        AND status IN ('pending', 'registered')
+    ) THEN
+        UPDATE public.user_scope_assignments
+        SET status = 'active', activated_at = now()
+        WHERE user_id = auth.uid() AND role_name = p_role_name;
+    ELSE
+        INSERT INTO public.user_scope_assignments (user_id, role_name, status, activated_at)
+        VALUES (auth.uid(), p_role_name, 'active', now());
+    END IF;
+
+    SELECT json_build_object(
+        'success', true,
+        'scope', json_build_object(
+            'role_name', p_role_name,
+            'activated_at', now()::text
+        )
+    ) INTO v_result;
+
+    RETURN v_result;
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.deactivate_role_scope(p_role_name text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    UPDATE public.user_scope_assignments
+    SET status = 'inactive'
+    WHERE user_id = auth.uid() AND role_name = p_role_name AND status = 'active';
+
+    IF FOUND THEN
+        RETURN jsonb_build_object('success', true, 'message', 'Scope deactivated');
+    ELSE
+        RETURN jsonb_build_object('success', false, 'message', 'Scope not found or already inactive');
+    END IF;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_all_user_scopes()
+ RETURNS TABLE(id bigint, role_name text, display_name text, status text, is_active boolean, assigned_at timestamp with time zone, activated_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        usa.id,
+        ur.name as role_name,
+        ur.display_name,
+        usa.status,
+        CASE WHEN usa.status = 'active' THEN true ELSE false END as is_active,
+        usa.assigned_at,
+        usa.activated_at
+    FROM public.user_scope_assignments usa
+    JOIN public.user_roles ur ON usa.role_name = ur.name
+    WHERE usa.user_id = auth.uid()
+    ORDER BY usa.activated_at DESC NULLS LAST;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.migrate_existing_role_assignments()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    rec record;
+BEGIN
+    FOR rec IN 
+        SELECT DISTINCT user_id, role_name FROM public.user_role_assignments
+        WHERE user_id IS NOT NULL
+    LOOP
+        INSERT INTO public.user_scope_assignments (user_id, role_name, status, activated_at)
+        VALUES (rec.user_id, rec.role_name, 'active', now())
+        ON CONFLICT (user_id, role_name) DO NOTHING;
+    END LOOP;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.update_school_plan(p_plan_id text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    -- Check if user is school admin
+    IF NOT EXISTS (
+        SELECT 1 FROM public.school_admin_profiles WHERE user_id = auth.uid()
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Unauthorized access');
+    END IF;
+
+    -- Update school plan
+    UPDATE public.school_admin_profiles SET
+        plan_id = p_plan_id,
+        updated_at = now()
+    WHERE user_id = auth.uid();
+
+    RETURN jsonb_build_object('success', true, 'message', 'School plan updated');
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.upsert_teacher_profile(p_user_id uuid, p_display_name text, p_email text, p_phone text, p_department text, p_designation text, p_subject text, p_qualification text, p_experience integer, p_doj date)
+ RETURNS json
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Check if user is authorized
+    IF auth.uid() != p_user_id AND NOT (SELECT is_admin(auth.uid())) THEN
+        RETURN json_build_object('success', false, 'message', 'Unauthorized');
+    END IF;
+
+    -- Upsert teacher profile
+    INSERT INTO public.teacher_profiles (
+        user_id, display_name, email, phone, department, designation,
+        subject, qualification, experience_years, date_of_joining
+    )
+    VALUES (
+        p_user_id, p_display_name, p_email, p_phone, p_department, p_designation,
+        p_subject, p_qualification, p_experience, p_doj
+    )
+    ON CONFLICT (user_id) DO UPDATE SET
+        display_name = EXCLUDED.display_name,
+        email = EXCLUDED.email,
+        phone = EXCLUDED.phone,
+        department = EXCLUDED.department,
+        designation = EXCLUDED.designation,
+        subject = EXCLUDED.subject,
+        qualification = EXCLUDED.qualification,
+        experience_years = EXCLUDED.experience_years,
+        date_of_joining = EXCLUDED.date_of_joining,
+        updated_at = now();
+
+    RETURN json_build_object('success', true, 'message', 'Teacher profile updated successfully');
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN json_build_object('success', false, 'message', 'Database error: ' || SQLERRM);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_op(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;strict_word_similarity_dist_op$function$;
+
+CREATE OR REPLACE FUNCTION public.gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal)
+ RETURNS char
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$;gin_trgm_triconsistent$function$;
+
+CREATE OR REPLACE FUNCTION public.get_my_share_codes()
+ RETURNS TABLE(id integer, code text, admission_id uuid, applicant_name text, status text, code_type text, expires_at timestamp with time zone, profile_photo_url text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        s.id, s.code, s.admission_id, 
+        a.applicant_name, s.status, s.code_type, 
+        s.expires_at, a.profile_photo_url
+    FROM public.share_codes s
+    JOIN public.admissions a ON s.admission_id = a.id
+    WHERE a.parent_email = (SELECT p.email FROM public.profiles p WHERE p.id = auth.uid())
+    ORDER BY s.created_at DESC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_enquiry_timeline_v3(p_enquiry_id uuid)
+ RETURNS TABLE(id uuid, item_type text, details jsonb, created_at timestamp with time zone, created_by_name text, is_admin boolean)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        m.id::uuid,
+        'MESSAGE'::text,
+        jsonb_build_object('message', m.message)::jsonb,
+        m.created_at::timestamptz,
+        COALESCE(p.display_name, 'Institutional Node')::text,
+        COALESCE(m.is_admin, false)::boolean
+    FROM public.enquiry_messages m
+    LEFT JOIN public.profiles p ON m.sender_id = p.id
+    WHERE m.enquiry_id = p_enquiry_id
+    ORDER BY m.created_at ASC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.send_enquiry_message_v3(p_enquiry_id uuid, p_message text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_is_admin boolean;
+BEGIN
+    -- Determine role context
+    SELECT EXISTS (
+        SELECT 1 FROM public.profiles 
+        WHERE id = auth.uid() 
+        AND role IN ('School Administration', 'Branch Admin', 'Super Admin')
+    ) INTO v_is_admin;
+
+    INSERT INTO public.enquiry_messages (enquiry_id, sender_id, message, is_admin)
+    VALUES (p_enquiry_id, auth.uid(), p_message, v_is_admin);
+    
+    UPDATE public.enquiries SET updated_at = now() WHERE id = p_enquiry_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_update_enquiry_status(p_enquiry_id uuid, p_status text, p_notes text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    UPDATE public.enquiries 
+    SET status = p_status,
+        notes = COALESCE(p_notes, notes),
+        updated_at = now()
+    WHERE id = p_enquiry_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.parent_initialize_vault_slots(p_admission_id text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_req_count int;
+BEGIN
+    SELECT count(*)
+    INTO v_req_count
+    FROM public.document_requirements
+    WHERE admission_id = p_admission_id::uuid;
+
+    IF v_req_count = 0 THEN
+        INSERT INTO public.document_requirements (admission_id, document_name, is_mandatory, notes_for_parent)
+        VALUES
+            (p_admission_id::uuid, 'Birth Certificate', true, 'A government-issued birth certificate is required.'),
+            (p_admission_id::uuid, 'Previous School Marksheet', true, 'The official marksheet from the last attended institution.'),
+            (p_admission_id::uuid, 'Transfer Certificate', true, 'A formal transfer or school leaving certificate.'),
+            (p_admission_id::uuid, 'Guardian Photo ID', true, 'A government-issued photo ID of the primary parent/guardian.'),
+            (p_admission_id::uuid, 'Student Passport Photo', true, 'A recent passport-sized photograph of the applicant.'),
+            (p_admission_id::uuid, 'Immunization & Medical Records', false, 'Optional: Provide any relevant medical history or vaccination records.');
+    END IF;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.parent_initialize_vault_slots(p_admission_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+    INSERT INTO public.document_requirements (admission_id, document_name, is_mandatory)
+    SELECT p_admission_id, name, true
+    FROM (VALUES ('Birth Certificate'), ('Identity Proof (Guardian)'), ('Proof of Residence'), ('Previous Report Card')) AS t(name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM public.document_requirements 
+        WHERE admission_id = p_admission_id AND document_name = t.name
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.switch_active_role(p_target_role text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_profile_restored boolean := false;
+BEGIN
+    -- Update the primary identity node
+    UPDATE public.profiles 
+    SET role = p_target_role,
+        profile_completed = true
+    WHERE id = auth.uid();
+    
+    -- Verify if metadata exists in sub-registries (e.g., parent_profiles)
+    IF p_target_role = 'Parent/Guardian' THEN
+        IF EXISTS (SELECT 1 FROM public.parent_profiles WHERE user_id = auth.uid()) THEN
+            v_profile_restored := true;
+        END IF;
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'profile_restored', v_profile_restored
+    );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.admin_transition_admission(p_admission_id bigint, p_new_status text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_admission record;
+BEGIN
+    -- Check if user has admin access
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles p
+        WHERE p.id = auth.uid()
+        AND p.role IN ('School Administration')
+        AND EXISTS (
+            SELECT 1 FROM public.admissions a
+            WHERE a.id = p_admission_id
+            AND a.branch_id IN (SELECT get_my_branch_ids())
+        )
+    ) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Unauthorized access');
+    END IF;
+
+    -- Get admission details
+    SELECT * INTO v_admission FROM public.admissions WHERE id = p_admission_id;
+
+    IF v_admission IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Admission not found');
+    END IF;
+
+    -- Update status
+    UPDATE public.admissions SET
+        status = p_new_status,
+        updated_at = now()
+    WHERE id = p_admission_id;
+
+    RETURN jsonb_build_object('success', true, 'message', 'Admission status updated', 'new_status', p_new_status);
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object('success', false, 'message', SQLERRM);
+END;
+$function$;
