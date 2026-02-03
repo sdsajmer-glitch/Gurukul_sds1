@@ -125,7 +125,11 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
             const { data, error } = await supabase.rpc('get_enquiry_timeline_v3', { p_enquiry_id: idString });
             if (error) throw error;
             if (isMounted.current) {
-                setTimeline(data || []);
+                // Ensure chronological order: Oldest at top, Newest at bottom
+                const sortedTimeline = (data || []).sort((a: any, b: any) =>
+                    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                );
+                setTimeline(sortedTimeline);
                 setIsLegacyNode(false);
             }
         } catch (e) {
