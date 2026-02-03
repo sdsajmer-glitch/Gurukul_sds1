@@ -26,6 +26,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
     const [formData, setFormData] = useState<any>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [isFetchingInitialData, setIsFetchingInitialData] = useState(true);
     const [activeTab, setActiveTab] = useState<'details' | 'contact'>('details');
 
@@ -100,6 +101,17 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
     };
 
     const isFormValid = useMemo(() => {
+        if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+            // Required fields for School Admin
+            if (!formData.school_name?.trim()) return false;
+            if (!formData.address?.trim()) return false;
+            if (!formData.admin_contact_name?.trim()) return false;
+            if (!formData.admin_contact_email?.trim()) return false;
+            if (!formData.admin_contact_phone_local?.trim()) return false;
+            if (!formData.academic_board?.trim()) return false;
+            return true;
+        }
+
         if (!formData.display_name?.trim()) return false;
         if (role === BuiltInRoles.PARENT_GUARDIAN && !formData.relationship_to_student) return false;
         return true;
@@ -107,7 +119,34 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isFormValid) {
+
+        // Detailed validation with specific error messages
+        if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+            if (!formData.school_name?.trim()) {
+                setError("Institution Name is required");
+                return;
+            }
+            if (!formData.address?.trim()) {
+                setError("Street Address is required");
+                return;
+            }
+            if (!formData.admin_contact_name?.trim()) {
+                setError("Primary Administrator Name is required");
+                return;
+            }
+            if (!formData.admin_contact_email?.trim()) {
+                setError("Administrator Email is required");
+                return;
+            }
+            if (!formData.admin_contact_phone_local?.trim()) {
+                setError("Administrator Phone Number is required");
+                return;
+            }
+            if (!formData.academic_board?.trim()) {
+                setError("Education Board is required");
+                return;
+            }
+        } else if (!isFormValid) {
             setError("Mandatory identity parameters are missing.");
             return;
         }
@@ -116,6 +155,8 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
         setError(null);
 
         try {
+            const isEditMode = profile.profile_completed;
+
             if (role === BuiltInRoles.TEACHER) {
                 const { error: tError } = await supabase.rpc('upsert_teacher_profile', {
                     p_user_id: profile.id,
@@ -154,7 +195,8 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 });
                 if (stError) throw stError;
             } else if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-                const { error: sError } = await supabase.from('school_admin_profiles').upsert({
+                // Prepare complete payload with all fields
+                const payload: any = {
                     user_id: profile.id,
                     school_name: formData.school_name,
                     address: formData.address,
@@ -162,9 +204,19 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     state: formData.state,
                     country: formData.country,
                     admin_contact_name: formData.admin_contact_name,
-                    admin_contact_phone: formData.admin_contact_phone,
-                    onboarding_step: 'completed'
-                });
+                    admin_designation: formData.admin_designation || 'Director',
+                    admin_contact_email: formData.admin_contact_email,
+                    admin_contact_phone: (formData.admin_contact_phone_country_code || '+91') + (formData.admin_contact_phone_local || ''),
+                    academic_board: formData.academic_board,
+                    school_type: formData.school_type,
+                    academic_year_start: formData.academic_year_start,
+                    academic_year_end: formData.academic_year_end,
+                    grade_range_start: formData.grade_range_start,
+                    grade_range_end: formData.grade_range_end,
+                    onboarding_step: isEditMode ? formData.onboarding_step : 'pricing'
+                };
+
+                const { error: sError } = await supabase.from('school_admin_profiles').upsert(payload);
                 if (sError) throw sError;
             } else if (role === BuiltInRoles.TRANSPORT_STAFF) {
                 const { error: trError } = await supabase.rpc('upsert_transport_profile', {
@@ -185,10 +237,14 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
             }
 
             // Sync the master profile completed status
+            const finalDisplayName = role === BuiltInRoles.SCHOOL_ADMINISTRATION
+                ? (formData.admin_contact_name || formData.display_name)
+                : formData.display_name;
+
             const { error: profileError } = await supabase.from('profiles').update({
-                display_name: formData.display_name,
+                display_name: finalDisplayName,
                 phone: formData.phone,
-                profile_completed: true,
+                profile_completed: role !== BuiltInRoles.SCHOOL_ADMINISTRATION ? true : (isEditMode ? true : false),
                 role: role
             }).eq('id', profile.id);
 
@@ -196,7 +252,13 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
             if (isMounted.current) {
                 setLoading(false);
-                onComplete();
+                if (isEditMode && role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+                    setError(null);
+                    setSuccess("Profile updated successfully");
+                    setTimeout(() => setSuccess(null), 3000);
+                } else {
+                    onComplete();
+                }
             }
         } catch (err: any) {
             if (isMounted.current) {
@@ -251,6 +313,13 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-5 rounded-2xl flex items-center gap-4 animate-in shake">
                     <XIcon className="w-5 h-5 shrink-0" />
                     <span className="text-xs font-semibold uppercase tracking-wider">{error}</span>
+                </div>
+            )}
+
+            {success && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 p-5 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
+                    <CheckCircleIcon className="w-5 h-5 shrink-0" />
+                    <span className="text-xs font-semibold uppercase tracking-wider">{success}</span>
                 </div>
             )}
 
