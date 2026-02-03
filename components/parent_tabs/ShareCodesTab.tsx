@@ -24,24 +24,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // --- ADVANCED DESIGN TOKENS ---
 const TOKENS = {
-    glass: 'backdrop-blur-2xl bg-white/[0.01] border border-white/[0.04] shadow-2xl',
-    card: 'bg-[#0A0B0F] border border-white/[0.06] shadow-2xl overflow-hidden',
-    panel: 'bg-[#08090C] border border-white/[0.03]',
-    input: 'bg-black/40 border border-white/10 rounded-xl focus:border-primary/40 focus:ring-1 focus:ring-primary/10 transition-all outline-none text-white placeholder:text-white/10 text-sm font-medium',
+    glass: 'backdrop-blur-3xl bg-white/[0.015] border border-white/[0.05] shadow-2xl',
+    card: 'bg-[#0A0B0F] border border-white/[0.04] shadow-[0_32px_80px_-20px_rgba(0,0,0,0.5)] overflow-hidden',
+    panel: 'bg-[#060709] border border-white/[0.03]',
+    input: 'bg-black/60 border border-white/10 rounded-2xl focus:border-primary/40 focus:ring-4 focus:ring-primary/10 transition-all outline-none text-white placeholder:text-white/20 text-sm font-medium px-5 py-4',
     text: {
-        h: 'font-serif font-medium tracking-tight uppercase',
-        h_bold: 'font-serif font-black tracking-tight uppercase',
-        label: 'text-[10px] font-black uppercase tracking-[0.4em] text-white/20',
+        h: 'font-serif font-medium tracking-tight uppercase select-none',
+        h_bold: 'font-serif font-black tracking-tight uppercase select-none',
+        label: 'text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mb-2 block',
         body: 'text-sm text-white/40 leading-relaxed font-medium',
     },
-    success: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]',
+    success: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_30px_-10px_rgba(16,185,129,0.2)]',
+    action: 'hover:scale-[1.02] active:scale-[0.98] transition-all duration-300',
 };
 
 const statusMap: { [key: string]: { label: string; color: string; bg: string; border: string } } = {
-    'Active': { label: 'PROVISIONED', color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/20' },
-    'Redeemed': { label: 'VERIFIED', color: 'text-indigo-400', bg: 'bg-indigo-500/5', border: 'border-indigo-500/20' },
-    'Revoked': { label: 'TERMINATED', color: 'text-red-400', bg: 'bg-red-500/5', border: 'border-red-500/20' },
-    'Expired': { label: 'TIMED_OUT', color: 'text-white/20', bg: 'bg-white/5', border: 'border-white/10' },
+    'Active': { label: 'PROVISIONED', color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/10' },
+    'Redeemed': { label: 'VERIFIED', color: 'text-indigo-400', bg: 'bg-indigo-500/5', border: 'border-indigo-500/10' },
+    'Revoked': { label: 'TERMINATED', color: 'text-rose-400', bg: 'bg-rose-500/5', border: 'border-rose-500/10' },
+    'Expired': { label: 'TIMED_OUT', color: 'text-white/20', bg: 'bg-white/5', border: 'border-white/5' },
 };
 
 // --- SUB-COMPONENTS ---
@@ -49,15 +50,17 @@ const statusMap: { [key: string]: { label: string; color: string; bg: string; bo
 const CodeDigit: React.FC<{ char: string; active: boolean; size?: 'sm' | 'lg' }> = ({ char, active, size = 'lg' }) => {
     const isLarge = size === 'lg';
     return (
-        <div className={`
-            relative flex items-center justify-center rounded-xl border font-mono font-black transition-all duration-500
-            ${isLarge ? 'w-14 h-16 md:w-16 md:h-20 text-3xl md:text-4xl' : 'w-8 h-10 text-xs'}
-            ${char === '-' ? 'border-transparent text-white/10' :
-                active ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-white/5 border-white/5 text-white/20'}
-        `}>
-            {char}
+        <div
+            className={`
+                relative flex items-center justify-center rounded-2xl border font-mono font-black transition-all duration-700
+                ${isLarge ? 'w-14 h-20 md:w-16 md:h-24 text-4xl shadow-lg' : 'w-8 h-10 text-sm'}
+                ${char === '-' ? 'border-transparent text-white/10' :
+                    active ? 'bg-[#111318] border-primary/30 text-primary shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]' : 'bg-white/5 border-white/5 text-white/10'}
+            `}
+        >
+            <span className="relative z-10">{char}</span>
             {active && char !== '-' && (
-                <div className="absolute inset-0 bg-primary/20 blur-2xl opacity-10 pointer-events-none" />
+                <div className="absolute inset-x-2 bottom-2 h-[2px] bg-primary/40 blur-sm rounded-full pointer-events-none" />
             )}
         </div>
     );
@@ -76,66 +79,67 @@ const RegistryCard: React.FC<{
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`group p-6 rounded-[2.5rem] ${TOKENS.card} transition-all duration-500 border-white/[0.04] hover:border-white/10`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`group p-8 rounded-[2.5rem] ${TOKENS.card} transition-all duration-500 border-white/[0.04] hover:bg-white/[0.01] hover:border-white/[0.08]`}
         >
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center gap-4">
                     <PremiumAvatar
                         name={code.applicant_name}
                         src={code.profile_photo_url}
                         size="xs"
-                        className="w-10 h-10 ring-1 ring-white/10 shadow-lg"
+                        className="w-12 h-12 ring-2 ring-white/5 shadow-2xl"
                     />
                     <div>
-                        <h4 className="text-xs font-black text-white uppercase tracking-widest">{code.applicant_name}</h4>
-                        <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-0.5">{code.code_type} PROTOCOL</p>
+                        <h4 className="text-[13px] font-black text-white uppercase tracking-wider">{code.applicant_name}</h4>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mt-0.5">{code.code_type} PROTOCOL</p>
                     </div>
                 </div>
-                <div className={`px-2.5 py-1 rounded-lg border ${status.bg} ${status.border} ${status.color} text-[8px] font-black uppercase tracking-widest`}>
+                <div className={`px-3 py-1.5 rounded-xl border ${status.bg} ${status.border} ${status.color} text-[9px] font-black uppercase tracking-widest shadow-sm`}>
                     {status.label}
                 </div>
             </div>
 
-            <div
+            <button
                 onClick={() => onCopy(code.code, String(code.id))}
-                className="bg-black/40 border border-white/[0.03] rounded-2xl p-4 flex items-center justify-between group/code-well cursor-pointer hover:border-primary/20 transition-all mb-4 shadow-inner"
+                aria-label="Copy Protocol Key"
+                className="w-full bg-black/40 border border-white/[0.04] rounded-2xl p-5 flex items-center justify-between group/code-well cursor-pointer hover:border-primary/40 transition-all mb-6 shadow-inner focus:ring-2 focus:ring-primary/20 outline-none"
             >
-                <div className="flex items-baseline gap-1.5 overflow-hidden">
+                <div className="flex items-baseline gap-2 overflow-hidden px-1">
                     {codeChars.map((char, i) => (
-                        <span key={i} className={`font-mono font-black text-lg ${code.status === 'Active' ? 'text-white/30 group-hover/code-well:text-white' : 'text-white/10'} transition-colors`}>
+                        <span key={i} className={`font-mono font-black text-xl md:text-2xl ${code.status === 'Active' ? 'text-white/40 group-hover/code-well:text-white' : 'text-white/10'} transition-all duration-500`}>
                             {char}
                         </span>
                     ))}
                 </div>
-                <div className={`p-2 rounded-lg transition-all ${isCopied ? 'bg-emerald-500/10 text-emerald-400' : 'text-white/10 group-hover/code-well:text-primary'}`}>
-                    {isCopied ? <CheckCircleIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+                <div className={`p-2.5 rounded-xl transition-all duration-500 ${isCopied ? 'bg-emerald-500/10 text-emerald-400' : 'text-white/10 group-hover/code-well:text-primary group-hover/code-well:scale-110'}`}>
+                    {isCopied ? <CheckCircleIcon className="w-5 h-5" /> : <CopyIcon className="w-5 h-5" />}
                 </div>
-            </div>
+            </button>
 
-            <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-white/10 pt-1">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/10 pt-2 border-t border-white/[0.03]">
+                <div className="flex items-center gap-2.5">
+                    <ClockIcon className="w-3.5 h-3.5" />
+                    <span>Expires: {new Date(code.expires_at).toLocaleDateString()}</span>
+                </div>
+
                 <div className="flex items-center gap-2">
-                    <ClockIcon className="w-3 h-3" />
-                    <span>Exp: {new Date(code.expires_at).toLocaleDateString()}</span>
-                </div>
-
-                <div className="flex items-center gap-1">
                     {code.status === 'Active' ? (
                         <button
                             onClick={(e) => { e.stopPropagation(); onRevoke(code.id); }}
-                            className="p-2 text-white/10 hover:text-red-400 transition-colors"
+                            className="p-2 text-white/10 hover:text-rose-400 hover:bg-rose-500/5 rounded-lg transition-all"
                             title="Revoke Protocol"
                         >
-                            <TrashIcon className="w-4 h-4" />
+                            <TrashIcon className="w-4.2 h-4.2" />
                         </button>
                     ) : (
                         <button
                             onClick={(e) => { e.stopPropagation(); onRefetch(code); }}
-                            className="p-2 text-white/10 hover:text-primary transition-colors"
+                            className="p-2 text-white/10 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
                             title="Refetch Protocol"
                         >
-                            <RotateCcwIcon className="w-4 h-4" />
+                            <RotateCcwIcon className="w-4.2 h-4.2" />
                         </button>
                     )}
                 </div>
