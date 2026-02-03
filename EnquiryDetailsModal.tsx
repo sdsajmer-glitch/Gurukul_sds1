@@ -47,22 +47,20 @@ const TimelineEntry: React.FC<{ item: TimelineItem }> = ({ item }) => {
         const isParent = !item.is_admin;
         return (
             <motion.div
-                initial={{ opacity: 0, y: 4 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className={`flex items-start gap-3 w-full py-2 ${isParent ? 'justify-start' : 'justify-end'}`}
+                className={`flex w-full mb-2 ${isParent ? 'justify-start' : 'justify-end'}`}
             >
-                <div className={`flex items-start gap-3 max-w-[80%] ${isParent ? 'flex-row' : 'flex-row-reverse'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] text-white/90 flex-shrink-0 border border-white/5 ${isParent ? 'bg-indigo-600/40' : 'bg-white/5'}`}>
-                        {item.created_by_name.charAt(0)}
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <div className={`px-4 py-3 rounded-2xl shadow-sm border border-white/[0.05] ${isParent ? 'bg-[#1a1d23] rounded-tl-none' : 'bg-[#1f1b2e] rounded-tr-none'}`}>
-                            <p className="text-[14px] leading-relaxed text-white/85 font-sans whitespace-pre-wrap">{item.details.message}</p>
-                        </div>
-                        <div className={`flex items-center gap-2 px-1 ${isParent ? 'justify-start' : 'justify-end'}`}>
-                            <span className="text-[11px] font-medium text-white/40 uppercase tracking-wider">{item.created_by_name}</span>
-                            <span className="text-[11px] font-sans text-white/20">{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <div className={`flex flex-col gap-1.5 max-w-[85%] sm:max-w-[75%] ${isParent ? 'items-start' : 'items-end'}`}>
+                    <div className={`relative px-4 py-2.5 shadow-sm ${isParent ? 'bg-[#1a1d23] text-white/90 rounded-21xl rounded-tl-none border border-white/[0.04]' : 'bg-primary/95 text-white rounded-21xl rounded-tr-none shadow-primary/10'}`}>
+                        {/* Message Tail */}
+                        <div className={`absolute top-0 w-3 h-3 ${isParent ? '-left-1.5 bg-[#1a1d23] border-l border-t border-white/[0.04]' : '-right-1.5 bg-primary'} rotate-45 transform pointer-events-none hidden sm:block`} />
+
+                        <p className="text-[14.5px] leading-relaxed font-sans whitespace-pre-wrap relative z-10">{item.details.message}</p>
+
+                        <div className={`flex items-center gap-2 mt-1.5 justify-end relative z-10 opacity-60`}>
+                            <span className="text-[10px] font-sans font-medium uppercase tracking-tighter">{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {!isParent && <CheckCircleIcon className="w-3 h-3" />}
                         </div>
                     </div>
                 </div>
@@ -71,9 +69,10 @@ const TimelineEntry: React.FC<{ item: TimelineItem }> = ({ item }) => {
     }
 
     return (
-        <div className="flex justify-center my-6">
-            <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/[0.02] border border-white/5">
-                <span className="text-[11px] font-semibold uppercase text-white/25 tracking-widest">
+        <div className="flex justify-center my-8">
+            <div className="flex items-center gap-3 px-5 py-2 rounded-full bg-white/[0.03] border border-white/5 shadow-inner">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-pulse" />
+                <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em]">
                     {item.item_type.replace(/_/g, ' ')} • {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
             </div>
@@ -160,7 +159,13 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
 
     useEffect(() => {
         if (commsEndRef.current) {
-            commsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            const container = commsEndRef.current.parentElement;
+            if (container) {
+                const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+                if (isNearBottom || timeline.length <= 1) {
+                    commsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
         }
     }, [timeline]);
 
@@ -329,67 +334,72 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                 <div className="flex-grow overflow-hidden flex flex-col lg:flex-row relative">
                     {/* Message Area */}
                     <div className="flex-1 flex flex-col bg-transparent relative z-10 border-r border-white/[0.03]">
-                        <div className="flex-grow overflow-y-auto p-8 md:p-12 space-y-6 custom-scrollbar flex flex-col scroll-smooth bg-[#08090a]/40">
+                        <div className="flex-grow overflow-y-auto p-8 md:p-10 space-y-4 custom-scrollbar flex flex-col scroll-smooth bg-[#08090a]/40 relative">
                             {loading.timeline && timeline.length === 0 ? (
-                                <div className="m-auto flex flex-col items-center gap-3">
-                                    <Spinner size="md" className="text-primary/60" />
-                                    <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/15">Establishing Link...</p>
+                                <div className="m-auto flex flex-col items-center gap-4">
+                                    <Spinner size="lg" className="text-primary/60" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/10">Establishing Protocol...</p>
                                 </div>
                             ) : syncError ? (
-                                <div className="m-auto flex flex-col items-center text-center space-y-4">
-                                    <AlertTriangleIcon className="w-10 h-10 text-red-500/50" />
-                                    <p className="text-xs font-bold text-white/30 uppercase tracking-widest">{syncError}</p>
-                                    <button onClick={() => fetchTimeline()} className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline">Retry Connection</button>
+                                <div className="m-auto flex flex-col items-center text-center space-y-6">
+                                    <AlertTriangleIcon className="w-12 h-12 text-red-500/40" />
+                                    <p className="text-sm font-bold text-white/30 uppercase tracking-[0.2em]">{syncError}</p>
+                                    <button onClick={() => fetchTimeline()} className="px-6 py-2.5 rounded-full border border-primary/20 text-[10px] font-black text-primary uppercase tracking-widest hover:bg-primary/10 transition-all">Retry Transmission</button>
                                 </div>
                             ) : isLegacyNode ? (
-                                <div className="m-auto flex flex-col items-center text-center space-y-6">
-                                    <AlertTriangleIcon className="w-16 h-16 text-white/10" />
-                                    <div>
-                                        <h4 className="text-lg font-bold text-white/40 uppercase tracking-widest">Legacy Record Detected</h4>
-                                        <p className="text-sm text-white/20 mt-2 max-w-sm mx-auto leading-relaxed">Communications are locked for this node. Identity migration to UUID standard is required.</p>
+                                <div className="m-auto flex flex-col items-center text-center space-y-8">
+                                    <LockIcon className="w-20 h-20 text-white/5" />
+                                    <div className="space-y-3">
+                                        <h4 className="text-xl font-black text-white/30 uppercase tracking-tighter">Legacy Record Locked</h4>
+                                        <p className="text-xs text-white/10 uppercase tracking-[0.2em] max-w-xs mx-auto leading-relaxed font-bold">Standard identity node required for secure communications.</p>
                                     </div>
                                 </div>
                             ) : (
                                 <>
                                     {timeline.length === 0 && (
-                                        <div className="m-auto flex flex-col items-center text-center opacity-20">
-                                            <CommunicationIcon className="w-16 h-16 mb-6" />
-                                            <p className="text-sm font-medium uppercase tracking-[0.3em]">Channel Idle</p>
+                                        <div className="m-auto flex flex-col items-center text-center opacity-10 grayscale">
+                                            <CommunicationIcon className="w-24 h-24 mb-6" />
+                                            <p className="text-[12px] font-black uppercase tracking-[0.5em]">Channel Idle</p>
                                         </div>
                                     )}
-                                    <div className="space-y-4">
+                                    <div className="flex flex-col min-h-full justify-end">
                                         {timeline.map((item, idx) => <TimelineEntry key={idx} item={item} />)}
-                                        <div ref={commsEndRef} className="h-4" />
+                                        <div ref={commsEndRef} className="h-2" />
                                     </div>
                                 </>
                             )}
                         </div>
 
                         {/* Input Composer */}
-                        <div className="p-8 border-t border-white/[0.04] bg-[#0c0d12]/90 backdrop-blur-md">
-                            <form onSubmit={handleSendMessage} className="flex gap-4 items-center max-w-4xl mx-auto">
+                        <div className="p-8 border-t border-white/[0.03] bg-[#0c0d12] relative z-20">
+                            <form onSubmit={handleSendMessage} className="flex gap-4 items-center max-w-5xl mx-auto group/composer">
                                 <div className="flex-grow relative">
                                     <input
                                         type="text"
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         disabled={isLegacyNode || !!syncError}
-                                        placeholder={isLegacyNode ? "HANDSHAKE BLOCKED" : "Add an internal note or audit comment..."}
-                                        className={`w-full h-12 pl-5 pr-12 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white/85 placeholder:text-white/20 outline-none transition-all duration-200 focus:bg-white/[0.05] focus:border-primary/40 ${isLegacyNode || syncError ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                        placeholder={isLegacyNode ? "HANDSHAKE BLOCKED" : "Type a secure message..."}
+                                        className={`w-full h-14 pl-7 pr-16 rounded-[1.8rem] bg-[#050608] border border-white/5 text-[15px] text-white/90 placeholder:text-white/10 outline-none transition-all duration-300 focus:border-primary/40 focus:ring-4 focus:ring-primary/5 shadow-inner ${isLegacyNode || syncError ? 'opacity-30 cursor-not-allowed' : ''}`}
                                     />
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                        <LockIcon className="w-4 h-4 text-white/10" />
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                                        <div className="w-px h-6 bg-white/5" />
+                                        <SparklesIcon className="w-5 h-5 text-white/5 group-hover/composer:text-primary transition-colors duration-500" />
                                     </div>
                                 </div>
                                 <button
                                     type="submit"
                                     disabled={!newMessage.trim() || isLegacyNode || !!syncError}
-                                    className="w-12 h-12 bg-indigo-600/80 text-white rounded-xl flex items-center justify-center transition-all hover:bg-indigo-600 active:scale-95 disabled:opacity-10"
+                                    className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xl ${!newMessage.trim() || isLegacyNode || !!syncError ? 'bg-white/5 text-white/10' : 'bg-primary text-white hover:scale-110 active:scale-95 shadow-primary/20'}`}
                                 >
-                                    <LocalSendIcon className="w-5 h-5" />
+                                    <LocalSendIcon className="w-6 h-6" />
                                 </button>
                             </form>
-                            <p className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-white/10 mt-5">Verified Audit Log Context</p>
+                            <div className="flex items-center justify-center gap-3 mt-6 opacity-30">
+                                <div className="h-px w-8 bg-white/10" />
+                                <p className="text-[9px] font-black uppercase tracking-[0.5em] text-white/40">Secured Handshake Protocol</p>
+                                <div className="h-px w-8 bg-white/10" />
+                            </div>
                         </div>
                     </div>
 
