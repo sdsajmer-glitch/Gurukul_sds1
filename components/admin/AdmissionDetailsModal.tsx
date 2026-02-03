@@ -32,8 +32,15 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     const [isRequestingDoc, setIsRequestingDoc] = useState(false);
     const [newDocName, setNewDocName] = useState('');
     const [requestingLoading, setRequestingLoading] = useState(false);
+    const [expandedDoc, setExpandedDoc] = useState<number | null>(null);
 
     const isMounted = useRef(true);
+
+    const totalDocs = docs.length;
+    const verifiedDocs = docs.filter(d => d.status === 'Verified').length;
+    const mandatoryDocs = docs.filter(d => d.is_mandatory);
+    const allMandatoryVerified = mandatoryDocs.length > 0 && mandatoryDocs.every(d => d.status === 'Verified');
+    const progressPercentage = totalDocs > 0 ? Math.round((verifiedDocs / totalDocs) * 100) : 0;
 
     useEffect(() => {
         return () => { isMounted.current = false; };
@@ -244,20 +251,32 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
                                 {/* Left Column: Applicant Data */}
                                 <div className="lg:col-span-12 xl:col-span-5 space-y-8">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                                            <UserIcon className="w-4 h-4" />
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                                                <UserIcon className="w-4 h-4" />
+                                            </div>
+                                            <h3 className="text-xs font-black uppercase text-white/40 tracking-[0.4em]">
+                                                Applicant Profile
+                                            </h3>
                                         </div>
-                                        <h3 className="text-xs font-black uppercase text-white/40 tracking-[0.4em]">
-                                            Applicant Profile
-                                        </h3>
+                                        <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Profile 100%</span>
+                                        </div>
                                     </div>
 
-                                    <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] p-8 space-y-8 backdrop-blur-md relative overflow-hidden group shadow-2xl">
+                                    <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] p-8 space-y-8 backdrop-blur-md relative overflow-hidden group shadow-2xl transition-all hover:bg-white/[0.04]">
                                         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-indigo-500/10 transition-all duration-700" />
 
+                                        <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <button className="p-2 text-white/20 hover:text-white/50 transition-colors" title="Modify Registry Entry">
+                                                <RefreshCwIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
+
                                         <div className="flex items-start gap-6 relative z-10 transition-transform group-hover:translate-x-1 duration-300">
-                                            <div className="mt-1 p-3.5 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-lg">
+                                            <div className="mt-1 p-3.5 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-lg group-hover:shadow-indigo-500/10 transition-shadow">
                                                 <UserIcon className="w-7 h-7" />
                                             </div>
                                             <div>
@@ -269,7 +288,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                         <div className="h-px bg-gradient-to-r from-white/10 via-white/5 to-transparent w-full" />
 
                                         <div className="flex items-start gap-6 relative z-10 transition-transform group-hover:translate-x-1 duration-300 delay-75">
-                                            <div className="mt-1 p-3.5 bg-purple-500/10 rounded-2xl text-purple-400 border border-purple-500/20 shadow-lg">
+                                            <div className="mt-1 p-3.5 bg-purple-500/10 rounded-2xl text-purple-400 border border-purple-500/20 shadow-lg group-hover:shadow-purple-500/10 transition-shadow">
                                                 <MailIcon className="w-7 h-7" />
                                             </div>
                                             <div className="min-w-0 flex-1">
@@ -281,7 +300,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                         <div className="h-px bg-gradient-to-r from-white/10 via-white/5 to-transparent w-full" />
 
                                         <div className="flex items-start gap-6 relative z-10 transition-transform group-hover:translate-x-1 duration-300 delay-150">
-                                            <div className="mt-1 p-3.5 bg-pink-500/10 rounded-2xl text-pink-400 border border-pink-500/20 shadow-lg">
+                                            <div className="mt-1 p-3.5 bg-pink-500/10 rounded-2xl text-pink-400 border border-pink-500/20 shadow-lg group-hover:shadow-pink-500/10 transition-shadow">
                                                 <PhoneIcon className="w-7 h-7" />
                                             </div>
                                             <div>
@@ -301,31 +320,54 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
 
                                 {/* Right Column: Documentation */}
                                 <div className="lg:col-span-12 xl:col-span-7 space-y-8 flex flex-col">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                                                <ShieldCheckIcon className="w-5 h-5" />
+                                    <div className="flex flex-col gap-6">
+                                        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                                                        <ShieldCheckIcon className="w-5 h-5" />
+                                                    </div>
+                                                    <h3 className="text-xs font-black uppercase text-white/40 tracking-[0.4em]">
+                                                        Documentation Vault
+                                                    </h3>
+                                                </div>
+                                                <div className="flex items-center gap-3 pl-1.5">
+                                                    <div className="flex -space-x-1">
+                                                        {[...Array(totalDocs)].map((_, i) => (
+                                                            <div key={i} className={`w-1.5 h-1.5 rounded-full border border-black ${i < verifiedDocs ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-white/10'}`} />
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                                                        {verifiedDocs} of {totalDocs} Verified <span className="text-white/10 mx-2">|</span> {progressPercentage}% Complete
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <h3 className="text-xs font-black uppercase text-white/40 tracking-[0.4em]">
-                                                Documentation Vault
-                                            </h3>
+
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={fetchDocs}
+                                                    className="p-3 rounded-2xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all border border-white/5 shadow-lg active:scale-95"
+                                                    title="Re-sync Registry"
+                                                >
+                                                    <RefreshCwIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsRequestingDoc(!isRequestingDoc)}
+                                                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95
+                                                        ${isRequestingDoc ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/20' : 'bg-white/5 text-white/70 hover:bg-white/10 border border-white/10 hover:border-white/20'}`}
+                                                >
+                                                    <PlusIcon className="w-4 h-4" /> {isRequestingDoc ? 'Cancel' : 'Request Doc'}
+                                                </button>
+                                            </div>
                                         </div>
 
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={fetchDocs}
-                                                className="p-3 rounded-2xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all border border-white/5 shadow-lg active:scale-95"
-                                                title="Re-sync Registry"
-                                            >
-                                                <RefreshCwIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                                            </button>
-                                            <button
-                                                onClick={() => setIsRequestingDoc(!isRequestingDoc)}
-                                                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95
-                                                    ${isRequestingDoc ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/20' : 'bg-white/5 text-white/70 hover:bg-white/10 border border-white/10 hover:border-white/20'}`}
-                                            >
-                                                <PlusIcon className="w-4 h-4" /> {isRequestingDoc ? 'Cancel' : 'Request Doc'}
-                                            </button>
+                                        {/* Progress Track */}
+                                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden relative">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${progressPercentage}%` }}
+                                                className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                                            />
                                         </div>
                                     </div>
 
@@ -402,95 +444,124 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                                             initial={{ opacity: 0, y: 20 }}
                                                             animate={{ opacity: 1, y: 0 }}
                                                             transition={{ delay: idx * 0.08 }}
-                                                            className="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-white/[0.03] border border-white/10 hover:border-white/20 rounded-[2rem] group hover:bg-white/[0.05] transition-all duration-500 relative overflow-hidden shadow-xl"
+                                                            onClick={() => setExpandedDoc(expandedDoc === doc.id ? null : doc.id)}
+                                                            className={`flex flex-col p-6 bg-white/[0.03] border rounded-[2rem] group transition-all duration-500 relative overflow-hidden shadow-xl cursor-pointer
+                                                                ${expandedDoc === doc.id ? 'border-white/20 bg-white/[0.06] ring-1 ring-white/10' : 'border-white/10 hover:border-white/20 hover:bg-white/[0.05]'}
+                                                            `}
                                                         >
                                                             <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-transparent via-white/10 to-transparent group-hover:via-indigo-500/50 transition-all duration-700" />
 
-                                                            <div className="flex items-center gap-6 relative z-10 mb-4 sm:mb-0">
-                                                                <div className={`p-4 rounded-2xl transition-all duration-500 shadow-lg ${doc.status === 'Verified' ? 'bg-emerald-500/15 text-emerald-400 ring-2 ring-emerald-500/30' :
-                                                                    doc.status === 'Rejected' ? 'bg-red-500/15 text-red-500 ring-2 ring-red-500/30' :
-                                                                        'bg-white/5 text-white/30 group-hover:scale-110 group-hover:text-white/60'
-                                                                    }`}>
-                                                                    <FileTextIcon className="w-7 h-7" />
-                                                                </div>
-                                                                <div>
-                                                                    <div className="flex items-center gap-3">
-                                                                        <p className="text-lg font-black text-white tracking-tight uppercase group-hover:text-indigo-400 transition-colors">
-                                                                            {doc.document_name}
-                                                                        </p>
-                                                                        {doc.is_mandatory && (
-                                                                            <span className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] shadow-sm">
-                                                                                Required
-                                                                            </span>
-                                                                        )}
+                                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+                                                                <div className="flex items-center gap-6 relative z-10 mb-4 sm:mb-0">
+                                                                    <div className={`p-4 rounded-2xl transition-all duration-500 shadow-lg ${doc.status === 'Verified' ? 'bg-emerald-500/15 text-emerald-400 ring-2 ring-emerald-500/30' :
+                                                                        doc.status === 'Rejected' ? 'bg-red-500/15 text-red-500 ring-2 ring-red-500/30' :
+                                                                            'bg-white/5 text-white/30 group-hover:scale-110 group-hover:text-white/60'
+                                                                        }`}>
+                                                                        {doc.status === 'Verified' ? <CheckCircleIcon className="w-7 h-7" /> : <FileTextIcon className="w-7 h-7" />}
                                                                     </div>
-                                                                    <div className="flex items-center gap-4 mt-2">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className={`w-2 h-2 rounded-full ${doc.status === 'Verified' ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]' :
-                                                                                doc.status === 'Rejected' ? 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]' :
-                                                                                    'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.8)]'
-                                                                                }`} />
-                                                                            <span className={`text-[10px] uppercase font-black tracking-[0.2em] font-mono ${doc.status === 'Verified' ? 'text-emerald-400' :
-                                                                                doc.status === 'Rejected' ? 'text-red-400' :
-                                                                                    'text-amber-400'
-                                                                                }`}>
-                                                                                {doc.status}
-                                                                            </span>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-3">
+                                                                            <p className="text-lg font-black text-white tracking-tight uppercase group-hover:text-indigo-400 transition-colors">
+                                                                                {doc.document_name}
+                                                                            </p>
+                                                                            {doc.is_mandatory && (
+                                                                                <span className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-[9px] font-black uppercase tracking-[0.2em] shadow-sm">
+                                                                                    Required
+                                                                                </span>
+                                                                            )}
                                                                         </div>
-                                                                        {doc.status === 'Rejected' && (
-                                                                            <span className="text-xs text-red-400/60 font-medium italic truncate max-w-[250px] bg-red-500/5 px-3 py-1 rounded-lg border border-red-500/10">
-                                                                                {doc.rejection_reason}
-                                                                            </span>
-                                                                        )}
+                                                                        <div className="flex items-center gap-4 mt-2">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className={`w-2 h-2 rounded-full ${doc.status === 'Verified' ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]' :
+                                                                                    doc.status === 'Rejected' ? 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]' :
+                                                                                        'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.8)]'
+                                                                                    }`} />
+                                                                                <span className={`text-[10px] uppercase font-black tracking-[0.2em] font-mono ${doc.status === 'Verified' ? 'text-emerald-400' :
+                                                                                    doc.status === 'Rejected' ? 'text-red-400' :
+                                                                                        'text-amber-400'
+                                                                                    }`}>
+                                                                                    {doc.status}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
+                                                                </div>
+
+                                                                {/* Hover Triggered Actions */}
+                                                                <div className="flex items-center gap-4 relative z-10 ml-auto sm:ml-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none group-hover:pointer-events-auto">
+                                                                    {doc.admission_documents?.[0]?.storage_path ? (
+                                                                        <div className="flex items-center bg-black/60 rounded-[1.5rem] p-2 border border-white/10 backdrop-blur-3xl shadow-2xl" onClick={e => e.stopPropagation()}>
+                                                                            <button
+                                                                                onClick={() => StorageService.getSignedUrl(BUCKETS.DOCUMENTS, doc.admission_documents[0].storage_path).then(url => window.open(url, '_blank'))}
+                                                                                className="p-3 hover:bg-white/10 rounded-2xl text-white/50 hover:text-white transition-all group/btn"
+                                                                                title="Inspect Artifact"
+                                                                            >
+                                                                                <EyeIcon className="w-5 h-5 group-hover/btn:scale-125 transition-transform duration-300" />
+                                                                            </button>
+                                                                            <div className="w-px h-8 bg-white/15 mx-1.5" />
+                                                                            <button
+                                                                                onClick={() => handleDownload(doc)}
+                                                                                disabled={downloadingId === doc.id}
+                                                                                className="p-3 hover:bg-white/10 rounded-2xl text-white/50 hover:text-indigo-400 transition-all disabled:opacity-50 group/btn"
+                                                                                title="Secure Download"
+                                                                            >
+                                                                                {downloadingId === doc.id ? <Spinner size="sm" className="text-indigo-400" /> : <DownloadIcon className="w-5 h-5 group-hover/btn:scale-125 transition-transform duration-300" />}
+                                                                            </button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="px-6 py-2.5 rounded-[1.25rem] bg-white/[0.03] border border-white/5 shadow-inner">
+                                                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-mono animate-pulse">Wait-Pld</span>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {doc.status !== 'Verified' && doc.admission_documents?.length > 0 && (
+                                                                        <div className="flex items-center gap-3 ml-2" onClick={e => e.stopPropagation()}>
+                                                                            <button
+                                                                                onClick={() => handleVerifyDoc(doc.id)}
+                                                                                className="p-4 bg-emerald-500/10 hover:bg-emerald-600 text-emerald-500 hover:text-white rounded-2xl transition-all border border-emerald-500/20 shadow-xl active:scale-90 group/v"
+                                                                                title="Execute Verification"
+                                                                            >
+                                                                                <CheckCircleIcon className="w-6 h-6 group-hover/v:scale-110 transition-transform" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleRejectDoc(doc.id)}
+                                                                                className="p-4 bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all border border-red-500/20 shadow-xl active:scale-90 group/v"
+                                                                                title="Reject Artifact"
+                                                                            >
+                                                                                <XIcon className="w-6 h-6 group-hover/v:scale-110 transition-transform" />
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex items-center gap-4 relative z-10 ml-auto sm:ml-0">
-                                                                {doc.admission_documents?.[0]?.storage_path ? (
-                                                                    <div className="flex items-center bg-black/60 rounded-[1.5rem] p-2 border border-white/10 backdrop-blur-3xl shadow-2xl">
-                                                                        <button
-                                                                            onClick={() => StorageService.getSignedUrl(BUCKETS.DOCUMENTS, doc.admission_documents[0].storage_path).then(url => window.open(url, '_blank'))}
-                                                                            className="p-3 hover:bg-white/10 rounded-2xl text-white/50 hover:text-white transition-all group/btn"
-                                                                            title="Inspect Artifact"
-                                                                        >
-                                                                            <EyeIcon className="w-5 h-5 group-hover/btn:scale-125 transition-transform duration-300" />
-                                                                        </button>
-                                                                        <div className="w-px h-8 bg-white/15 mx-1.5" />
-                                                                        <button
-                                                                            onClick={() => handleDownload(doc)}
-                                                                            disabled={downloadingId === doc.id}
-                                                                            className="p-3 hover:bg-white/10 rounded-2xl text-white/50 hover:text-indigo-400 transition-all disabled:opacity-50 group/btn"
-                                                                            title="Secure Download"
-                                                                        >
-                                                                            {downloadingId === doc.id ? <Spinner size="sm" className="text-indigo-400" /> : <DownloadIcon className="w-5 h-5 group-hover/btn:scale-125 transition-transform duration-300" />}
-                                                                        </button>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="px-6 py-2.5 rounded-[1.25rem] bg-white/[0.03] border border-white/5 shadow-inner">
-                                                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] font-mono animate-pulse">Wait-Pld</span>
-                                                                    </div>
+                                                            {/* Expansion Area: Reviewer Notes / Recovery */}
+                                                            <AnimatePresence>
+                                                                {expandedDoc === doc.id && (
+                                                                    <motion.div
+                                                                        initial={{ height: 0, opacity: 0 }}
+                                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                                        exit={{ height: 0, opacity: 0 }}
+                                                                        className="overflow-hidden"
+                                                                    >
+                                                                        <div className="pt-6 mt-6 border-t border-white/10 flex flex-col gap-4">
+                                                                            {doc.status === 'Rejected' && (
+                                                                                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-start gap-4">
+                                                                                    <AlertTriangleIcon className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                                                                                    <div className="space-y-1">
+                                                                                        <p className="text-[10px] font-black uppercase text-red-400/60 tracking-widest">Rejection Reason</p>
+                                                                                        <p className="text-sm font-medium text-red-200/80">{doc.rejection_reason}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/20 px-2">
+                                                                                <p>Artifact Type: Registry Document</p>
+                                                                                <p>Internal ID: {doc.id}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </motion.div>
                                                                 )}
-
-                                                                {doc.status !== 'Verified' && doc.admission_documents?.length > 0 && (
-                                                                    <div className="flex items-center gap-3 ml-2">
-                                                                        <button
-                                                                            onClick={() => handleVerifyDoc(doc.id)}
-                                                                            className="p-4 bg-emerald-500/10 hover:bg-emerald-600 text-emerald-500 hover:text-white rounded-2xl transition-all border border-emerald-500/20 shadow-xl active:scale-90 group/v"
-                                                                            title="Execute Verification"
-                                                                        >
-                                                                            <CheckCircleIcon className="w-6 h-6 group-hover/v:scale-110 transition-transform" />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleRejectDoc(doc.id)}
-                                                                            className="p-4 bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl transition-all border border-red-500/20 shadow-xl active:scale-90 group/v"
-                                                                            title="Reject Artifact"
-                                                                        >
-                                                                            <XIcon className="w-6 h-6 group-hover/v:scale-110 transition-transform" />
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                            </AnimatePresence>
                                                         </motion.div>
                                                     ))}
                                                 </div>
@@ -507,31 +578,43 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 <div className="p-8 lg:p-10 border-t border-white/10 bg-white/[0.02] flex flex-col md:flex-row justify-between items-center gap-8 shrink-0 backdrop-blur-3xl relative z-10">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                            <div className={`w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)] ${allMandatoryVerified ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
                             <p className="text-[11px] text-white/50 font-black uppercase tracking-[0.5em]">
                                 Secure Admission Protocol v2.5
                             </p>
                         </div>
                         <p className="text-[9px] text-white/20 font-bold uppercase tracking-[0.3em] pl-5">
-                            Sync: Global Institutional Registry • {new Date().toLocaleDateString()} • Node: {admission.id.slice(0, 8).toUpperCase()}
+                            {allMandatoryVerified
+                                ? "Protocol Stage: Ready for Finalization"
+                                : `Protocol Stage: Awaiting Compliance (${verifiedDocs}/${totalDocs} Verified)`}
                         </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-6 w-full md:w-auto">
+                    <div className="flex flex-col sm:flex-row gap-6 w-full md:w-auto items-center">
+                        {!allMandatoryVerified && admission.status !== 'Enrolled' && finalizeState !== 'success' && (
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white/30 text-center sm:text-right max-w-[200px] leading-relaxed">
+                                Complete all <span className="text-indigo-400">Mandatory</span> verifications to enable finalization.
+                            </p>
+                        )}
+
                         {admission.status !== 'Enrolled' && finalizeState !== 'success' && (
                             <motion.button
-                                whileHover={{ scale: 1.03, translateY: -2 }}
-                                whileTap={{ scale: 0.97 }}
+                                whileHover={allMandatoryVerified ? { scale: 1.03, translateY: -2 } : {}}
+                                whileTap={allMandatoryVerified ? { scale: 0.97 } : {}}
                                 onClick={handleFinalize}
-                                disabled={finalizeState === 'processing'}
-                                className="w-full sm:px-16 py-6 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 hover:from-emerald-500 hover:via-emerald-400 hover:to-emerald-300 text-white font-black text-sm uppercase tracking-[0.4em] rounded-[2rem] shadow-[0_20px_60px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-5 disabled:opacity-50 disabled:cursor-not-allowed group border border-emerald-400/40 relative overflow-hidden"
+                                disabled={finalizeState === 'processing' || !allMandatoryVerified}
+                                className={`w-full sm:px-16 py-6 font-black text-sm uppercase tracking-[0.4em] rounded-[2rem] transition-all flex items-center justify-center gap-5 relative overflow-hidden border
+                                    ${allMandatoryVerified
+                                        ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 hover:from-emerald-500 hover:via-emerald-400 hover:to-emerald-300 text-white shadow-[0_20px_60px_rgba(16,185,129,0.4)] border-emerald-400/40'
+                                        : 'bg-white/5 text-white/20 border-white/10 grayscale cursor-not-allowed opacity-50'}
+                                `}
                             >
                                 <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-[-20deg]" />
                                 {finalizeState === 'processing' ? (
                                     <><Spinner size="sm" className="text-white" /> Initializing Node...</>
                                 ) : (
                                     <>
-                                        <ShieldCheckIcon className="w-7 h-7 group-hover:scale-110 transition-transform duration-300" />
+                                        <ShieldCheckIcon className="w-7 h-7" />
                                         Finalize Enrollment
                                     </>
                                 )}
