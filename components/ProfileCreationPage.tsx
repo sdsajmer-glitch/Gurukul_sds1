@@ -119,45 +119,64 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('=== FORM SUBMISSION STARTED ===');
+        console.log('Current formData:', formData);
+        console.log('Current role:', role);
 
         // Detailed validation with specific error messages
         if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+            console.log('Validating School Admin fields...');
+
             if (!formData.school_name?.trim()) {
+                console.error('Validation failed: school_name missing');
                 setError("Institution Name is required");
                 return;
             }
             if (!formData.address?.trim()) {
+                console.error('Validation failed: address missing');
                 setError("Street Address is required");
                 return;
             }
             if (!formData.admin_contact_name?.trim()) {
+                console.error('Validation failed: admin_contact_name missing');
                 setError("Primary Administrator Name is required");
                 return;
             }
             if (!formData.admin_contact_email?.trim()) {
+                console.error('Validation failed: admin_contact_email missing');
                 setError("Administrator Email is required");
                 return;
             }
             if (!formData.admin_contact_phone_local?.trim()) {
+                console.error('Validation failed: admin_contact_phone_local missing');
                 setError("Administrator Phone Number is required");
                 return;
             }
             if (!formData.academic_board?.trim()) {
+                console.error('Validation failed: academic_board missing');
                 setError("Education Board is required");
                 return;
             }
+
+            console.log('✅ All validations passed!');
         } else if (!isFormValid) {
+            console.error('Validation failed: isFormValid is false');
             setError("Mandatory identity parameters are missing.");
             return;
         }
 
+        console.log('Setting loading state...');
         setLoading(true);
         setError(null);
+        setSuccess(null);
 
         try {
             const isEditMode = profile.profile_completed;
+            console.log('Is Edit Mode:', isEditMode);
+            console.log('Profile ID:', profile.id);
 
             if (role === BuiltInRoles.TEACHER) {
+                console.log('Processing Teacher profile...');
                 const { error: tError } = await supabase.rpc('upsert_teacher_profile', {
                     p_user_id: profile.id,
                     p_display_name: formData.display_name,
@@ -170,8 +189,13 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     p_experience: Number(formData.experience_years) || 0,
                     p_doj: formData.date_of_joining || new Date().toISOString().split('T')[0]
                 });
-                if (tError) throw tError;
+                if (tError) {
+                    console.error('Teacher profile error:', tError);
+                    throw tError;
+                }
+                console.log('✅ Teacher profile saved');
             } else if (role === BuiltInRoles.PARENT_GUARDIAN) {
+                console.log('Processing Parent profile...');
                 const { error: pError } = await supabase.rpc('upsert_parent_profile', {
                     p_user_id: profile.id,
                     p_display_name: formData.display_name,
@@ -184,8 +208,13 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     p_country: formData.country,
                     p_pin_code: formData.pin_code
                 });
-                if (pError) throw pError;
+                if (pError) {
+                    console.error('Parent profile error:', pError);
+                    throw pError;
+                }
+                console.log('✅ Parent profile saved');
             } else if (role === BuiltInRoles.STUDENT) {
+                console.log('Processing Student profile...');
                 const { error: stError } = await supabase.rpc('upsert_student_profile', {
                     p_user_id: profile.id,
                     p_display_name: formData.display_name,
@@ -193,8 +222,14 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     p_gender: formData.gender,
                     p_dob: formData.date_of_birth || new Date().toISOString().split('T')[0]
                 });
-                if (stError) throw stError;
+                if (stError) {
+                    console.error('Student profile error:', stError);
+                    throw stError;
+                }
+                console.log('✅ Student profile saved');
             } else if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+                console.log('Processing School Admin profile...');
+
                 // Prepare complete payload with all fields
                 const payload: any = {
                     user_id: profile.id,
@@ -216,24 +251,44 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     onboarding_step: isEditMode ? formData.onboarding_step : 'pricing'
                 };
 
-                const { error: sError } = await supabase.from('school_admin_profiles').upsert(payload);
-                if (sError) throw sError;
+                console.log('School Admin Payload:', payload);
+
+                const { data: upsertData, error: sError } = await supabase
+                    .from('school_admin_profiles')
+                    .upsert(payload)
+                    .select();
+
+                if (sError) {
+                    console.error('School Admin upsert error:', sError);
+                    throw sError;
+                }
+                console.log('✅ School Admin profile saved:', upsertData);
             } else if (role === BuiltInRoles.TRANSPORT_STAFF) {
+                console.log('Processing Transport Staff profile...');
                 const { error: trError } = await supabase.rpc('upsert_transport_profile', {
                     p_user_id: profile.id,
                     p_display_name: formData.display_name,
                     p_vehicle_details: formData.vehicle_details,
                     p_license_info: formData.license_info
                 });
-                if (trError) throw trError;
+                if (trError) {
+                    console.error('Transport profile error:', trError);
+                    throw trError;
+                }
+                console.log('✅ Transport profile saved');
             } else if (role === BuiltInRoles.ECOMMERCE_OPERATOR) {
+                console.log('Processing E-commerce profile...');
                 const { error: ecError } = await supabase.rpc('upsert_ecommerce_profile', {
                     p_user_id: profile.id,
                     p_display_name: formData.display_name,
                     p_store_name: formData.store_name,
                     p_business_type: formData.business_type
                 });
-                if (ecError) throw ecError;
+                if (ecError) {
+                    console.error('E-commerce profile error:', ecError);
+                    throw ecError;
+                }
+                console.log('✅ E-commerce profile saved');
             }
 
             // Sync the master profile completed status
@@ -241,26 +296,50 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 ? (formData.admin_contact_name || formData.display_name)
                 : formData.display_name;
 
-            const { error: profileError } = await supabase.from('profiles').update({
-                display_name: finalDisplayName,
-                phone: formData.phone,
-                profile_completed: role !== BuiltInRoles.SCHOOL_ADMINISTRATION ? true : (isEditMode ? true : false),
-                role: role
-            }).eq('id', profile.id);
+            console.log('Updating master profile...');
+            console.log('Final display name:', finalDisplayName);
+            console.log('Profile completed:', role !== BuiltInRoles.SCHOOL_ADMINISTRATION ? true : (isEditMode ? true : false));
 
-            if (profileError) throw profileError;
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .update({
+                    display_name: finalDisplayName,
+                    phone: formData.phone,
+                    profile_completed: role !== BuiltInRoles.SCHOOL_ADMINISTRATION ? true : (isEditMode ? true : false),
+                    role: role
+                })
+                .eq('id', profile.id)
+                .select();
+
+            if (profileError) {
+                console.error('Profile update error:', profileError);
+                throw profileError;
+            }
+            console.log('✅ Master profile updated:', profileData);
 
             if (isMounted.current) {
+                console.log('Component still mounted, updating UI...');
                 setLoading(false);
                 if (isEditMode && role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+                    console.log('Showing success message for edit mode');
                     setError(null);
                     setSuccess("Profile updated successfully");
                     setTimeout(() => setSuccess(null), 3000);
                 } else {
+                    console.log('Calling onComplete()...');
                     onComplete();
                 }
             }
+
+            console.log('=== FORM SUBMISSION COMPLETED SUCCESSFULLY ===');
         } catch (err: any) {
+            console.error('=== FORM SUBMISSION ERROR ===');
+            console.error('Error object:', err);
+            console.error('Error message:', err.message);
+            console.error('Error details:', err.details);
+            console.error('Error hint:', err.hint);
+            console.error('Error code:', err.code);
+
             if (isMounted.current) {
                 setError(formatError(err));
                 setLoading(false);
