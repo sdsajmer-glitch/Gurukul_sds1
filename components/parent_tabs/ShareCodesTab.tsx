@@ -46,7 +46,7 @@ const statusMap: { [key: string]: { label: string; color: string; bg: string; bo
 
 // --- SUB-COMPONENTS ---
 
-const CodeDigit = ({ char, active, size = 'lg' }: { char: string; active: boolean; size?: 'sm' | 'lg' }) => {
+const CodeDigit: React.FC<{ char: string; active: boolean; size?: 'sm' | 'lg' }> = ({ char, active, size = 'lg' }) => {
     const isLarge = size === 'lg';
     return (
         <div className={`
@@ -63,13 +63,13 @@ const CodeDigit = ({ char, active, size = 'lg' }: { char: string; active: boolea
     );
 };
 
-const RegistryCard = ({ code, onRevoke, onCopy, onRefetch, isCopied }: {
-    code: ShareCode;
+const RegistryCard: React.FC<{
+    code: ShareCode & { profile_photo_url?: string | null };
     onRevoke: (id: number) => void;
     onCopy: (text: string, id: string) => void;
     onRefetch: (code: ShareCode) => void;
     isCopied: boolean;
-}) => {
+}> = ({ code, onRevoke, onCopy, onRefetch, isCopied }) => {
     const status = statusMap[code.status] || statusMap.Expired;
     const codeChars = code.code.split('');
 
@@ -82,9 +82,12 @@ const RegistryCard = ({ code, onRevoke, onCopy, onRefetch, isCopied }: {
         >
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-white/20 group-hover:text-primary transition-colors">
-                        <UsersIcon className="w-5 h-5" />
-                    </div>
+                    <PremiumAvatar
+                        name={code.applicant_name}
+                        src={code.profile_photo_url}
+                        size="xs"
+                        className="w-10 h-10 ring-1 ring-white/10 shadow-lg"
+                    />
                     <div>
                         <h4 className="text-xs font-black text-white uppercase tracking-widest">{code.applicant_name}</h4>
                         <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mt-0.5">{code.code_type} PROTOCOL</p>
@@ -180,10 +183,14 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                 setSelectedAdmission(String(apps[0].id));
             }
 
-            const mappedCodes = (codesRes.data || []).map((c: any) => ({
-                ...c,
-                applicant_name: c.applicant_name || apps.find((a: any) => a.id === (c.admission_id || c.enquiry_id))?.applicant_name || 'Unknown Applicant'
-            }));
+            const mappedCodes = (codesRes.data || []).map((c: any) => {
+                const app = apps.find((a: any) => a.id === (c.admission_id || c.enquiry_id));
+                return {
+                    ...c,
+                    applicant_name: c.applicant_name || app?.applicant_name || 'Unknown Applicant',
+                    profile_photo_url: app?.profile_photo_url || null
+                };
+            });
 
             setCodes(mappedCodes);
         } catch (err: any) {
@@ -319,7 +326,12 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                             `}
                                         >
                                             <div className="flex items-center gap-4">
-                                                <PremiumAvatar name={app.applicant_name} size="xs" className="w-8 h-8 rounded-lg" />
+                                                <PremiumAvatar
+                                                    name={app.applicant_name}
+                                                    src={app.profile_photo_url}
+                                                    size="xs"
+                                                    className="w-9 h-9 border border-white/10 shadow-lg"
+                                                />
                                                 <div className="text-left">
                                                     <p className={`text-[11px] font-black uppercase tracking-tight ${selectedAdmission === String(app.id) ? 'text-white' : 'text-white/40 group-hover:text-white/60'}`}>
                                                         {app.applicant_name}
@@ -398,13 +410,21 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                     className="relative z-10 w-full max-w-2xl flex flex-col items-center gap-12"
                                 >
                                     <div className="space-y-4">
-                                        <motion.div
-                                            initial={{ rotate: -180, scale: 0.5 }}
-                                            animate={{ rotate: 0, scale: 1 }}
-                                            className={`w-14 h-14 rounded-2xl flex items-center justify-center border mx-auto ${TOKENS.success}`}
-                                        >
-                                            <CheckCircleIcon className="w-7 h-7" />
-                                        </motion.div>
+                                        <div className="flex items-center justify-center -space-x-4 mb-2">
+                                            <PremiumAvatar
+                                                name={selectedChild?.applicant_name || 'User'}
+                                                src={selectedChild?.profile_photo_url}
+                                                size="md"
+                                                className="border-4 border-[#0A0B0F] shadow-2xl relative z-10 scale-110"
+                                            />
+                                            <motion.div
+                                                initial={{ rotate: -180, scale: 0.5 }}
+                                                animate={{ rotate: 0, scale: 1 }}
+                                                className={`w-14 h-14 rounded-2xl flex items-center justify-center border bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_40px_-10px_rgba(16,185,129,0.3)] relative z-0`}
+                                            >
+                                                <CheckCircleIcon className="w-7 h-7" />
+                                            </motion.div>
+                                        </div>
                                         <h2 className={`${TOKENS.text.h_bold} text-4xl lg:text-5xl text-white tracking-tight leading-none`}>
                                             Identity <span className="text-white/20 italic font-medium">Provisioned.</span>
                                         </h2>
