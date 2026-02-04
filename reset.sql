@@ -48,6 +48,7 @@ DROP FUNCTION IF EXISTS public.get_all_teachers_for_admin CASCADE;
 DROP FUNCTION IF EXISTS public.get_all_users_for_admin CASCADE;
 DROP FUNCTION IF EXISTS public.get_class_roster CASCADE;
 DROP FUNCTION IF EXISTS public.get_finance_dashboard_data CASCADE;
+DROP FUNCTION IF EXISTS public.get_my_children_profiles CASCADE; -- Added prevent conflict
 DROP FUNCTION IF EXISTS public.get_school_branches CASCADE;
 DROP FUNCTION IF EXISTS public.get_student_financial_node CASCADE;
 DROP FUNCTION IF EXISTS public.get_student_financial_nodes CASCADE;
@@ -2472,7 +2473,9 @@ RETURNS TABLE (
   profile_photo_url text,
   branch_id integer,
   submitted_at timestamptz,
-  student_user_id uuid
+  student_user_id uuid,
+  emergency_contact text,
+  medical_info text
 )
 LANGUAGE sql
 SECURITY DEFINER
@@ -2491,10 +2494,12 @@ AS $$
     a.profile_photo_url,
     a.branch_id,
     a.submitted_at,
-    a.student_user_id
+    a.student_user_id,
+    a.emergency_contact,
+    a.medical_info
   FROM public.admissions a
   WHERE a.parent_id = auth.uid()
-     OR a.parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid())
+     OR LOWER(a.parent_email) = LOWER(COALESCE((SELECT email FROM public.profiles WHERE id = auth.uid()), (SELECT auth.jwt() ->> 'email'), ''))
   ORDER BY a.submitted_at DESC;
 $$;
 
