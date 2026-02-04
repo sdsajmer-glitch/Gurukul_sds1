@@ -668,13 +668,18 @@ CREATE TABLE public.admission_audit_logs (
 CREATE TABLE public.admission_share_codes (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   code text NOT NULL UNIQUE,
-  admission_id bigint,
-  enquiry_id bigint,
+  admission_id uuid,
+  enquiry_id uuid,
   code_type text NOT NULL,
   status text DEFAULT 'Active',
   purpose text,
   expires_at timestamp with time zone DEFAULT (now() + '1 day'::interval),
-  created_at timestamp with time zone DEFAULT now()
+  created_at timestamp with time zone DEFAULT now(),
+  created_by uuid REFERENCES auth.users(id),
+  redeemed_by uuid REFERENCES auth.users(id),
+  redeemed_at timestamp with time zone,
+  attempts integer DEFAULT 0,
+  locked_until timestamp with time zone
 );
 
 CREATE TABLE public.attendance_records (
