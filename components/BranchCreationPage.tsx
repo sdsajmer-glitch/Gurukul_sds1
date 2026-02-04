@@ -19,6 +19,7 @@ import { SparklesIcon } from './icons/SparklesIcon';
 import { CheckoutIcon } from './icons/CheckoutIcon';
 import { EditIcon } from './icons/EditIcon';
 import { GoogleGenAI } from '@google/genai';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface BranchCreationPageProps {
     onNext?: () => void;
@@ -68,43 +69,149 @@ const FloatingLabelInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> &
     </div>
 );
 
-const StyledSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement> & { label: string, icon?: React.ReactNode, error?: string, hint?: string }> = ({ label, icon, children, error, hint, className, ...props }) => (
-    <div className="relative group/select w-full space-y-1.5">
-        <div className="relative">
-            <div className={`absolute top-1/2 -translate-y-1/2 left-4 transition-colors duration-300 z-10 pointer-events-none
-                ${error ? 'text-red-500' : 'text-white/20 group-focus-within/select:text-primary'}`}>
-                {icon}
+const InstitutionalSelect: React.FC<{
+    label: string,
+    icon?: React.ReactNode,
+    error?: string,
+    hint?: string,
+    value: string,
+    onChange: (value: string) => void,
+    options: { value: string, label: string }[],
+    disabled?: boolean,
+    required?: boolean,
+    className?: string,
+    searchable?: boolean
+}> = ({ label, icon, value, onChange, options, error, hint, disabled, required, className, searchable = false }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const containerRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    const filteredOptions = useMemo(() => {
+        if (!searchable || !searchTerm) return options;
+        const lowerTerm = searchTerm.toLowerCase();
+        return options.filter(opt => opt.label.toLowerCase().includes(lowerTerm));
+    }, [options, searchTerm, searchable]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        if (isOpen && searchable && searchInputRef.current) {
+            setTimeout(() => searchInputRef.current?.focus(), 100);
+        }
+        if (!isOpen) setSearchTerm('');
+    }, [isOpen, searchable]);
+
+    const selectedOption = options.find(opt => opt.value === value);
+
+    return (
+        <div className={`relative group/select w-full space-y-1.5 ${className || ''}`} ref={containerRef}>
+            <div className="relative">
+                <div className={`absolute top-1/2 -translate-y-1/2 left-4 transition-colors duration-300 z-10 pointer-events-none
+                    ${error ? 'text-red-500' : 'text-white/20 group-focus-within/select:text-primary'}
+                    ${isOpen ? 'text-primary' : ''}`}>
+                    {icon}
+                </div>
+
+                <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => !disabled && setIsOpen(!isOpen)}
+                    className={`peer block w-full text-left rounded-2xl border bg-white/[0.02] px-4 py-4 pl-12 pr-10 text-[15px] font-medium transition-all duration-300
+                        ${error
+                            ? 'border-red-500/50 bg-red-500/[0.02] focus:border-red-500 ring-4 ring-red-500/10'
+                            : isOpen
+                                ? 'border-primary/50 bg-white/[0.04] ring-4 ring-primary/10'
+                                : 'border-white/5 hover:border-white/10'} 
+                        ${disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
+                        ${selectedOption ? 'text-white' : 'text-white/20'}`}
+                >
+                    {selectedOption ? selectedOption.label : "Select Option..."}
+                </button>
+
+                <label className={`absolute left-11 top-0 -translate-y-1/2 bg-[#0a0a0b] px-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 pointer-events-none z-20
+                    ${error ? 'text-red-500' : isOpen ? 'text-primary' : 'text-primary/60'}`}>
+                    {label} {required && <span className="text-red-500/50 ml-1 mt-1">*</span>}
+                </label>
+
+                <div className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-500
+                    ${error ? 'text-red-500' : (isOpen ? 'text-primary rotate-180' : 'text-white/20 group-hover/select:text-white/40')}`}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                </div>
+
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="absolute z-[100] mt-3 w-full bg-[#0a0a0b] rounded-2xl border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden backdrop-blur-2xl ring-1 ring-white/10 origin-top"
+                        >
+                            {searchable && (
+                                <div className="p-3 border-b border-white/5 bg-white/[0.01]">
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        placeholder="Filter records..."
+                                        className="w-full pl-4 pr-4 py-3 text-[11px] rounded-xl bg-black border border-white/5 focus:border-primary/50 outline-none text-white placeholder:text-white/10 font-black uppercase tracking-widest"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
+                                {filteredOptions.length > 0 ? (
+                                    filteredOptions.map((option) => (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            onClick={() => {
+                                                onChange(option.value);
+                                                setIsOpen(false);
+                                            }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 group mb-1 last:mb-0
+                                                ${value === option.value
+                                                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                                    : 'text-white/30 hover:bg-white/[0.05] hover:text-white'
+                                                }`}
+                                        >
+                                            <span className="flex-grow text-left truncate">{option.label}</span>
+                                            {value === option.value && <CheckCircleIcon className="w-3.5 h-3.5 text-white animate-in zoom-in-50" />}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="px-5 py-10 flex flex-col items-center gap-3 text-white/20 italic">
+                                        <XIcon className="w-6 h-6 opacity-20" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-center">No segments found</span>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
-            <select
-                {...props}
-                className={`peer block w-full appearance-none rounded-2xl border bg-white/[0.02] px-4 py-4 pl-12 pr-10 text-[15px] text-white font-medium transition-all duration-300 cursor-pointer
-                    ${error
-                        ? 'border-red-500/50 bg-red-500/[0.02] focus:border-red-500 focus:ring-4 focus:ring-red-500/10'
-                        : 'border-white/5 hover:border-white/10 focus:border-primary/50 focus:bg-white/[0.04] focus:ring-4 focus:ring-primary/10'} 
-                    focus:outline-none ${className} disabled:opacity-30 disabled:cursor-not-allowed`}
-            >
-                {children}
-            </select>
-            <label className={`absolute left-11 top-0 -translate-y-1/2 bg-[#0a0a0b] px-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 pointer-events-none
-                ${error ? 'text-red-500' : 'text-primary'}`}>
-                {label} {props.required && <span className="text-red-500/50 ml-1 mt-1">*</span>}
-            </label>
-            <div className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none transition-colors
-                ${error ? 'text-red-500' : 'text-white/20 group-hover/select:text-white/40'}`}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-            </div>
+            {error ? (
+                <p className="flex items-center gap-1.5 px-1 text-[10px] font-bold text-red-500 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">
+                    <XIcon className="w-3 h-3" /> {error}
+                </p>
+            ) : hint && (
+                <p className="px-1 text-[10px] font-medium text-white/20 uppercase tracking-widest leading-relaxed">
+                    {hint}
+                </p>
+            )}
         </div>
-        {error ? (
-            <p className="flex items-center gap-1.5 px-1 text-[10px] font-bold text-red-500 uppercase tracking-wider">
-                <XIcon className="w-3 h-3" /> {error}
-            </p>
-        ) : hint && (
-            <p className="px-1 text-[10px] font-medium text-white/20 uppercase tracking-widest">
-                {hint}
-            </p>
-        )}
-    </div>
-);
+    );
+};
 
 export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, profile, onBack, hideHero = false, initialBranch }) => {
     const [branches, setBranches] = useState<SchoolBranch[]>([]);
@@ -274,20 +381,39 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     };
 
     const handleResolveAddress = async () => {
-        if (!formData.address.trim()) return;
+        if (!formData.address?.trim()) return;
         setIsResolvingAddress(true);
         setModalError(null);
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
             const prompt = `Based on the street address "${formData.address}", identify the city, state, and country. 
-            Output ONLY strictly as a valid JSON object: {"city": "string", "state": "string", "country": "string"}.`;
+            Output ONLY strictly as a valid JSON object: {"city": "string", "state": "string", "country": "string"}.
+            Country must be exactly one of: ${countries.join(', ')}.`;
 
+            // Use gemini-2.5-flash as primary (project standard), but ready for property vs function response
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
-                contents: prompt
+                contents: prompt,
+                config: { tools: [{ googleMaps: {} }] }
             });
 
-            const text = response.text || '';
+            // Defensive extraction: SDKs vary between .text (property) and .text() (function)
+            let text = "";
+            try {
+                if (typeof response.text === 'function') {
+                    text = await response.text();
+                } else if (typeof response.response?.text === 'function') {
+                    text = await response.response.text();
+                } else {
+                    text = response.text || "";
+                }
+            } catch (e) {
+                console.warn("Direct text extraction failed, trying raw response access", e);
+                text = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            }
+
+            console.log('Auto-fill resolution result:', text);
+
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const data = JSON.parse(jsonMatch[0]);
@@ -297,10 +423,21 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                     state: data.state || prev.state,
                     country: data.country || prev.country
                 }));
+                setModalError(null); // Explicitly clear on success
+            } else {
+                console.warn('No JSON found in AI response:', text);
+                setModalError("Unable to locate address metadata. Please enter manually.");
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Address auto-fill error:", err);
-            setModalError("Unable to auto-fill details. Please enter manually.");
+            const errorMsg = err.message?.toLowerCase() || "";
+            if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+                setModalError("Identity Protocol (AI) offline. Please enter location manually.");
+            } else if (errorMsg.includes('limit') || errorMsg.includes('429')) {
+                setModalError("AI Rate limit reached. Please wait a moment or enter manually.");
+            } else {
+                setModalError("Unable to auto-fill details. Please enter manually.");
+            }
         } finally {
             setIsResolvingAddress(false);
         }
@@ -367,10 +504,14 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
         onNext();
     };
 
-    const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, country: e.target.value, state: '', city: '' });
-    const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, state: e.target.value, city: '' });
+    const handleCountryChange = (val: string) => setFormData({ ...formData, country: val, state: '', city: '' });
+    const handleStateChange = (val: string) => setFormData({ ...formData, state: val, city: '' });
     const availableStates = useMemo(() => formData.country ? statesByCountry[formData.country] || [] : [], [formData.country]);
     const availableCities = useMemo(() => formData.state ? citiesByState[formData.state] || [] : [], [formData.state]);
+
+    const jurisdictionOptions = useMemo(() => countries.map(c => ({ value: c, label: c })), []);
+    const stateOptions = useMemo(() => availableStates.map(s => ({ value: s, label: s })), [availableStates]);
+    const cityOptions = useMemo(() => availableCities.map(c => ({ value: c, label: c })), [availableCities]);
 
     const renderForm = () => (
         <form onSubmit={handleSave} className="space-y-12 animate-in fade-in duration-500 overflow-visible pb-10">
@@ -446,20 +587,42 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <StyledSelect label="Jurisdiction" required value={formData.country} onChange={handleCountryChange} error={formErrors.country} icon={<GlobeIcon className="w-4 h-4" />}>
-                            {countries.map(c => <option key={c} value={c}>{c}</option>)}
-                        </StyledSelect>
+                        <InstitutionalSelect
+                            label="Jurisdiction"
+                            required
+                            value={formData.country}
+                            onChange={handleCountryChange}
+                            options={jurisdictionOptions}
+                            error={formErrors.country}
+                            icon={<GlobeIcon className="w-4 h-4" />}
+                            searchable
+                        />
 
-                        <StyledSelect label="Administrative State" required value={formData.state} onChange={handleStateChange} disabled={!formData.country} error={formErrors.state} icon={<LocationIcon className="w-4 h-4" />}>
-                            <option value="">Select State</option>
-                            {availableStates.map(s => <option key={s} value={s}>{s}</option>)}
-                        </StyledSelect>
+                        <InstitutionalSelect
+                            label="Administrative State"
+                            required
+                            value={formData.state}
+                            onChange={handleStateChange}
+                            disabled={!formData.country}
+                            options={stateOptions}
+                            error={formErrors.state}
+                            icon={<LocationIcon className="w-4 h-4" />}
+                            searchable
+                        />
 
                         {availableCities.length > 0 ? (
-                            <StyledSelect className="md:col-span-2" label="Sync City" required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} error={formErrors.city} icon={<LocationIcon className="w-4 h-4" />}>
-                                <option value="">Select City Node</option>
-                                {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
-                            </StyledSelect>
+                            <InstitutionalSelect
+                                className="md:col-span-2"
+                                label="Sync City"
+                                required
+                                value={formData.city}
+                                onChange={val => setFormData({ ...formData, city: val })}
+                                disabled={!formData.state}
+                                options={cityOptions}
+                                error={formErrors.city}
+                                icon={<LocationIcon className="w-4 h-4" />}
+                                searchable
+                            />
                         ) : (
                             <FloatingLabelInput className="md:col-span-2" label="Sync City" required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} disabled={!formData.state} error={formErrors.city} icon={<LocationIcon className="w-4 h-4" />} />
                         )}
