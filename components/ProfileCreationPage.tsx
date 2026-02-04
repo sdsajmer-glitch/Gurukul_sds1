@@ -243,6 +243,9 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 const fullPhoneNumber = phoneCountryCode + phoneLocal;
                 console.log('Constructed phone number:', fullPhoneNumber);
 
+                // Store in formData.phone so it's accessible for profiles table update
+                formData.phone = fullPhoneNumber;
+
                 // Prepare complete payload with all fields - ensure no undefined values
                 const payload: any = {
                     user_id: profile.id,
@@ -333,6 +336,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
             console.log('Updating master profile...');
             console.log('Final display name:', finalDisplayName);
+            console.log('Final phone number:', formData.phone);
             console.log('Profile completed: true (School Admin can now access dashboard)');
 
             const { data: profileData, error: profileError } = await supabase
