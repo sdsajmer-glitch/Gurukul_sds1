@@ -4,7 +4,6 @@ import { AdmissionApplication } from '../../types';
 import { StorageService, BUCKETS } from '../../services/storage';
 import Spinner from '../common/Spinner';
 import { XIcon } from '../icons/XIcon';
-import { XCircleIcon } from '../icons/XCircleIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { UploadIcon } from '../icons/UploadIcon';
 import { UserIcon } from '../icons/UserIcon';
@@ -14,69 +13,98 @@ import { CalendarIcon } from '../icons/CalendarIcon';
 import { InfoIcon } from '../icons/InfoIcon';
 import { PhoneIcon } from '../icons/PhoneIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
+import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+import { LockIcon } from '../icons/LockIcon';
+import { EyeIcon } from '../icons/EyeIcon';
 import CustomSelect from '../common/CustomSelect';
 import PremiumAvatar from '../common/PremiumAvatar';
+import clsx from 'clsx';
 
 const resolveSyncError = (err: any): string => {
     if (!err) return "Identity synchronization protocol failed.";
-
-    let message = '';
-    if (typeof err === 'string') {
-        message = err;
-    } else {
-        message = err.message || err.error_description || err.details || err.hint || err.error || '';
-    }
-
+    let message = typeof err === 'string' ? err : err.message || err.error_description || err.details || '';
     const lowerMessage = message.toLowerCase();
 
-    if (lowerMessage.includes('bucket not found')) {
-        return "Critical Configuration Mismatch: The institutional cloud bucket 'profiles' or 'documents' has not been initialized. Please contact the system architect to verify bucket naming conventions.";
-    }
+    if (lowerMessage.includes('bucket not found')) return "Critical Configuration Mismatch: Storage bucket missing.";
+    if (lowerMessage.includes('invalid input syntax')) return "Identity Type Mismatch: Database schema update required.";
 
-    if (lowerMessage.includes('invalid input syntax for type bigint') && /[\da-f]{8}-[\da-f]{4}/.test(lowerMessage)) {
-        return "Identity Type Mismatch: The admissions registry uses an outdated numeric ID. Please apply the latest `schema.txt` update via the Supabase SQL Editor to resolve this protocol exception.";
-    }
-
-    return typeof message === 'string' ? message : "Institutional node exception.";
+    return message || "Institutional node exception.";
 };
 
-const PremiumFloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string; icon?: React.ReactNode; isTextArea?: boolean; isSynced?: boolean }> = ({ label, icon, isTextArea, isSynced, className, ...props }) => (
-    <div className="relative group w-full">
-        {/* Autofill Fix Style */}
+// Compliance-focused Section Header
+const ComplianceSectionHeader: React.FC<{
+    title: string;
+    icon?: React.ReactNode;
+    purpose: string;
+    badge?: string;
+}> = ({ title, icon, purpose, badge }) => (
+    <div className="mb-6 mt-4 border-b border-white/5 pb-2">
+        <div className="flex justify-between items-end mb-1">
+            <div className="flex items-center gap-2">
+                {icon && <span className="text-primary/80">{icon}</span>}
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">{title}</h4>
+            </div>
+            {badge && (
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-white/5 border border-white/5 text-[9px] font-medium text-white/30">
+                    {badge}
+                </span>
+            )}
+        </div>
+        <p className="text-[10px] text-primary/40 font-mono tracking-tight uppercase flex items-center gap-1.5">
+            <span className="w-1 h-1 rounded-full bg-primary/40"></span>
+            {purpose}
+        </p>
+    </div>
+);
+
+const PremiumFloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string; icon?: React.ReactNode; isTextArea?: boolean; isSynced?: boolean; helperText?: string }> = ({ label, icon, isTextArea, isSynced, helperText, className, ...props }) => (
+    <div className="relative group w-full mb-1">
         <style>{`
             input:-webkit-autofill,
             input:-webkit-autofill:hover, 
             input:-webkit-autofill:focus, 
             input:-webkit-autofill:active {
-                -webkit-box-shadow: 0 0 0 30px #121214 inset !important;
+                -webkit-box-shadow: 0 0 0 30px #0f1116 inset !important;
                 -webkit-text-fill-color: white !important;
                 transition: background-color 5000s ease-in-out 0s;
             }
         `}</style>
 
-        {label && (
-            <label className={`absolute left-10 top-0 -translate-y-1/2 bg-[#0a0a0c] px-2 text-[9px] font-black uppercase text-white/30 tracking-[0.3em] z-20 transition-all duration-300 group-focus-within:text-primary ${isSynced ? 'text-primary' : ''}`}>
-                {label}
-            </label>
-        )}
-        <div className={`absolute ${isTextArea ? 'top-6' : 'top-1/2 -translate-y-1/2'} left-5 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none ${isSynced ? 'text-primary/60' : ''}`}>
-            {icon}
+        <label className={`block mb-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${isSynced ? 'text-primary' : 'text-white/40 group-focus-within:text-white/70'}`}>
+            {label} {props.required && <span className="text-accent-error">*</span>}
+        </label>
+
+        <div className="relative">
+            <div className={`absolute top-4 left-4 transition-colors duration-300 z-10 pointer-events-none ${isSynced ? 'text-primary' : 'text-white/20 group-focus-within:text-primary'}`}>
+                {icon}
+            </div>
+
+            {isTextArea ? (
+                <textarea
+                    {...(props as any)}
+                    className={clsx(
+                        "block w-full rounded-2xl border bg-[#0f1116] px-5 pl-12 py-4 text-sm font-medium text-white placeholder-white/10 outline-none transition-all duration-300",
+                        "border-white/5 hover:border-white/10 focus:border-primary/50 focus:bg-[#13151a]",
+                        "focus:ring-4 focus:ring-primary/10 shadow-inner resize-none min-h-[100px]",
+                        className
+                    )}
+                />
+            ) : (
+                <input
+                    autoComplete="off"
+                    data-lpignore="true"
+                    {...props}
+                    className={clsx(
+                        "block w-full h-[52px] rounded-xl border bg-[#0f1116] px-5 pl-12 text-sm font-medium text-white placeholder-white/10 outline-none transition-all duration-300",
+                        "border-white/5 hover:border-white/10 focus:border-primary/50 focus:bg-[#13151a]",
+                        "focus:ring-4 focus:ring-primary/10 shadow-inner",
+                        isSynced && "border-primary/30 bg-primary/5 text-primary",
+                        className
+                    )}
+                />
+            )}
         </div>
-        {isTextArea ? (
-            <textarea
-                {...(props as any)}
-                placeholder=" "
-                className={`peer block w-full h-32 rounded-[1.8rem] border transition-all duration-500 px-6 pl-14 pt-6 pb-2 text-sm text-white font-medium bg-white/[0.01] outline-none placeholder-transparent border-white/5 hover:border-white/10 focus:border-primary/50 focus:ring-8 focus:ring-primary/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] focus:bg-white/[0.03] ${className}`}
-            />
-        ) : (
-            <input
-                autoComplete="off"
-                data-lpignore="true"
-                {...props}
-                placeholder=" "
-                className={`peer block w-full h-[64px] rounded-[1.5rem] border transition-all duration-500 px-6 pl-14 pt-4 pb-1 text-sm text-white font-medium bg-white/[0.01] outline-none placeholder-transparent border-white/5 hover:border-white/10 focus:border-primary/50 focus:ring-8 focus:ring-primary/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] focus:bg-white/[0.03] ${isSynced ? 'border-primary/40 bg-primary/5' : ''} ${className}`}
-            />
-        )}
+        {helperText && <p className="mt-2 text-[10px] text-white/20 font-medium flex items-center gap-1.5"><InfoIcon className="w-3 h-3" /> {helperText}</p>}
     </div>
 );
 
@@ -99,7 +127,9 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         emergency_contact: child?.emergency_contact || '',
     });
 
-    // Position state for draggability
+    const [consentGiven, setConsentGiven] = useState(false);
+
+    // Draggable State
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const dragStartPos = useRef({ x: 0, y: 0 });
@@ -113,7 +143,6 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Prevent background scrolling when modal is active
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = 'unset'; };
@@ -122,44 +151,24 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     useEffect(() => {
         const fetchParent = async () => {
             const { data } = await supabase.from('profiles').select('display_name, email, phone').eq('id', currentUserId).maybeSingle();
-            if (data) {
-                setParentProfile({ name: data.display_name || '', email: data.email, phone: data.phone || '' });
-            }
+            if (data) setParentProfile({ name: data.display_name || '', email: data.email, phone: data.phone || '' });
         };
         fetchParent();
     }, [currentUserId]);
 
-    // Draggable Logic
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('input') || (e.target as HTMLElement).closest('select')) return;
-
+    // Drag Logic
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('button, input, select, textarea, label')) return;
         setIsDragging(true);
-        dragStartPos.current = {
-            x: e.clientX - position.x,
-            y: e.clientY - position.y
-        };
-    };
+        dragStartPos.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+    }, [position]);
 
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!isDragging) return;
-
-        const newX = e.clientX - dragStartPos.current.x;
-        const newY = e.clientY - dragStartPos.current.y;
-
-        const bounds = {
-            x: window.innerWidth * 0.45,
-            y: window.innerHeight * 0.45
-        };
-
-        setPosition({
-            x: Math.max(-bounds.x, Math.min(bounds.x, newX)),
-            y: Math.max(-bounds.y, Math.min(bounds.y, newY))
-        });
+        setPosition({ x: e.clientX - dragStartPos.current.x, y: e.clientY - dragStartPos.current.y });
     }, [isDragging]);
 
-    const handleMouseUp = useCallback(() => {
-        setIsDragging(false);
-    }, []);
+    const handleMouseUp = useCallback(() => setIsDragging(false), []);
 
     useEffect(() => {
         if (isDragging) {
@@ -176,12 +185,10 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     }, [isDragging, handleMouseMove, handleMouseUp]);
 
     const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!consentGiven) return;
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            if (file.size > 5 * 1024 * 1024) {
-                alert("Magnitude exceeds limits. Max 5MB.");
-                return;
-            }
+            if (file.size > 5 * 1024 * 1024) return alert("Image exceeds 5MB limit.");
             setPhotoFile(file);
             setPhotoPreview(URL.createObjectURL(file));
         }
@@ -191,9 +198,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         if (isEmergencySynced) {
             setFormData(prev => ({ ...prev, emergency_contact: '' }));
             setIsEmergencySynced(false);
-            return;
-        }
-        if (parentProfile) {
+        } else if (parentProfile) {
             setFormData(prev => ({ ...prev, emergency_contact: `${parentProfile.name} / ${parentProfile.phone || 'No Phone'}` }));
             setIsEmergencySynced(true);
         }
@@ -201,12 +206,11 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
 
     const handleSubmitDetails = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.applicant_name || !currentUserId) return;
+        if (!formData.applicant_name || !currentUserId || !consentGiven) return;
         setLoading(true);
         setError(null);
         try {
             let finalPhotoPath = child?.profile_photo_url || null;
-
             if (photoFile) {
                 const storagePath = StorageService.getProfilePath('child', currentUserId);
                 const { path } = await StorageService.upload(BUCKETS.PROFILES, storagePath, photoFile);
@@ -232,7 +236,6 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                 const { error } = await supabase.from('admissions').update(payload).eq('id', child.id);
                 if (error) throw error;
             } else {
-                // FIX: Explicitly generate a UUID on the client side to avoid null constraint violations when DB defaults are missing.
                 payload.id = crypto.randomUUID();
                 const { error } = await supabase.from('admissions').insert(payload);
                 if (error) throw error;
@@ -258,123 +261,259 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     return (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[150] flex items-center justify-center p-4 sm:p-6 overflow-hidden animate-in fade-in duration-500 select-none">
+        <div className="fixed inset-0 bg-[#050608]/95 backdrop-blur-xl z-[150] flex items-center justify-center overflow-hidden animate-in fade-in duration-500">
             <div
                 ref={modalRef}
                 style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
-                className={`bg-[#0a0a0c] w-full max-w-2xl h-full md:h-auto md:max-h-[92vh] rounded-[2rem] md:rounded-[3.5rem] shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] border border-white/10 flex flex-col relative animate-in zoom-in-95 duration-500 ring-1 ring-white/5 overflow-hidden transition-shadow ${isDragging ? 'shadow-primary/20 scale-[1.01]' : ''}`}
-                onClick={e => e.stopPropagation()}
+                className={clsx(
+                    "bg-[#0a0a0c] w-full h-full md:h-auto md:max-h-[95vh] md:max-w-3xl",
+                    "md:rounded-[2.5rem] shadow-2xl ring-1 ring-white/10 flex flex-col relative",
+                    "animate-in zoom-in-95 duration-500 overflow-hidden",
+                    isDragging && "scale-[1.01] shadow-primary/10 cursor-grabbing"
+                )}
             >
                 {step === 'details' ? (
-                    <form onSubmit={handleSubmitDetails} className="flex flex-col h-full relative z-10 overflow-hidden select-text">
-                        {/* Header - Drag Handle */}
+                    <form onSubmit={handleSubmitDetails} className="flex flex-col h-full relative z-10">
+                        {/* Header */}
                         <div
                             onMouseDown={handleMouseDown}
-                            className={`px-6 py-6 md:px-10 md:py-8 border-b border-white/5 bg-white/[0.02] backdrop-blur-2xl flex justify-between items-center shrink-0 cursor-grab active:cursor-grabbing transition-colors ${isDragging ? 'bg-primary/5' : ''}`}
+                            className="px-6 py-5 md:px-10 md:py-6 border-b border-white/5 bg-[#0c0e12] flex justify-between items-center shrink-0 cursor-grab active:cursor-grabbing"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-inner border border-primary/20">
-                                    <PlusIcon className="w-6 h-6" />
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-[inset_0_0_10px_rgba(var(--primary),0.2)]">
+                                    <PlusIcon className="w-5 h-5" />
                                 </div>
-                                <div className="min-w-0">
-                                    <h3 className="text-xl md:text-3xl font-serif font-black text-white tracking-tighter uppercase leading-none truncate">Register <span className="text-white/20 italic">Child.</span></h3>
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mt-1 whitespace-nowrap">Identity Enrollment Node</p>
+                                <div>
+                                    <h3 className="text-xl font-serif font-black text-white tracking-tight uppercase">Register Child<span className="text-primary">.</span></h3>
+                                    <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em]">Identity Enrollment Node</p>
                                 </div>
                             </div>
-                            <button type="button" onClick={onClose} className="p-2.5 rounded-full bg-white/5 text-white/20 hover:text-white hover:bg-white/10 transition-all"><XIcon className="w-5 h-5" /></button>
+                            <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-white/5 text-white/30 hover:text-white transition-colors">
+                                <XIcon className="w-5 h-5" />
+                            </button>
                         </div>
 
-                        {/* Body - Scrollable */}
-                        <div className="px-6 py-6 md:px-10 md:py-8 overflow-y-auto flex-grow space-y-10 custom-scrollbar">
+                        {/* Scrollable Body */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 space-y-10">
                             {error && (
-                                <div className="p-4 bg-red-500/10 text-red-500 rounded-2xl text-xs border border-red-500/20 flex items-start gap-4 animate-in shake">
-                                    <XCircleIcon className="w-5 h-5 shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="font-black uppercase tracking-[0.2em] text-[9px]">Sync Protocol Exception</p>
-                                        <p className="font-medium leading-relaxed opacity-80">{error}</p>
-                                    </div>
+                                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-medium flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                                    <ShieldCheckIcon className="w-4 h-4" /> {error}
                                 </div>
                             )}
 
-                            <div className="flex flex-col items-center gap-4 group/avatar">
-                                <div className="relative">
+                            {/* Biometric Section - Compliance Locked */}
+                            <div className="flex flex-col items-center justify-center gap-6 py-4 bg-white/[0.02] rounded-3xl border border-white/5 relative overflow-hidden transition-all duration-500">
+                                {!consentGiven && (
+                                    <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-700 pointer-events-none">
+                                        <LockIcon className="w-8 h-8 text-white/30" />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Guardian Consent Required</p>
+                                    </div>
+                                )}
+
+                                <div className={clsx("relative group/avatar transition-all duration-500", !consentGiven && "blur-sm opacity-50")}>
                                     <PremiumAvatar
                                         src={photoPreview}
-                                        name={formData.applicant_name || 'C'}
-                                        size="md"
-                                        className="ring-[12px] ring-white/[0.02] border-4 border-[#0a0a0c] shadow-2xl transition-transform duration-500 group-hover/avatar:scale-105"
+                                        name={formData.applicant_name || '?'}
+                                        size="lg"
+                                        className="w-28 h-28 md:w-32 md:h-32 rounded-full ring-4 ring-[#0a0a0c] shadow-2xl relative z-10"
                                     />
                                     <button
                                         type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="absolute bottom-0 right-0 w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-2xl ring-4 ring-[#0a0a0c] hover:scale-110 active:scale-95 transition-all z-30"
+                                        onClick={() => consentGiven && fileInputRef.current?.click()}
+                                        disabled={!consentGiven}
+                                        className="absolute bottom-0 right-0 p-3 bg-primary text-white rounded-2xl shadow-lg ring-4 ring-[#0a0a0c] hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all z-20 disabled:hidden"
                                     >
                                         <UploadIcon className="w-5 h-5" />
                                     </button>
-                                    <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
                                 </div>
-                                <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.6em] animate-pulse">Biometric Interface</p>
+                                <div className={clsx("text-center space-y-1 transition-opacity duration-500", !consentGiven && "opacity-30")}>
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center justify-center gap-2">
+                                        <ShieldCheckIcon className="w-3 h-3" /> Secure Biometric Identity
+                                    </p>
+                                    <p className="text-xs text-text-tertiary">Encrypted (AES-256) & Access Controlled. <br />This does not store images publicly.</p>
+                                </div>
+                                <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-                                <PremiumFloatingInput label="Full Legal Name" name="applicant_name" value={formData.applicant_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} />
-                                <CustomSelect
-                                    label="Academic Placement"
-                                    value={formData.grade}
-                                    onChange={(v) => setFormData(prev => ({ ...prev, grade: v }))}
-                                    options={Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `Grade ${i + 1}` }))}
-                                    icon={<SchoolIcon className="w-4 h-4" />}
-                                    placeholder="Select Grade"
-                                />
-                                <PremiumFloatingInput label="Date of Birth" name="date_of_birth" type="date" value={formData.date_of_birth} onChange={handleChange} required icon={<CalendarIcon className="w-4 h-4" />} />
-                                <CustomSelect
-                                    label="Gender"
-                                    value={formData.gender}
-                                    onChange={(v) => setFormData(prev => ({ ...prev, gender: v }))}
-                                    options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Other' }]}
-                                    icon={<UserIcon className="w-4 h-4" />}
-                                />
-                                <div className="md:col-span-2 space-y-4">
-                                    <div className="flex justify-between items-center px-1">
-                                        <label className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">Safety Contact</label>
-                                        <button type="button" onClick={handleSyncEmergency} className={`text-[9px] font-black uppercase tracking-widest transition-all ${isEmergencySynced ? 'text-primary' : 'text-white/20 hover:text-white'}`}>
-                                            <SparklesIcon className="w-3 h-3 inline mr-1" /> {isEmergencySynced ? 'Synced' : 'Use My Data'}
+                            {/* Form Sections */}
+                            <div className="space-y-8">
+                                {/* Personal Identity */}
+                                <div>
+                                    <ComplianceSectionHeader
+                                        title="Child Identity"
+                                        icon={<UserIcon className="w-3 h-3" />}
+                                        purpose="Used strictly for Identity Verification"
+                                        badge="DPDP Compliant"
+                                    />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <PremiumFloatingInput
+                                            label="Full Legal Name"
+                                            name="applicant_name"
+                                            value={formData.applicant_name}
+                                            onChange={handleChange}
+                                            required
+                                            icon={<UserIcon className="w-4 h-4" />}
+                                            placeholder="e.g. Arabella Rose"
+                                        />
+                                        <PremiumFloatingInput
+                                            label="Date of Birth"
+                                            name="date_of_birth"
+                                            type="date"
+                                            value={formData.date_of_birth}
+                                            onChange={handleChange}
+                                            required
+                                            icon={<CalendarIcon className="w-4 h-4" />}
+                                            helperText="Needed for age-appropriate placement."
+                                        />
+                                        <CustomSelect
+                                            label="Gender Identity"
+                                            value={formData.gender}
+                                            onChange={(v) => setFormData(prev => ({ ...prev, gender: v }))}
+                                            options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Prefer Not to Say' }]}
+                                            icon={<UserIcon className="w-4 h-4" />}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Academic */}
+                                <div>
+                                    <ComplianceSectionHeader
+                                        title="Academic Placement"
+                                        icon={<SchoolIcon className="w-3 h-3" />}
+                                        purpose="Required for Class Assignment"
+                                    />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <CustomSelect
+                                            label="Target Grade"
+                                            value={formData.grade}
+                                            onChange={(v) => setFormData(prev => ({ ...prev, grade: v }))}
+                                            options={Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `Grade ${i + 1}` }))}
+                                            icon={<SchoolIcon className="w-4 h-4" />}
+                                            placeholder="Select Grade Level"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Safety & Medical */}
+                                <div>
+                                    <div className="flex items-center justify-between">
+                                        <ComplianceSectionHeader
+                                            title="Safety & Clinical"
+                                            icon={<ShieldCheckIcon className="w-3 h-3" />}
+                                            purpose="School Safety Compliance Only"
+                                            badge="Restricted Access"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleSyncEmergency}
+                                            className="text-[9px] font-bold text-primary hover:text-primary/80 uppercase tracking-widest flex items-center gap-1.5 transition-colors mb-4"
+                                        >
+                                            <SparklesIcon className="w-3 h-3" /> {isEmergencySynced ? 'Synced' : 'Use My Data'}
                                         </button>
                                     </div>
-                                    <PremiumFloatingInput label="" name="emergency_contact" value={formData.emergency_contact} onChange={handleChange} isSynced={isEmergencySynced} icon={<PhoneIcon className="w-4 h-4" />} placeholder="Guardian Name / Secure Line" />
+                                    <div className="space-y-6">
+                                        <PremiumFloatingInput
+                                            label="Emergency Guardian"
+                                            name="emergency_contact"
+                                            value={formData.emergency_contact}
+                                            onChange={handleChange}
+                                            isSynced={isEmergencySynced}
+                                            icon={<PhoneIcon className="w-4 h-4" />}
+                                            placeholder="Primary Contact Name & Number"
+                                            helperText="Used ONLY for urgent security protocols."
+                                        />
+                                        <PremiumFloatingInput
+                                            label="Medical Notes"
+                                            name="medical_info"
+                                            value={formData.medical_info}
+                                            onChange={handleChange}
+                                            isTextArea
+                                            icon={<InfoIcon className="w-4 h-4" />}
+                                            placeholder="List any allergies, conditions, or dietary requirements..."
+                                            helperText="Encrypted. Accessible only by authorized medical staff."
+                                        />
+                                    </div>
                                 </div>
-                                <div className="md:col-span-2 pb-6">
-                                    <label className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em] mb-4 block ml-1">Clinical Disclosures</label>
-                                    <PremiumFloatingInput label="" name="medical_info" value={formData.medical_info} onChange={handleChange} isTextArea icon={<InfoIcon className="w-4 h-4" />} placeholder="Define Allergies or Requirements..." />
+                            </div>
+
+                            {/* Consent Checkpoint */}
+                            <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-4">
+                                <label className="flex items-start gap-4 cursor-pointer group">
+                                    <div className="relative mt-1">
+                                        <input
+                                            type="checkbox"
+                                            checked={consentGiven}
+                                            onChange={(e) => {
+                                                const isConsenting = e.target.checked;
+                                                setConsentGiven(isConsenting);
+                                                if (!isConsenting) {
+                                                    setPhotoFile(null);
+                                                    setPhotoPreview(child?.profile_photo_url || null);
+                                                }
+                                            }}
+                                            className="peer appearance-none w-5 h-5 rounded border border-white/20 bg-black/40 checked:bg-primary checked:border-primary transition-all cursor-pointer"
+                                        />
+                                        <CheckCircleIcon className="absolute inset-0 text-[#0a0a0c] w-5 h-5 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                        <p className="text-sm font-medium text-white/90 leading-relaxed">
+                                            I, the legal guardian, consent to the collection and encrypted processing of my child's identity and biometric data.
+                                        </p>
+                                        <p className="text-xs text-white/40 leading-relaxed">
+                                            This data is used strictly for <strong className="text-white/60">Institutional Verification & Safety</strong>. I understand I can revoke this consent or request data deletion at any time via the Parent Portal.
+                                        </p>
+                                    </div>
+                                </label>
+                                <div className="pl-9 flex flex-wrap gap-4 text-[9px] font-black uppercase tracking-widest text-primary/60">
+                                    <button type="button" className="hover:text-primary transition-colors flex items-center gap-1.5 ">
+                                        <EyeIcon className="w-3 h-3" /> Data Visibility
+                                    </button>
+                                    <button type="button" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                                        <ShieldCheckIcon className="w-3 h-3" /> Retention Policy
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Footer - Fixed */}
-                        <div className="px-6 py-6 md:px-10 md:py-8 border-t border-white/5 bg-white/[0.02] flex flex-col sm:flex-row justify-between items-center gap-6 shrink-0">
-                            <button type="button" onClick={onClose} disabled={loading} className="text-[11px] font-black text-white/20 hover:text-white transition-all uppercase tracking-[0.5em] order-2 sm:order-1">Discard Protocol</button>
-                            <button type="submit" disabled={loading || !formData.applicant_name} className="w-full sm:w-auto px-12 py-5 bg-primary text-primary-foreground rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-4 group transform active:scale-95 disabled:opacity-30 order-1 sm:order-2">
-                                {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-5 h-5" /> Initialize Enrollment</>}
+                        {/* Footer */}
+                        <div className="p-6 md:p-8 border-t border-white/5 bg-[#0c0e12] flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+                            <div className="flex items-center gap-2 text-white/20 order-3 md:order-1 md:mr-auto">
+                                <LockIcon className="w-3 h-3" />
+                                <span className="text-[9px] font-medium tracking-wide">Encrypted at rest & in transit</span>
+                            </div>
+
+                            <button type="button" onClick={onClose} className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 hover:text-white transition-colors order-2">
+                                Discard
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={loading || !formData.applicant_name || !formData.date_of_birth || !consentGiven}
+                                className="w-full md:w-auto px-10 py-4 bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale text-white rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-3 transition-all transform active:scale-95 order-1 md:order-3"
+                            >
+                                {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-4 h-4" /> <span className="text-xs font-black uppercase tracking-[0.25em]">Initialize Enrollment</span></>}
                             </button>
                         </div>
                     </form>
                 ) : (
-                    <div className="p-10 md:p-20 text-center space-y-12 animate-in zoom-in-95 duration-1000 h-full flex flex-col items-center justify-center">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full"></div>
-                            <CheckCircleIcon animate className="w-24 h-24 md:w-32 md:h-32 text-emerald-500 relative z-10" />
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-10 space-y-8 animate-in zoom-in-95 duration-700">
+                        <div className="w-24 h-24 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
+                            <CheckCircleIcon className="w-12 h-12" />
                         </div>
-                        <div className="space-y-4">
-                            <h2 className="text-3xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-none">Registry <span className="text-white/20 italic">Updated.</span></h2>
-                            <p className="text-white/40 text-base md:text-lg leading-relaxed max-w-sm mx-auto font-serif italic">The enrollment protocol for {formData.applicant_name} has been successfully integrated into the institutional cluster.</p>
+                        <div className="space-y-4 max-w-md">
+                            <h2 className="text-3xl font-serif font-black text-white tracking-tight">Identity Synchronized</h2>
+                            <p className="text-white/50 text-sm leading-relaxed">
+                                The enrollment node for <strong className="text-white">{formData.applicant_name}</strong> has been successfully broadcast to the institutional ledger.
+                            </p>
                         </div>
-                        <button onClick={handleFinalizeHandshake} disabled={loading} className="w-full max-w-sm py-6 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-[0.5em] rounded-[1.8rem] shadow-2xl transition-all active:scale-95">
-                            Finalize Handshake
+                        <button
+                            onClick={handleFinalizeHandshake}
+                            className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-widest text-white transition-all"
+                        >
+                            Close Protocol
                         </button>
                     </div>
                 )}

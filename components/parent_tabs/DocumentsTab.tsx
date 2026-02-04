@@ -19,6 +19,11 @@ import { PaperClipIcon } from '../icons/PaperClipIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
 import { FileTextIcon } from '../icons/FileTextIcon';
 
+// Design System Components
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+
 // --- Types ---
 interface GroupedRequirementData {
     admissionId: string;
@@ -44,8 +49,7 @@ const formatFileSize = (bytes: number) => {
 };
 
 // --- Sub-Components ---
-
-const CollapsibleDocumentCard: React.FC<{
+const DocumentCard: React.FC<{
     req: RequirementWithDocs;
     onUpload: (file: File, reqId: number, admId: string, onProgress: (progress: number) => void) => Promise<void>;
 }> = ({ req, onUpload }) => {
@@ -53,86 +57,27 @@ const CollapsibleDocumentCard: React.FC<{
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
-    const [isPreviewing, setIsPreviewing] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // --- 1. Status Matrix Logic ---
+    // Logic
     const status = req.status || 'Pending';
     const isMandatory = req.is_mandatory;
     const docFile = req.admission_documents?.[0];
     const hasFileRecord = !!docFile;
 
-    // Derived States
     const isVerified = status === 'Verified' || status === 'APPROVED';
     const isRejected = status === 'Rejected';
-    const isReviewing = status === 'Reviewing';
-    // Submitted is essentially "Under Review" effectively in this system if not explicit
-    const isSubmitted = status === 'Submitted' || status === 'Uploaded';
-    const isExpired = status === 'Expired';
-    const isPending = status === 'Pending';
+    const isSubmitted = status === 'Submitted' || status === 'Uploaded' || status === 'Reviewing';
 
-    // Matrix Configuration (Figma Spec Implementation)
-    const getConfig = () => {
-        if (isVerified) return {
-            theme: 'emerald',
-            bg: 'bg-emerald-500/5',
-            border: 'border-accent-success',
-            glow: 'shadow-glow-success',
-            icon: <ShieldCheckIcon className="w-5 h-5" />,
-            label: 'VERIFIED',
-            text: 'text-accent-success',
-            subText: '100%',
-            actionButton: 'text-accent-success border-accent-success hover:bg-accent-success/10'
-        };
-        if (isRejected) return {
-            theme: 'red',
-            bg: 'bg-accent-error/5',
-            border: 'border-accent-error',
-            glow: 'shadow-glow-error',
-            icon: <XIcon className="w-5 h-5" />,
-            label: 'REJECTED',
-            text: 'text-accent-error',
-            subText: 'Action Required',
-            actionButton: 'text-accent-error border-accent-error hover:bg-accent-error/10'
-        };
-        if (isSubmitted || isReviewing) return {
-            theme: 'blue',
-            bg: 'bg-accent-info/5',
-            border: 'border-accent-info',
-            glow: 'shadow-glow-info',
-            icon: <CheckCircleIcon className="w-5 h-5" />,
-            label: 'SUBMITTED',
-            text: 'text-accent-info',
-            subText: 'Pending verification',
-            actionButton: 'text-accent-info border-accent-info hover:bg-accent-info/10'
-        };
-        if (isMandatory) return {
-            theme: 'amber',
-            bg: 'bg-accent-warning/5',
-            border: 'border-accent-warning border-dashed',
-            glow: 'shadow-glow-warning',
-            icon: <AlertTriangleIcon className="w-5 h-5" />,
-            label: 'REQUIRED',
-            text: 'text-accent-warning',
-            subText: 'Mandatory for enrollment',
-            actionButton: 'bg-accent-premium text-white hover:bg-accent-premium/90 border-transparent shadow-lg'
-        };
-        // Optional
-        return {
-            theme: 'gray',
-            bg: 'bg-white/[0.02]',
-            border: 'border-white/10',
-            glow: '',
-            icon: <DocumentTextIcon className="w-5 h-5" />,
-            label: 'OPTIONAL',
-            text: 'text-white/40',
-            subText: 'Not mandatory',
-            actionButton: 'bg-accent-premium text-white hover:bg-accent-premium/90 border-transparent shadow-lg'
-        };
+    // Mapping to Badge Status
+    const getBadgeStatus = () => {
+        if (isVerified) return 'verified';
+        if (isRejected) return 'error';
+        if (isSubmitted) return 'pending'; // or 'info'
+        if (isMandatory) return 'pending'; // 'warning' visual is handled by badge color logic usually, but let's stick to standard types
+        return 'default';
     };
-
-    const config = getConfig();
 
     const handleFileSelect = async (files: FileList | null) => {
         if (!files?.length || uploadProgress !== null) return;
@@ -141,7 +86,6 @@ const CollapsibleDocumentCard: React.FC<{
             setError("File size exceeds 10MB limit.");
             return;
         }
-
         setError(null);
         setUploadProgress(0);
         try {
@@ -155,12 +99,8 @@ const CollapsibleDocumentCard: React.FC<{
     };
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragOver(false);
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            handleFileSelect(e.dataTransfer.files);
-        }
+        e.preventDefault(); e.stopPropagation(); setIsDragOver(false);
+        if (e.dataTransfer.files?.length > 0) handleFileSelect(e.dataTransfer.files);
     };
 
     const handleDownload = async (e: React.MouseEvent) => {
@@ -171,18 +111,10 @@ const CollapsibleDocumentCard: React.FC<{
             const { data, error } = await supabase.storage.from(BUCKETS.DOCUMENTS).download(docFile.storage_path);
             if (error) throw error;
             const url = window.URL.createObjectURL(data);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = docFile.file_name;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            const a = document.createElement('a'); a.href = url; a.download = docFile.file_name;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-        } catch (err) {
-            alert("Download failed. Please try again.");
-        } finally {
-            setIsDownloading(false);
-        }
+        } catch (err) { alert("Download failed."); } finally { setIsDownloading(false); }
     };
 
     const handleView = async (e: React.MouseEvent) => {
@@ -191,110 +123,105 @@ const CollapsibleDocumentCard: React.FC<{
         try {
             const url = await StorageService.getSignedUrl(BUCKETS.DOCUMENTS, docFile.storage_path);
             window.open(url, '_blank');
-        } catch (err) {
-            alert("Unable to open file preview.");
-        }
+        } catch (err) { alert("Unable to open preview."); }
     };
 
-    // --- Artifact Card UI ---
+    // Variant Determination
+    let variant: 'default' | 'verified' | 'premium' | 'disabled' = 'default';
+    if (isVerified) variant = 'verified';
+    if (isMandatory && !isSubmitted && !isVerified) variant = 'premium'; // Use premium style for "Start Here" attention
+    if (isRejected) variant = 'disabled'; // Or error style if supported, but let's use default with error badge
+
     return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`group relative flex flex-col p-6 rounded-[20px] border-2 transition-all duration-300 overflow-hidden ${config.bg} ${config.border} ${config.glow} hover:-translate-y-1 hover:shadow-2xl`}
-            style={{ minHeight: '360px' }}
-            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-            onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
-            onDrop={handleDrop}
-        >
+        <Card variant={variant} className={`h-full relative overflow-hidden transition-all duration-300 ${isDragOver ? 'ring-2 ring-primary bg-primary/10' : ''}`}>
+
             {/* Header */}
-            <div className="flex justify-between items-start mb-6">
-                <div className={`p-3 rounded-xl border border-white/5 bg-white/5 ${config.text}`}>
-                    {config.icon}
+            <div className="flex justify-between items-start mb-4 relative z-10">
+                <div className={`p-2.5 rounded-xl border ${isVerified ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-white/5 border-white/5 text-white/50'}`}>
+                    {isVerified ? <ShieldCheckIcon className="w-5 h-5" /> : isRejected ? <XIcon className="w-5 h-5 text-red-500" /> : <DocumentTextIcon className="w-5 h-5" />}
                 </div>
-                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-black/20 ${config.text} ${config.border.replace('border-dashed', 'border-solid')}`}>
-                    {config.label}
-                </span>
+                <Badge status={getBadgeStatus()} text={status} />
             </div>
 
-            {/* Content */}
-            <div className="flex-grow flex flex-col">
-                <h4 className="text-lg font-bold text-white mb-2 leading-tight">{req.document_name}</h4>
-                <p className={`text-xs font-medium font-mono mb-8 ${config.text} opacity-80`}>{config.subText}</p>
+            {/* Title */}
+            <div className="relative z-10 mb-6">
+                <h4 className="text-base font-bold text-text-primary leading-tight mb-1">{req.document_name}</h4>
+                <p className="text-xs text-text-tertiary font-mono">{isMandatory ? 'Required Artifact' : 'Optional Support Doc'}</p>
+            </div>
 
+            {/* Content Area */}
+            <div
+                className="flex-grow flex flex-col justify-end relative z-10"
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
+                onDrop={handleDrop}
+            >
                 {hasFileRecord ? (
-                    <div className="mt-auto space-y-3">
-                        <div className="p-4 rounded-xl bg-[#0a0c10] border border-white/10 flex items-center gap-4 group/file hover:border-white/20 transition-colors">
-                            <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-white/40">
-                                {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-5 h-5" /> : <PaperClipIcon className="w-5 h-5" />}
+                    <div className="space-y-3">
+                        {/* File Info */}
+                        <div className="p-3 rounded-lg bg-bg-secondary border border-border-subtle flex items-center gap-3">
+                            <div className="w-8 h-8 rounded bg-bg-card flex items-center justify-center text-text-tertiary">
+                                {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-4 h-4" /> : <PaperClipIcon className="w-4 h-4" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-white truncate">{docFile.file_name}</p>
-                                <p className="text-[10px] text-white/30 font-mono mt-0.5">{formatFileSize(docFile.file_size || 0)} • {new Date(docFile.uploaded_at || new Date()).toLocaleDateString()}</p>
+                                <p className="text-xs font-medium text-text-primary truncate">{docFile.file_name}</p>
+                                <p className="text-[10px] text-text-disabled">{formatFileSize(docFile.file_size || 0)}</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <button
-                                onClick={handleView}
-                                className="h-10 flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-[10px] font-black uppercase tracking-widest text-white transition-all"
-                            >
-                                <EyeIcon className="w-3 h-3" /> Preview
-                            </button>
-                            <button
-                                onClick={handleDownload}
-                                disabled={isDownloading}
-                                className="h-10 flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-[10px] font-black uppercase tracking-widest text-white transition-all"
-                            >
-                                {isDownloading ? <Spinner size="sm" /> : <DownloadIcon className="w-3 h-3" />} Download
-                            </button>
+                        {/* Actions */}
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button variant="secondary" size="sm" onClick={handleView} title="Preview">
+                                <EyeIcon className="w-3.5 h-3.5" /> Prev
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={handleDownload} disabled={isDownloading} title="Download">
+                                <DownloadIcon className="w-3.5 h-3.5" /> Save
+                            </Button>
                         </div>
 
                         {!isVerified && (
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="w-full py-3 text-[10px] font-normal text-white/30 hover:text-white border-t border-dashed border-white/10 hover:border-white/30 transition-all flex items-center justify-center gap-2 mt-2"
-                            >
-                                <UploadIcon className="w-3 h-3" /> Upload Replacement Artifact
-                            </button>
+                            <div className="pt-2 border-t border-border-subtle">
+                                <button className="w-full text-[10px] text-text-tertiary hover:text-primary transition-colors flex items-center justify-center gap-1.5" onClick={() => fileInputRef.current?.click()}>
+                                    <UploadIcon className="w-3 h-3" /> Upload Replacement
+                                </button>
+                            </div>
                         )}
                     </div>
                 ) : (
-                    <div className="mt-auto">
-                        <div className={`mt-4 mb-6 h-32 rounded-xl border-2 border-dashed ${isDragOver ? 'border-accent-premium bg-accent-premium/10' : 'border-white/5 bg-white/[0.02]'} flex flex-col items-center justify-center gap-2 transition-all`}>
-                            {uploadProgress !== null ? (
-                                <div className="w-full px-6 text-center">
-                                    <p className="text-[10px] font-black text-accent-premium uppercase mb-2">Syncing {uploadProgress.toFixed(0)}%</p>
-                                    <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-accent-premium" style={{ width: `${uploadProgress}%` }}></div></div>
+                    // Upload State
+                    <div className="space-y-4">
+                        {uploadProgress !== null ? (
+                            <div className="bg-bg-secondary p-4 rounded-xl border border-border-subtle text-center">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Syncing {uploadProgress.toFixed(0)}%</p>
+                                <div className="h-1 w-full bg-bg-primary rounded-full overflow-hidden">
+                                    <div className="h-full bg-primary transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
                                 </div>
-                            ) : (
-                                <>
-                                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20"><UploadIcon className="w-4 h-4" /></div>
-                                    <span className="text-[10px] font-medium text-white/20">Drag & Drop</span>
-                                </>
-                            )}
-                        </div>
-
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploadProgress !== null}
-                            className={`w-full h-12 flex items-center justify-center gap-2 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border ${config.actionButton} ${uploadProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            <UploadIcon className="w-4 h-4" /> Upload
-                        </button>
+                            </div>
+                        ) : (
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="group/upload cursor-pointer rounded-xl border border-dashed border-border-subtle hover:border-primary/50 hover:bg-primary/5 p-4 flex flex-col items-center justify-center gap-2 transition-all"
+                            >
+                                <UploadIcon className="w-6 h-6 text-text-disabled group-hover/upload:text-primary transition-colors" />
+                                <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wide">Click to Upload</span>
+                            </div>
+                        )}
                     </div>
                 )}
-
-                {/* Error Toast */}
-                {error && <div className="absolute inset-x-4 bottom-4 p-3 bg-red-500/90 text-white text-[10px] font-bold rounded-lg text-center backdrop-blur-md animate-in slide-in-from-bottom-2">{error}</div>}
-
-                <input ref={fileInputRef} type="file" className="hidden" onChange={e => handleFileSelect(e.target.files)} />
             </div>
 
-            {/* Hover Effect Layer */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500"></div>
-        </motion.div>
+            {/* Error Overlay */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-x-2 bottom-2 bg-red-500/90 text-white p-2 text-[10px] font-bold text-center rounded-lg backdrop-blur-sm z-50">
+                        {error}
+                        <button onClick={() => setError(null)} className="absolute top-1 right-1 opacity-50 hover:opacity-100"><XIcon className="w-3 h-3" /></button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <input ref={fileInputRef} type="file" className="hidden" onChange={e => handleFileSelect(e.target.files)} />
+        </Card>
     );
 };
 
@@ -358,7 +285,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
         } finally {
             if (!isSilent) setLoading(false);
         }
-    }, [profile.id, focusOnAdmissionId, onClearFocus, expandedIds.size]);
+    }, [profile.id, focusOnAdmissionId, onClearFocus]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -417,24 +344,15 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
     if (error) return <div className="p-6 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center font-bold">{error}</div>;
 
     return (
-        <div className="max-w-7xl mx-auto space-y-12 pb-32 animate-in fade-in duration-700">
-            {/* Module Header */}
-            <div className="relative p-10 md:p-16 rounded-[3rem] bg-[#0c0e12] border border-white/5 overflow-hidden shadow-2xl ring-1 ring-white/5">
-                <div className="absolute -right-40 -top-40 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none opacity-40"></div>
-                <div className="relative z-10">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.15)]"><ShieldCheckIcon className="w-6 h-6" /></div>
-                        <span className="text-[11px] font-black uppercase text-emerald-500 tracking-[0.4em] drop-shadow-sm">Integrity Center</span>
-                    </div>
-                    <h2 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-none">Artifact <span className="text-white/20 italic">Vault.</span></h2>
-                    <p className="text-white/40 text-lg font-serif italic border-l border-white/10 pl-8 max-w-lg leading-relaxed mt-6">
-                        Finalize institutional identity synchronization by providing verified artifacts for enrollment nodes.
-                    </p>
-                </div>
+        <div className="max-w-7xl mx-auto space-y-8 pb-32 animate-in fade-in duration-700">
+            {/* Header */}
+            <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold text-white tracking-tight">Artifact Vault</h2>
+                <p className="text-text-secondary mt-2">Securely manage and synchronize your institutional documents.</p>
             </div>
 
             {/* Students List */}
-            <div className="space-y-8 px-2">
+            <div className="space-y-6">
                 {Object.keys(groupedData).map(admId => {
                     const node = groupedData[admId];
                     const isExpanded = expandedIds.has(admId);
@@ -443,207 +361,74 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                     const percent = total > 0 ? Math.round((verifiedCount / total) * 100) : 0;
 
                     return (
-                        <motion.div layout key={admId} className={`group bg-[#0f1116] border transition-all duration-700 rounded-[3rem] overflow-hidden shadow-xl ${isExpanded ? 'border-primary/20 ring-1 ring-primary/5 shadow-2xl shadow-primary/5' : 'border-white/5 hover:border-white/10'}`}>
+                        <div key={admId} className="group overflow-hidden rounded-3xl transition-all duration-500 border border-white/5 bg-[#0f1116] shadow-xl hover:shadow-2xl hover:border-white/10">
                             {/* Student Header */}
-                            <header className="p-8 flex flex-col md:flex-row items-center justify-between cursor-pointer gap-6 relative" onClick={() => toggleExpand(admId)}>
-                                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-
-                                <div className="flex items-center gap-6 w-full md:w-auto relative z-10">
-                                    <PremiumAvatar src={node.profilePhotoUrl} name={node.applicantName} size="sm" className="shadow-2xl border border-white/10 w-16 h-16 rounded-2xl" />
+                            <div
+                                onClick={() => toggleExpand(admId)}
+                                className={`
+                                    relative p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 cursor-pointer transition-colors duration-500
+                                    ${isExpanded ? 'bg-bg-primary' : 'bg-[#0f1116] hover:bg-white/[0.02]'}
+                                `}
+                            >
+                                <div className="flex items-center gap-6 w-full md:w-auto z-10">
+                                    <PremiumAvatar src={node.profilePhotoUrl} name={node.applicantName} size="sm" className="w-14 h-14 rounded-2xl shadow-lg" />
                                     <div>
-                                        <h3 className="text-2xl font-bold text-white group-hover:text-primary transition-colors tracking-tight">{node.applicantName}</h3>
-                                        <div className="flex items-center gap-3 mt-1.5">
-                                            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Grade {node.grade}</span>
-                                            {total === 0 && <span className="text-[9px] bg-white/5 px-2 py-0.5 rounded text-white/20 font-bold uppercase tracking-wider">Empty Node</span>}
+                                        <h3 className="text-xl font-bold text-white tracking-tight">{node.applicantName}</h3>
+                                        <p className="text-xs text-text-tertiary mb-1 font-mono uppercase tracking-wider">Grade {node.grade}</p>
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-1.5 w-24 bg-bg-card rounded-full overflow-hidden border border-white/5">
+                                                <div className={`h-full rounded-full ${percent === 100 ? 'bg-accent-success' : 'bg-accent-primary'}`} style={{ width: `${percent}%` }}></div>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-text-secondary">{percent}%</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end relative z-10">
-                                    <div className="flex items-center gap-8">
-                                        <div className="w-48 text-right hidden md:block">
-                                            <div className="flex justify-between items-end mb-2">
-                                                <div className="flex flex-col items-start">
-                                                    <span className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-0.5">Vault Status</span>
-                                                    <span className={`text-[10px] font-bold uppercase tracking-wide ${percent === 100 ? 'text-[#22C55E]' : 'text-white/60'}`}>
-                                                        {percent === 100 ? 'Fully Synchronized' : percent > 75 ? 'Almost Complete' : percent > 0 ? 'Syncing in Progress' : 'Pending Initialization'}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-col items-end">
-                                                    <span className={`text-xl font-black ${percent === 100 ? 'text-[#22C55E]' : 'text-white'}`}>{percent}%</span>
-                                                </div>
-                                            </div>
-                                            <div className="h-2 bg-[#121622] rounded-full overflow-hidden border border-white/5 relative">
-                                                <div className="absolute inset-0 bg-white/[0.02]"></div>
-                                                <motion.div
-                                                    className={`h-full rounded-full relative overflow-hidden ${percent === 100 ? 'bg-[#22C55E]' : 'bg-[#8B5CF6]'}`}
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${percent}%` }}
-                                                    transition={{ duration: 1, ease: "circOut" }}
-                                                >
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]"></div>
-                                                </motion.div>
-                                            </div>
-                                            <p className="text-[9px] font-mono text-white/30 mt-2 text-right">
-                                                {verifiedCount} of {total} documents submitted
-                                            </p>
-                                        </div>
+
+                                <div className="flex items-center gap-4 z-10">
+                                    <div className="text-right hidden md:block">
+                                        <span className="text-[10px] text-text-tertiary block">Status</span>
+                                        <span className={`text-xs font-bold ${percent === 100 ? 'text-accent-success' : 'text-text-primary'}`}>{percent === 100 ? 'Synchronized' : 'In Progress'}</span>
                                     </div>
-                                    <div className={`p-4 rounded-full bg-white/5 border border-white/10 transition-all duration-500 shadow-xl ${isExpanded ? 'rotate-180 bg-primary/10 text-primary border-primary/20 shadow-primary/10' : 'text-white/30 group-hover:text-white group-hover:bg-white/10'}`}>
-                                        <ChevronDownIcon className="w-5 h-5" />
-                                    </div>
+                                    <Button variant="ghost" size="sm" className={`rounded-full w-10 h-10 p-0 flex items-center justify-center transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-white/5' : ''}`}>
+                                        <ChevronDownIcon className="w-5 h-5 text-text-secondary" />
+                                    </Button>
                                 </div>
-                            </header>
+                            </div>
 
                             {/* Collapsible Content */}
                             <AnimatePresence>
                                 {isExpanded && (
-                                    <motion.section
+                                    <motion.div
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-                                        className="overflow-hidden bg-[#0a0c10]/50 shadow-inner"
+                                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                                     >
-                                        <div className="p-8 md:p-10 border-t border-white/[0.04]">
+                                        <div className="border-t border-white/5 bg-black/20 p-6 md:p-8">
                                             {node.requirements.length === 0 ? (
-                                                <div className="text-center py-12 md:py-16 text-white/20 border-2 border-dashed border-white/5 rounded-[2rem] flex flex-col items-center bg-[#0c0d12]/50 relative overflow-hidden">
-                                                    <div className="absolute inset-0 bg-grid-white/[0.02] [mask-image:linear-gradient(0deg,white,transparent)]"></div>
-                                                    <div className="relative z-10 mb-8">
-                                                        <div className="w-20 h-20 bg-gradient-to-tr from-white/10 to-transparent rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-2xl ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-500">
-                                                            <DocumentTextIcon className="w-10 h-10 opacity-60 text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.5)]" />
-                                                        </div>
-                                                        <h4 className="font-serif font-black text-2xl text-white/60 tracking-tight">Initialize Vault</h4>
-                                                        <p className="text-sm font-medium text-white/30 max-w-sm mx-auto mt-3 leading-relaxed">Select a standard artifact type to begin the institutional synchronization process.</p>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl px-4 relative z-10">
-                                                        {['Birth Certificate', 'Transfer Certificate', 'Report Card', 'Identity Proof', 'Medical Record', 'Other Artifact'].map((type) => (
-                                                            <button
-                                                                key={type}
-                                                                onClick={async (e) => {
-                                                                    e.stopPropagation();
-                                                                    let name = type;
-                                                                    if (type === 'Other Artifact') {
-                                                                        const customName = window.prompt("Enter the designation for this artifact:");
-                                                                        if (!customName) return;
-                                                                        name = customName;
-                                                                    }
-
-                                                                    try {
-                                                                        const { error } = await supabase.from('document_requirements').insert({
-                                                                            admission_id: admId,
-                                                                            document_name: name,
-                                                                            is_mandatory: false,
-                                                                            status: 'Pending'
-                                                                        });
-                                                                        if (error) throw error;
-                                                                        await fetchData(true);
-                                                                    } catch (err: any) {
-                                                                        alert("Protocol Interrupted: " + err.message);
-                                                                    }
-                                                                }}
-                                                                className="group/btn relative flex flex-col items-center justify-center p-6 rounded-2xl bg-[#13151a] border border-white/5 hover:border-primary/40 hover:bg-[#1a1c24] transition-all duration-300 overflow-hidden shadow-lg hover:shadow-primary/10"
-                                                            >
-                                                                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
-                                                                <PlusIcon className="w-6 h-6 text-white/20 group-hover/btn:text-primary mb-3 transition-colors duration-300 group-hover/btn:scale-110" />
-                                                                <span className="text-[11px] font-black text-white/40 group-hover/btn:text-white uppercase tracking-widest relative z-10">{type}</span>
-                                                            </button>
-                                                        ))}
-                                                    </div>
+                                                <div className="text-center py-10">
+                                                    <p className="text-text-disabled text-sm">No artifacts required for this enrollment.</p>
+                                                    <Button variant="primary" className="mt-4" onClick={(e) => { e.stopPropagation(); /* Add logic */ }}>Initialize Requirements</Button>
                                                 </div>
                                             ) : (
-                                                <div className="space-y-6">
-                                                    {/* Add New Button (Top Right of Grid) */}
-                                                    <div className="flex justify-end">
-                                                        <button
-                                                            onClick={async (e) => {
-                                                                e.stopPropagation();
-                                                                const name = prompt("Enter artifact name:");
-                                                                if (!name) return;
-                                                                try {
-                                                                    const { error } = await supabase.from('document_requirements').insert({
-                                                                        admission_id: admId,
-                                                                        document_name: name,
-                                                                        is_mandatory: false,
-                                                                        status: 'Pending'
-                                                                    });
-                                                                    if (error) throw error;
-                                                                    await fetchData(true);
-                                                                } catch (err: any) {
-                                                                    alert("Failed to add slot: " + err.message);
-                                                                }
-                                                            }}
-                                                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 hover:border-white/20 transition-all text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-primary"
-                                                        >
-                                                            <PlusIcon className="w-3 h-3" /> Add Artifact
-                                                        </button>
-                                                    </div>
-
-                                                    <motion.div
-                                                        initial="hidden"
-                                                        animate="visible"
-                                                        variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
-                                                        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-                                                    >
-                                                        {node.requirements.map(req => (
-                                                            <CollapsibleDocumentCard key={req.id} req={req} onUpload={handleUpload} />
-                                                        ))}
-                                                    </motion.div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                    {node.requirements.map(req => (
+                                                        <DocumentCard key={req.id} req={req} onUpload={handleUpload} />
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>
-                                    </motion.section>
+                                    </motion.div>
                                 )}
                             </AnimatePresence>
-                        </motion.div>
+                        </div>
                     );
                 })}
             </div>
 
             {Object.keys(groupedData).length === 0 && !loading && (
-                <div className="relative py-40 rounded-[3rem] overflow-hidden flex flex-col items-center justify-center group transition-all duration-700">
-
-                    {/* Ambient Background */}
-                    <div className="absolute inset-0 bg-[#0c0e12] border border-white/5 rounded-[3rem]"></div>
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/[0.03] via-transparent to-transparent opacity-50"></div>
-
-                    {/* Animated Glow */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full pointer-events-none animate-pulse-slow"></div>
-
-                    {/* Dashed Border Overlay */}
-                    <div className="absolute inset-4 border-2 border-dashed border-white/5 rounded-[2.5rem] pointer-events-none"></div>
-
-                    {/* Content */}
-                    <div className="relative z-10 flex flex-col items-center max-w-xl mx-auto px-6 text-center">
-
-                        {/* Icon Container */}
-                        <div className="relative mb-10 group-hover:-translate-y-2 transition-transform duration-500 ease-out">
-                            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                            <div className="w-24 h-24 bg-gradient-to-br from-[#1a1d26] to-[#0c0e12] rounded-3xl flex items-center justify-center border border-white/5 shadow-2xl relative z-10 ring-1 ring-white/5 group-hover:border-primary/30 grayscale group-hover:grayscale-0 transition-all duration-500">
-                                <ShieldCheckIcon className="w-10 h-10 text-white/30 group-hover:text-primary transition-colors duration-500" />
-                            </div>
-                        </div>
-
-                        <h3 className="text-3xl md:text-4xl font-serif font-bold text-white mb-6 tracking-tight">
-                            Identity Artifacts Missing
-                        </h3>
-
-                        <p className="text-white/40 text-sm md:text-base leading-relaxed mb-10 max-w-md mx-auto">
-                            The artifact vault is currently dormant because no active institutional profiles are linked.
-                            <span className="block mt-4 text-white/20 font-medium italic">Initialize the protocol by registering a student identity below.</span>
-                        </p>
-
-                        <button
-                            onClick={() => setActiveComponent?.('My Children')}
-                            className="relative px-10 py-5 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-[0_20px_50px_-15px_rgba(var(--primary),0.3)] transition-all duration-300 group/btn overflow-hidden transform hover:-translate-y-1 hover:shadow-[0_30px_60px_-15px_rgba(var(--primary),0.4)] ring-1 ring-white/10"
-                        >
-                            <span className="relative z-10 flex items-center gap-3">
-                                <PlusIcon className="w-4 h-4 group-hover/btn:rotate-90 transition-transform duration-500" />
-                                Register Student Identity
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full -translate-x-full group-hover/btn:animate-[shimmer_1s_infinite]"></div>
-                        </button>
-                    </div>
+                <div className="text-center py-20">
+                    <p className="text-text-disabled">No student profiles found.</p>
                 </div>
             )}
         </div>
@@ -651,3 +436,4 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
 };
 
 export default DocumentsTab;
+
