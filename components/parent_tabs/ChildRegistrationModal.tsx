@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useReducer } from 'react';
 import { supabase } from '../../services/supabase';
 import { AdmissionApplication } from '../../types';
 import { StorageService, BUCKETS } from '../../services/storage';
@@ -20,6 +20,8 @@ import CustomSelect from '../common/CustomSelect';
 import PremiumAvatar from '../common/PremiumAvatar';
 import clsx from 'clsx';
 
+// --- Types & Utilities ---
+
 const resolveSyncError = (err: any): string => {
     if (!err) return "Identity synchronization protocol failed.";
     let message = typeof err === 'string' ? err : err.message || err.error_description || err.details || '';
@@ -31,7 +33,37 @@ const resolveSyncError = (err: any): string => {
     return message || "Institutional node exception.";
 };
 
-// Compliance-focused Section Header
+// --- Consent State Machine (Red) ---
+
+type ConsentState =
+    | 'noConsent'
+    | 'consentGranted'
+    | 'biometricCaptured'
+    | 'enrollmentCompleted';
+
+type ConsentAction =
+    | { type: 'GRANT_CONSENT' }
+    | { type: 'WITHDRAW_CONSENT' }
+    | { type: 'CAPTURE_BIOMETRIC' }
+    | { type: 'SUBMIT_SUCCESS' };
+
+const consentReducer = (state: ConsentState, action: ConsentAction): ConsentState => {
+    switch (action.type) {
+        case 'GRANT_CONSENT':
+            return state === 'noConsent' ? 'consentGranted' : state;
+        case 'WITHDRAW_CONSENT':
+            return 'noConsent'; // Reset to initial state
+        case 'CAPTURE_BIOMETRIC':
+            return state === 'consentGranted' || state === 'biometricCaptured' ? 'biometricCaptured' : state;
+        case 'SUBMIT_SUCCESS':
+            return 'enrollmentCompleted';
+        default:
+            return state;
+    }
+};
+
+// --- Components ---
+
 const ComplianceSectionHeader: React.FC<{
     title: string;
     icon?: React.ReactNode;
@@ -117,7 +149,10 @@ interface ChildRegistrationModalProps {
 
 const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, onClose, onSave, currentUserId }) => {
     const isEdit = !!child;
-    const [step, setStep] = useState<'details' | 'success'>('details');
+
+    // --- State Machine ---
+    const [consentState, dispatch] = useReducer(consentReducer, 'noConsent');
+
     const [formData, setFormData] = useState({
         applicant_name: child?.applicant_name || '',
         grade: child?.grade || '',
@@ -126,8 +161,6 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         medical_info: child?.medical_info || '',
         emergency_contact: child?.emergency_contact || '',
     });
-
-    const [consentGiven, setConsentGiven] = useState(false);
 
     // Draggable State
     const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -185,12 +218,13 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     }, [isDragging, handleMouseMove, handleMouseUp]);
 
     const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!consentGiven) return;
+        if (consentState === 'noConsent') return;
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             if (file.size > 5 * 1024 * 1024) return alert("Image exceeds 5MB limit.");
             setPhotoFile(file);
             setPhotoPreview(URL.createObjectURL(file));
+            dispatch({ type: 'CAPTURE_BIOMETRIC' });
         }
     };
 
@@ -204,9 +238,23 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         }
     };
 
+    const handleConsentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const isConsenting = e.target.checked;
+        if (isConsenting) {
+            dispatch({ type: 'GRANT_CONSENT' });
+        } else {
+            // IMMEDIATE REVOCATION LOGIC
+            setPhotoFile(null);
+            setPhotoPreview(child?.profile_photo_url || null);
+            dispatch({ type: 'WITHDRAW_CONSENT' });
+        }
+    };
+
     const handleSubmitDetails = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.applicant_name || !currentUserId || !consentGiven) return;
+        // Strict State Machine Check: Must contain active consent
+        if (!formData.applicant_name || !currentUserId || consentState === 'noConsent') return;
+
         setLoading(true);
         setError(null);
         try {
@@ -240,7 +288,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                 const { error } = await supabase.from('admissions').insert(payload);
                 if (error) throw error;
             }
-            setStep('success');
+            dispatch({ type: 'SUBMIT_SUCCESS' });
         } catch (err: any) {
             setError(resolveSyncError(err));
         } finally {
@@ -264,24 +312,29 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
+    // Derived States for UI
+    const isConsentActive = consentState === 'consentGranted' || consentState === 'biometricCaptured';
+    const canSubmit = consentState === 'biometricCaptured'; // Require biometric for this flow (or refine if optional)
+
     return (
         <div className="fixed inset-0 bg-[#050608]/95 backdrop-blur-xl z-[150] flex items-center justify-center overflow-hidden animate-in fade-in duration-500">
             <div
                 ref={modalRef}
                 style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
                 className={clsx(
-                    "bg-[#0a0a0c] w-full h-full md:h-auto md:max-h-[95vh] md:max-w-3xl",
-                    "md:rounded-[2.5rem] shadow-2xl ring-1 ring-white/10 flex flex-col relative",
+                    "bg-[#0a0a0c] shadow-2xl ring-1 ring-white/10 flex flex-col relative",
+                    "w-full h-[100dvh] md:h-auto md:max-h-[90dvh] md:max-w-3xl", // Mobile: Full height (dvh), Desktop: Constrained
+                    "md:rounded-[2.5rem]",
                     "animate-in zoom-in-95 duration-500 overflow-hidden",
                     isDragging && "scale-[1.01] shadow-primary/10 cursor-grabbing"
                 )}
             >
-                {step === 'details' ? (
-                    <form onSubmit={handleSubmitDetails} className="flex flex-col h-full relative z-10">
-                        {/* Header */}
+                {consentState !== 'enrollmentCompleted' ? (
+                    <form onSubmit={handleSubmitDetails} className="flex flex-col h-full relative z-10 w-full">
+                        {/* Header - Fixed */}
                         <div
                             onMouseDown={handleMouseDown}
-                            className="px-6 py-5 md:px-10 md:py-6 border-b border-white/5 bg-[#0c0e12] flex justify-between items-center shrink-0 cursor-grab active:cursor-grabbing"
+                            className="shrink-0 px-6 py-5 md:px-10 md:py-6 border-b border-white/5 bg-[#0c0e12] flex justify-between items-center cursor-grab active:cursor-grabbing"
                         >
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-[inset_0_0_10px_rgba(var(--primary),0.2)]">
@@ -297,8 +350,8 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                             </button>
                         </div>
 
-                        {/* Scrollable Body */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 space-y-10">
+                        {/* Scrollable Body - Flexible */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 space-y-10 min-h-0">
                             {error && (
                                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-medium flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                                     <ShieldCheckIcon className="w-4 h-4" /> {error}
@@ -307,14 +360,14 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
 
                             {/* Biometric Section - Compliance Locked */}
                             <div className="flex flex-col items-center justify-center gap-6 py-4 bg-white/[0.02] rounded-3xl border border-white/5 relative overflow-hidden transition-all duration-500">
-                                {!consentGiven && (
+                                {!isConsentActive && (
                                     <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-700 pointer-events-none">
                                         <LockIcon className="w-8 h-8 text-white/30" />
                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Guardian Consent Required</p>
                                     </div>
                                 )}
 
-                                <div className={clsx("relative group/avatar transition-all duration-500", !consentGiven && "blur-sm opacity-50")}>
+                                <div className={clsx("relative group/avatar transition-all duration-500", !isConsentActive && "blur-sm opacity-50")}>
                                     <PremiumAvatar
                                         src={photoPreview}
                                         name={formData.applicant_name || '?'}
@@ -323,14 +376,14 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                     />
                                     <button
                                         type="button"
-                                        onClick={() => consentGiven && fileInputRef.current?.click()}
-                                        disabled={!consentGiven}
+                                        onClick={() => isConsentActive && fileInputRef.current?.click()}
+                                        disabled={!isConsentActive}
                                         className="absolute bottom-0 right-0 p-3 bg-primary text-white rounded-2xl shadow-lg ring-4 ring-[#0a0a0c] hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all z-20 disabled:hidden"
                                     >
                                         <UploadIcon className="w-5 h-5" />
                                     </button>
                                 </div>
-                                <div className={clsx("text-center space-y-1 transition-opacity duration-500", !consentGiven && "opacity-30")}>
+                                <div className={clsx("text-center space-y-1 transition-opacity duration-500", !isConsentActive && "opacity-30")}>
                                     <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center justify-center gap-2">
                                         <ShieldCheckIcon className="w-3 h-3" /> Secure Biometric Identity
                                     </p>
@@ -446,15 +499,8 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                     <div className="relative mt-1">
                                         <input
                                             type="checkbox"
-                                            checked={consentGiven}
-                                            onChange={(e) => {
-                                                const isConsenting = e.target.checked;
-                                                setConsentGiven(isConsenting);
-                                                if (!isConsenting) {
-                                                    setPhotoFile(null);
-                                                    setPhotoPreview(child?.profile_photo_url || null);
-                                                }
-                                            }}
+                                            checked={isConsentActive}
+                                            onChange={handleConsentChange}
                                             className="peer appearance-none w-5 h-5 rounded border border-white/20 bg-black/40 checked:bg-primary checked:border-primary transition-all cursor-pointer"
                                         />
                                         <CheckCircleIcon className="absolute inset-0 text-[#0a0a0c] w-5 h-5 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
@@ -479,8 +525,8 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                             </div>
                         </div>
 
-                        {/* Footer */}
-                        <div className="p-6 md:p-8 border-t border-white/5 bg-[#0c0e12] flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+                        {/* Footer - Fixed */}
+                        <div className="shrink-0 p-6 md:p-8 border-t border-white/5 bg-[#0c0e12] flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex items-center gap-2 text-white/20 order-3 md:order-1 md:mr-auto">
                                 <LockIcon className="w-3 h-3" />
                                 <span className="text-[9px] font-medium tracking-wide">Encrypted at rest & in transit</span>
@@ -491,7 +537,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                             </button>
                             <button
                                 type="submit"
-                                disabled={loading || !formData.applicant_name || !formData.date_of_birth || !consentGiven}
+                                disabled={loading || !formData.applicant_name || !formData.date_of_birth || !canSubmit}
                                 className="w-full md:w-auto px-10 py-4 bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale text-white rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-3 transition-all transform active:scale-95 order-1 md:order-3"
                             >
                                 {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-4 h-4" /> <span className="text-xs font-black uppercase tracking-[0.25em]">Initialize Enrollment</span></>}
