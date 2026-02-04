@@ -66,9 +66,10 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 data.admin_designation = data.admin_designation || 'Director';
                 data.admin_contact_email = data.admin_contact_email || profile.email || '';
 
-                // If phone exists, try to split it into country code and local
-                if (profile.phone && !data.admin_contact_phone_local) {
-                    const phoneStr = profile.phone;
+                // Prioritize existing node phone over master profile phone for splitting
+                const phoneToSplit = data.admin_contact_phone || profile.phone || '';
+                if (phoneToSplit && !data.admin_contact_phone_local) {
+                    const phoneStr = phoneToSplit;
                     if (phoneStr.startsWith('+')) {
                         // Simple split assumption: first 3 chars for code if it looks like +91
                         data.admin_contact_phone_country_code = phoneStr.slice(0, 3);
@@ -334,17 +335,23 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 ? (formData.admin_contact_name || formData.display_name)
                 : formData.display_name;
 
+            // For school admins, use the constructed phone number. For others, use what's in formData.
+            const finalPhone = role === BuiltInRoles.SCHOOL_ADMINISTRATION ? formData.phone : formData.phone;
+            // Actually, for School Admin, formData.phone was just assigned fullPhoneNumber.
+            // But let's be explicit and robust.
+            const phoneToSync = role === BuiltInRoles.SCHOOL_ADMINISTRATION ? (formData.phone || '') : (formData.phone || '');
+
             console.log('Updating master profile...');
             console.log('Final display name:', finalDisplayName);
-            console.log('Final phone number:', formData.phone);
-            console.log('Profile completed: true (School Admin can now access dashboard)');
+            console.log('Final phone number:', phoneToSync);
+            console.log('Profile completed: true');
 
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .update({
                     display_name: finalDisplayName,
-                    phone: formData.phone,
-                    profile_completed: true, // Always mark as completed for all roles
+                    phone: phoneToSync,
+                    profile_completed: true,
                     role: role
                 })
                 .eq('id', profile.id)
@@ -359,14 +366,19 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
             if (isMounted.current) {
                 console.log('Component still mounted, updating UI...');
                 setLoading(false);
-                if (isEditMode && role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-                    console.log('Showing success message for edit mode');
-                    setError(null);
-                    setSuccess("Profile updated successfully");
-                    setTimeout(() => setSuccess(null), 3000);
-                } else {
-                    console.log('Calling onComplete()...');
-                    onComplete();
+
+                // Show success message
+                setError(null);
+                setSuccess(isEditMode ? "Profile updated successfully" : "Setup completed successfully");
+
+                // Trigger parent update (this ensures dashboards/sidebars refresh)
+                console.log('Calling onComplete()...');
+                if (onComplete) onComplete();
+
+                if (isEditMode) {
+                    setTimeout(() => {
+                        if (isMounted.current) setSuccess(null);
+                    }, 3000);
                 }
             }
 

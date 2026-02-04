@@ -120,6 +120,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
     const handleStepAdvance = async () => {
         if (!isMounted.current) return;
 
+        // If not a school admin, we are done with the onboarding flow after the profile step
+        if (selectedRole !== BuiltInRoles.SCHOOL_ADMINISTRATION) {
+            console.log('✅ Non-school admin profile completed, finalizing...');
+            if (onComplete) await onComplete();
+            return;
+        }
+
         setLoading(true);
         try {
             // New Order: Pricing -> Profile -> Branches
@@ -185,6 +192,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ profile, onComplete, on
                     await supabase.from('school_admin_profiles').update({ onboarding_step: 'pricing' }).eq('user_id', profile.id);
                     setStep('pricing');
                 } else if (step === 'pricing') {
+                    // Clean up the partial school admin profile we created
+                    await supabase.from('school_admin_profiles').delete().eq('user_id', profile.id);
                     await supabase.from('profiles').update({ role: null, profile_completed: false }).eq('id', profile.id);
                     setSelectedRole(null);
                     setStep('role');
