@@ -229,40 +229,75 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 console.log('✅ Student profile saved');
             } else if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
                 console.log('Processing School Admin profile...');
+                console.log('Raw formData:', JSON.stringify(formData, null, 2));
 
-                // Prepare complete payload with all fields
+                // Validate phone number construction
+                const phoneCountryCode = formData.admin_contact_phone_country_code?.trim() || '+91';
+                const phoneLocal = formData.admin_contact_phone_local?.trim() || '';
+
+                if (!phoneLocal) {
+                    console.error('Phone local number is empty!');
+                    throw new Error('Administrator phone number is required');
+                }
+
+                const fullPhoneNumber = phoneCountryCode + phoneLocal;
+                console.log('Constructed phone number:', fullPhoneNumber);
+
+                // Prepare complete payload with all fields - ensure no undefined values
                 const payload: any = {
                     user_id: profile.id,
-                    school_name: formData.school_name,
-                    address: formData.address,
-                    city: formData.city,
-                    state: formData.state,
-                    country: formData.country,
-                    admin_contact_name: formData.admin_contact_name,
-                    admin_designation: formData.admin_designation || 'Director',
-                    admin_contact_email: formData.admin_contact_email,
-                    admin_contact_phone: (formData.admin_contact_phone_country_code || '+91') + (formData.admin_contact_phone_local || ''),
-                    academic_board: formData.academic_board,
-                    school_type: formData.school_type,
-                    academic_year_start: formData.academic_year_start,
-                    academic_year_end: formData.academic_year_end,
-                    grade_range_start: formData.grade_range_start,
-                    grade_range_end: formData.grade_range_end,
-                    onboarding_step: isEditMode ? formData.onboarding_step : 'pricing'
+                    school_name: formData.school_name?.trim() || null,
+                    address: formData.address?.trim() || null,
+                    city: formData.city?.trim() || null,
+                    state: formData.state?.trim() || null,
+                    country: formData.country?.trim() || 'India',
+                    admin_contact_name: formData.admin_contact_name?.trim() || null,
+                    admin_designation: formData.admin_designation?.trim() || 'Director',
+                    admin_contact_email: formData.admin_contact_email?.trim() || null,
+                    admin_contact_phone: fullPhoneNumber,
+                    academic_board: formData.academic_board?.trim() || null,
+                    school_type: formData.school_type?.trim() || null,
+                    academic_year_start: formData.academic_year_start?.trim() || null,
+                    academic_year_end: formData.academic_year_end?.trim() || null,
+                    grade_range_start: formData.grade_range_start?.trim() || null,
+                    grade_range_end: formData.grade_range_end?.trim() || null,
+                    onboarding_step: isEditMode ? (formData.onboarding_step || 'pricing') : 'pricing'
                 };
 
-                console.log('School Admin Payload:', payload);
+                // Validate required fields are not null
+                const requiredFields = ['school_name', 'address', 'admin_contact_name', 'admin_contact_email', 'admin_contact_phone', 'academic_board'];
+                const missingFields = requiredFields.filter(field => !payload[field]);
+
+                if (missingFields.length > 0) {
+                    console.error('Missing required fields:', missingFields);
+                    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+                }
+
+                console.log('School Admin Payload (validated):', JSON.stringify(payload, null, 2));
+                console.log('Attempting upsert with user_id:', profile.id);
 
                 const { data: upsertData, error: sError } = await supabase
                     .from('school_admin_profiles')
-                    .upsert(payload)
+                    .upsert(payload, {
+                        onConflict: 'user_id'
+                    })
                     .select();
 
                 if (sError) {
-                    console.error('School Admin upsert error:', sError);
+                    console.error('❌ School Admin upsert error:', sError);
+                    console.error('Error code:', sError.code);
+                    console.error('Error message:', sError.message);
+                    console.error('Error details:', sError.details);
+                    console.error('Error hint:', sError.hint);
                     throw sError;
                 }
-                console.log('✅ School Admin profile saved:', upsertData);
+
+                if (!upsertData || upsertData.length === 0) {
+                    console.error('❌ Upsert returned no data');
+                    throw new Error('Profile save failed - no data returned');
+                }
+
+                console.log('✅ School Admin profile saved successfully:', upsertData);
             } else if (role === BuiltInRoles.TRANSPORT_STAFF) {
                 console.log('Processing Transport Staff profile...');
                 const { error: trError } = await supabase.rpc('upsert_transport_profile', {
