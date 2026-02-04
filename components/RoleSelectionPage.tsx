@@ -249,13 +249,13 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
 
             {isSchoolAdminModalOpen && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex justify-center items-center z-[100] p-4 animate-in fade-in duration-300" onClick={() => !createLoading && !joinLoading && setIsSchoolAdminModalOpen(false)}>
-                    <div className="bg-card w-full max-w-4xl rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden transform transition-all scale-100" onClick={e => e.stopPropagation()}>
-                        <div className="flex flex-col md:flex-row h-full min-h-[500px]">
+                    <div className="bg-card w-full max-w-4xl rounded-[2rem] md:rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden transform transition-all scale-100" onClick={e => e.stopPropagation()}>
+                        <div className="flex flex-col md:flex-row h-full min-h-[60vh] md:min-h-[500px]">
 
                             <button
                                 onClick={handleCreateNewSchool}
                                 disabled={createLoading || joinLoading || isBranchAdminEligible}
-                                className={`flex-1 p-12 text-center group relative overflow-hidden transition-all ${isBranchAdminEligible ? 'bg-muted/10 cursor-not-allowed grayscale-[0.5]' : 'hover:bg-primary/5 cursor-pointer'} disabled:opacity-50`}
+                                className={`flex-1 p-6 md:p-12 text-center group relative overflow-hidden transition-all ${isBranchAdminEligible ? 'bg-muted/10 cursor-not-allowed grayscale-[0.5]' : 'hover:bg-primary/5 cursor-pointer'} disabled:opacity-50`}
                             >
                                 <div className="relative z-10 flex flex-col items-center">
                                     <div className={`w-24 h-24 ${isBranchAdminEligible ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'} rounded-3xl flex items-center justify-center mb-8 group-hover:${isBranchAdminEligible ? '' : 'scale-110'} transition-transform duration-500 shadow-inner border ${isBranchAdminEligible ? 'border-border' : 'border-primary/20'}`}>
@@ -281,7 +281,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                             <div className="w-px bg-border/60 self-stretch hidden md:block" />
                             <div className="h-px bg-border/60 self-stretch md:hidden" />
 
-                            <div className="flex-1 p-12 text-center bg-muted/20 relative flex flex-col">
+                            <div className="flex-1 p-6 md:p-12 text-center bg-muted/20 relative flex flex-col">
                                 <div className="flex flex-col items-center flex-grow">
                                     <div className="w-24 h-24 bg-indigo-500/10 rounded-full flex items-center justify-center mb-8 shadow-inner border border-indigo-500/20">
                                         {joinSuccess ? <CheckCircleIcon className="w-12 h-12 text-emerald-500 animate-in zoom-in" /> : <ShieldCheckIcon className="w-12 h-12 text-indigo-600" />}

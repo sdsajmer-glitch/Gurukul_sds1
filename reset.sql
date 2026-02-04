@@ -2117,10 +2117,11 @@ BEGIN
   SET role = 'School Administration'
   WHERE id = v_user_id;
 
-  -- Ensure School Admin Profile exists
+  -- Ensure School Admin Profile exists and set step to 'pricing'
   INSERT INTO public.school_admin_profiles (user_id, onboarding_step)
-  VALUES (v_user_id, 'profile')
-  ON CONFLICT (user_id) DO NOTHING;
+  VALUES (v_user_id, 'pricing')
+  ON CONFLICT (user_id) DO UPDATE 
+  SET onboarding_step = 'pricing';
 
   RETURN jsonb_build_object('success', true);
 END;
@@ -2453,7 +2454,7 @@ BEGIN
   UPDATE public.school_admin_profiles
   SET 
     plan_id = p_plan_id,
-    onboarding_step = 'branches'
+    onboarding_step = 'profile'
   WHERE user_id = auth.uid();
 END;
 $$;

@@ -59,6 +59,7 @@ const DocumentCard: React.FC<{
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -142,14 +143,25 @@ const DocumentCard: React.FC<{
                             <LockIcon className="w-5 h-5 opacity-40" />}
                 </div>
 
-                <div className={clsx(
-                    "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm",
-                    isVerified ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
-                        isRejected ? "bg-red-500/10 text-red-500 border-red-500/20" :
-                            isPending ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
-                                "bg-white/5 text-white/40 border-white/10"
-                )}>
-                    {status}
+                <div className="flex items-center gap-2">
+                    <div className={clsx(
+                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm",
+                        isVerified ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
+                            isRejected ? "bg-red-500/10 text-red-500 border-red-500/20" :
+                                isPending ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
+                                    "bg-white/5 text-white/40 border-white/10"
+                    )}>
+                        {status}
+                    </div>
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className={clsx(
+                            "w-8 h-8 rounded-full border border-white/10 flex items-center justify-center transition-all duration-300",
+                            isExpanded ? "bg-primary/20 border-primary/30 rotate-180" : "bg-white/5 hover:bg-white/10"
+                        )}
+                    >
+                        <ChevronDownIcon className={clsx("w-4 h-4", isExpanded ? "text-primary" : "text-white/30")} />
+                    </button>
                 </div>
             </div>
 
@@ -170,82 +182,126 @@ const DocumentCard: React.FC<{
                 </div>
             </div>
 
-            {/* Interaction Area */}
-            <div
-                className="flex-grow flex flex-col justify-end relative z-10"
-                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
-                onDrop={handleDrop}
-            >
-                {hasFileRecord ? (
-                    <div className="space-y-4">
-                        {/* Artifact Slot */}
-                        <div className="p-4 rounded-2xl bg-black/40 border border-white/5 flex items-center gap-4 group/file hover:bg-black/60 transition-all">
-                            <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center text-white/20 group-hover/file:text-primary transition-colors">
-                                {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-5 h-5" /> : <PaperClipIcon className="w-5 h-5" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-white/70 truncate uppercase tracking-wide">{docFile.file_name}</p>
-                                <p className="text-[9px] text-white/20 font-mono mt-1">{formatFileSize(docFile.file_size || 0)} • Verified Hash</p>
-                            </div>
-                        </div>
+            {/* Interaction Area (Always Visible Header) */}
+            <div className="relative z-10 flex flex-col h-full">
+                <AnimatePresence initial={false}>
+                    {isExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                            className="overflow-hidden"
+                        >
+                            <div className="pb-6 space-y-4">
+                                {req.notes_for_parent && (
+                                    <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl">
+                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Instructions</p>
+                                        <p className="text-[11px] text-white/60 leading-relaxed italic">{req.notes_for_parent}</p>
+                                    </div>
+                                )}
 
-                        {/* High-Trust Action Bar */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <Button
-                                variant="secondary"
-                                className="h-12 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border-white/5 text-white/60 hover:text-white flex items-center justify-center gap-2 transition-all active:scale-95"
-                                onClick={handleView}
-                            >
-                                <EyeIcon className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Preview</span>
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                className="h-12 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border-white/5 text-white/60 hover:text-white flex items-center justify-center gap-2 transition-all active:scale-95"
-                                onClick={handleDownload}
-                                disabled={isDownloading}
-                            >
-                                <DownloadIcon className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Store</span>
-                            </Button>
-                        </div>
+                                {isRejected && req.rejection_reason && (
+                                    <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-xl">
+                                        <p className="text-[9px] font-black text-red-500/40 uppercase tracking-[0.2em] mb-1">Rejection Reason</p>
+                                        <p className="text-[11px] text-red-400/80 leading-relaxed">{req.rejection_reason}</p>
+                                    </div>
+                                )}
 
-                        {!isVerified && (
-                            <div className="pt-2">
-                                <button
-                                    className="w-full h-10 text-[9px] font-black uppercase tracking-[0.25em] text-white/20 hover:text-primary transition-all flex items-center justify-center gap-3 border border-dashed border-white/5 rounded-xl hover:border-primary/30 hover:bg-primary/[0.02]"
-                                    onClick={() => fileInputRef.current?.click()}
+                                <div
+                                    className="relative"
+                                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                                    onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
+                                    onDrop={handleDrop}
                                 >
-                                    <UploadIcon className="w-3.5 h-3.5" /> Replace Artifact
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    // Secure Upload Zone
-                    <div className="space-y-4">
-                        {uploadProgress !== null ? (
-                            <div className="bg-primary/5 p-6 rounded-[1.5rem] border border-primary/20 text-center animate-pulse">
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-3">Encrypting Node... {uploadProgress.toFixed(0)}%</p>
-                                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-primary" style={{ width: `${uploadProgress}%` }}></div>
+                                    {hasFileRecord ? (
+                                        <div className="space-y-4">
+                                            {/* Artifact Slot */}
+                                            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 flex items-center gap-4 group/file hover:bg-black/60 transition-all">
+                                                <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center text-white/20 group-hover/file:text-primary transition-colors">
+                                                    {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-5 h-5" /> : <PaperClipIcon className="w-5 h-5" />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-bold text-white/70 truncate uppercase tracking-wide">{docFile.file_name}</p>
+                                                    <p className="text-[9px] text-white/20 font-mono mt-1">{formatFileSize(docFile.file_size || 0)} • Verified Hash</p>
+                                                </div>
+                                            </div>
+
+                                            {/* High-Trust Action Bar */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <Button
+                                                    variant="secondary"
+                                                    className="h-12 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border-white/5 text-white/60 hover:text-white flex items-center justify-center gap-2 transition-all active:scale-95"
+                                                    onClick={handleView}
+                                                >
+                                                    <EyeIcon className="w-4 h-4" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Preview</span>
+                                                </Button>
+                                                <Button
+                                                    variant="secondary"
+                                                    className="h-12 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border-white/5 text-white/60 hover:text-white flex items-center justify-center gap-2 transition-all active:scale-95"
+                                                    onClick={handleDownload}
+                                                    disabled={isDownloading}
+                                                >
+                                                    <DownloadIcon className="w-4 h-4" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Store</span>
+                                                </Button>
+                                            </div>
+
+                                            {!isVerified && (
+                                                <div className="pt-2">
+                                                    <button
+                                                        className="w-full h-10 text-[9px] font-black uppercase tracking-[0.25em] text-white/20 hover:text-primary transition-all flex items-center justify-center gap-3 border border-dashed border-white/5 rounded-xl hover:border-primary/30 hover:bg-primary/[0.02]"
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                    >
+                                                        <UploadIcon className="w-3.5 h-3.5" /> Replace Artifact
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        // Secure Upload Zone
+                                        <div className="space-y-4">
+                                            {uploadProgress !== null ? (
+                                                <div className="bg-primary/5 p-6 rounded-[1.5rem] border border-primary/20 text-center animate-pulse">
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-3">Encrypting Node... {uploadProgress.toFixed(0)}%</p>
+                                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-primary" style={{ width: `${uploadProgress}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="w-full group/upload cursor-pointer rounded-[1.5rem] border-2 border-dashed border-white/5 hover:border-primary/50 hover:bg-primary/[0.02] p-8 flex flex-col items-center justify-center gap-4 transition-all duration-700"
+                                                >
+                                                    <div className="w-14 h-14 rounded-2xl bg-white/[0.02] flex items-center justify-center group-hover/upload:bg-primary/10 transition-all duration-700">
+                                                        <UploadIcon className="w-6 h-6 text-white/10 group-hover/upload:text-primary transition-colors" />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] group-hover/upload:text-white/60 transition-colors">Provision Artifact</span>
+                                                        <p className="text-[9px] text-white/5 mt-2 italic font-medium px-4 opacity-0 group-hover/upload:opacity-100 transition-opacity">Select an identity document for secure synchronization.</p>
+                                                    </div>
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        ) : (
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="w-full group/upload cursor-pointer rounded-[1.5rem] border-2 border-dashed border-white/5 hover:border-primary/50 hover:bg-primary/[0.02] p-8 flex flex-col items-center justify-center gap-4 transition-all duration-700"
-                            >
-                                <div className="w-14 h-14 rounded-2xl bg-white/[0.02] flex items-center justify-center group-hover/upload:bg-primary/10 transition-all duration-700">
-                                    <UploadIcon className="w-6 h-6 text-white/10 group-hover/upload:text-primary transition-colors" />
-                                </div>
-                                <div className="text-center">
-                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] group-hover/upload:text-white/60 transition-colors">Provision Artifact</span>
-                                    <p className="text-[9px] text-white/5 mt-2 italic font-medium px-4 opacity-0 group-hover/upload:opacity-100 transition-opacity">Select an identity document for secure synchronization.</p>
-                                </div>
-                            </button>
-                        )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {!isExpanded && (
+                    <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                        <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">
+                            {hasFileRecord ? "Artifact Provisioned" : "Awaiting Artifact"}
+                        </span>
+                        <button
+                            onClick={() => setIsExpanded(true)}
+                            className="text-[9px] font-black text-primary uppercase tracking-[0.2em] hover:underline"
+                        >
+                            Quick View
+                        </button>
                     </div>
                 )}
             </div>
