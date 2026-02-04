@@ -49,11 +49,11 @@ const CollapsibleDocumentCard: React.FC<{
     req: RequirementWithDocs;
     onUpload: (file: File, reqId: number, admId: string, onProgress: (progress: number) => void) => Promise<void>;
 }> = ({ req, onUpload }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isPreviewing, setIsPreviewing] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,7 +64,7 @@ const CollapsibleDocumentCard: React.FC<{
     const hasFileRecord = !!docFile;
 
     // Derived States
-    const isVerified = status === 'Verified';
+    const isVerified = status === 'Verified' || status === 'APPROVED';
     const isRejected = status === 'Rejected';
     const isReviewing = status === 'Reviewing';
     // Submitted is essentially "Under Review" effectively in this system if not explicit
@@ -74,78 +74,65 @@ const CollapsibleDocumentCard: React.FC<{
 
     // Matrix Configuration (Figma Spec Implementation)
     const getConfig = () => {
-        if (isVerified) return { // Approved
+        if (isVerified) return {
             theme: 'emerald',
-            bg: 'bg-[#0E1F16]',
-            border: 'border-[#22C55E]',
-            glow: 'shadow-[0_0_20px_-5px_rgba(34,197,94,0.15)]',
-            icon: <ShieldCheckIcon className="w-6 h-6" />,
+            bg: 'bg-emerald-500/5',
+            border: 'border-accent-success',
+            glow: 'shadow-glow-success',
+            icon: <ShieldCheckIcon className="w-5 h-5" />,
             label: 'VERIFIED',
-            text: 'text-[#22C55E]',
-            subText: 'Verified and secured.',
-            barColor: 'bg-[#22C55E]'
+            text: 'text-accent-success',
+            subText: '100%',
+            actionButton: 'text-accent-success border-accent-success hover:bg-accent-success/10'
         };
-        if (isRejected) return { // Rejected
+        if (isRejected) return {
             theme: 'red',
-            bg: 'bg-[#241212]',
-            border: 'border-[#EF4444]',
-            glow: 'shadow-[0_0_20px_-5px_rgba(239,68,68,0.15)]',
-            icon: <XIcon className="w-6 h-6" />,
+            bg: 'bg-accent-error/5',
+            border: 'border-accent-error',
+            glow: 'shadow-glow-error',
+            icon: <XIcon className="w-5 h-5" />,
             label: 'REJECTED',
-            text: 'text-[#EF4444]',
-            subText: 'Action Required: Re-upload',
-            barColor: 'bg-[#EF4444]'
+            text: 'text-accent-error',
+            subText: 'Action Required',
+            actionButton: 'text-accent-error border-accent-error hover:bg-accent-error/10'
         };
-        if (isExpired) return { // Expired
-            theme: 'orange',
-            bg: 'bg-[#261A0D]',
-            border: 'border-[#F97316]',
-            glow: 'shadow-[0_0_20px_-5px_rgba(249,115,22,0.15)]',
-            icon: <AlertTriangleIcon className="w-6 h-6" />,
-            label: 'EXPIRED',
-            text: 'text-[#F97316]',
-            subText: 'Document has expired',
-            barColor: 'bg-[#F97316]'
-        };
-        if (isReviewing || isSubmitted) return { // Reviewing or Submitted - BLUE
+        if (isSubmitted || isReviewing) return {
             theme: 'blue',
-            bg: 'bg-[#121B2E]',
-            border: 'border-[#3B82F6]',
-            glow: 'shadow-[0_0_20px_-5px_rgba(59,130,246,0.15)]',
-            icon: <CheckCircleIcon className="w-6 h-6" />,
+            bg: 'bg-accent-info/5',
+            border: 'border-accent-info',
+            glow: 'shadow-glow-info',
+            icon: <CheckCircleIcon className="w-5 h-5" />,
             label: 'SUBMITTED',
-            text: 'text-[#3B82F6]',
+            text: 'text-accent-info',
             subText: 'Pending verification',
-            barColor: 'bg-[#3B82F6]'
+            actionButton: 'text-accent-info border-accent-info hover:bg-accent-info/10'
         };
-        if (isPending && isMandatory) return { // Required
+        if (isMandatory) return {
             theme: 'amber',
-            bg: 'bg-[#1E1A0E]',
-            border: 'border-[#FBBF24] border-dashed',
-            glow: 'shadow-[0_0_20px_-5px_rgba(251,191,36,0.15)]',
-            icon: <AlertTriangleIcon className="w-6 h-6" />,
+            bg: 'bg-accent-warning/5',
+            border: 'border-accent-warning border-dashed',
+            glow: 'shadow-glow-warning',
+            icon: <AlertTriangleIcon className="w-5 h-5" />,
             label: 'REQUIRED',
-            text: 'text-[#FBBF24]',
+            text: 'text-accent-warning',
             subText: 'Mandatory for enrollment',
-            barColor: 'bg-[#FBBF24]'
+            actionButton: 'bg-accent-premium text-white hover:bg-accent-premium/90 border-transparent shadow-lg'
         };
-        // Optional / Default
+        // Optional
         return {
             theme: 'gray',
-            bg: 'bg-[#1A1A1A]',
-            border: 'border-[#6B7280]',
+            bg: 'bg-white/[0.02]',
+            border: 'border-white/10',
             glow: '',
-            icon: <DocumentTextIcon className="w-6 h-6" />,
+            icon: <DocumentTextIcon className="w-5 h-5" />,
             label: 'OPTIONAL',
-            text: 'text-[#6B7280]',
+            text: 'text-white/40',
             subText: 'Not mandatory',
-            barColor: 'bg-[#6B7280]'
+            actionButton: 'bg-accent-premium text-white hover:bg-accent-premium/90 border-transparent shadow-lg'
         };
     };
 
     const config = getConfig();
-
-    const toggleExpand = () => setIsExpanded(!isExpanded);
 
     const handleFileSelect = async (files: FileList | null) => {
         if (!files?.length || uploadProgress !== null) return;
@@ -209,254 +196,104 @@ const CollapsibleDocumentCard: React.FC<{
         }
     };
 
-    // Card Styles based on status (Handled by config now)
-
+    // --- Artifact Card UI ---
     return (
         <motion.div
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`group relative flex flex-col gap-3 p-5 rounded-[20px] border transition-all duration-300 overflow-hidden ${config.bg} ${config.border} ${config.glow} hover:-translate-y-1 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]`}
-            style={{ minHeight: '130px' }}
+            className={`group relative flex flex-col p-6 rounded-[20px] border-2 transition-all duration-300 overflow-hidden ${config.bg} ${config.border} ${config.glow} hover:-translate-y-1 hover:shadow-2xl`}
+            style={{ minHeight: '360px' }}
+            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
+            onDrop={handleDrop}
         >
-            {/* Header: Icon + Badge */}
-            <div className="flex items-start justify-between w-full relative z-10">
-                <div className={`w-8 h-8 flex items-center justify-center rounded-lg border border-white/5 ${config.text} bg-white/5`}>
+            {/* Header */}
+            <div className="flex justify-between items-start mb-6">
+                <div className={`p-3 rounded-xl border border-white/5 bg-white/5 ${config.text}`}>
                     {config.icon}
                 </div>
-
-                {/* Status Pill Badge */}
-                <div className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border shadow-sm ${config.text} ${config.bg} border-white/5`}>
+                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-black/20 ${config.text} ${config.border.replace('border-dashed', 'border-solid')}`}>
                     {config.label}
-                </div>
+                </span>
             </div>
 
-            {/* Title & Meta */}
-            <div className="relative z-10">
-                <h4 className="text-sm font-bold text-white leading-tight mb-1.5">{req.document_name}</h4>
-                <p className={`text-[11px] font-medium ${config.text} opacity-90 leading-relaxed`}>{config.subText}</p>
-                {docFile && (
-                    <div className="flex items-center gap-2 mt-2">
-                        <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                        <p className="text-[10px] text-white/30 font-mono uppercase">{docFile.mime_type?.split('/')[1] || 'FILE'}</p>
-                    </div>
-                )}
-            </div>
+            {/* Content */}
+            <div className="flex-grow flex flex-col">
+                <h4 className="text-lg font-bold text-white mb-2 leading-tight">{req.document_name}</h4>
+                <p className={`text-xs font-medium font-mono mb-8 ${config.text} opacity-80`}>{config.subText}</p>
 
-            {/* Divider */}
-            <div className="h-px bg-white/5 w-full my-1"></div>
-
-            {/* Actions */}
-            <div className="mt-auto relative z-10">
-                {!isExpanded ? (
-                    <div className="flex items-center gap-2">
-                        {hasFileRecord ? (
-                            // --- Action Group when File Exists (View, Download, Replace) ---
-                            <div className="flex items-center w-full gap-2">
-                                {/* Primary: View */}
-                                <button
-                                    onClick={toggleExpand} // Using toggleExpand as View since it opens preview
-                                    className="flex-grow h-10 flex items-center justify-center gap-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white transition-all group/btn"
-                                >
-                                    <EyeIcon className="w-4 h-4 opacity-60 group-hover/btn:opacity-100" />
-                                    <span className="text-[11px] font-black uppercase tracking-widest">View Artifact</span>
-                                </button>
-
-                                {/* Secondary: Download */}
-                                <button
-                                    onClick={handleDownload}
-                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white/40 hover:text-white transition-all"
-                                    title="Download"
-                                >
-                                    <DownloadIcon className="w-4 h-4" />
-                                </button>
-
-                                {/* Secondary: Re-upload */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (window.confirm('Replace this artifact? The previous version will be archived.')) {
-                                            fileInputRef.current?.click();
-                                        }
-                                    }}
-                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-white/40 hover:text-white transition-all"
-                                    title="Re-upload"
-                                >
-                                    <UploadIcon className="w-4 h-4" />
-                                </button>
+                {hasFileRecord ? (
+                    <div className="mt-auto space-y-3">
+                        <div className="p-4 rounded-xl bg-[#0a0c10] border border-white/10 flex items-center gap-4 group/file hover:border-white/20 transition-colors">
+                            <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-white/40">
+                                {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-5 h-5" /> : <PaperClipIcon className="w-5 h-5" />}
                             </div>
-                        ) : (
-                            // --- Direct Upload CTA when Required/Pending ---
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-white truncate">{docFile.file_name}</p>
+                                <p className="text-[10px] text-white/30 font-mono mt-0.5">{formatFileSize(docFile.file_size || 0)} • {new Date(docFile.uploaded_at || new Date()).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
                             <button
-                                onClick={toggleExpand}
-                                className={`w-full h-10 flex items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-lg group/btn bg-primary text-white hover:bg-primary/90 border-primary/50`}
+                                onClick={handleView}
+                                className="h-10 flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-[10px] font-black uppercase tracking-widest text-white transition-all"
                             >
-                                <UploadIcon className="w-4 h-4" />
-                                <span>Upload</span>
+                                <EyeIcon className="w-3 h-3" /> Preview
+                            </button>
+                            <button
+                                onClick={handleDownload}
+                                disabled={isDownloading}
+                                className="h-10 flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-[10px] font-black uppercase tracking-widest text-white transition-all"
+                            >
+                                {isDownloading ? <Spinner size="sm" /> : <DownloadIcon className="w-3 h-3" />} Download
+                            </button>
+                        </div>
+
+                        {!isVerified && (
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full py-3 text-[10px] font-normal text-white/30 hover:text-white border-t border-dashed border-white/10 hover:border-white/30 transition-all flex items-center justify-center gap-2 mt-2"
+                            >
+                                <UploadIcon className="w-3 h-3" /> Upload Replacement Artifact
                             </button>
                         )}
                     </div>
                 ) : (
-                    <button onClick={toggleExpand} className="w-full py-3 text-[10px] text-red-400/60 hover:text-red-400 font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 bg-red-500/[0.05] rounded-xl hover:bg-red-500/10"><XIcon className="w-3 h-3" /> Close View</button>
-                )}
-            </div>
-
-            {/* --- Expanded Content --- */}
-            <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
-                        className="relative"
-                    >
-                        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                        <div className="p-6 pt-6 bg-black/20 backdrop-blur-sm">
-
-                            {/* Rejection Notice */}
-                            {isRejected && (
-                                <div className="mb-6 p-4 bg-red-500/5 border border-red-500/20 rounded-2xl flex gap-3 backdrop-blur-md">
-                                    <div className="mt-0.5 min-w-[20px]"><AlertTriangleIcon className="w-5 h-5 text-red-500" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase text-red-500 tracking-wider mb-1">Issue Detected</p>
-                                        <p className="text-sm text-red-200/80 leading-relaxed font-medium">{req.rejection_reason || 'The provided artifact does not meet the necessary criteria for verification. Please review and re-upload.'}</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Main Content Area */}
-                            {hasFileRecord && !isRejected ? (
-                                <div className="space-y-6">
-                                    {/* File Card */}
-                                    <div className="relative group/file overflow-hidden rounded-2xl border border-white/10 bg-[#0c0e12] transition-colors hover:border-white/20">
-
-                                        {/* File Info Header */}
-                                        <div className="flex items-start gap-5 p-6 pb-0">
-
-                                            <div className="w-16 h-16 rounded-2xl bg-[#151820] flex items-center justify-center border border-white/5 text-white/40 shadow-inner group-hover/file:text-white group-hover/file:scale-105 transition-all duration-300">
-                                                {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-8 h-8" /> : <PaperClipIcon className="w-8 h-8" />}
-                                            </div>
-
-                                            <div className="flex-1 min-w-0 pt-1">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <p className="text-lg font-bold text-white truncate pr-4" title={docFile.file_name}>{docFile.file_name}</p>
-                                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${isVerified ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                                        'bg-blue-500/10 border-blue-500/20 text-blue-400'
-                                                        }`}>
-                                                        {isVerified ? 'Verified' : 'Pending Review'}
-                                                    </span>
-                                                </div>
-
-                                                <div className="flex items-center gap-3 text-xs text-white/40 font-mono">
-                                                    <span className="uppercase bg-white/5 px-2 py-0.5 rounded text-[10px]">{docFile.mime_type?.split('/')[1] || 'FILE'}</span>
-                                                    <span>•</span>
-                                                    <span>{formatFileSize(docFile.file_size || 0)}</span>
-                                                    <span>•</span>
-                                                    <span>{new Date(docFile.uploaded_at || new Date()).toLocaleDateString()}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Action Bar */}
-                                        <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/5">
-                                            <button
-                                                onClick={handleView}
-                                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider border border-white/5 hover:border-white/20 transition-all group/btn"
-                                            >
-                                                <EyeIcon className="w-4 h-4 text-white/40 group-hover/btn:text-white transition-colors" />
-                                                Preview
-                                            </button>
-
-                                            <button
-                                                onClick={handleDownload}
-                                                disabled={isDownloading}
-                                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary hover:text-white font-bold text-xs uppercase tracking-wider border border-primary/20 hover:border-primary/50 transition-all group/btn"
-                                            >
-                                                {isDownloading ? <Spinner size="sm" /> : <DownloadIcon className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />}
-                                                Download
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Replace Button (Only if not verified) */}
-                                    {!isVerified && (
-                                        <button
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-white/10 text-xs font-bold text-white/30 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all group/replace"
-                                        >
-                                            <UploadIcon className="w-4 h-4 text-white/20 group-hover/replace:text-white transition-colors" />
-                                            Upload Replacement Artifact
-                                        </button>
-                                    )}
+                    <div className="mt-auto">
+                        <div className={`mt-4 mb-6 h-32 rounded-xl border-2 border-dashed ${isDragOver ? 'border-accent-premium bg-accent-premium/10' : 'border-white/5 bg-white/[0.02]'} flex flex-col items-center justify-center gap-2 transition-all`}>
+                            {uploadProgress !== null ? (
+                                <div className="w-full px-6 text-center">
+                                    <p className="text-[10px] font-black text-accent-premium uppercase mb-2">Syncing {uploadProgress.toFixed(0)}%</p>
+                                    <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-accent-premium" style={{ width: `${uploadProgress}%` }}></div></div>
                                 </div>
                             ) : (
-                                /* Upload Area */
-                                <div
-                                    onClick={() => fileInputRef.current?.click()}
-                                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                                    onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
-                                    onDrop={handleDrop}
-                                    className={`
-                                        relative min-h-[160px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer transition-all duration-500 overflow-hidden
-                                        ${isDragOver
-                                            ? 'border-primary bg-primary/10 shadow-[0_0_30px_rgba(var(--primary),0.2)]'
-                                            : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
-                                        }
-                                    `}
-                                >
-                                    {/* Background Grid Pattern */}
-                                    <div className="absolute inset-0 bg-grid-white/[0.02] [mask-image:linear-gradient(0deg,transparent,black)] pointer-events-none"></div>
-
-                                    <div className={`relative z-10 w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${isDragOver ? 'bg-primary/20 text-primary scale-110' : 'bg-[#1c1f26] text-white/40 shadow-xl border border-white/5'
-                                        }`}>
-                                        <UploadIcon className="w-6 h-6" />
-                                    </div>
-                                    <div className="relative z-10 text-center px-4">
-                                        <p className={`text-xs font-bold uppercase tracking-widest transition-colors ${isDragOver ? 'text-primary' : 'text-white/60'}`}>
-                                            {isDragOver ? 'Release to Upload' : 'Initiate Upload Protocol'}
-                                        </p>
-                                        <p className="text-[10px] text-white/20 font-medium mt-2 leading-relaxed max-w-[200px] mx-auto">
-                                            Click or Drag verified artifact here.<br />PDF, JPG, PNG (Max 10MB)
-                                        </p>
-                                    </div>
-                                </div>
+                                <>
+                                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20"><UploadIcon className="w-4 h-4" /></div>
+                                    <span className="text-[10px] font-medium text-white/20">Drag & Drop</span>
+                                </>
                             )}
-
-                            {/* Progress Bar */}
-                            {uploadProgress !== null && (
-                                <div className="mt-5">
-                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-primary mb-2">
-                                        <span>Encrypting & Syncing</span>
-                                        <span>{uploadProgress.toFixed(0)}%</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-[#0a0c10] rounded-full overflow-hidden border border-white/5">
-                                        <motion.div
-                                            className="h-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]"
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${uploadProgress}%` }}
-                                            transition={{ duration: 0.2 }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Error Message */}
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                                    className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center gap-2 text-red-300"
-                                >
-                                    <AlertTriangleIcon className="w-4 h-4" />
-                                    <p className="text-[10px] font-bold uppercase tracking-wide">{error}</p>
-                                </motion.div>
-                            )}
-
-                            <input ref={fileInputRef} type="file" className="hidden" onChange={e => handleFileSelect(e.target.files)} />
                         </div>
-                    </motion.div>
+
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadProgress !== null}
+                            className={`w-full h-12 flex items-center justify-center gap-2 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all border ${config.actionButton} ${uploadProgress ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            <UploadIcon className="w-4 h-4" /> Upload
+                        </button>
+                    </div>
                 )}
-            </AnimatePresence>
+
+                {/* Error Toast */}
+                {error && <div className="absolute inset-x-4 bottom-4 p-3 bg-red-500/90 text-white text-[10px] font-bold rounded-lg text-center backdrop-blur-md animate-in slide-in-from-bottom-2">{error}</div>}
+
+                <input ref={fileInputRef} type="file" className="hidden" onChange={e => handleFileSelect(e.target.files)} />
+            </div>
+
+            {/* Hover Effect Layer */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500"></div>
         </motion.div>
     );
 };
