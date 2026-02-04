@@ -261,7 +261,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     academic_year_end: formData.academic_year_end?.trim() || null,
                     grade_range_start: formData.grade_range_start?.trim() || null,
                     grade_range_end: formData.grade_range_end?.trim() || null,
-                    onboarding_step: isEditMode ? (formData.onboarding_step || 'pricing') : 'pricing'
+                    onboarding_step: 'completed' // Mark as completed after profile creation
                 };
 
                 // Validate required fields are not null
@@ -333,14 +333,14 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
             console.log('Updating master profile...');
             console.log('Final display name:', finalDisplayName);
-            console.log('Profile completed:', role !== BuiltInRoles.SCHOOL_ADMINISTRATION ? true : (isEditMode ? true : false));
+            console.log('Profile completed: true (School Admin can now access dashboard)');
 
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .update({
                     display_name: finalDisplayName,
                     phone: formData.phone,
-                    profile_completed: role !== BuiltInRoles.SCHOOL_ADMINISTRATION ? true : (isEditMode ? true : false),
+                    profile_completed: true, // Always mark as completed for all roles
                     role: role
                 })
                 .eq('id', profile.id)
