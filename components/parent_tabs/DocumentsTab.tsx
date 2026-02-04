@@ -764,17 +764,49 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
             </div>
 
             {Object.keys(groupedData).length === 0 && !loading && (
-                <div className="py-32 text-center border-2 border-dashed border-white/10 rounded-[4rem] shadow-2xl flex flex-col items-center bg-[#0c0d12]">
-                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 shadow-inner"><DocumentTextIcon className="w-10 h-10 text-white/20" /></div>
-                    <h3 className="text-xl font-bold text-white/60">No Active Enrollments</h3>
-                    <p className="text-white/20 max-sm mx-auto mt-2 text-sm leading-relaxed">No active institutional identities linked to this profile. Register a child to activate the document vault.</p>
-                    <button
-                        onClick={() => setActiveComponent?.('My Children')}
-                        className="mt-8 px-10 py-4 bg-primary text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-3 group transform hover:-translate-y-1 active:scale-95"
-                    >
-                        <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
-                        Register a Child
-                    </button>
+                <div className="relative py-40 rounded-[3rem] overflow-hidden flex flex-col items-center justify-center group transition-all duration-700">
+
+                    {/* Ambient Background */}
+                    <div className="absolute inset-0 bg-[#0c0e12] border border-white/5 rounded-[3rem]"></div>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/[0.03] via-transparent to-transparent opacity-50"></div>
+
+                    {/* Animated Glow */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full pointer-events-none animate-pulse-slow"></div>
+
+                    {/* Dashed Border Overlay */}
+                    <div className="absolute inset-4 border-2 border-dashed border-white/5 rounded-[2.5rem] pointer-events-none"></div>
+
+                    {/* Content */}
+                    <div className="relative z-10 flex flex-col items-center max-w-xl mx-auto px-6 text-center">
+
+                        {/* Icon Container */}
+                        <div className="relative mb-10 group-hover:-translate-y-2 transition-transform duration-500 ease-out">
+                            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                            <div className="w-24 h-24 bg-gradient-to-br from-[#1a1d26] to-[#0c0e12] rounded-3xl flex items-center justify-center border border-white/5 shadow-2xl relative z-10 ring-1 ring-white/5 group-hover:border-primary/30 grayscale group-hover:grayscale-0 transition-all duration-500">
+                                <ShieldCheckIcon className="w-10 h-10 text-white/30 group-hover:text-primary transition-colors duration-500" />
+                            </div>
+                        </div>
+
+                        <h3 className="text-3xl md:text-4xl font-serif font-bold text-white mb-6 tracking-tight">
+                            Identity Artifacts Missing
+                        </h3>
+
+                        <p className="text-white/40 text-sm md:text-base leading-relaxed mb-10 max-w-md mx-auto">
+                            The artifact vault is currently dormant because no active institutional profiles are linked.
+                            <span className="block mt-4 text-white/20 font-medium italic">Initialize the protocol by registering a student identity below.</span>
+                        </p>
+
+                        <button
+                            onClick={() => setActiveComponent?.('My Children')}
+                            className="relative px-10 py-5 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-[0_20px_50px_-15px_rgba(var(--primary),0.3)] transition-all duration-300 group/btn overflow-hidden transform hover:-translate-y-1 hover:shadow-[0_30px_60px_-15px_rgba(var(--primary),0.4)] ring-1 ring-white/10"
+                        >
+                            <span className="relative z-10 flex items-center gap-3">
+                                <PlusIcon className="w-4 h-4 group-hover/btn:rotate-90 transition-transform duration-500" />
+                                Register Student Identity
+                            </span>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full -translate-x-full group-hover/btn:animate-[shimmer_1s_infinite]"></div>
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
