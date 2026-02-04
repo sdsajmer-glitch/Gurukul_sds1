@@ -1,138 +1,280 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="https://vitejs.dev/logo.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Gurukul OS | Institutional Portal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      :root, .light {
-        --background: 0 0% 100%;
-        --foreground: 224 71.4% 4.1%;
-        --card: 0 0% 100%;
-        --card-foreground: 224 71.4% 4.1%;
-        --primary: 262.1 83.3% 57.8%;
-        --primary-foreground: 210 20% 98%;
-        --border: 220 13% 91%;
-        --input: 220 13% 91%;
-        --skel-base: #E2E8F0;
-        --skel-highlight: #F1F5F9;
-      }
-      .dark {
-        --background: 228 9% 6%;
-        --foreground: 210 20% 98%;
-        --card: 228 9% 10%;
-        --card-foreground: 210 20% 98%;
-        --primary: 258 90% 66%;
-        --primary-foreground: 210 20% 98%;
-        --border: 228 9% 16%;
-        --input: 228 9% 18%;
-        --skel-base: #101115;
-        --skel-highlight: #1a1b23;
-        --skel-glow: #312e81;
-      }
-      
-      * {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="https://vitejs.dev/logo.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Gurukul OS | Institutional Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      /* ===== Backgrounds ===== */
+      --color-bg-primary: #0B0D10;
+      --color-bg-secondary: #11141A;
+      --color-bg-card: #151922;
+
+      /* ===== Borders ===== */
+      --color-border-subtle: rgba(255, 255, 255, 0.08);
+
+      /* ===== Text ===== */
+      --color-text-primary: #F4F6FA;
+      --color-text-secondary: #B3B8C4;
+      --color-text-tertiary: #7B8190;
+      --color-text-disabled: #5A5F6E;
+
+      /* ===== Accent ===== */
+      --color-accent-primary: #8B5CF6;
+      --color-accent-info: #3B82F6;
+      --color-accent-premium: #F5C77A;
+      --color-accent-success: #22C55E;
+      --color-accent-warning: #F59E0B;
+      --color-accent-error: #EF4444;
+
+      /* ===== States ===== */
+      --color-state-hover: rgba(255, 255, 255, 0.04);
+      --color-state-active: rgba(255, 255, 255, 0.08);
+      --color-state-disabled: rgba(255, 255, 255, 0.4);
+
+      /* ===== Radius ===== */
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+
+      /* ===== Spacing ===== */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+
+      /* ===== Motion ===== */
+      --motion-fast: 120ms;
+      --motion-normal: 200ms;
+      --motion-slow: 300ms;
+    }
+
+    :root,
+    .light {
+      --background: 0 0% 100%;
+      --foreground: 224 71.4% 4.1%;
+      --card: 0 0% 100%;
+      --card-foreground: 224 71.4% 4.1%;
+      --primary: 262.1 83.3% 57.8%;
+      --primary-foreground: 210 20% 98%;
+      --border: 220 13% 91%;
+      --input: 220 13% 91%;
+      --skel-base: #E2E8F0;
+      --skel-highlight: #F1F5F9;
+    }
+
+    .dark {
+      --background: 228 9% 6%;
+      --foreground: 210 20% 98%;
+      --card: 228 9% 10%;
+      --card-foreground: 210 20% 98%;
+      --primary: 258 90% 66%;
+      --primary-foreground: 210 20% 98%;
+      --border: 228 9% 16%;
+      --input: 228 9% 18%;
+      --skel-base: #101115;
+      --skel-highlight: #1a1b23;
+      --skel-glow: #312e81;
+    }
+
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #08090a;
+      overflow-x: hidden;
+      width: 100%;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* Atmospheric Overlays */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+      opacity: 0.015;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.2);
+      border-radius: 20px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(139, 92, 246, 0.5);
+    }
+
+    @keyframes scanner-move {
+      0% {
+        transform: translateY(-100%);
       }
 
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #08090a;
-        overflow-x: hidden;
-        width: 100%;
-        position: relative;
-        min-height: 100vh;
+      100% {
+        transform: translateY(calc(100vh + 100%));
       }
-      
-      /* Atmospheric Overlays */
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        background-image: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
-        opacity: 0.015;
-        pointer-events: none;
-        z-index: 9999;
+    }
+
+    .animate-scanner-move {
+      animation: scanner-move 3s linear infinite;
+    }
+
+    @keyframes pulse-velvet {
+
+      0%,
+      100% {
+        opacity: 0.8;
+        transform: scale(1);
       }
 
-      ::-webkit-scrollbar { width: 4px; height: 4px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.2); border-radius: 20px; }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.5); }
+      50% {
+        opacity: 1;
+        transform: scale(1.02);
+      }
+    }
 
-      @keyframes scanner-move {
-        0% { transform: translateY(-100%); }
-        100% { transform: translateY(calc(100vh + 100%)); }
-      }
-      .animate-scanner-move { animation: scanner-move 3s linear infinite; }
-      
-      @keyframes pulse-velvet {
-        0%, 100% { opacity: 0.8; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.02); }
-      }
-      .animate-pulse-velvet { animation: pulse-velvet 3s infinite ease-in-out; }
+    .animate-pulse-velvet {
+      animation: pulse-velvet 3s infinite ease-in-out;
+    }
 
-      .perspective-1000 { perspective: 1000px; }
-      
-      input::-webkit-outer-spin-button,
-      input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-      input[type=number] { -moz-appearance: textfield; }
-      
-      .custom-scrollbar {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(139, 92, 246, 0.2) transparent;
-      }
-    </style>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              serif: ['Lora', 'serif'],
-              mono: ['Fira Code', 'monospace'],
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(139, 92, 246, 0.2) transparent;
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Lora', 'serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          colors: {
+            border: {
+              DEFAULT: 'hsl(var(--border))',
+              subtle: 'var(--color-border-subtle)',
             },
-            colors: {
-              border: 'hsl(var(--border))',
-              input: 'hsl(var(--input))',
-              background: 'hsl(var(--background))',
-              foreground: 'hsl(var(--foreground))',
-              primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
-              card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
-              skeleton: {
-                base: 'var(--skel-base)',
-                highlight: 'var(--skel-highlight)',
-                glow: 'var(--skel-glow)',
-              },
-              // -- Design System 2.0 Tokens --
-              'bg-primary': '#08090a',
-              'bg-secondary': '#0c0e12',
-              'bg-card': '#13151b',
-              'accent-info': '#3B82F6',     // Verified / Standard
-              'accent-success': '#22C55E',  // Success
-              'accent-warning': '#F59E0B',  // Warning
-              'accent-error': '#EF4444',    // Error
-              'accent-premium': '#8B5CF6',  // Premium / Locked
+            input: 'hsl(var(--input))',
+            background: 'hsl(var(--background))',
+            foreground: 'hsl(var(--foreground))',
+            primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+            card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
+            skeleton: {
+              base: 'var(--skel-base)',
+              highlight: 'var(--skel-highlight)',
+              glow: 'var(--skel-glow)',
             },
-            boxShadow: {
-              '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.6)',
-              'glow-primary': '0 0 20px -5px hsl(var(--primary) / 0.5)',
-              'glow-success': '0 0 20px -5px #22C55E',
-              'glow-warning': '0 0 20px -5px #F59E0B',
-              'glow-info': '0 0 20px -5px #3B82F6',
-            }
+            // -- Design System 2.0 Tokens (Full Mapping) --
+            bg: {
+              primary: 'var(--color-bg-primary)',
+              secondary: 'var(--color-bg-secondary)',
+              card: 'var(--color-bg-card)',
+            },
+            text: {
+              primary: 'var(--color-text-primary)',
+              secondary: 'var(--color-text-secondary)',
+              tertiary: 'var(--color-text-tertiary)',
+              disabled: 'var(--color-text-disabled)',
+            },
+            accent: {
+              primary: 'var(--color-accent-primary)',
+              info: 'var(--color-accent-info)',
+              premium: 'var(--color-accent-premium)',
+              success: 'var(--color-accent-success)',
+              warning: 'var(--color-accent-warning)',
+              error: 'var(--color-accent-error)',
+            },
+            state: {
+              hover: 'var(--color-state-hover)',
+              active: 'var(--color-state-active)',
+              disabled: 'var(--color-state-disabled)',
+            },
+            // Compatibility / shorthand aliases if needed
+            'bg-primary': 'var(--color-bg-primary)',
+            'bg-secondary': 'var(--color-bg-secondary)',
+            'bg-card': 'var(--color-bg-card)',
+            'accent-info': 'var(--color-accent-info)',
+            'accent-success': 'var(--color-accent-success)',
+            'accent-warning': 'var(--color-accent-warning)',
+            'accent-error': 'var(--color-accent-error)',
+            'accent-premium': 'var(--color-accent-premium)',
+          },
+          borderRadius: {
+            sm: 'var(--radius-sm)',
+            md: 'var(--radius-md)',
+            lg: 'var(--radius-lg)',
+            full: 'var(--radius-full)',
+          },
+          spacing: {
+            xs: 'var(--space-xs)',
+            sm: 'var(--space-sm)',
+            md: 'var(--space-md)',
+            lg: 'var(--space-lg)',
+            xl: 'var(--space-xl)',
+            '2xl': 'var(--space-2xl)',
+          },
+          transitionDuration: {
+            fast: 'var(--motion-fast)',
+            DEFAULT: 'var(--motion-normal)',
+            slow: 'var(--motion-slow)',
+          },
+          boxShadow: {
+            '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.6)',
+            'glow-primary': '0 0 20px -5px var(--color-accent-primary)', // Using variable for consistency
+            'glow-success': '0 0 20px -5px var(--color-accent-success)',
+            'glow-warning': '0 0 20px -5px var(--color-accent-warning)',
+            'glow-info': '0 0 20px -5px var(--color-accent-info)',
+            'glow-error': '0 0 20px -5px var(--color-accent-error)',
           }
         }
       }
-    </script>
-<script type="importmap">
+    }
+  </script>
+  <script type="importmap">
 {
   "imports": {
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
@@ -152,8 +294,10 @@
 </script>
 
 </head>
-  <body class="bg-[#08090a] text-foreground">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body class="bg-[#08090a] text-foreground">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

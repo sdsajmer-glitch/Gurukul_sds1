@@ -25,3 +25,6 @@ dist-ssr
 
 # Excel temporary files
 ~$*
+
+*storybook.log
+storybook-static
