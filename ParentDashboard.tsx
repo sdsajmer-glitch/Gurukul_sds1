@@ -14,7 +14,7 @@ import { HomeIcon } from './components/icons/HomeIcon';
 import { StudentsIcon } from './components/icons/StudentsIcon';
 import { DocumentTextIcon } from './components/icons/DocumentTextIcon';
 import { CommunicationIcon } from './components/icons/CommunicationIcon';
-import { ReceiptIcon } from './components/icons/ReceiptIcon'; 
+import { ReceiptIcon } from './components/icons/ReceiptIcon';
 
 interface ParentDashboardProps {
     profile: UserProfile;
@@ -33,7 +33,7 @@ const navItems = [
 
 const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole, onProfileUpdate, onSignOut }) => {
     const [activeComponent, setActiveComponent] = useState('Overview');
-    
+
     // Fix: Updated focusedAdmissionId to string | null to match UUID standard.
     const [focusedAdmissionId, setFocusedAdmissionId] = useState<string | null>(null);
 
@@ -49,24 +49,27 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
         'Documents': <DocumentsTab profile={profile} focusOnAdmissionId={focusedAdmissionId} onClearFocus={() => setFocusedAdmissionId(null)} setActiveComponent={setActiveComponent} />,
         'Messages': <MessagesTab />,
         'Share Codes': <ShareCodesTab onNavigate={setActiveComponent} />,
-        'My Profile': <ProfileCreationPage 
-                            profile={profile} 
-                            role={profile.role!} 
-                            onComplete={onProfileUpdate}
-                            onBack={() => setActiveComponent('Overview')} 
-                            showBackButton={true} 
-                        />,
+        'My Profile': <ProfileCreationPage
+            profile={profile}
+            role={profile.role!}
+            onComplete={() => {
+                onProfileUpdate();
+                setActiveComponent('Overview');
+            }}
+            onBack={() => setActiveComponent('Overview')}
+            showBackButton={true}
+        />,
     };
 
     return (
         <div className="min-h-screen bg-[#08090a] text-foreground flex flex-col selection:bg-primary/20 selection:text-primary overflow-x-hidden">
-            <Header 
+            <Header
                 profile={profile}
                 onSelectRole={onSelectRole}
                 onSignOut={onSignOut}
                 onProfileClick={() => setActiveComponent('My Profile')}
             />
-            
+
             {/* Optimized Responsive Navigation Ribbon */}
             <div className="sticky top-16 md:top-20 z-30 bg-[#08090a]/80 backdrop-blur-xl border-b border-white/5 pt-4 pb-2">
                 <div className="max-w-7xl mx-auto flex items-center justify-start md:justify-center overflow-x-auto no-scrollbar gap-2 px-4">
@@ -79,8 +82,8 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
                                     onClick={() => setActiveComponent(item.id)}
                                     className={`
                                         flex items-center gap-2 px-4 md:px-7 py-2.5 md:py-3 rounded-full font-black text-[10px] md:text-xs uppercase tracking-widest transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap relative group
-                                        ${isActive 
-                                            ? 'bg-primary text-white shadow-[0_8px_20px_-4px_rgba(var(--primary),0.4)] scale-[1.05] z-10' 
+                                        ${isActive
+                                            ? 'bg-primary text-white shadow-[0_8px_20px_-4px_rgba(var(--primary),0.4)] scale-[1.05] z-10'
                                             : 'text-white/40 hover:text-white hover:bg-white/5'
                                         }
                                     `}
@@ -99,7 +102,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
                     {components[activeComponent] || <OverviewTab profile={profile} />}
                 </div>
             </main>
-            
+
             <footer className="py-10 border-t border-white/5 bg-black/20 text-center px-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/10">Institutional Matrix v9.5.1 Parent Node</p>
             </footer>

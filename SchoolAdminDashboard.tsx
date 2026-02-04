@@ -150,7 +150,16 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
     const renderContent = () => {
         switch (activeComponent) {
             case 'Dashboard': return <DashboardOverview schoolProfile={schoolData} currentBranch={currentBranch} profile={profile} onNavigate={setActiveComponent} />;
-            case 'Profile': return <ProfileCreationPage profile={profile} role={profile.role!} onComplete={onProfileUpdate} onBack={() => setActiveComponent('Dashboard')} showBackButton={true} />;
+            case 'Profile': return <ProfileCreationPage
+                profile={profile}
+                role={profile.role!}
+                onComplete={() => {
+                    onProfileUpdate();
+                    setActiveComponent('Dashboard');
+                }}
+                onBack={() => setActiveComponent('Dashboard')}
+                showBackButton={true}
+            />;
             case 'Branches': return <BranchManagementTab isHeadOfficeAdmin={isHeadOfficeAdmin} branches={branches} isLoading={loadingData} error={dataError} onBranchUpdate={fetchDashboardData} onSelectBranch={setCurrentBranchId} schoolProfile={schoolData} />;
             case 'Admissions': return <AdmissionsTab branchId={currentBranchId} />;
             case 'Enquiries': return <EnquiryTab branchId={currentBranchId} onNavigate={setActiveComponent} />;

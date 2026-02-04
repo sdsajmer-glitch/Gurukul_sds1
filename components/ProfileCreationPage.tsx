@@ -369,17 +369,16 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
                 // Show success message
                 setError(null);
-                setSuccess(isEditMode ? "Profile updated successfully" : "Setup completed successfully");
+                setSuccess(isEditMode ? "Profile metrics updated successfully" : "Setup protocol completed successfully");
 
-                // Trigger parent update (this ensures dashboards/sidebars refresh)
-                console.log('Calling onComplete()...');
-                if (onComplete) onComplete();
-
-                if (isEditMode) {
-                    setTimeout(() => {
-                        if (isMounted.current) setSuccess(null);
-                    }, 3000);
-                }
+                // Trigger parent update with a slight delay to allow the "Wow" animation to finish
+                console.log('Scheduling onComplete()...');
+                setTimeout(() => {
+                    if (isMounted.current) {
+                        if (onComplete) onComplete();
+                        if (isEditMode) setSuccess(null);
+                    }
+                }, 2500);
             }
 
             console.log('=== FORM SUBMISSION COMPLETED SUCCESSFULLY ===');
@@ -446,10 +445,40 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 </div>
             )}
 
+            {/* Premium Success Overlay */}
             {success && (
-                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 p-5 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
-                    <CheckCircleIcon className="w-5 h-5 shrink-0" />
-                    <span className="text-xs font-semibold uppercase tracking-wider">{success}</span>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-500">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
+                    <div className="relative bg-[#0a0a0b] border border-white/10 w-full max-w-md rounded-[3rem] p-12 text-center shadow-3xl overflow-hidden animate-in zoom-in-95 duration-500">
+                        {/* Background Sparkle */}
+                        <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/20 rounded-full blur-[80px]" />
+                        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-[80px]" />
+
+                        <div className="relative z-10 space-y-8">
+                            <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]">
+                                <CheckCircleIcon className="w-12 h-12 text-emerald-500 animate-in zoom-in-50 duration-700" />
+                            </div>
+
+                            <div className="space-y-3">
+                                <h3 className="text-3xl font-serif font-black text-white tracking-tight uppercase italic transition-all">
+                                    Identity <span className="text-emerald-500">Secured</span>
+                                </h3>
+                                <p className="text-sm font-medium text-white/40 leading-relaxed uppercase tracking-widest px-4">
+                                    {success}
+                                </p>
+                            </div>
+
+                            <div className="pt-8 border-t border-white/5 flex flex-col items-center gap-4">
+                                <div className="flex items-center gap-3 py-2 px-5 bg-white/5 rounded-full border border-white/10">
+                                    <Spinner size="sm" className="text-primary" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
+                                        Accessing Command Center...
+                                    </span>
+                                </div>
+                                <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em]">Institutional Node Handshake: 100%</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 

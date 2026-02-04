@@ -31,7 +31,7 @@ const navItems = [
 
 const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ profile, onSwitchRole, onProfileUpdate, onSignOut, onSelectRole }) => {
     const [activeComponent, setActiveComponent] = useState('My Classes');
-    
+
     // Fix: These components are now correctly typed via type intersection in types.ts to resolve call signature errors.
     const components: { [key: string]: React.ReactNode } = {
         'My Classes': <MyClassesTab currentUserId={profile.id} />,
@@ -40,32 +40,35 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ profile, onSwitchRo
         'Communication': <CommunicationTab currentUserId={profile.id} />,
         'Performance': <PerformanceTab currentUserId={profile.id} />,
         'Professional Development': <ProfessionalDevelopmentTab currentUserId={profile.id} />,
-        'My Profile': <ProfileCreationPage 
-                            profile={profile} 
-                            role={profile.role!} 
-                            onComplete={onProfileUpdate}
-                            onBack={() => {}} 
-                            showBackButton={false} 
-                        />,
+        'My Profile': <ProfileCreationPage
+            profile={profile}
+            role={profile.role!}
+            onComplete={() => {
+                onProfileUpdate();
+                setActiveComponent('My Classes');
+            }}
+            onBack={() => setActiveComponent('My Classes')}
+            showBackButton={true}
+        />,
     };
 
     const renderComponent = () => {
         // Fix: Components now have proper call signatures for JSX.
         return components[activeComponent] || <MyClassesTab currentUserId={profile.id} />;
     };
-    
+
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <Header 
+            <Header
                 profile={profile}
                 onSwitchRole={onSwitchRole}
                 onSignOut={onSignOut}
                 onProfileClick={() => setActiveComponent('My Profile')}
                 onSelectRole={onSelectRole}
             />
-             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {activeComponent !== 'My Profile' && (
-                     <div className="mb-8 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="mb-8 overflow-x-auto pb-2 scrollbar-hide">
                         <nav className="flex space-x-1 bg-muted p-1 rounded-xl border border-border min-w-max" aria-label="Tabs">
                             {navItems.map(item => {
                                 const isActive = activeComponent === item.id;
@@ -75,8 +78,8 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ profile, onSwitchRo
                                         onClick={() => setActiveComponent(item.id)}
                                         className={`
                                             flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ease-in-out
-                                            ${isActive 
-                                                ? 'bg-card text-primary shadow-sm' 
+                                            ${isActive
+                                                ? 'bg-card text-primary shadow-sm'
                                                 : 'text-muted-foreground hover:text-foreground'
                                             }
                                         `}
