@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase, formatError } from '../../services/supabase';
-import { MyEnquiry, TimelineItem, EnquiryStatus, Communication } from '../../types';
+import { Communication, EnquiryStatus, MyEnquiry, TimelineItem } from '../../types';
 import Spinner from '../common/Spinner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import clsx from 'clsx';
 
 // --- Authoritative Icons ---
 const MegaphoneIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
@@ -126,109 +127,140 @@ export default function MessagesTab() {
 
     return (
         <div className="max-w-[1600px] mx-auto py-6 px-4 md:px-8 space-y-8 h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] flex flex-col">
-            {/* Header - Fixed */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/[0.05] pb-6 shrink-0">
-                <div className="space-y-1">
-                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em] opacity-80">Institutional Registry</span>
-                    <h1 className="text-3xl md:text-4xl font-serif font-black text-white tracking-tighter uppercase leading-none">Inbox <span className="text-white/20 italic font-medium">Channel.</span></h1>
-                    <p className="text-xs text-white/40 mt-1 font-medium max-w-lg italic">Synchronized handshake terminal for all official school communications.</p>
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10 border-b border-white/[0.03] pb-10 shrink-0">
+                <div className="max-w-2xl">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                        <span className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">Official Registry</span>
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-[0.9]">
+                        Inbox <span className="opacity-30 font-normal">Channel.</span>
+                    </h2>
+                    <p className="text-white/40 text-[15px] leading-relaxed mt-8 max-w-lg italic font-serif">
+                        Synchronized handshake terminal for institutional communications and verification workflows.
+                    </p>
                 </div>
+
                 <div className="flex items-center gap-6">
-                    <div className="hidden md:flex items-center gap-3 bg-white/5 px-4 py-1.5 rounded-xl border border-white/10">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]"></div>
-                        <span className="text-[9px] font-black text-white/60 tracking-[0.2em] uppercase">Identity Link Secured</span>
+                    <div className="hidden md:flex items-center gap-4 bg-[#0c0d12] px-6 py-3 rounded-2xl border border-white/5 shadow-2xl">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_12px_#10b981]"></div>
+                        <span className="text-[10px] font-black text-white/60 tracking-[0.3em] uppercase">Uplink Secured</span>
                     </div>
                 </div>
             </div>
 
             <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6">
-                {/* 1. Sidebar - Ledger */}
-                <div className={`lg:w-[400px] flex flex-col shrink-0 transition-transform duration-300 lg:translate-x-0 ${isMobileMenuOpen ? 'fixed inset-0 z-50 bg-black' : 'hidden lg:flex'}`}>
-                    <div className="bg-[#0c0d12]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl h-full">
-                        {/* Tab Switcher */}
-                        <div className="p-6 pb-2">
-                            <div className="flex items-center justify-between mb-4 lg:hidden">
-                                <h3 className="text-xs font-black text-white/60 tracking-widest uppercase">Select Payload</h3>
-                                <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/40 font-black text-lg p-2">&times;</button>
+                {/* 1. Sidebar - Ledger Panel */}
+                <div className={clsx(
+                    "lg:w-[420px] flex flex-col shrink-0 transition-all duration-500 lg:translate-x-0 relative",
+                    isMobileMenuOpen ? "fixed inset-0 z-50 bg-[#08090d]" : "hidden lg:flex"
+                )}>
+                    <div className="bg-[#0c0d12] rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl h-full relative">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-primary/[0.01] to-transparent pointer-events-none"></div>
+
+                        <div className="p-8 pb-4 relative z-10">
+                            <div className="flex items-center justify-between mb-6 lg:hidden">
+                                <h3 className="text-[10px] font-black text-white/40 tracking-[0.4em] uppercase">Select Payload</h3>
+                                <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 text-white/40">&times;</button>
                             </div>
-                            <div className="flex p-1.5 bg-black/40 rounded-[1.5rem] border border-white/5">
+                            <div className="flex p-1.5 bg-black/40 rounded-[1.5rem] border border-white/5 shadow-inner">
                                 {(['broadcasts', 'enquiries'] as Tab[]).map(t => (
                                     <button
                                         key={t}
                                         onClick={() => { handleSwitchTab(t); if (window.innerWidth < 1024) setIsMobileMenuOpen(false); }}
-                                        className={`flex-1 py-3 text-[9px] font-black uppercase tracking-[0.25em] rounded-xl transition-all duration-300 ${activeTab === t
-                                            ? 'bg-primary/20 text-primary shadow-lg border border-primary/20'
-                                            : 'text-white/20 hover:text-white/40'}`}
+                                        className={clsx(
+                                            "flex-1 py-3.5 text-[9px] font-black uppercase tracking-[0.25em] rounded-xl transition-all duration-500",
+                                            activeTab === t
+                                                ? "bg-primary text-white shadow-[0_0_20px_rgba(var(--primary),0.3)]"
+                                                : "text-white/20 hover:text-white/40"
+                                        )}
                                     >
-                                        {t.toUpperCase()}
+                                        {t}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Node List */}
-                        <div className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar relative z-10 pb-20">
                             <AnimatePresence mode="wait">
                                 {activeTab === 'broadcasts' ? (
-                                    <motion.div key="broadcast-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2 pb-10">
+                                    <motion.div key="broadcast-list" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-3">
                                         {announcements.length === 0 ? <EmptyNode label="Broadcasts" /> : announcements.map(msg => (
                                             <button
                                                 key={msg.id}
                                                 onClick={() => { setSelectedAnnouncement(msg); setIsMobileMenuOpen(false); }}
-                                                className={`w-full p-5 rounded-[2rem] text-left transition-all duration-300 border group relative overflow-hidden ${selectedAnnouncement?.id === msg.id
-                                                    ? 'bg-primary/10 border-primary/40 shadow-xl'
-                                                    : 'bg-white/[0.01] border-white/[0.02] hover:bg-white/[0.04] opacity-50 hover:opacity-100'}`}
+                                                className={clsx(
+                                                    "w-full p-6 text-left transition-all duration-500 rounded-[2rem] border relative group",
+                                                    selectedAnnouncement?.id === msg.id
+                                                        ? "bg-primary/[0.08] border-primary/40 shadow-xl"
+                                                        : "bg-white/[0.01] border-white/5 hover:border-white/10 hover:bg-white/[0.03]"
+                                                )}
                                             >
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <MegaphoneIcon className={`w-3 h-3 ${selectedAnnouncement?.id === msg.id ? 'text-primary' : 'text-white/20'}`} />
-                                                        <span className="text-[8px] font-black uppercase tracking-widest text-white/40">{msg.sender_name || 'Official'}</span>
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className={clsx("p-1.5 rounded-lg border", selectedAnnouncement?.id === msg.id ? "bg-primary/20 border-primary/20 text-primary" : "bg-white/5 border-white/10 text-white/20")}>
+                                                            <MegaphoneIcon className="w-3 h-3" />
+                                                        </div>
+                                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">{msg.sender_name || 'Authority'}</span>
                                                     </div>
                                                     <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(msg.sent_at)}</span>
                                                 </div>
-                                                <h4 className="text-xs font-black text-white uppercase tracking-tight leading-none group-hover:text-primary transition-colors truncate">{msg.subject}</h4>
-                                                <p className="text-[9px] text-white/20 mt-1.5 font-medium line-clamp-1">{msg.body}</p>
-                                                {selectedAnnouncement?.id === msg.id && <div className="absolute top-5 right-5 animate-in zoom-in"><ShieldCheckIcon className="w-2.5 h-2.5 text-primary" /></div>}
+                                                <h4 className={clsx("text-xs font-bold uppercase tracking-tight transition-all", selectedAnnouncement?.id === msg.id ? "text-white" : "text-white/60 group-hover:text-primary")}>{msg.subject}</h4>
+                                                <p className="text-[10px] text-white/20 mt-2 font-medium line-clamp-1 italic">{msg.body}</p>
+                                                {selectedAnnouncement?.id === msg.id && <div className="absolute top-6 right-6"><div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)]"></div></div>}
                                             </button>
                                         ))}
                                     </motion.div>
                                 ) : (
-                                    <motion.div key="enquiry-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2 pb-10">
+                                    <motion.div key="enquiry-list" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-3">
                                         {enquiries.length === 0 ? <EmptyNode label="Enquiries" /> : enquiries.map(enq => (
                                             <button
                                                 key={enq.id}
                                                 onClick={() => { setSelectedEnquiry(enq); setIsMobileMenuOpen(false); }}
-                                                className={`w-full p-5 rounded-[2rem] text-left transition-all duration-300 border group relative overflow-hidden ${selectedEnquiry?.id === enq.id
-                                                    ? 'bg-gradient-to-r from-indigo-500/10 to-indigo-500/5 border-indigo-500/30 shadow-2xl shadow-indigo-500/5'
-                                                    : 'bg-white/[0.01] border-white/[0.02] hover:bg-white/[0.03] opacity-60 hover:opacity-100'}`}
+                                                className={clsx(
+                                                    "w-full p-6 text-left transition-all duration-500 rounded-[2rem] border relative group",
+                                                    selectedEnquiry?.id === enq.id
+                                                        ? "bg-indigo-500/[0.08] border-indigo-500/40 shadow-xl"
+                                                        : "bg-white/[0.01] border-white/5 hover:border-white/10 hover:bg-white/[0.03]"
+                                                )}
                                             >
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <TerminalIcon className={`w-3 h-3 ${selectedEnquiry?.id === enq.id ? 'text-indigo-400' : 'text-white/20'}`} />
-                                                        <span className="text-[8px] font-black uppercase tracking-widest text-white/40">Node: {String(enq.id).slice(0, 8)}</span>
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className={clsx("p-1.5 rounded-lg border", selectedEnquiry?.id === enq.id ? "bg-indigo-500/20 border-indigo-500/20 text-indigo-400" : "bg-white/5 border-white/10 text-white/20")}>
+                                                            <TerminalIcon className="w-3 h-3" />
+                                                        </div>
+                                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">Node {String(enq.id).slice(0, 6)}</span>
                                                     </div>
                                                     <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(enq.updated_at)}</span>
                                                 </div>
-                                                <h4 className={`text-xs font-black uppercase tracking-tight leading-none transition-colors truncate mb-3 ${selectedEnquiry?.id === enq.id ? 'text-white' : 'text-white/80 group-hover:text-indigo-300'}`}>{enq.applicant_name}</h4>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-md border tracking-widest ${statusConfig[enq.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enq.status as EnquiryStatus]?.color || 'text-white/20 border-white/5'}`}>
+                                                <h4 className={clsx("text-[13px] font-bold tracking-tight transition-all", selectedEnquiry?.id === enq.id ? "text-white" : "text-white/60 group-hover:text-indigo-400")}>{enq.applicant_name}</h4>
+                                                <div className="flex items-center gap-3 mt-4">
+                                                    <span className={clsx(
+                                                        "text-[7px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-[0.15em]",
+                                                        statusConfig[enq.status as EnquiryStatus]?.bg || 'bg-white/5',
+                                                        statusConfig[enq.status as EnquiryStatus]?.color || 'text-white/20 border-white/10'
+                                                    )}>
                                                         {enq.status.replace('ENQUIRY_', '')}
                                                     </span>
-                                                    <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">Grade {enq.grade}</span>
+                                                    <div className="w-1 h-1 rounded-full bg-white/5"></div>
+                                                    <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Grade {enq.grade}</span>
                                                 </div>
-                                                {selectedEnquiry?.id === enq.id && <div className="absolute top-5 right-5 animate-in zoom-in duration-300"><ShieldCheckIcon className="w-3 h-3 text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.5)]" /></div>}
+                                                {selectedEnquiry?.id === enq.id && <div className="absolute top-6 right-6"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_12px_rgba(129,140,248,0.8)]"></div></div>}
                                             </button>
                                         ))}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
+
+                        <div className="absolute top-32 left-0 right-0 h-10 bg-gradient-to-b from-[#0c0d12] to-transparent pointer-events-none z-20"></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0c0d12] to-transparent pointer-events-none z-20"></div>
                     </div>
                 </div>
 
                 {/* 2. Main Viewport */}
                 <div className="flex-1 flex flex-col bg-[#0c0d12]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 relative overflow-hidden min-w-0">
-                    {/* Mobile Menu Trigger */}
                     <button
                         onClick={() => setIsMobileMenuOpen(true)}
                         className="lg:hidden absolute top-4 left-4 z-10 p-3 bg-white/5 border border-white/10 rounded-2xl text-white/60 hover:text-white"
@@ -287,15 +319,23 @@ function EmptyNode({ label }: { label: string }) {
 
 function ReadingStandby({ title }: { title: string }) {
     return (
-        <div className="flex flex-col items-center justify-center h-full p-20 text-center animate-in fade-in duration-1000">
-            <div className="relative mb-12">
-                <div className="absolute inset-0 bg-primary/5 rounded-full blur-[100px]"></div>
-                <MegaphoneIcon className="w-24 h-24 text-white/5 relative z-10" />
+        <div className="flex flex-col items-center justify-center h-full p-20 text-center animate-in fade-in duration-1000 relative">
+            <div className="relative mb-16">
+                <div className="absolute -inset-10 bg-primary/20 blur-[100px] rounded-full animate-pulse"></div>
+                <div className="w-32 h-32 rounded-[2.5rem] bg-white/[0.02] border border-white/5 flex items-center justify-center relative z-10 shadow-3xl">
+                    <RadarIcon className="w-14 h-14 text-white/10" />
+                </div>
             </div>
-            <h3 className="text-2xl font-serif font-black text-white uppercase tracking-widest mb-4 opacity-60">{title}</h3>
-            <p className="text-sm font-serif italic text-white/20 max-w-xs leading-relaxed">Select a registry node to decrypt and initialize the institutional handshake channel.</p>
-            <div className="mt-16 pt-8 border-t border-white/[0.03] flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.5em] text-white/5">
-                <ShieldCheckIcon className="w-4 h-4" /> End-to-End Encrypted Payload
+            <h3 className="text-3xl font-serif font-black text-white uppercase tracking-widest mb-6">{title}</h3>
+            <p className="text-sm font-serif italic text-white/30 max-w-sm leading-relaxed border-l border-white/5 pl-8 text-left mx-auto">
+                "Select a registry node to decrypt and initialize the institutional handshake channel."
+            </p>
+
+            <div className="absolute bottom-12 flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/5">
+                <div className="w-12 h-px bg-white/5"></div>
+                <ShieldCheckIcon className="w-5 h-5" />
+                <span>Identity Payload Protocol v8.4.2</span>
+                <div className="w-12 h-px bg-white/5"></div>
             </div>
         </div>
     );
@@ -382,26 +422,26 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
             {/* Chat Area */}
             <div className="flex-1 flex flex-col min-w-0 h-full">
                 {/* Header - Fixed */}
-                <header className="px-6 md:px-10 py-6 border-b border-white/[0.05] bg-black/40 backdrop-blur-md shrink-0 z-10">
-                    <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.4em]">Identity Handshake</span>
-                                <div className="w-1 h-1 rounded-full bg-indigo-500/40"></div>
-                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest shrink-0">Live Link</span>
+                <header className="px-8 md:px-12 py-10 border-b border-white/[0.03] bg-black/40 backdrop-blur-md shrink-0 z-10">
+                    <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-8">
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Node Connection Established</span>
                             </div>
-                            <h2 className="text-xl md:text-2xl font-serif font-black text-white leading-tight tracking-tight uppercase truncate">{enquiry.applicant_name}</h2>
+                            <h2 className="text-3xl md:text-4xl font-serif font-black text-white leading-tight tracking-tight uppercase">{enquiry.applicant_name}</h2>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                             <button
                                 onClick={() => loadTimeline()}
-                                className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-                                title="Refresh Uplink"
+                                className="h-14 px-6 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center gap-3 hover:bg-white/[0.05] text-white/40 hover:text-white transition-all active:scale-95 group"
+                                title="Sync Node"
                             >
-                                <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                <RefreshIcon className={clsx("w-5 h-5 group-hover:rotate-180 transition-transform duration-700", loading && "animate-spin")} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Sync</span>
                             </button>
-                            <div className="md:hidden w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                                <ShieldCheckIcon className="w-4 h-4 text-indigo-400" />
+                            <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-lg shadow-indigo-500/5">
+                                <ShieldCheckIcon className="w-6 h-6 text-indigo-400" />
                             </div>
                         </div>
                     </div>
@@ -498,13 +538,21 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
             </div>
 
             {/* Profile Sidebar - Desktop Only */}
-            <div className="w-80 flex-shrink-0 bg-black/20 p-10 space-y-10 overflow-y-auto hidden xl:block">
-                <section className="space-y-6">
-                    <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Registry Status</h3>
-                    <div className={`p-6 rounded-3xl border ${statusConfig[enquiry.status as EnquiryStatus]?.bg || 'bg-white/5'} ${statusConfig[enquiry.status as EnquiryStatus]?.color || 'text-white/20'} border-white/5 shadow-2xl flex flex-col items-center justify-center text-center gap-4`}>
+            <div className="w-80 flex-shrink-0 bg-white/[0.01] border-l border-white/[0.03] p-10 space-y-12 overflow-y-auto hidden xl:block custom-scrollbar">
+                <section className="space-y-8">
+                    <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
+                        <h3 className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Registry Status</h3>
+                    </div>
+                    <div className={clsx(
+                        "p-8 rounded-[2.5rem] border shadow-2xl flex flex-col items-center justify-center text-center gap-6 transition-all duration-700",
+                        statusConfig[enquiry.status as EnquiryStatus]?.bg || 'bg-white/5',
+                        statusConfig[enquiry.status as EnquiryStatus]?.color || 'text-white/20',
+                        "border-white/5"
+                    )}>
                         <div className="relative">
-                            <div className="absolute inset-0 bg-current opacity-20 blur-xl"></div>
-                            <ShieldCheckIcon className="w-10 h-10 relative z-10" />
+                            <div className="absolute inset-0 bg-current opacity-20 blur-2xl rounded-full"></div>
+                            <ShieldCheckIcon className="w-12 h-12 relative z-10" />
                         </div>
                         <span className="text-[11px] font-black uppercase tracking-[0.3em] leading-none">
                             {enquiry.status.replace('ENQUIRY_', '')}

@@ -8,6 +8,7 @@ import ChildProfileCard from './ChildProfileCard';
 import ChildRegistrationModal from './ChildRegistrationModal';
 import { PlusIcon } from '../icons/PlusIcon';
 import { SearchIcon } from '../icons/SearchIcon';
+import clsx from 'clsx';
 
 type FilterType = 'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED';
 
@@ -25,7 +26,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
     const [editingChild, setEditingChild] = useState<AdmissionApplication | null>(null);
     const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
     const [searchTerm, setSearchTerm] = useState('');
-    
+
     const fetchData = useCallback(async () => {
         if (!profile?.id) return;
         setLoading(true);
@@ -43,7 +44,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
 
     useEffect(() => {
         fetchData();
-        
+
         // Setup Realtime Subscription for instant updates
         const channel = supabase.channel('family-nodes-sync')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'admissions' }, () => {
@@ -60,13 +61,13 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchData]); 
+    }, [fetchData]);
 
     const filteredApplications = useMemo(() => {
         return applications.filter(app => {
             const matchesSearch = (app.applicant_name || '').toLowerCase().includes(searchTerm.toLowerCase());
             const status = (app.status || '').toUpperCase();
-            
+
             if (activeFilter === 'APPROVED') return matchesSearch && (status === 'APPROVED' || status === 'VERIFIED' || status === 'ENROLLED');
             if (activeFilter === 'REJECTED') return matchesSearch && status === 'REJECTED';
             if (activeFilter === 'PENDING') {
@@ -87,51 +88,62 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
 
     return (
         <div className="w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 font-sans">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 mb-16">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10 mb-20">
                 <div className="max-w-2xl">
                     <div className="flex items-center gap-3 mb-4">
-                         <span className="text-[10px] font-black uppercase text-primary tracking-[0.4em] border-l-2 border-primary/40 pl-4">Institutional Roster</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary/60"></div>
+                        <span className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">Institutional Roster</span>
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-serif font-black text-white tracking-tighter uppercase leading-none">
-                        Family <span className="text-white/20 font-normal italic">Nodes.</span>
+                    <h2 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-[0.9]">
+                        Family <span className="opacity-30 font-normal">Nodes.</span>
                     </h2>
-                    <p className="text-white/40 text-[15px] leading-relaxed font-serif italic mt-6 max-w-lg border-l border-white/10 pl-8">
-                        Centralized oversight for enrollment identities, academic records, and secure institutional access.
+                    <p className="text-white/40 text-[15px] leading-relaxed mt-8 max-w-lg border-l border-white/5 pl-8 italic font-serif">
+                        Centralized oversight for enrollment identities, academic records, and secure institutional access within a verified environment.
                     </p>
                 </div>
-                
-                <div className="flex items-center gap-4 w-full lg:w-auto">
-                    <button 
-                        onClick={() => { setEditingChild(null); setIsModalOpen(true); }} 
-                        className="flex-grow lg:flex-grow-0 h-12 md:h-14 px-10 bg-primary hover:bg-primary/90 text-white font-bold text-[12px] uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 transition-all transform active:scale-[0.98] hover:scale-[1.02] flex items-center justify-center gap-3 group"
+
+                <div className="flex items-center gap-4 w-full lg:w-auto shrink-0">
+                    <button
+                        onClick={() => { setEditingChild(null); setIsModalOpen(true); }}
+                        className="relative group overflow-hidden flex-grow lg:flex-grow-0 h-14 md:h-16 px-12 bg-primary text-white font-black text-[12px] uppercase tracking-[0.25em] rounded-[1.25rem] shadow-2xl shadow-primary/20 transition-all transform active:scale-[0.98] hover:scale-[1.02] flex items-center justify-center gap-4"
                     >
-                        <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" /> Provision Node
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
+                        <span>Provision Node</span>
                     </button>
                 </div>
             </div>
 
             {/* Filter Hub */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-white/[0.01] p-3 rounded-[2rem] border border-white/5 mb-12 shadow-inner">
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto no-scrollbar">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8 bg-white/[0.01] p-2 rounded-[2.5rem] border border-white/5 mb-16 shadow-2xl">
+                <div className="flex bg-black/40 p-1.5 rounded-[2rem] border border-white/5 w-full md:w-auto overflow-x-auto no-scrollbar">
                     {(['ALL', 'APPROVED', 'PENDING', 'REJECTED'] as FilterType[]).map(f => (
                         <button
                             key={f}
                             onClick={() => setActiveFilter(f)}
-                            className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-[10px] font-black tracking-[0.15em] uppercase transition-all duration-300 ${activeFilter === f ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20' : 'text-white/30 hover:text-white/60'}`}
+                            className={clsx(
+                                "relative px-8 py-3 rounded-[1.5rem] text-[10px] font-black tracking-[0.2em] uppercase transition-all duration-500",
+                                activeFilter === f
+                                    ? "text-primary z-10"
+                                    : "text-white/20 hover:text-white/40"
+                            )}
                         >
+                            {activeFilter === f && (
+                                <div className="absolute inset-0 bg-primary/10 rounded-[1.5rem] ring-1 ring-primary/30 shadow-[0_0_20px_rgba(var(--primary),0.1)] -z-10 animate-in zoom-in-90 duration-500"></div>
+                            )}
                             {f}
                         </button>
                     ))}
                 </div>
-                
-                <div className="relative flex-grow w-full md:max-w-md group">
-                    <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors duration-300" />
-                    <input 
-                        type="text" 
-                        placeholder="Search identities..." 
+
+                <div className="relative flex-grow w-full md:max-w-md group pr-4 focus-within:max-w-lg transition-all duration-500">
+                    <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/10 group-focus-within:text-primary transition-colors duration-300" />
+                    <input
+                        type="text"
+                        placeholder="Search identities by name..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-12 w-full pl-12 pr-6 bg-black/20 border border-white/5 rounded-xl text-sm font-medium text-white focus:bg-black/30 outline-none transition-all placeholder:text-white/10 focus:ring-4 focus:ring-primary/10"
+                        className="h-14 w-full pl-14 pr-8 bg-black/20 border-b border-white/5 focus:border-primary/30 rounded-2xl text-[13px] font-medium text-white outline-none transition-all placeholder:text-white/5 focus:bg-white/[0.02] focus:ring-0"
                     />
                 </div>
             </div>
@@ -148,10 +160,10 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 {filteredApplications.map((app, idx) => (
                     <div key={app.id} className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${idx * 60}ms` }}>
-                        <ChildProfileCard 
+                        <ChildProfileCard
                             child={app}
                             isExpanded={false}
-                            onToggleExpand={() => {}}
+                            onToggleExpand={() => { }}
                             onEdit={() => { setEditingChild(app); setIsModalOpen(true); }}
                             onManageDocuments={() => onManageDocuments(app.id)}
                             onNavigateDashboard={async () => {
@@ -162,24 +174,30 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
                         />
                     </div>
                 ))}
-                
+
                 {/* Empty State / Add Child Trigger */}
-                <button 
+                <button
                     onClick={() => { setEditingChild(null); setIsModalOpen(true); }}
-                    className="flex flex-col items-center justify-center p-12 rounded-2xl border-2 border-dashed border-white/5 hover:border-primary/40 hover:bg-primary/[0.01] transition-all duration-700 group relative overflow-hidden h-full min-h-[340px] bg-black/20"
+                    className="flex flex-col items-center justify-center p-12 rounded-[2.5rem] border-2 border-dashed border-white/5 hover:border-primary/40 hover:bg-primary/[0.02] transition-all duration-1000 group relative overflow-hidden h-full min-h-[400px] bg-white/[0.01]"
                 >
-                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-6 transition-all duration-700 group-hover:bg-primary/10 group-hover:scale-110 border border-white/5 shadow-inner">
-                        <PlusIcon className="w-6 h-6 text-white/10 group-hover:text-primary transition-colors" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+
+                    <div className="w-20 h-20 rounded-3xl bg-white/[0.02] flex items-center justify-center mb-10 transition-all duration-700 group-hover:bg-primary/10 group-hover:scale-110 group-hover:rotate-[10deg] border border-white/5 shadow-2xl relative z-10">
+                        <PlusIcon className="w-8 h-8 text-white/5 group-hover:text-primary transition-all duration-500" />
                     </div>
-                    <div className="text-center">
-                        <span className="font-sans font-bold text-[13px] text-white/20 group-hover:text-white/60 transition-all uppercase tracking-[0.2em] block mb-2">Enroll Sibling</span>
-                        <p className="text-[11px] text-white/10 font-medium italic group-hover:text-white/30 transition-all">Create a new family node to link an additional student.</p>
+
+                    <div className="text-center relative z-10">
+                        <span className="font-serif font-black text-lg text-white/20 group-hover:text-white/90 transition-all uppercase tracking-[0.2em] block mb-4">Enroll <span className="text-primary/40 group-hover:text-primary">Sibling.</span></span>
+                        <p className="text-[12px] text-white/10 font-medium max-w-[220px] mx-auto leading-relaxed group-hover:text-white/40 transition-all italic">Create a new family node to link an additional identity to your institutional roster.</p>
                     </div>
+
+                    {/* Corner accent */}
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 blur-[40px] rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-all"></div>
                 </button>
             </div>
 
             {isModalOpen && (
-                <ChildRegistrationModal 
+                <ChildRegistrationModal
                     child={editingChild}
                     onClose={() => { setIsModalOpen(false); setEditingChild(null); }}
                     onSave={fetchData}
@@ -191,7 +209,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
 };
 
 const AlertTriangleIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
 );
 
 export default MyChildrenTab;

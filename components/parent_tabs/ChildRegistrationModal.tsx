@@ -323,7 +323,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                 style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
                 className={clsx(
                     "bg-[#0a0a0c] shadow-2xl ring-1 ring-white/10 flex flex-col relative",
-                    "w-full h-[100dvh] md:h-auto md:max-h-[90dvh] md:max-w-3xl", // Mobile: Full height (dvh), Desktop: Constrained
+                    "w-full h-[90dvh] md:h-[85vh] md:max-w-3xl",
                     "md:rounded-[2.5rem]",
                     "animate-in zoom-in-95 duration-500 overflow-hidden",
                     isDragging && "scale-[1.01] shadow-primary/10 cursor-grabbing"
@@ -351,14 +351,60 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                         </div>
 
                         {/* Scrollable Body - Flexible */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 space-y-10 min-h-0">
+                        <div className="flex-1 overflow-y-scroll custom-scrollbar p-6 md:p-10 space-y-10 min-h-0">
                             {error && (
                                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-medium flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                                     <ShieldCheckIcon className="w-4 h-4" /> {error}
                                 </div>
                             )}
 
-                            {/* Biometric Section - Compliance Locked */}
+                            {/* Privacy Handshake / Consent Checkpoint */}
+                            <div className={clsx(
+                                "p-6 md:p-8 rounded-[2rem] border transition-all duration-500 relative overflow-hidden",
+                                isConsentActive
+                                    ? "bg-primary/10 border-primary/30 shadow-[0_0_40px_rgba(var(--primary),0.1)]"
+                                    : "bg-white/[0.02] border-white/10 hover:border-white/20"
+                            )}>
+                                <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-[80px] pointer-events-none"></div>
+
+                                <label className="relative z-10 flex items-start gap-5 cursor-pointer group">
+                                    <div className="relative mt-1 shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={isConsentActive}
+                                            onChange={handleConsentChange}
+                                            className="peer appearance-none w-6 h-6 rounded-lg border border-white/20 bg-black/40 checked:bg-primary checked:border-primary transition-all cursor-pointer ring-offset-2 ring-offset-[#0a0a0c] focus:ring-2 focus:ring-primary/50"
+                                        />
+                                        <CheckCircleIcon className="absolute inset-0 text-[#0a0a0c] w-6 h-6 scale-90 opacity-0 peer-checked:opacity-100 peer-checked:scale-110 transition-all pointer-events-none" />
+                                    </div>
+                                    <div className="flex-1 space-y-3">
+                                        <div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/80 mb-1.5 flex items-center gap-2">
+                                                <LockIcon className="w-3 h-3" /> Identity Protocol Authorization
+                                            </h4>
+                                            <p className="text-[15px] font-medium text-white/90 leading-relaxed">
+                                                I, the legal guardian, <span className="text-white">consent</span> to the collection and encrypted processing of my child's identity and <span className="text-primary/90 font-bold">biometric data</span>.
+                                            </p>
+                                        </div>
+                                        <p className="text-xs text-white/40 leading-relaxed max-w-xl">
+                                            This data is used strictly for <span className="text-white/60">Institutional Verification & Safety</span>. I understand I can revoke this consent or request data deletion at any time via the Parent Portal.
+                                        </p>
+
+                                        <div className="pt-2 flex flex-wrap gap-6 text-[10px] font-bold uppercase tracking-widest">
+                                            <button type="button" className="text-primary/60 hover:text-primary transition-colors flex items-center gap-2 group/btn">
+                                                <EyeIcon className="w-3.5 h-3.5" />
+                                                <span className="border-b border-white/5 group-hover/btn:border-primary/30 pb-0.5">Data Visibility</span>
+                                            </button>
+                                            <button type="button" className="text-primary/60 hover:text-primary transition-colors flex items-center gap-2 group/btn">
+                                                <ShieldCheckIcon className="w-3.5 h-3.5" />
+                                                <span className="border-b border-white/5 group-hover/btn:border-primary/30 pb-0.5">Retention Policy</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {/* Biometric Section */}
                             <div className="flex flex-col items-center justify-center gap-6 py-4 bg-white/[0.02] rounded-3xl border border-white/5 relative overflow-hidden transition-all duration-500">
                                 {!isConsentActive && (
                                     <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-700 pointer-events-none">
@@ -392,9 +438,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                 <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
                             </div>
 
-                            {/* Form Sections */}
                             <div className="space-y-8">
-                                {/* Personal Identity */}
                                 <div>
                                     <ComplianceSectionHeader
                                         title="Child Identity"
@@ -432,7 +476,6 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                     </div>
                                 </div>
 
-                                {/* Academic */}
                                 <div>
                                     <ComplianceSectionHeader
                                         title="Academic Placement"
@@ -451,7 +494,6 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                     </div>
                                 </div>
 
-                                {/* Safety & Medical */}
                                 <div>
                                     <div className="flex items-center justify-between">
                                         <ComplianceSectionHeader
@@ -490,37 +532,6 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                             helperText="Encrypted. Accessible only by authorized medical staff."
                                         />
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Consent Checkpoint */}
-                            <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-4">
-                                <label className="flex items-start gap-4 cursor-pointer group">
-                                    <div className="relative mt-1">
-                                        <input
-                                            type="checkbox"
-                                            checked={isConsentActive}
-                                            onChange={handleConsentChange}
-                                            className="peer appearance-none w-5 h-5 rounded border border-white/20 bg-black/40 checked:bg-primary checked:border-primary transition-all cursor-pointer"
-                                        />
-                                        <CheckCircleIcon className="absolute inset-0 text-[#0a0a0c] w-5 h-5 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
-                                    </div>
-                                    <div className="flex-1 space-y-1">
-                                        <p className="text-sm font-medium text-white/90 leading-relaxed">
-                                            I, the legal guardian, consent to the collection and encrypted processing of my child's identity and biometric data.
-                                        </p>
-                                        <p className="text-xs text-white/40 leading-relaxed">
-                                            This data is used strictly for <strong className="text-white/60">Institutional Verification & Safety</strong>. I understand I can revoke this consent or request data deletion at any time via the Parent Portal.
-                                        </p>
-                                    </div>
-                                </label>
-                                <div className="pl-9 flex flex-wrap gap-4 text-[9px] font-black uppercase tracking-widest text-primary/60">
-                                    <button type="button" className="hover:text-primary transition-colors flex items-center gap-1.5 ">
-                                        <EyeIcon className="w-3 h-3" /> Data Visibility
-                                    </button>
-                                    <button type="button" className="hover:text-primary transition-colors flex items-center gap-1.5">
-                                        <ShieldCheckIcon className="w-3 h-3" /> Retention Policy
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -564,6 +575,24 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                     </div>
                 )}
             </div>
+            {/* Inject Custom Scrollbar Styles */}
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.05);
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.25);
+                    border-radius: 10px;
+                    border: 2px solid transparent;
+                    background-clip: content-box;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background-color: rgba(255, 255, 255, 0.4);
+                }
+            `}</style>
         </div>
     );
 };

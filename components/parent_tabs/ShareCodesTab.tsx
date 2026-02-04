@@ -229,11 +229,20 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
 
             if (error) throw error;
 
+            // Handle Application-Level Logic Error from RPC
+            if (data && typeof data === 'object' && 'success' in data && !data.success) {
+                throw new Error(data.message || 'Protocol generation failed');
+            }
+
             const codeValue = typeof data === 'string' ? data : (data?.code || data?.p_code);
+
+            if (!codeValue) throw new Error('Protocol returned invalid signature');
+
             setGeneratedCode(codeValue);
             setPurpose('');
             await fetchData();
         } catch (err: any) {
+            console.error('Share Code Error:', err);
             setError(formatError(err));
         } finally {
             setGenerating(false);
@@ -319,6 +328,17 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                         </div>
 
                         <form onSubmit={handleGenerateCode} className="space-y-10">
+                            {/* Error Alert */}
+                            {error && (
+                                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
+                                    <AlertTriangleIcon className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                                    <div>
+                                        <h4 className="text-xs font-black text-rose-400 uppercase tracking-wider">Protocol Error</h4>
+                                        <p className="text-xs text-rose-400/80 font-medium leading-relaxed mt-1">{error}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* 1. Target Selector */}
                             <div className="space-y-4">
                                 <label className={TOKENS.text.label}>1. Select Target Node</label>
