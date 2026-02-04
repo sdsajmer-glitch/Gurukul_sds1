@@ -1512,7 +1512,7 @@ BEGIN
     new.id,
     new.email,
     COALESCE(new.raw_user_meta_data->>'full_name', new.email),
-    COALESCE(new.raw_user_meta_data->>'role', 'Student')
+    COALESCE(new.raw_user_meta_data->>'role', NULL)
   );
   RETURN new;
 END;
