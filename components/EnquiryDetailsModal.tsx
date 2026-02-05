@@ -5,6 +5,7 @@ import { Enquiry, TimelineItem, EnquiryStatus } from '../types';
 import Spinner from './common/Spinner';
 import { XIcon } from './icons/XIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
+import PremiumAvatar from './common/PremiumAvatar';
 import { GraduationCapIcon } from './icons/GraduationCapIcon';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { ClockIcon } from './icons/ClockIcon';
@@ -64,6 +65,12 @@ const TimelineEntry: React.FC<{ item: TimelineItem; prevItem: TimelineItem | nul
             >
                 {!isGrouped && (
                     <div className={`flex items-center gap-2 mb-1.5 px-1 ${isParent ? 'flex-row' : 'flex-row-reverse'}`}>
+                        <PremiumAvatar
+                            src={item.sender_photo_url}
+                            name={isParent ? item.created_by_name : 'Admin'}
+                            size="xs"
+                            className="ring-1 ring-white/10"
+                        />
                         <span className={`text-[9px] font-black uppercase tracking-widest ${isParent ? 'text-white/40' : 'text-indigo-400'}`}>
                             {isParent ? item.created_by_name : 'School Official'}
                         </span>
@@ -141,7 +148,7 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
         setSyncError(null);
 
         try {
-            const { data, error } = await supabase.rpc('get_enquiry_timeline_v3', { p_enquiry_id: idString });
+            const { data, error } = await supabase.rpc('get_enquiry_timeline_v4', { p_enquiry_id: idString });
             if (error) throw error;
             if (isMounted.current) {
                 // Sort Oldest -> Newest so we can render top-down
@@ -505,9 +512,7 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
 
                                 <div className="p-4 bg-white/[0.02] rounded-xl border border-white/5 space-y-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/40 font-bold text-xs">
-                                            {enquiry.parent_name?.charAt(0) || 'P'}
-                                        </div>
+                                        <PremiumAvatar src={enquiry.profile_photo_url} name={enquiry.parent_name} size="sm" />
                                         <div className="min-w-0">
                                             <p className="text-xs font-bold text-white/90 truncate">{enquiry.parent_name}</p>
                                             <p className="text-[9px] font-medium text-white/30 uppercase tracking-wider">Parent / Guardian</p>

@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase, formatError } from './services/supabase';
 import { Enquiry, EnquiryStatus } from './types';
 import Spinner from './components/common/Spinner';
-import EnquiryDetailsModal from './EnquiryDetailsModal';
+import PremiumAvatar from './components/common/PremiumAvatar';
+import EnquiryDetailsModal from './components/EnquiryDetailsModal';
 import { SearchIcon } from './components/icons/SearchIcon';
 import { KeyIcon } from './components/icons/KeyIcon';
 import { MailIcon } from './components/icons/MailIcon';
@@ -16,7 +16,6 @@ import { FilterIcon } from './components/icons/FilterIcon';
 import { UsersIcon } from './components/icons/UsersIcon';
 import { SparklesIcon } from './components/icons/SparklesIcon';
 import { AlertTriangleIcon } from './components/icons/AlertTriangleIcon';
-import PremiumAvatar from './components/common/PremiumAvatar';
 
 // --- ADVANCED DESIGN TOKENS ---
 const TOKENS = {
@@ -286,9 +285,12 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                                             <div className="flex items-center gap-10">
                                                 <div className="relative shrink-0">
                                                     <div className="absolute inset-0 bg-primary/20 blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-700"></div>
-                                                    <div className="w-[72px] h-[72px] rounded-[2rem] bg-gradient-to-br from-indigo-500/10 to-purple-600/10 flex items-center justify-center text-indigo-400 font-serif font-black text-2xl shadow-inner border border-white/5 relative z-10">
-                                                        {(enq.applicant_name || '?').charAt(0)}
-                                                    </div>
+                                                    <PremiumAvatar
+                                                        src={enq.profile_photo_url}
+                                                        name={enq.applicant_name}
+                                                        size="md"
+                                                        className="relative z-10 ring-2 ring-white/5 group-hover:ring-primary/40 transition-all duration-500 shadow-2xl"
+                                                    />
                                                 </div>
                                                 <div className="flex flex-col gap-1.5">
                                                     <div className="text-2xl font-serif font-black text-white group-hover:text-primary transition-colors duration-500 uppercase tracking-tighter leading-none">{enq.applicant_name}</div>

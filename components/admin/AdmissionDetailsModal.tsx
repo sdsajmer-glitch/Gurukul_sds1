@@ -4,6 +4,7 @@ import { AdmissionApplication } from '../../types';
 import Spinner from '../common/Spinner';
 import { XIcon } from '../icons/XIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
+import PremiumAvatar from '../common/PremiumAvatar';
 import { UserIcon } from '../icons/UserIcon';
 import { MailIcon } from '../icons/MailIcon';
 import { PhoneIcon } from '../icons/PhoneIcon';
@@ -173,13 +174,12 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 {/* Header */}
                 <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01] backdrop-blur-md relative z-10">
                     <div className="flex items-center gap-6">
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-700 flex items-center justify-center text-white text-3xl font-black shadow-[0_8px_30px_rgb(79,70,229,0.3)] ring-4 ring-white/10"
-                        >
-                            {admission.applicant_name.charAt(0)}
-                        </motion.div>
+                        <PremiumAvatar
+                            src={admission.profile_photo_url}
+                            name={admission.applicant_name}
+                            size="lg"
+                            className="shadow-[0_8px_30px_rgb(79,70,229,0.3)] ring-4 ring-white/10"
+                        />
                         <div>
                             <motion.h2
                                 initial={{ x: -20, opacity: 0 }}

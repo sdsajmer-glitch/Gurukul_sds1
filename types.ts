@@ -435,6 +435,7 @@ export interface Enquiry {
     notes?: string;
     updated_at: string;
     branch_id?: number | null;
+    profile_photo_url?: string | null;
 }
 
 export interface MyEnquiry extends Enquiry {
@@ -447,6 +448,7 @@ export interface TimelineItem {
     created_by_name: string;
     is_admin: boolean;
     details: any;
+    sender_photo_url?: string | null;
 }
 
 export type CourseStatus = 'Active' | 'Draft' | 'Archived' | 'Pending' | 'Inactive';
