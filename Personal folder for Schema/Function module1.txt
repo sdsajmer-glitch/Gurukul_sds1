@@ -1053,7 +1053,9 @@ CREATE OR REPLACE FUNCTION public.admin_verify_share_code(p_code text)
 AS $function$
 DECLARE
     v_record RECORD;
+    v_table text := NULL;
 BEGIN
+    -- Try primary table `share_codes`
     SELECT 
         sc.id,
         sc.admission_id,
@@ -1063,16 +1065,39 @@ BEGIN
         adm.applicant_name,
         adm.grade
     FROM public.share_codes sc
-    JOIN public.admissions adm ON sc.admission_id = adm.id
+    LEFT JOIN public.admissions adm ON sc.admission_id = adm.id
     WHERE sc.code = p_code
     LIMIT 1
     INTO v_record;
+
+    IF v_record.id IS NOT NULL THEN
+        v_table := 'share_codes';
+    ELSE
+        -- Fallback to `admission_share_codes` (legacy/alternate table)
+        SELECT 
+            asc.id,
+            asc.admission_id,
+            asc.code_type,
+            asc.status,
+            asc.expires_at,
+            a.applicant_name,
+            a.grade
+        FROM public.admission_share_codes asc
+        LEFT JOIN public.admissions a ON asc.admission_id = a.id
+        WHERE asc.code = p_code
+        LIMIT 1
+        INTO v_record;
+
+        IF v_record.id IS NOT NULL THEN
+            v_table := 'admission_share_codes';
+        END IF;
+    END IF;
 
     IF v_record.id IS NULL THEN
         RETURN jsonb_build_object('found', false, 'error', 'Token not recognized in registry.');
     END IF;
 
-    IF v_record.status != 'Active' OR v_record.expires_at < NOW() THEN
+    IF v_record.status IS NULL OR v_record.status != 'Active' OR v_record.expires_at < NOW() THEN
         RETURN jsonb_build_object('found', false, 'error', 'Token has expired or been revoked.');
     END IF;
 
@@ -1082,7 +1107,8 @@ BEGIN
         'admission_id', v_record.admission_id,
         'applicant_name', v_record.applicant_name,
         'grade', v_record.grade,
-        'code_type', v_record.code_type
+        'code_type', v_record.code_type,
+        'origin_table', v_table
     );
 END;
 $function$;
@@ -1094,13 +1120,18 @@ CREATE OR REPLACE FUNCTION public.admin_import_record_from_share_code(p_admissio
 AS $function$
 DECLARE
     v_enquiry_id UUID;
+    v_exists_share boolean;
+    v_exists_admshare boolean;
 BEGIN
-    -- 1. Validate the code once more
-    IF NOT EXISTS (SELECT 1 FROM public.share_codes WHERE id = p_code_id AND status = 'Active') THEN
+    -- 1. Validate the code once more across both possible tables
+    SELECT EXISTS (SELECT 1 FROM public.share_codes WHERE id = p_code_id AND status = 'Active') INTO v_exists_share;
+    SELECT EXISTS (SELECT 1 FROM public.admission_share_codes WHERE id = p_code_id AND status = 'Active') INTO v_exists_admshare;
+
+    IF NOT v_exists_share AND NOT v_exists_admshare THEN
         RETURN jsonb_build_object('success', false, 'message', 'Security token no longer valid.');
     END IF;
 
-    -- 2. Execute sync based on protocol type
+    -- 2. Execute sync based on protocol type (same behavior regardless of origin table)
     IF p_code_type = 'Enquiry' THEN
         SELECT id INTO v_enquiry_id FROM public.enquiries WHERE admission_id = p_admission_id LIMIT 1;
 
@@ -1124,8 +1155,13 @@ BEGIN
     -- 3. Update Admission branch context
     UPDATE public.admissions SET branch_id = p_branch_id WHERE id = p_admission_id;
 
-    -- 4. Burn the token (Single use protocol)
-    UPDATE public.share_codes SET status = 'Redeemed', redeemed_at = NOW() WHERE id = p_code_id;
+    -- 4. Burn the token (Single use protocol) - mark redeemed in whichever table(s) contain the code
+    IF v_exists_share THEN
+        UPDATE public.share_codes SET status = 'Redeemed', redeemed_at = NOW(), redeemed_by = auth.uid() WHERE id = p_code_id;
+    END IF;
+    IF v_exists_admshare THEN
+        UPDATE public.admission_share_codes SET status = 'Redeemed', redeemed_at = NOW(), redeemed_by = auth.uid() WHERE id = p_code_id;
+    END IF;
 
     RETURN jsonb_build_object('success', true, 'message', 'Identity synchronization complete.');
 END;
