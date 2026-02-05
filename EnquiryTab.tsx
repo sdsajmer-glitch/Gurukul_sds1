@@ -41,6 +41,7 @@ const TOKENS = {
 };
 
 const statusColors: Record<EnquiryStatus, string> = {
+    'NEW': 'bg-blue-500/5 text-blue-400 border-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.05)]',
     'ENQUIRY_ACTIVE': 'bg-blue-500/5 text-blue-400 border-blue-500/10',
     'ENQUIRY_VERIFIED': 'bg-emerald-500/5 text-emerald-400 border-emerald-500/10 font-bold shadow-sm',
     'ENQUIRY_IN_REVIEW': 'bg-purple-500/5 text-purple-400 border-purple-500/10',
@@ -50,12 +51,13 @@ const statusColors: Record<EnquiryStatus, string> = {
 };
 
 const statusLabels: Record<EnquiryStatus, string> = {
+    'NEW': 'NEW',
     'ENQUIRY_ACTIVE': 'ACTIVE',
     'ENQUIRY_VERIFIED': 'VERIFIED',
     'ENQUIRY_IN_REVIEW': 'IN REVIEW',
     'ENQUIRY_CONTACTED': 'CONTACTED',
     'ENQUIRY_REJECTED': 'REJECTED',
-    'ENQUIRY_CONVERTED': 'CONVERTED',
+    'ENQUIRY_CONVERTED': 'PROMOTED TO ADMISSION',
 };
 
 type SortableKeys = 'applicant_name' | 'grade' | 'status' | 'updated_at';

@@ -30,15 +30,16 @@ const LocalSendIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode, label: string, color: string }> = {
+    'NEW': { icon: <div className="w-2 h-2 rounded-full bg-blue-500/80 shadow-sm" />, label: 'New', color: 'text-blue-400' },
     'ENQUIRY_ACTIVE': { icon: <div className="w-2 h-2 rounded-full bg-blue-500/80 shadow-sm" />, label: 'Active', color: 'text-blue-400' },
     'ENQUIRY_VERIFIED': { icon: <ShieldCheckIcon className="w-4 h-4 text-teal-500/80" />, label: 'Verified', color: 'text-teal-500' },
     'ENQUIRY_IN_REVIEW': { icon: <ClockIcon className="w-4 h-4 text-purple-500/80" />, label: 'In Review', color: 'text-purple-500' },
     'ENQUIRY_CONTACTED': { icon: <CommunicationIcon className="w-4 h-4 text-amber-500/80" />, label: 'Contacted', color: 'text-amber-500' },
     'ENQUIRY_REJECTED': { icon: <ShieldAlertIcon className="w-4 h-4 text-red-500/80" />, label: 'Rejected', color: 'text-red-500' },
-    'ENQUIRY_CONVERTED': { icon: <CheckCircleIcon className="w-4 h-4 text-emerald-500/80" />, label: 'Converted', color: 'text-emerald-500' },
+    'ENQUIRY_CONVERTED': { icon: <CheckCircleIcon className="w-4 h-4 text-emerald-500/80" />, label: 'Promoted to Admission', color: 'text-emerald-500' },
 };
 
-const ORDERED_STATUSES: EnquiryStatus[] = ['ENQUIRY_ACTIVE', 'ENQUIRY_VERIFIED', 'ENQUIRY_IN_REVIEW', 'ENQUIRY_CONTACTED', 'ENQUIRY_REJECTED', 'ENQUIRY_CONVERTED'];
+const ORDERED_STATUSES: EnquiryStatus[] = ['ENQUIRY_ACTIVE', 'ENQUIRY_VERIFIED', 'ENQUIRY_IN_REVIEW', 'ENQUIRY_CONTACTED', 'ENQUIRY_REJECTED'];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -227,11 +228,6 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
     };
 
     const handleFinalizeSave = async () => {
-        if (pendingStatus === 'ENQUIRY_CONVERTED') {
-            handleConvert();
-            return;
-        }
-
         let customNote = "";
         if (pendingStatus === 'ENQUIRY_REJECTED') {
             const reason = prompt("Specify the reason for record rejection:");
