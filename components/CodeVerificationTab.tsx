@@ -84,10 +84,22 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
         try {
             const branchToLink = branchId === undefined || branchId === null ? null : branchId;
 
+            // Validate admission_id is a proper UUID before passing to RPC
+            const admissionId = verifiedData.admission_id;
+            if (!admissionId || typeof admissionId !== 'string') {
+                throw new Error('Invalid admission ID: missing or not a string');
+            }
+
+            // Validate UUID format (basic check for UUID pattern)
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(admissionId)) {
+                throw new Error(`Invalid admission ID format: ${admissionId}`);
+            }
+
             // ARCHITECTURE FIX: Use unified ID-based RPC for all code types.
             // This bypasses the redundant string lookups that cause 'invalid token' errors.
             const { data, error: impError } = await supabase.rpc('admin_import_record_from_share_code', {
-                p_admission_id: verifiedData.admission_id,
+                p_admission_id: admissionId,
                 p_code_type: verifiedData.code_type,
                 p_branch_id: branchToLink,
                 p_code_id: verifiedData.id

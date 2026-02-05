@@ -1140,10 +1140,10 @@ BEGIN
 
     RETURN jsonb_build_object(
         'found', true,
-        'id', v_record.id,
-        'admission_id', v_record.admission_id,
-        'applicant_name', v_record.applicant_name,
-        'grade', v_record.grade,
+        'id', v_record.id::text,
+        'admission_id', v_record.admission_id::text,
+        'applicant_name', COALESCE(v_record.applicant_name, ''),
+        'grade', COALESCE(v_record.grade, ''),
         'code_type', v_record.code_type
     );
 END;
