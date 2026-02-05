@@ -1156,11 +1156,12 @@ CREATE OR REPLACE FUNCTION public.admin_import_record_from_share_code(p_admissio
 AS $function$
 DECLARE
     v_enquiry_id UUID;
+    v_code_exists BOOLEAN;
 BEGIN
     -- 1. Validate the code once more
-    SELECT EXISTS (SELECT 1 FROM public.admission_share_codes WHERE id = p_code_id AND status = 'Active') INTO v_enquiry_id;
+    SELECT EXISTS (SELECT 1 FROM public.admission_share_codes WHERE id = p_code_id AND status = 'Active') INTO v_code_exists;
 
-    IF NOT v_enquiry_id THEN
+    IF NOT v_code_exists THEN
         RETURN jsonb_build_object('success', false, 'message', 'Security token no longer valid.');
     END IF;
 
