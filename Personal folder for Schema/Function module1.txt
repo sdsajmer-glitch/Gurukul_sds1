@@ -6,7 +6,61 @@
 -- Step 1: Ensure pg_trgm extension is available
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- Step 2: Drop functions with changed signatures before recreation
+-- Step 2: Configure RLS on enquiry_messages table
+ALTER TABLE public.enquiry_messages ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies to avoid conflicts
+DROP POLICY IF EXISTS "Enquiry messages: Parent access" ON public.enquiry_messages;
+DROP POLICY IF EXISTS "Enquiry messages: Admin access" ON public.enquiry_messages;
+
+-- Policy: Parents can view messages on their own enquiries
+CREATE POLICY "Enquiry messages: Parent access" ON public.enquiry_messages
+FOR SELECT TO authenticated
+USING (
+    enquiry_id IN (
+        SELECT id FROM public.enquiries 
+        WHERE user_id = auth.uid() 
+        OR LOWER(parent_email) = (SELECT LOWER(email) FROM public.profiles WHERE id = auth.uid())
+        OR LOWER(parent_email) = (SELECT LOWER(auth.jwt() ->> 'email'))
+    )
+);
+
+-- Policy: Admins and school staff can access all messages and insert new ones
+CREATE POLICY "Enquiry messages: Admin access" ON public.enquiry_messages
+FOR ALL TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.profiles p
+        JOIN public.enquiries e ON (e.branch_id = p.branch_id OR p.role = 'Super Admin')
+        WHERE p.id = auth.uid() 
+        AND p.role IN ('School Administration', 'Branch Admin', 'Super Admin')
+        AND e.id = enquiry_messages.enquiry_id
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.profiles p
+        JOIN public.enquiries e ON (e.branch_id = p.branch_id OR p.role = 'Super Admin')
+        WHERE p.id = auth.uid() 
+        AND p.role IN ('School Administration', 'Branch Admin', 'Super Admin')
+        AND e.id = enquiry_messages.enquiry_id
+    )
+);
+
+-- Policy: Parents can INSERT their own messages
+CREATE POLICY "Enquiry messages: Parent insert" ON public.enquiry_messages
+FOR INSERT TO authenticated
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.enquiries e
+        WHERE e.id = enquiry_messages.enquiry_id
+        AND (e.user_id = auth.uid() 
+             OR LOWER(e.parent_email) = (SELECT LOWER(email) FROM public.profiles WHERE id = auth.uid())
+             OR LOWER(e.parent_email) = (SELECT LOWER(auth.jwt() ->> 'email')))
+    )
+);
+
+-- Step 3: Drop functions with changed signatures before recreation
 DROP FUNCTION IF EXISTS public.get_all_enquiries_v2(bigint) CASCADE;
 DROP FUNCTION IF EXISTS public.get_my_children_profiles() CASCADE;
 DROP FUNCTION IF EXISTS public.parent_get_document_requirements(uuid) CASCADE;
