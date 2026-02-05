@@ -413,20 +413,21 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                     </div>
                                 )}
 
-                                <div className={clsx("relative group/avatar transition-all duration-500", !isConsentActive && "blur-sm opacity-50")}>
+                                <div className={clsx("relative group/avatar transition-all duration-700", !isConsentActive && "blur-sm opacity-50")}>
+                                    <div className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-1000 animate-pulse"></div>
                                     <PremiumAvatar
                                         src={photoPreview}
                                         name={formData.applicant_name || '?'}
                                         size="lg"
-                                        className="w-28 h-28 md:w-32 md:h-32 rounded-full ring-4 ring-[#0a0a0c] shadow-2xl relative z-10"
+                                        className="w-28 h-28 md:w-32 md:h-32 rounded-full ring-4 ring-[#0a0a0c] shadow-2xl relative z-10 hover:scale-105 transition-transform duration-500"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => isConsentActive && fileInputRef.current?.click()}
                                         disabled={!isConsentActive}
-                                        className="absolute bottom-0 right-0 p-3 bg-primary text-white rounded-2xl shadow-lg ring-4 ring-[#0a0a0c] hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all z-20 disabled:hidden"
+                                        className="absolute bottom-1 right-1 p-3.5 bg-primary text-white rounded-2xl shadow-[0_0_20px_rgba(var(--primary),0.4)] ring-4 ring-[#0a0a0c] hover:bg-primary/90 hover:scale-110 active:scale-90 transition-all z-20 disabled:hidden group/btn"
                                     >
-                                        <UploadIcon className="w-5 h-5" />
+                                        <UploadIcon className="w-5 h-5 group-hover/btn:rotate-12 transition-transform" />
                                     </button>
                                 </div>
                                 <div className={clsx("text-center space-y-1 transition-opacity duration-500", !isConsentActive && "opacity-30")}>
@@ -556,9 +557,20 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                         </div>
                     </form>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-10 space-y-8 animate-in zoom-in-95 duration-700">
-                        <div className="w-24 h-24 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
-                            <CheckCircleIcon className="w-12 h-12" />
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-10 space-y-10 animate-in zoom-in-95 duration-1000">
+                        <div className="relative">
+                            <div className="absolute -inset-10 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
+                            <div className="relative flex flex-col items-center">
+                                <PremiumAvatar
+                                    src={photoPreview}
+                                    name={formData.applicant_name}
+                                    size="xl"
+                                    className="ring-8 ring-emerald-500/10 shadow-[0_0_60px_rgba(16,185,129,0.2)]"
+                                />
+                                <div className="absolute -bottom-4 bg-emerald-500 text-[#0a0a0c] p-2.5 rounded-2xl shadow-2xl ring-4 ring-[#0a0a0c] animate-bounce">
+                                    <CheckCircleIcon className="w-6 h-6" />
+                                </div>
+                            </div>
                         </div>
                         <div className="space-y-4 max-w-md">
                             <h2 className="text-3xl font-serif font-black text-white tracking-tight">Identity Synchronized</h2>

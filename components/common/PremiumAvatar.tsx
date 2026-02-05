@@ -3,7 +3,7 @@ import { supabase } from '../../services/supabase';
 import { BUCKETS } from '../../services/storage';
 
 interface PremiumAvatarProps {
-    src?: string | null; 
+    src?: string | null;
     name: string;
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
     className?: string;
@@ -12,14 +12,14 @@ interface PremiumAvatarProps {
 const PremiumAvatar: React.FC<PremiumAvatarProps> = ({ src, name, size = 'md', className }) => {
     const [imgStatus, setImgStatus] = useState<'loading' | 'loaded' | 'error'>(src ? 'loading' : 'error');
     const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
-    
+
     useEffect(() => {
         if (!src) {
             setImgStatus('error');
             return;
         }
 
-        if (typeof src === 'string' && src.startsWith('http')) {
+        if (typeof src === 'string' && (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:'))) {
             setResolvedUrl(src);
             setImgStatus('loading');
             return;
@@ -28,7 +28,7 @@ const PremiumAvatar: React.FC<PremiumAvatarProps> = ({ src, name, size = 'md', c
         const { data } = supabase.storage
             .from(BUCKETS.PROFILES)
             .getPublicUrl(src);
-        
+
         setResolvedUrl(`${data.publicUrl}?t=${Date.now()}`);
         setImgStatus('loading');
     }, [src]);
@@ -67,13 +67,13 @@ const PremiumAvatar: React.FC<PremiumAvatarProps> = ({ src, name, size = 'md', c
     return (
         <div className={`relative flex-shrink-0 ${sizeMap[size]} ${className} group/avatar`}>
             <div className={`absolute -inset-1.5 rounded-full blur-xl opacity-30 transition-all duration-1000 bg-primary group-hover/avatar:opacity-60`}></div>
-            
+
             <div className="relative w-full h-full rounded-full overflow-hidden bg-[#13151b] border-2 border-white/10 shadow-2xl ring-1 ring-white/5 flex items-center justify-center transition-all duration-700 group-hover/avatar:scale-[1.03]">
                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.01] to-white/[0.05] pointer-events-none z-20"></div>
 
                 {resolvedUrl && imgStatus !== 'error' ? (
-                    <img 
-                        src={resolvedUrl} 
+                    <img
+                        src={resolvedUrl}
                         alt={name || 'Avatar'}
                         onLoad={() => setImgStatus('loaded')}
                         onError={() => setImgStatus('error')}
@@ -93,7 +93,7 @@ const PremiumAvatar: React.FC<PremiumAvatarProps> = ({ src, name, size = 'md', c
                     </div>
                 )}
             </div>
-            
+
             <style>{`
                 @keyframes shimmer { 100% { transform: translateX(100%); } }
             `}</style>
