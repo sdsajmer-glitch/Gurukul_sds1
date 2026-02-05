@@ -1016,11 +1016,11 @@ BEGIN
     -- Generate a unique 8-char code
     LOOP
         v_code := upper(substring(md5(random()::text) from 1 for 8));
-        SELECT EXISTS(SELECT 1 FROM public.share_codes WHERE code = v_code) INTO v_exists;
+        SELECT EXISTS(SELECT 1 FROM public.admission_share_codes WHERE code = v_code) INTO v_exists;
         EXIT WHEN NOT v_exists;
     END LOOP;
 
-    INSERT INTO public.share_codes (
+    INSERT INTO public.admission_share_codes (
         admission_id, code, purpose, code_type, expires_at, created_by
     ) VALUES (
         p_admission_id, v_code, p_purpose, p_code_type, NOW() + INTERVAL '24 hours', auth.uid()
@@ -1093,45 +1093,21 @@ CREATE OR REPLACE FUNCTION public.admin_verify_share_code(p_code text)
 AS $function$
 DECLARE
     v_record RECORD;
-    v_table text := NULL;
 BEGIN
-    -- Try primary table `share_codes`
+    -- Query admission_share_codes (the actual table)
     SELECT 
-        sc.id,
-        sc.admission_id,
-        sc.code_type,
-        sc.status,
-        sc.expires_at,
-        adm.applicant_name,
-        adm.grade
-    FROM public.share_codes sc
-    LEFT JOIN public.admissions adm ON sc.admission_id = adm.id
-    WHERE sc.code = p_code
+        asc_sc.id,
+        asc_sc.admission_id,
+        asc_sc.code_type,
+        asc_sc.status,
+        asc_sc.expires_at,
+        a.applicant_name,
+        a.grade
+    FROM public.admission_share_codes asc_sc
+    LEFT JOIN public.admissions a ON asc_sc.admission_id = a.id
+    WHERE asc_sc.code = p_code
     LIMIT 1
     INTO v_record;
-
-    IF v_record.id IS NOT NULL THEN
-        v_table := 'share_codes';
-    ELSE
-        -- Fallback to `admission_share_codes` (legacy/alternate table)
-        SELECT 
-            asc_sc.id,
-            asc_sc.admission_id,
-            asc_sc.code_type,
-            asc_sc.status,
-            asc_sc.expires_at,
-            a.applicant_name,
-            a.grade
-        FROM public.admission_share_codes asc_sc
-        LEFT JOIN public.admissions a ON asc_sc.admission_id = a.id
-        WHERE asc_sc.code = p_code
-        LIMIT 1
-        INTO v_record;
-
-        IF v_record.id IS NOT NULL THEN
-            v_table := 'admission_share_codes';
-        END IF;
-    END IF;
 
     IF v_record.id IS NULL THEN
         RETURN jsonb_build_object('found', false, 'error', 'Token not recognized in registry.');
@@ -1147,8 +1123,7 @@ BEGIN
         'admission_id', v_record.admission_id,
         'applicant_name', v_record.applicant_name,
         'grade', v_record.grade,
-        'code_type', v_record.code_type,
-        'origin_table', v_table
+        'code_type', v_record.code_type
     );
 END;
 $function$;
@@ -1160,14 +1135,11 @@ CREATE OR REPLACE FUNCTION public.admin_import_record_from_share_code(p_admissio
 AS $function$
 DECLARE
     v_enquiry_id UUID;
-    v_exists_share boolean;
-    v_exists_admshare boolean;
 BEGIN
-    -- 1. Validate the code once more across both possible tables
-    SELECT EXISTS (SELECT 1 FROM public.share_codes WHERE id = p_code_id AND status = 'Active') INTO v_exists_share;
-    SELECT EXISTS (SELECT 1 FROM public.admission_share_codes WHERE id = p_code_id AND status = 'Active') INTO v_exists_admshare;
+    -- 1. Validate the code once more
+    SELECT EXISTS (SELECT 1 FROM public.admission_share_codes WHERE id = p_code_id AND status = 'Active') INTO v_enquiry_id;
 
-    IF NOT v_exists_share AND NOT v_exists_admshare THEN
+    IF NOT v_enquiry_id THEN
         RETURN jsonb_build_object('success', false, 'message', 'Security token no longer valid.');
     END IF;
 
@@ -1195,13 +1167,8 @@ BEGIN
     -- 3. Update Admission branch context
     UPDATE public.admissions SET branch_id = p_branch_id WHERE id = p_admission_id;
 
-    -- 4. Burn the token (Single use protocol) - mark redeemed in whichever table(s) contain the code
-    IF v_exists_share THEN
-        UPDATE public.share_codes SET status = 'Redeemed', redeemed_at = NOW(), redeemed_by = auth.uid() WHERE id = p_code_id;
-    END IF;
-    IF v_exists_admshare THEN
-        UPDATE public.admission_share_codes SET status = 'Redeemed', redeemed_at = NOW(), redeemed_by = auth.uid() WHERE id = p_code_id;
-    END IF;
+    -- 4. Burn the token (Single use protocol) in admission_share_codes
+    UPDATE public.admission_share_codes SET status = 'Redeemed', redeemed_at = NOW(), redeemed_by = auth.uid() WHERE id = p_code_id;
 
     RETURN jsonb_build_object('success', true, 'message', 'Identity synchronization complete.');
 END;
@@ -4066,13 +4033,13 @@ AS $function$
 BEGIN
     RETURN QUERY
     SELECT 
-        s.id, s.code, s.admission_id, 
-        a.applicant_name, s.status, s.code_type, 
-        s.expires_at, a.profile_photo_url
-    FROM public.share_codes s
-    JOIN public.admissions a ON s.admission_id = a.id
+        asc_sc.id, asc_sc.code, asc_sc.admission_id, 
+        a.applicant_name, asc_sc.status, asc_sc.code_type, 
+        asc_sc.expires_at, a.profile_photo_url
+    FROM public.admission_share_codes asc_sc
+    JOIN public.admissions a ON asc_sc.admission_id = a.id
     WHERE a.parent_email = (SELECT p.email FROM public.profiles p WHERE p.id = auth.uid())
-    ORDER BY s.created_at DESC;
+    ORDER BY asc_sc.created_at DESC;
 END;
 $function$;
 
