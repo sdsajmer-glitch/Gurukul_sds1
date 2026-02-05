@@ -35,6 +35,7 @@ const InfoIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode, label: string, color: string, bg: string }> = {
+    'NEW': { icon: <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />, label: 'New', color: 'text-blue-400', bg: 'bg-blue-500/10' },
     'ENQUIRY_ACTIVE': { icon: <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />, label: 'Active', color: 'text-blue-400', bg: 'bg-blue-500/10' },
     'ENQUIRY_VERIFIED': { icon: <ShieldCheckIcon className="w-4 h-4 text-teal-400" />, label: 'Verified', color: 'text-teal-400', bg: 'bg-teal-500/10' },
     'ENQUIRY_IN_REVIEW': { icon: <ClockIcon className="w-4 h-4 text-purple-400" />, label: 'In Review', color: 'text-purple-400', bg: 'bg-purple-500/10' },
@@ -43,7 +44,7 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode, label: string, colo
     'ENQUIRY_CONVERTED': { icon: <CheckCircleIcon className="w-4 h-4 text-emerald-400" />, label: 'Converted', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
 };
 
-const ORDERED_STATUSES: EnquiryStatus[] = ['ENQUIRY_ACTIVE', 'ENQUIRY_VERIFIED', 'ENQUIRY_IN_REVIEW', 'ENQUIRY_CONTACTED', 'ENQUIRY_REJECTED', 'ENQUIRY_CONVERTED'];
+const ORDERED_STATUSES: EnquiryStatus[] = ['NEW', 'ENQUIRY_ACTIVE', 'ENQUIRY_VERIFIED', 'ENQUIRY_IN_REVIEW', 'ENQUIRY_CONTACTED', 'ENQUIRY_REJECTED', 'ENQUIRY_CONVERTED' as any];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -132,9 +133,8 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
         const idString = String(enquiry.id);
 
         if (!UUID_REGEX.test(idString)) {
+            // Attempt to load anyway, but flag as legacy if it fails
             setIsLegacyNode(true);
-            if (isMounted.current) setLoading(prev => ({ ...prev, timeline: false }));
-            return;
         }
 
         if (!isSilent && isMounted.current) setLoading(prev => ({ ...prev, timeline: true }));
@@ -179,7 +179,11 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
     const handleAIGenerateSummary = async () => {
         setLoading(prev => ({ ...prev, ai: true }));
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            // Fix for Vite: Using a more robust way to skip if key is missing
+            const apiKey = (window as any).VITE_API_KEY || (import.meta as any).env?.VITE_API_KEY;
+            if (!apiKey) throw new Error("AI Uplink Key Missing");
+
+            const ai = new GoogleGenAI({ apiKey });
             const conversationText = timeline
                 .filter(t => t.item_type === 'MESSAGE')
                 .map(t => `${t.is_admin ? 'Admin' : 'Parent'}: ${t.details.message}`)

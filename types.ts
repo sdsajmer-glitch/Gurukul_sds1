@@ -422,7 +422,7 @@ export interface AdminAnalyticsStats {
     pending_applications: number;
 }
 
-export type EnquiryStatus = 'ENQUIRY_ACTIVE' | 'ENQUIRY_VERIFIED' | 'ENQUIRY_IN_REVIEW' | 'ENQUIRY_CONTACTED' | 'ENQUIRY_REJECTED' | 'ENQUIRY_CONVERTED';
+export type EnquiryStatus = 'NEW' | 'ENQUIRY_ACTIVE' | 'ENQUIRY_VERIFIED' | 'ENQUIRY_IN_REVIEW' | 'ENQUIRY_CONTACTED' | 'ENQUIRY_REJECTED' | 'ENQUIRY_CONVERTED';
 
 export interface Enquiry {
     id: string;

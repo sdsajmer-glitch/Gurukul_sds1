@@ -22,21 +22,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const statusColors: Record<string, string> = {
-  'ENQUIRY_ACTIVE': 'bg-blue-500/5 text-blue-400/80 border-blue-500/10',
-  'ENQUIRY_VERIFIED': 'bg-emerald-500/5 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.05)]',
-  'ENQUIRY_IN_REVIEW': 'bg-purple-500/5 text-purple-400/80 border-purple-500/10',
-  'ENQUIRY_CONTACTED': 'bg-amber-500/5 text-amber-400/80 border-amber-500/10',
-  'ENQUIRY_REJECTED': 'bg-rose-500/5 text-rose-400/80 border-rose-500/10',
-  'ENQUIRY_CONVERTED': 'bg-indigo-500/5 text-indigo-400/80 border-indigo-500/10',
+    'NEW': 'bg-blue-500/5 text-blue-400 border-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.05)]',
+    'ENQUIRY_ACTIVE': 'bg-blue-500/5 text-blue-400/80 border-blue-500/10',
+    'ENQUIRY_VERIFIED': 'bg-emerald-500/5 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.05)]',
+    'ENQUIRY_IN_REVIEW': 'bg-purple-500/5 text-purple-400/80 border-purple-500/10',
+    'ENQUIRY_CONTACTED': 'bg-amber-500/5 text-amber-400/80 border-purple-500/10',
+    'ENQUIRY_REJECTED': 'bg-rose-500/5 text-rose-400/80 border-rose-500/10',
+    'ENQUIRY_CONVERTED': 'bg-indigo-500/5 text-indigo-400/80 border-indigo-500/10',
 };
 
 const statusLabels: Record<string, string> = {
-  'ENQUIRY_ACTIVE': 'Active',
-  'ENQUIRY_VERIFIED': 'Verified',
-  'ENQUIRY_IN_REVIEW': 'In Review',
-  'ENQUIRY_CONTACTED': 'Contacted',
-  'ENQUIRY_REJECTED': 'Rejected',
-  'ENQUIRY_CONVERTED': 'Converted',
+    'NEW': 'New',
+    'ENQUIRY_ACTIVE': 'Active',
+    'ENQUIRY_VERIFIED': 'Verified',
+    'ENQUIRY_IN_REVIEW': 'In Review',
+    'ENQUIRY_CONTACTED': 'Contacted',
+    'ENQUIRY_REJECTED': 'Rejected',
+    'ENQUIRY_CONVERTED': 'Converted',
 };
 
 interface EnquiryTabProps {
@@ -59,12 +61,13 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
         try {
             // FIX: Explicitly pass BigInt castable branchId to resolve RPC ambiguity
             const cleanBranchId = branchId === null ? null : Number(branchId);
-            const { data, error: rpcError } = await supabase.rpc('get_all_enquiries_v2', { 
-                p_branch_id: cleanBranchId 
+            const { data, error: rpcError } = await supabase.rpc('get_all_enquiries_v2', {
+                p_branch_id: cleanBranchId
             });
-            
+
             if (rpcError) throw rpcError;
-            const validData = (data || []).filter((e: Enquiry) => e.id && UUID_REGEX.test(String(e.id)));
+            // Relaxed filtering: Any ID that exists is considered, legacy or otherwise.
+            const validData = (data || []).filter((e: Enquiry) => e.id);
             setEnquiries(validData || []);
         } catch (err: any) {
             setError(formatError(err));
@@ -87,10 +90,10 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
             }
 
             const searchLower = searchTerm.toLowerCase();
-            const matchesSearch = !searchTerm || 
+            const matchesSearch = !searchTerm ||
                 enq.applicant_name.toLowerCase().includes(searchLower) ||
                 enq.parent_name.toLowerCase().includes(searchLower);
-                
+
             return matchesSearch;
         });
     }, [enquiries, searchTerm, filterStatus]);
@@ -103,7 +106,7 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
 
     return (
         <div className="space-y-10 md:space-y-14 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-24 md:pb-12 max-w-[1600px] mx-auto px-4 md:px-0">
-            
+
             {/* Header / Hero Area */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
                 <div className="max-w-2xl">
@@ -119,14 +122,14 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3 w-full md:w-auto">
-                    <button 
+                    <button
                         onClick={() => fetchEnquiries()}
                         className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5 text-white/30 hover:text-white hover:border-white/10 transition-all active:scale-95"
                     >
                         <RefreshIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                     </button>
                     {onNavigate && (
-                        <button 
+                        <button
                             onClick={() => onNavigate('Code Verification')}
                             className="flex-grow md:flex-none h-12 md:h-14 px-8 bg-primary text-white font-bold text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-xl shadow-primary/10 transition-all hover:scale-[1.02] active:scale-95 border border-white/10 ring-4 ring-primary/5"
                         >
@@ -139,9 +142,9 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
             {/* KPI Cards: Status Indicators */}
             <div className="overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
                 <div className="flex md:grid md:grid-cols-3 gap-6 min-w-max md:min-w-full">
-                    <MetricCard title="Total Ledger" value={stats.total} icon={<MailIcon className="w-5 h-5"/>} color="text-blue-400" />
-                    <MetricCard title="Verified Stream" value={stats.verified} icon={<ShieldCheckIcon className="w-5 h-5"/>} color="text-emerald-400" />
-                    <MetricCard title="Promoted" value={stats.converted} icon={<CheckCircleIcon className="w-5 h-5"/>} color="text-indigo-400" />
+                    <MetricCard title="Total Ledger" value={stats.total} icon={<MailIcon className="w-5 h-5" />} color="text-blue-400" />
+                    <MetricCard title="Verified Stream" value={stats.verified} icon={<ShieldCheckIcon className="w-5 h-5" />} color="text-emerald-400" />
+                    <MetricCard title="Promoted" value={stats.converted} icon={<CheckCircleIcon className="w-5 h-5" />} color="text-indigo-400" />
                 </div>
             </div>
 
@@ -170,14 +173,14 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                         className="w-full pl-12 pr-6 py-3.5 bg-black/20 border border-white/5 rounded-2xl text-sm font-medium text-white placeholder:text-white/10 focus:bg-black/40 outline-none transition-all focus:ring-4 focus:ring-primary/5"
                     />
                 </div>
-                
+
                 <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar w-full lg:w-auto shadow-inner">
                     {(['All', ...Object.keys(statusLabels)] as (keyof typeof statusLabels | 'All')[]).map(f => {
                         const label = f === 'All' ? 'Active Desk' : statusLabels[f as string];
                         const key = f === 'All' ? '' : f;
                         const isActive = filterStatus === key;
                         return (
-                            <button 
+                            <button
                                 key={f}
                                 onClick={() => setFilterStatus(key)}
                                 className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.25em] transition-all duration-300 whitespace-nowrap ${isActive ? 'bg-white/5 text-primary shadow-sm' : 'text-white/30 hover:text-white/50'}`}
@@ -214,7 +217,7 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                                 </tr>
                             ) : (
                                 filteredEnquiries.map(enq => (
-                                    <tr 
+                                    <tr
                                         key={enq.id}
                                         onClick={() => setViewingEnquiry(enq)}
                                         className="group hover:bg-white/[0.015] transition-all duration-300 cursor-pointer"
@@ -259,7 +262,7 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
             {/* Mobile Ledger: Identity Cards */}
             <div className="md:hidden space-y-4">
                 {filteredEnquiries.map(enq => (
-                    <div 
+                    <div
                         key={enq.id}
                         onClick={() => setViewingEnquiry(enq)}
                         className="bg-card p-6 rounded-[2rem] border border-white/5 active:scale-[0.98] transition-all shadow-xl"
@@ -294,20 +297,20 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
             {/* Mobile Floating Action */}
             {onNavigate && (
                 <div className="md:hidden fixed bottom-6 left-6 right-6 z-[100] animate-in slide-in-from-bottom-12 duration-700">
-                    <button 
+                    <button
                         onClick={() => onNavigate('Code Verification')}
                         className="w-full h-14 bg-primary text-white font-black text-[12px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/20 transition-all active:scale-95 border border-white/10 ring-4 ring-primary/5 flex items-center justify-center gap-3"
                     >
-                        <KeyIcon className="w-5 h-5"/> Verify Node
+                        <KeyIcon className="w-5 h-5" /> Verify Node
                     </button>
                 </div>
             )}
 
             {viewingEnquiry && (
-                <EnquiryDetailsModal 
-                    enquiry={viewingEnquiry} 
+                <EnquiryDetailsModal
+                    enquiry={viewingEnquiry}
                     currentBranchId={branchId}
-                    onClose={() => setViewingEnquiry(null)} 
+                    onClose={() => setViewingEnquiry(null)}
                     onUpdate={() => {
                         fetchEnquiries(true);
                     }}
