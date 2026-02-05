@@ -76,17 +76,12 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
     const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' }>({ key: 'updated_at', direction: 'descending' });
 
     const fetchEnquiries = useCallback(async (isSilent = false) => {
-        if (branchId === undefined) {
-            setLoading(false);
-            return;
-        }
-
         if (!isSilent) setLoading(true);
         setError(null);
         try {
             // FIX: Explicitly call get_all_enquiries_v2 to bypass schema cache ambiguity
             const { data, error: rpcError } = await supabase.rpc('get_all_enquiries_v2', {
-                p_branch_id: branchId
+                p_branch_id: branchId ?? null
             });
 
             if (rpcError) throw rpcError;
@@ -231,8 +226,8 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                                 key={f}
                                 onClick={() => setFilterStatus(key)}
                                 className={`px-10 py-3 rounded-[1.2rem] text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-500 whitespace-nowrap ${(filterStatus === key)
-                                        ? 'bg-[#1a1d24] text-primary shadow-2xl ring-1 ring-white/10 scale-[1.05] z-10'
-                                        : 'text-white/20 hover:text-white/40'
+                                    ? 'bg-[#1a1d24] text-primary shadow-2xl ring-1 ring-white/10 scale-[1.05] z-10'
+                                    : 'text-white/20 hover:text-white/40'
                                     }`}
                             >
                                 {label}

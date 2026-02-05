@@ -310,11 +310,17 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                         </div>
                         <div className="min-w-0">
                             <h2 className="text-lg font-bold text-white tracking-tight uppercase truncate max-w-[200px] md:max-w-md">{enquiry.applicant_name}</h2>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">
-                                    NODE_{String(enquiry.id).substring(0, 8).toUpperCase()}
+                            <div className="flex items-center gap-3 text-[9px] font-medium text-white/40">
+                                <span className="font-mono tracking-widest text-white/30">
+                                    ID_{String(enquiry.id).substring(0, 8).toUpperCase()}
                                 </span>
-                                <span className="hidden md:inline-block text-[9px] font-bold text-emerald-500/80 uppercase tracking-wider">• Secured Channel</span>
+                                <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                <span>
+                                    {new Date(enquiry.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </span>
+                                <span className="hidden md:inline-flex items-center gap-1 text-emerald-500/80 font-bold uppercase tracking-wider ml-1">
+                                    <ShieldCheckIcon className="w-3 h-3" /> Secure Node
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -537,6 +543,50 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                                         <span className="text-2xl font-black text-white/80">Grade {enquiry.grade}</span>
                                     </div>
                                     <p className="text-[10px] font-medium text-white/30 uppercase tracking-widest pl-7">Target Class</p>
+                                </div>
+                            </section>
+
+                            <div className="w-full h-px bg-white/[0.04]"></div>
+
+                            {/* Section: Official Notes & Remarks */}
+                            {enquiry.notes && (
+                                <section className="space-y-4">
+                                    <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.2em]">Official Remarks</h3>
+                                    <div className="p-4 bg-amber-500/[0.03] rounded-xl border border-amber-500/10 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                            <SaveIcon className="w-10 h-10 text-amber-500" />
+                                        </div>
+                                        <p className="text-[11px] leading-relaxed text-amber-200/90 font-mono relative z-10 whitespace-pre-wrap">
+                                            {enquiry.notes}
+                                        </p>
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Section: Institution Context */}
+                            <section className="space-y-4">
+                                <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.2em]">Network Node</h3>
+                                <div className="p-4 bg-white/[0.02] rounded-xl border border-white/5 flex items-center justify-between group hover:bg-white/[0.04] transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400">
+                                            <UsersIcon className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-white/90">
+                                                {enquiry.branch_id ? `Branch Unit #${enquiry.branch_id}` : 'Head Office (Global)'}
+                                            </p>
+                                            <p className="text-[9px] font-medium text-white/30 uppercase tracking-widest">Assigned Jurisdiction</p>
+                                        </div>
+                                    </div>
+                                    {enquiry.branch_id ? (
+                                        <div className="px-2 py-1 rounded bg-indigo-500/20 text-[9px] font-bold text-indigo-300 border border-indigo-500/30">
+                                            UNIT-{enquiry.branch_id}
+                                        </div>
+                                    ) : (
+                                        <div className="px-2 py-1 rounded bg-white/10 text-[9px] font-bold text-white/40 border border-white/10">
+                                            HQ
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 
