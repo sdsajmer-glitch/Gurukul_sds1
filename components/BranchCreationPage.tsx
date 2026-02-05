@@ -726,129 +726,302 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 animate-in fade-in duration-500 pb-20">
-            {/* HERO SECTION */}
+            {/* ENHANCED HERO SECTION - ENTERPRISE COMMAND CENTER */}
             {!hideHero && (
-                <div className="relative rounded-[2.5rem] bg-[#0a0a0b] border border-white/10 p-10 md:p-14 mb-14 overflow-hidden shadow-2xl group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-                    <div className="absolute -right-20 -top-20 opacity-[0.03] pointer-events-none group-hover:scale-105 transition-transform duration-1000">
-                        <SchoolIcon className="w-96 h-96 text-white" />
-                    </div>
-
-                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-12">
-                        <div className="flex-grow">
-                            <h1 className="text-5xl md:text-6xl font-sans font-black text-white tracking-tight uppercase leading-none mb-4 italic">
-                                Network <span className="text-white/20 not-italic">Map</span>
+                <div className="space-y-8 mb-14">
+                    {/* Page Header with Clear Hierarchy */}
+                    <div className="relative">
+                        <div className="flex flex-col gap-3">
+                            <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-none">
+                                Institutional Network
                             </h1>
-                            <p className="text-sm font-medium text-white/40 max-w-2xl leading-relaxed border-l-2 border-primary/20 pl-6">
-                                Establish and maintain the distributed infrastructure of your institution. Secure, single-entry protocol for all satellite campuses.
+                            <p className="text-sm md:text-base text-white/30 font-medium max-w-3xl leading-relaxed">
+                                Centralized oversight and management of distributed institutional nodes. Monitor network health, manage branch governance, and expand your infrastructure with enterprise-grade security.
                             </p>
                         </div>
+                    </div>
 
-                        <button
-                            onClick={() => handleOpenCreate()}
-                            className="bg-primary hover:bg-primary/90 text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:shadow-primary/5 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-3"
-                        >
-                            <PlusIcon className="w-5 h-5" /> Expand Network
-                        </button>
+                    {/* Network Overview - Command Center Metrics */}
+                    <div className="relative bg-gradient-to-br from-[#0a0a0b] to-[#0f0f12] border border-white/10 rounded-3xl p-8 md:p-10 overflow-hidden shadow-2xl">
+                        {/* Subtle Background Pattern */}
+                        <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+                        </div>
+
+                        <div className="relative z-10 space-y-8">
+                            {/* Header Row */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                                <div>
+                                    <h2 className="text-lg font-black text-white uppercase tracking-wider mb-1.5">Network Overview</h2>
+                                    <p className="text-xs text-white/20 font-medium uppercase tracking-widest">Real-time system status</p>
+                                </div>
+
+                                {/* Primary Action - Strategic Placement */}
+                                <button
+                                    onClick={() => handleOpenCreate()}
+                                    className="group relative bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 min-h-[56px] focus:outline-none focus:ring-4 focus:ring-primary/50"
+                                    aria-label="Expand institutional network by adding a new node"
+                                >
+                                    <PlusIcon className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" />
+                                    <span>Expand Network</span>
+                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-primary/50 to-primary rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-300" />
+                                </button>
+                            </div>
+
+                            {/* Metrics Pills - Scannable & Compact */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {/* Active Nodes Metric */}
+                                <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 rounded-2xl p-6 transition-all duration-300">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="p-2.5 bg-emerald-500/10 rounded-xl">
+                                            <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-3xl md:text-4xl font-black text-white tabular-nums">{branches.filter(b => !b.is_main_branch).length + (branches.some(b => b.is_main_branch) ? 1 : 0)}</div>
+                                            <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Active Nodes</div>
+                                        </div>
+                                    </div>
+                                    <div className="h-1 bg-emerald-500/10 rounded-full overflow-hidden">
+                                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }} />
+                                    </div>
+                                </div>
+
+                                {/* Head Office Metric */}
+                                <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 rounded-2xl p-6 transition-all duration-300">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="p-2.5 bg-primary/10 rounded-xl">
+                                            <SchoolIcon className="w-5 h-5 text-primary" />
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-3xl md:text-4xl font-black text-white tabular-nums">{branches.filter(b => b.is_main_branch).length}</div>
+                                            <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Head Office</div>
+                                        </div>
+                                    </div>
+                                    <div className="h-1 bg-primary/10 rounded-full overflow-hidden">
+                                        <div className="h-full bg-primary rounded-full" style={{ width: branches.some(b => b.is_main_branch) ? '100%' : '0%' }} />
+                                    </div>
+                                </div>
+
+                                {/* Branches Metric */}
+                                <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 rounded-2xl p-6 transition-all duration-300">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="p-2.5 bg-blue-500/10 rounded-xl">
+                                            <GlobeIcon className="w-5 h-5 text-blue-500" />
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-3xl md:text-4xl font-black text-white tabular-nums">{branches.filter(b => !b.is_main_branch).length}</div>
+                                            <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Branches</div>
+                                        </div>
+                                    </div>
+                                    <div className="h-1 bg-blue-500/10 rounded-full overflow-hidden">
+                                        <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${branches.length > 0 ? (branches.filter(b => !b.is_main_branch).length / branches.length) * 100 : 0}%` }} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Section Header for Node Registry */}
+                    <div className="flex items-center justify-between px-2">
+                        <div>
+                            <h2 className="text-xl font-black text-white uppercase tracking-wider">Node Registry</h2>
+                            <p className="text-xs text-white/20 font-medium mt-1">Infrastructure topology and branch governance</p>
+                        </div>
+                        {onNext && branches.length > 0 && (
+                            <button
+                                onClick={handleFinish}
+                                className="flex items-center gap-3 text-emerald-500 hover:text-emerald-400 font-black text-[10px] uppercase tracking-widest transition-all hover:gap-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-lg px-3 py-2 min-h-[44px]"
+                            >
+                                <span>Complete Setup</span>
+                                <CheckoutIcon className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
 
-            {/* ACTION BAR */}
-            <div className="flex justify-between items-center mb-12 px-2">
-                {onBack && (
-                    <button onClick={onBack} className="flex items-center gap-3 text-white/20 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest">
-                        <ChevronLeftIcon className="w-4 h-4" /> Return to Command
+            {/* Back Navigation - Subtle & Out of Primary Flow */}
+            {!hideHero && onBack && (
+                <div className="mb-8 px-2">
+                    <button
+                        onClick={onBack}
+                        className="flex items-center gap-2 text-white/20 hover:text-white/60 transition-all text-[10px] font-bold uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-white/20 rounded-lg px-3 py-2 min-h-[44px]"
+                    >
+                        <ChevronLeftIcon className="w-3.5 h-3.5" />
+                        <span>Back</span>
                     </button>
-                )}
+                </div>
+            )}
 
-                {onNext && branches.length > 0 && (
-                    <button onClick={handleFinish} className="flex items-center gap-4 text-emerald-500 hover:text-emerald-400 font-black text-[10px] uppercase tracking-widest">
-                        Finalize Architecture <CheckoutIcon className="w-4 h-4" />
-                    </button>
-                )}
-            </div>
 
             {loading ? (
-                <div className="flex justify-center p-40">
+                <div className="flex flex-col items-center justify-center p-32 gap-6">
                     <Spinner size="lg" className="text-primary" />
+                    <p className="text-xs text-white/20 font-medium uppercase tracking-widest">Loading network topology...</p>
                 </div>
             ) : branches.length === 0 ? (
-                <div onClick={() => handleOpenCreate()} className="border-2 border-dashed border-white/5 rounded-[3rem] p-32 flex flex-col items-center justify-center text-center gap-8 group cursor-pointer hover:bg-white/[0.01] transition-all">
-                    <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center text-white/10 group-hover:text-primary transition-all duration-500">
-                        <SchoolIcon className="w-10 h-10" />
+                <div
+                    onClick={() => handleOpenCreate()}
+                    className="group relative border-2 border-dashed border-white/10 hover:border-primary/30 rounded-3xl p-16 md:p-24 flex flex-col items-center justify-center text-center gap-8 cursor-pointer transition-all duration-300 hover:bg-white/[0.01] focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                    tabIndex={0}
+                    role="button"
+                    aria-label="Initialize your first institutional node"
+                    onKeyDown={(e) => e.key === 'Enter' && handleOpenCreate()}
+                >
+                    {/* Animated Icon */}
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 group-hover:border-primary/30 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                            <PlusIcon className="w-14 h-14 text-white/20 group-hover:text-primary transition-colors duration-300" />
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <h3 className="text-2xl font-black text-white uppercase tracking-tight">Empty Framework</h3>
-                        <p className="text-sm text-white/20 font-medium">Initialize the primary head office node to begin.</p>
+
+                    {/* Instructional Microcopy */}
+                    <div className="space-y-4 max-w-md">
+                        <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">Initialize Network</h3>
+                        <p className="text-sm md:text-base text-white/30 font-medium leading-relaxed">
+                            Begin by establishing your head office node. This serves as the central authority for your institutional network.
+                        </p>
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-xs font-black uppercase tracking-wider">
+                            <SparklesIcon className="w-4 h-4" />
+                            <span>Ready to Deploy</span>
+                        </div>
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Node Cards - Enterprise Infrastructure Design */}
                     {branches.map(branch => (
-                        <div key={branch.id} className="bg-[#0a0a0b] border border-white/5 rounded-[2rem] p-8 space-y-8 group hover:border-white/10 transition-all">
-                            <div className="flex justify-between items-start">
-                                <div className={`p-4 rounded-2xl ${branch.is_main_branch ? 'bg-primary/10 text-primary' : 'bg-white/5 text-white/40'}`}>
-                                    <SchoolIcon className="w-6 h-6" />
-                                </div>
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => handleOpenEdit(branch)} className="p-2 text-white/20 hover:text-white"><EditIcon className="w-4 h-4" /></button>
-                                    {!branch.is_main_branch && (
-                                        <button onClick={() => setDeletingBranch(branch)} className="p-2 text-white/20 hover:text-red-500"><XIcon className="w-4 h-4" /></button>
-                                    )}
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-white tracking-tight uppercase leading-none mb-2">{branch.name}</h3>
-                                <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest flex items-center gap-2">
-                                    <LocationIcon className="w-3 h-3" /> {branch.city}, {branch.state}
-                                </p>
-                            </div>
-                            <div className="pt-6 border-t border-white/5 flex justify-between items-center">
-                                <span className={`text-[9px] font-black uppercase tracking-widest ${branch.is_main_branch ? 'text-primary' : 'text-white/20'}`}>
-                                    {branch.is_main_branch ? 'Head Office' : 'Satellite Node'}
-                                </span>
-                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-black text-white/40 uppercase">
-                                    {branch.admin_name?.[0] || '?'}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-50 flex items-center justify-center p-0 md:p-10 animate-in fade-in duration-500" onClick={handleCloseModal}>
-                    <div
-                        className="bg-[#0a0a0b] w-full max-w-4xl h-full md:h-auto md:max-h-[95vh] rounded-none md:rounded-[3rem] border-0 md:border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        {/* Modal Header */}
-                        <div className="px-10 py-10 border-b border-white/5 flex justify-between items-center bg-white/[0.02] relative overflow-hidden shrink-0">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-                            <div>
-                                <h3 className="text-3xl font-black text-white uppercase tracking-tight italic flex items-center gap-4">
-                                    <div className="p-2 bg-primary/20 rounded-lg">
-                                        <SchoolIcon className="w-6 h-6 text-primary" />
+                        <article
+                            key={branch.id}
+                            className="group relative bg-gradient-to-br from-[#0a0a0b] to-[#0f0f12] border border-white/10 hover:border-white/20 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1 flex flex-col"
+                        >
+                            {/* Card Header */}
+                            <div className="p-6 pb-4 border-b border-white/5">
+                                <div className="flex items-start justify-between mb-4">
+                                    {/* Node Type Icon */}
+                                    <div className={`p-3 rounded-xl transition-all duration-300 ${branch.is_main_branch ? 'bg-primary/10 text-primary ring-2 ring-primary/20' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                                        <SchoolIcon className="w-6 h-6" />
                                     </div>
-                                    Initialize <span className="text-white/20 not-italic tracking-normal">Node</span>
-                                </h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mt-3 ml-12">
-                                    Configure hardware identity & admin access
-                                </p>
+
+                                    {/* Action Buttons - Accessible & Clear */}
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleOpenEdit(branch)}
+                                            className="p-2.5 text-white/20 hover:text-white hover:bg-white/5 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                            title="Edit node configuration"
+                                            aria-label={`Edit ${branch.name} configuration`}
+                                        >
+                                            <EditIcon className="w-4 h-4" />
+                                        </button>
+                                        {!branch.is_main_branch && (
+                                            <button
+                                                onClick={() => setDeletingBranch(branch)}
+                                                className="p-2.5 text-white/20 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-red-500/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                                title="Remove node from network"
+                                                aria-label={`Remove ${branch.name} from network`}
+                                            >
+                                                <XIcon className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Node Information */}
+                                <div>
+                                    <h3 className="text-lg font-black text-white tracking-tight leading-tight mb-2 line-clamp-2">{branch.name}</h3>
+                                    <p className="text-xs text-white/30 font-medium uppercase tracking-wide flex items-center gap-2">
+                                        <LocationIcon className="w-3.5 h-3.5 flex-shrink-0" />
+                                        <span className="truncate">{branch.city}, {branch.state}</span>
+                                    </p>
+                                </div>
                             </div>
-                            <button onClick={handleCloseModal} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white/40 hover:text-white transition-all transform hover:rotate-90 duration-500">
-                                <XIcon className="w-6 h-6" />
-                            </button>
+
+                            {/* Card Footer - Status & Metadata */}
+                            <div className="p-6 pt-4 mt-auto">
+                                <div className="flex items-center justify-between">
+                                    {/* Status Badge - Clear Visual Indicator */}
+                                    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${branch.is_main_branch
+                                        ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+                                        : 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20'
+                                        }`}>
+                                        <div className={`w-1.5 h-1.5 rounded-full ${branch.is_main_branch ? 'bg-primary' : 'bg-blue-400'} animate-pulse`} />
+                                        <span>{branch.is_main_branch ? 'Head Office' : 'Branch Node'}</span>
+                                    </div>
+
+                                    {/* Administrator Avatar */}
+                                    <div
+                                        className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-white/60 uppercase"
+                                        title={branch.admin_name || 'Administrator'}
+                                    >
+                                        {branch.admin_name?.[0] || '?'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Hover Glow Effect */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-primary/0 via-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                        </article>
+                    ))}
+
+                    {/* Add New Node Card - Expansion Affordance */}
+                    <button
+                        onClick={() => handleOpenCreate()}
+                        className="group relative border-2 border-dashed border-white/10 hover:border-primary/40 rounded-2xl p-12 flex flex-col items-center justify-center text-center gap-6 cursor-pointer transition-all duration-300 hover:bg-white/[0.01] focus:outline-none focus:ring-4 focus:ring-primary/20 min-h-[280px]"
+                        aria-label="Add new branch to network"
+                    >
+                        {/* Icon */}
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-primary/10 rounded-2xl blur-xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="relative w-16 h-16 rounded-2xl bg-white/5 group-hover:bg-primary/10 border border-white/10 group-hover:border-primary/30 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                                <PlusIcon className="w-8 h-8 text-white/20 group-hover:text-primary transition-colors duration-300 group-hover:rotate-90" />
+                            </div>
                         </div>
 
-                        {/* Modal Body */}
-                        <div className="flex-grow p-10 overflow-y-auto custom-scrollbar bg-black/40">
-                            {renderForm()}
+                        {/* Text */}
+                        <div className="space-y-2">
+                            <h3 className="text-base font-black text-white/60 group-hover:text-white uppercase tracking-tight transition-colors">Add Branch</h3>
+                            <p className="text-xs text-white/20 group-hover:text-white/40 font-medium transition-colors">Expand institutional reach</p>
+                        </div>
+                    </button>
+                </div>
+            )
+            }
+
+            {
+                isModalOpen && (
+                    <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-50 flex items-center justify-center p-0 md:p-10 animate-in fade-in duration-500" onClick={handleCloseModal}>
+                        <div
+                            className="bg-[#0a0a0b] w-full max-w-4xl h-full md:h-auto md:max-h-[95vh] rounded-none md:rounded-[3rem] border-0 md:border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Modal Header */}
+                            <div className="px-10 py-10 border-b border-white/5 flex justify-between items-center bg-white/[0.02] relative overflow-hidden shrink-0">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                                <div>
+                                    <h3 className="text-3xl font-black text-white uppercase tracking-tight italic flex items-center gap-4">
+                                        <div className="p-2 bg-primary/20 rounded-lg">
+                                            <SchoolIcon className="w-6 h-6 text-primary" />
+                                        </div>
+                                        Initialize <span className="text-white/20 not-italic tracking-normal">Node</span>
+                                    </h3>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mt-3 ml-12">
+                                        Configure hardware identity & admin access
+                                    </p>
+                                </div>
+                                <button onClick={handleCloseModal} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white/40 hover:text-white transition-all transform hover:rotate-90 duration-500">
+                                    <XIcon className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="flex-grow p-10 overflow-y-auto custom-scrollbar bg-black/40">
+                                {renderForm()}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <ConfirmationModal
                 isOpen={!!deletingBranch}
@@ -859,6 +1032,6 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 confirmText="Terminate Node"
                 loading={isDeleting}
             />
-        </div>
+        </div >
     );
 };
