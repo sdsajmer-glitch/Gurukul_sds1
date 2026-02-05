@@ -309,16 +309,46 @@ END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_all_enquiries_v2(p_branch_id bigint DEFAULT NULL::bigint)
- RETURNS SETOF enquiries
- LANGUAGE plpgsql
+ RETURNS TABLE(
+    id uuid, 
+    created_at timestamp, 
+    updated_at timestamp, 
+    admission_id uuid, 
+    user_id uuid, 
+    applicant_name text, 
+    parent_name text, 
+    parent_email text, 
+    parent_phone text, 
+    grade text, 
+    branch_id bigint, 
+    status text, 
+    notes text, 
+    received_at timestamp, 
+    profile_photo_url text
+ )
+ LANGUAGE sql
  SECURITY DEFINER
 AS $function$
-BEGIN
-    RETURN QUERY
-    SELECT * FROM public.enquiries
-    WHERE (p_branch_id IS NULL OR branch_id = p_branch_id)
-    ORDER BY updated_at DESC;
-END;
+    SELECT 
+        e.id,
+        e.created_at,
+        e.updated_at,
+        e.admission_id,
+        e.user_id,
+        e.applicant_name,
+        e.parent_name,
+        e.parent_email,
+        e.parent_phone,
+        e.grade,
+        e.branch_id,
+        e.status,
+        e.notes,
+        e.received_at,
+        COALESCE(a.profile_photo_url, e.profile_photo_url) as profile_photo_url
+    FROM public.enquiries e
+    LEFT JOIN public.admissions a ON e.admission_id = a.id
+    WHERE (p_branch_id IS NULL OR e.branch_id = p_branch_id)
+    ORDER BY e.updated_at DESC;
 $function$;
 
 -- Ensure old overloads are removed before redefining the function
