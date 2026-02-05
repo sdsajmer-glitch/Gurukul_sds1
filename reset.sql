@@ -39,12 +39,15 @@ DROP FUNCTION IF EXISTS public.admin_quick_add_student(text, text, text, text) C
 DROP FUNCTION IF EXISTS public.admin_quick_add_student(text, text, text, text, text, text, text) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_reconcile_student_account(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_sync_student_billing CASCADE;
-DROP FUNCTION IF EXISTS public.admin_update_enquiry_status CASCADE;
-DROP FUNCTION IF EXISTS public.admin_verify_enquiry_code CASCADE;
+DROP FUNCTION IF EXISTS public.admin_update_enquiry_status(uuid, text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.admin_update_enquiry_status(text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.admin_update_enquiry_status(text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.admin_verify_enquiry_code(text, bigint) CASCADE;
+DROP FUNCTION IF EXISTS public.admin_verify_enquiry_code(text) CASCADE;
 DROP FUNCTION IF EXISTS public.complete_branch_step CASCADE;
 DROP FUNCTION IF EXISTS public.convert_enquiry_to_admission CASCADE;
 DROP FUNCTION IF EXISTS public.generate_student_ledger_for_student CASCADE;
-DROP FUNCTION IF EXISTS public.get_all_classes_for_admin CASCADE;
+DROP FUNCTION IF EXISTS public.get_all_classes_for_admin() CASCADE;
 DROP FUNCTION IF EXISTS public.get_all_teachers_for_admin CASCADE;
 DROP FUNCTION IF EXISTS public.get_all_users_for_admin CASCADE;
 DROP FUNCTION IF EXISTS public.get_class_roster CASCADE;
