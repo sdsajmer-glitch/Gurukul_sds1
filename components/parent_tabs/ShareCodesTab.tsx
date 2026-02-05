@@ -212,6 +212,13 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
+    useEffect(() => {
+        const selected = myApplications.find(a => String(a.id) === selectedAdmission);
+        if (selected?.source_type) {
+            setCodeType(selected.source_type as ShareCodeType);
+        }
+    }, [selectedAdmission, myApplications]);
+
     const handleGenerateCode = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedAdmission) return;
@@ -385,21 +392,24 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                 <div className="grid grid-cols-2 gap-4">
                                     <button
                                         type="button"
-                                        onClick={() => setCodeType('Enquiry')}
-                                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group/btn ${codeType === 'Enquiry' ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20' : 'bg-white/[0.02] border-white/5 opacity-30 hover:opacity-100'}`}
+                                        disabled
+                                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group/btn ${codeType === 'Enquiry' ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20 cursor-default' : 'bg-white/[0.02] border-white/5 opacity-10 cursor-not-allowed'}`}
                                     >
-                                        <InfoIcon className={`w-5 h-5 transition-all ${codeType === 'Enquiry' ? 'text-primary' : 'text-white/20 group-hover/btn:text-white/40'}`} />
+                                        <InfoIcon className={`w-5 h-5 transition-all ${codeType === 'Enquiry' ? 'text-primary' : 'text-white/20'}`} />
                                         <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${codeType === 'Enquiry' ? 'text-primary' : 'text-white/20'}`}>Enquiry</span>
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setCodeType('Admission')}
-                                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group/btn ${codeType === 'Admission' ? 'bg-indigo-500/5 border-indigo-500/30 ring-1 ring-indigo-500/20' : 'bg-white/[0.02] border-white/5 opacity-30 hover:opacity-100'}`}
+                                        disabled
+                                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group/btn ${codeType === 'Admission' ? 'bg-indigo-500/5 border-indigo-500/30 ring-1 ring-indigo-500/20 cursor-default' : 'bg-white/[0.02] border-white/5 opacity-10 cursor-not-allowed'}`}
                                     >
-                                        <ShieldCheckIcon className={`w-5 h-5 transition-all ${codeType === 'Admission' ? 'text-indigo-400' : 'text-white/20 group-hover/btn:text-white/40'}`} />
+                                        <ShieldCheckIcon className={`w-5 h-5 transition-all ${codeType === 'Admission' ? 'text-indigo-400' : 'text-white/20'}`} />
                                         <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${codeType === 'Admission' ? 'text-indigo-400' : 'text-white/20'}`}>Admission</span>
                                     </button>
                                 </div>
+                                <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest text-center">
+                                    Protocol layer auto-determined by identity node status
+                                </p>
                             </div>
 
                             {/* 3. Action */}

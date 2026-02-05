@@ -278,20 +278,29 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                 medical_info: formData.medical_info,
                 emergency_contact: formData.emergency_contact,
                 profile_photo_url: finalPhotoPath,
-                parent_id: currentUserId,
                 parent_name: parentProfile?.name || '',
                 parent_email: parentProfile?.email || '',
                 parent_phone: parentProfile?.phone || '',
                 branch_id: (parentProfile as any)?.branch_id || null,
-                status: 'Pending Review'
             };
 
             if (isEdit) {
-                const { error } = await supabase.from('admissions').update(payload).eq('id', child.id);
-                if (error) throw error;
+                if (child.source_type === 'Enquiry') {
+                    payload.user_id = currentUserId;
+                    const { error } = await supabase.from('enquiries').update(payload).eq('id', child.id);
+                    if (error) throw error;
+                } else {
+                    payload.parent_id = currentUserId;
+                    payload.status = 'Pending Review';
+                    const { error } = await supabase.from('admissions').update(payload).eq('id', child.id);
+                    if (error) throw error;
+                }
             } else {
+                // NEW registrations always start as an Enquiry node
+                payload.user_id = currentUserId;
+                payload.status = 'NEW';
                 payload.id = crypto.randomUUID();
-                const { error } = await supabase.from('admissions').insert(payload);
+                const { error } = await supabase.from('enquiries').insert(payload);
                 if (error) throw error;
             }
             dispatch({ type: 'SUBMIT_SUCCESS' });

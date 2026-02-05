@@ -192,6 +192,7 @@ export interface AdmissionApplication {
     address?: string;
     date_of_birth?: string;
     gender?: string;
+    source_type?: 'Enquiry' | 'Admission';
 }
 
 export interface FinanceData {
