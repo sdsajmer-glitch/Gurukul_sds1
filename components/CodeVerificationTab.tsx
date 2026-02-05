@@ -169,6 +169,12 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
                                 <TechnicalInfoRow label="Grade Level" value={`Grade ${verifiedData.grade}`} />
                                 <TechnicalInfoRow label="Token Type" value={verifiedData.code_type} valueClassName="text-primary font-black uppercase" />
                             </div>
+                            {(verifiedData as any).contact_email || (verifiedData as any).contact_phone ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-white/5">
+                                    <TechnicalInfoRow label="Contact Email" value={(verifiedData as any).contact_email} valueClassName="text-white/60 font-medium text-sm" />
+                                    <TechnicalInfoRow label="Contact Phone" value={(verifiedData as any).contact_phone} valueClassName="text-white/60 font-medium text-sm" />
+                                </div>
+                            ) : null}
                         </div>
                         <div className="flex flex-col justify-center">
                             <button onClick={handleImport} disabled={loading} className="w-full py-6 bg-primary hover:bg-primary/90 text-white font-black text-sm uppercase tracking-[0.4em] rounded-[2rem] shadow-2xl shadow-primary/20 transition-all transform active:scale-95 group">

@@ -11,6 +11,7 @@ import { PhoneIcon } from './icons/PhoneIcon';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { XIcon } from './icons/XIcon';
+import { LockIcon } from './icons/LockIcon';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -24,7 +25,36 @@ interface ProfileCreationPageProps {
 
 export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profile, role, onComplete, onBack, showBackButton }) => {
     const [formData, setFormData] = useState<any>({});
-    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false); // Changed from loading to saving
+    const [isDirty, setIsDirty] = useState(false);
+    const [isStrictReadOnly, setIsStrictReadOnly] = useState(false);
+
+    useEffect(() => {
+        const checkIdentityContext = async () => {
+            if (role !== BuiltInRoles.PARENT_GUARDIAN) return;
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                // Check for existence in school_admin_profiles - this is the source of truth for administrative identity
+                const { data, error } = await supabase
+                    .from('school_admin_profiles')
+                    .select('user_id')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+
+                if (!error && data) {
+                    console.log('Administrative identity detected. Restricting Parent Portal mutation access.');
+                    setIsStrictReadOnly(true);
+                }
+            } catch (e) {
+                console.error('Identity handshake failed:', e);
+            }
+        };
+        checkIdentityContext();
+    }, [role]);
+
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [isFetchingInitialData, setIsFetchingInitialData] = useState(true);
@@ -91,6 +121,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
             setFormData(data);
             setIsFetchingInitialData(false);
+            setIsDirty(false); // Reset dirty state after fetching
         }
     }, [role, profile.id, profile.display_name, profile.phone, profile.email]);
 
@@ -99,6 +130,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev: any) => ({ ...prev, [name]: value }));
+        setIsDirty(true); // Mark form as dirty on change
     };
 
     const isFormValid = useMemo(() => {
@@ -123,6 +155,11 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
         console.log('=== FORM SUBMISSION STARTED ===');
         console.log('Current formData:', formData);
         console.log('Current role:', role);
+
+        if (isStrictReadOnly) {
+            setError("Access Restricted: Administrative nodes cannot mutate Parent data from this portal.");
+            return;
+        }
 
         // Detailed validation with specific error messages
         if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
@@ -166,8 +203,8 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
             return;
         }
 
-        console.log('Setting loading state...');
-        setLoading(true);
+        console.log('Setting saving state...');
+        setSaving(true); // Changed from setLoading to setSaving
         setError(null);
         setSuccess(null);
 
@@ -365,7 +402,8 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
             if (isMounted.current) {
                 console.log('Component still mounted, updating UI...');
-                setLoading(false);
+                setSaving(false); // Changed from setLoading to setSaving
+                setIsDirty(false); // Reset dirty state after successful save
 
                 // Show success message
                 setError(null);
@@ -392,7 +430,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
             if (isMounted.current) {
                 setError(formatError(err));
-                setLoading(false);
+                setSaving(false); // Changed from setLoading to setSaving
             }
         }
     };
@@ -588,7 +626,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
             <form onSubmit={handleSubmit} className="space-y-10">
                 <div className="bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-3xl p-8 md:p-10 shadow-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
                     {role === BuiltInRoles.PARENT_GUARDIAN ? (
-                        <ParentForm formData={formData} handleChange={handleFormChange} activeTab={activeTab} />
+                        <ParentForm formData={formData} handleChange={handleFormChange} activeTab={activeTab} isStrictReadOnly={isStrictReadOnly} />
                     ) : role === BuiltInRoles.TEACHER ? (
                         <TeacherForm formData={formData} handleChange={handleFormChange} photoPreviewUrl={null} onPhotoChange={() => { }} currentUserId={profile.id} isRestrictedView={true} />
                     ) : role === BuiltInRoles.SCHOOL_ADMINISTRATION ? (
@@ -626,43 +664,32 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                         </button>
                     ) : <div />}
 
+                    {/* Replaced the original button with the new structure */}
+                    {/* Restored Submit Button */}
                     <button
                         type="submit"
-                        disabled={loading || !isFormValid}
-                        className={`relative h-[52px] px-12 rounded-xl font-bold text-[12px] uppercase tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 group overflow-hidden ${!isFormValid
-                            ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5'
-                            : loading
-                                ? 'bg-primary/80 text-primary-foreground cursor-wait border border-primary/40'
-                                : 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:scale-[1.02] hover:shadow-primary/40 active:scale-[0.98] border border-primary/40'
-                            }`}
+                        disabled={saving || !isDirty || isStrictReadOnly || !isFormValid}
+                        className={`px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 transform active:scale-95 shadow-2xl relative group overflow-hidden ${saving || !isDirty || isStrictReadOnly || !isFormValid ? 'bg-white/5 text-white/10 cursor-not-allowed grayscale' : 'bg-primary text-white shadow-primary/20 hover:bg-primary/90'}`}
                     >
-                        {/* Animated background gradient */}
-                        {!loading && isFormValid && (
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                        <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-[-20deg]" />
+                        {saving ? <Spinner size="sm" /> : (
+                            <div className="flex items-center justify-center gap-3">
+                                <ShieldCheckIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                <span>{isStrictReadOnly ? 'Access Restricted' : `Update ${role} Protocol`}</span>
+                            </div>
                         )}
-
-                        {/* Button content */}
-                        <div className="relative flex items-center gap-3">
-                            {loading ? (
-                                <>
-                                    <div className="relative">
-                                        <Spinner size="sm" className="text-white" />
-                                        <div className="absolute inset-0 animate-ping">
-                                            <Spinner size="sm" className="text-white opacity-20" />
-                                        </div>
-                                    </div>
-                                    <span className="animate-pulse">Saving Profile...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <CheckCircleIcon className="w-4 h-4 transition-transform group-hover:scale-110" />
-                                    <span>Complete Setup</span>
-                                </>
-                            )}
-                        </div>
                     </button>
                 </div>
             </form>
+
+            {isStrictReadOnly && (
+                <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                    <LockIcon className="w-4 h-4 text-amber-500" />
+                    <p className="text-[10px] font-black uppercase text-amber-500 tracking-widest">
+                        Institutional Policy: Administrative nodes cannot mutate Parent data from this portal.
+                    </p>
+                </div>
+            )}
 
             <div className="text-center py-4 opacity-40 animate-in fade-in duration-1000 delay-300">
                 <p className="text-[11px] font-medium tracking-wide flex items-center justify-center gap-2 text-white/60">

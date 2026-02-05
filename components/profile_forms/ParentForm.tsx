@@ -67,15 +67,16 @@ interface FormProps {
     formData: Partial<ParentProfileData & { phone: string; display_name: string; }>;
     handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
     activeTab: 'details' | 'contact';
+    isStrictReadOnly?: boolean;
 }
 
-const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) => {
+const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, isStrictReadOnly }) => {
     const [loadingStates, setLoadingStates] = useState(false);
     const [loadingCities, setLoadingCities] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
     const [isResolving, setIsResolving] = useState(false);
     const [syncStatus, setSyncStatus] = useState<string>('');
-    const [syncError, setSyncError] = useState<{message: string, isWarning: boolean} | null>(null);
+    const [syncError, setSyncError] = useState<{ message: string, isWarning: boolean } | null>(null);
     const [syncedFields, setSyncedFields] = useState<Set<string>>(new Set());
 
     const availableStates = useMemo(() => formData.country ? statesByCountry[formData.country] || [] : [], [formData.country]);
@@ -112,7 +113,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
         setIsResolving(true);
         setSyncStatus('Resolving Address...');
         setSyncError(null);
-        
+
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const prompt = `Based on the residential address "${formData.address}", extract or identify city, state, and country.
@@ -135,7 +136,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                 if (data.country) handleSelectChange('country', false)(data.country);
                 if (data.state) handleSelectChange('state', false)(data.state);
                 if (data.city) handleSelectChange('city', false)(data.city);
-                
+
                 setSyncStatus('Address Resolved.');
                 setTimeout(() => setSyncStatus(''), 3000);
             }
@@ -189,7 +190,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     if (data.city) handleSelectChange('city', false)(data.city);
                     if (data.address) handleChange({ target: { name: 'address', value: data.address } } as any);
                     if (data.pin_code) handleChange({ target: { name: 'pin_code', value: data.pin_code } } as any);
-                    
+
                     setSyncStatus('Identity Synced.');
                     setTimeout(() => setSyncStatus(''), 3000);
                 }
@@ -216,32 +217,35 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                         <p className="text-[11px] text-white/30 font-medium tracking-wider">Define your institutional role and relationship.</p>
                     </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4"/>} />
-                    
-                    <CustomSelect 
-                        label="Relationship Status" 
-                        value={formData.relationship_to_student || ''} 
-                        onChange={handleSelectChange('relationship_to_student')} 
-                        options={[{value:'Father', label:'Father'}, {value:'Mother', label:'Mother'}, {value:'Guardian', label:'Legal Guardian'}, {value:'Other', label:'Authorized Affiliate'}]}
-                        icon={<UsersIcon className="w-4 h-4"/>}
+                    <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} disabled={isStrictReadOnly} />
+
+                    <CustomSelect
+                        label="Relationship Status"
+                        value={formData.relationship_to_student || ''}
+                        onChange={handleSelectChange('relationship_to_student')}
+                        options={[{ value: 'Father', label: 'Father' }, { value: 'Mother', label: 'Mother' }, { value: 'Guardian', label: 'Legal Guardian' }, { value: 'Other', label: 'Authorized Affiliate' }]}
+                        icon={<UsersIcon className="w-4 h-4" />}
+                        disabled={isStrictReadOnly}
                     />
-                    
-                    <CustomSelect 
-                        label="Gender" 
-                        value={formData.gender || ''} 
-                        onChange={handleSelectChange('gender')} 
-                        options={[{value:'Male', label:'Male'}, {value:'Female', label:'Female'}, {value:'Other', label:'Diverse'}, {value:'Prefer not to say', label:'Prefer not to say'}]}
-                        icon={<UserIcon className="w-4 h-4"/>}
+
+                    <CustomSelect
+                        label="Gender"
+                        value={formData.gender || ''}
+                        onChange={handleSelectChange('gender')}
+                        options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Diverse' }, { value: 'Prefer not to say', label: 'Prefer not to say' }]}
+                        icon={<UserIcon className="w-4 h-4" />}
+                        disabled={isStrictReadOnly}
                     />
-                    
-                    <CustomSelect 
-                        label="Family Size" 
-                        value={String(formData.number_of_children || '1')} 
-                        onChange={handleSelectChange('number_of_children')} 
-                        options={[{value:'1', label:'Single Child'}, {value:'2', label:'2 Children'}, {value:'3', label:'3 Children'}, {value:'4', label:'4+ Children'}]}
-                        icon={<UsersIcon className="w-4 h-4"/>}
+
+                    <CustomSelect
+                        label="Family Size"
+                        value={String(formData.number_of_children || '1')}
+                        onChange={handleSelectChange('number_of_children')}
+                        options={[{ value: '1', label: 'Single Child' }, { value: '2', label: '2 Children' }, { value: '3', label: '3 Children' }, { value: '4', label: '4+ Children' }]}
+                        icon={<UsersIcon className="w-4 h-4" />}
+                        disabled={isStrictReadOnly}
                     />
                 </div>
             </div>
@@ -261,94 +265,102 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab }) 
                     </div>
                 </div>
 
-                <button 
+                <button
                     type="button"
                     onClick={handleAutoLocate}
-                    disabled={isLocating}
+                    disabled={isLocating || isStrictReadOnly}
                     className={`h-[40px] px-6 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300 border
-                        ${isLocating 
-                            ? 'bg-primary/20 text-primary border-primary/40 animate-pulse' 
-                            : 'bg-white/5 text-white/50 border-white/5 hover:border-primary/40 hover:text-white active:scale-[0.98]'
+                        ${isLocating
+                            ? 'bg-primary/20 text-primary border-primary/40 animate-pulse'
+                            : isStrictReadOnly
+                                ? 'bg-white/5 text-white/10 border-white/5 cursor-not-allowed hidden'
+                                : 'bg-white/5 text-white/50 border-white/5 hover:border-primary/40 hover:text-white active:scale-[0.98]'
                         }
                     `}
                 >
-                    {isLocating ? <Spinner size="sm" className="text-primary"/> : <><LocateFixedIcon className="w-4 h-4 inline mr-2"/> Locate Node</>}
+                    {isLocating ? <Spinner size="sm" className="text-primary" /> : <><LocateFixedIcon className="w-4 h-4 inline mr-2" /> Locate Node</>}
                 </button>
             </div>
 
             <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <PremiumFloatingInput 
-                        label="Primary Mobile" 
-                        name="phone" 
-                        type="tel" 
-                        value={formData.phone} 
-                        onChange={handleChange} 
-                        required 
-                        icon={<PhoneIcon className="w-4 h-4"/>} 
+                    <PremiumFloatingInput
+                        label="Primary Mobile"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        required
+                        icon={<PhoneIcon className="w-4 h-4" />}
+                        disabled={isStrictReadOnly}
                     />
-                    
-                    <CustomSelect 
-                        label="Country" 
-                        value={formData.country || ''} 
-                        onChange={handleSelectChange('country')} 
-                        options={countries.map(c => ({value: c, label: c}))}
-                        icon={<GlobeIcon className="w-4 h-4"/>}
+
+                    <CustomSelect
+                        label="Country"
+                        value={formData.country || ''}
+                        onChange={handleSelectChange('country')}
+                        options={countries.map(c => ({ value: c, label: c }))}
+                        icon={<GlobeIcon className="w-4 h-4" />}
                         placeholder="Select Region..."
                         searchable
                         isSynced={syncedFields.has('country')}
+                        disabled={isStrictReadOnly}
                     />
                 </div>
 
-                <PremiumFloatingInput 
-                    label="Full Residential Address" 
-                    name="address" 
-                    value={formData.address} 
-                    onChange={handleChange as any} 
-                    isTextArea 
+                <PremiumFloatingInput
+                    label="Full Residential Address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange as any}
+                    isTextArea
                     isSynced={syncedFields.has('address')}
-                    icon={<LocationIcon className="w-4 h-4"/>} 
+                    icon={<LocationIcon className="w-4 h-4" />}
+                    disabled={isStrictReadOnly}
                     action={
-                        <button 
-                            type="button"
-                            onClick={handleResolveAddress}
-                            disabled={isResolving || !formData.address?.trim()}
-                            className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all disabled:opacity-30"
-                            title="Auto-fill city, state, country"
-                        >
-                            {isResolving ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5" />}
-                        </button>
+                        !isStrictReadOnly && (
+                            <button
+                                type="button"
+                                onClick={handleResolveAddress}
+                                disabled={isResolving || !formData.address?.trim()}
+                                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all disabled:opacity-30"
+                                title="Auto-fill city, state, country"
+                            >
+                                {isResolving ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5" />}
+                            </button>
+                        )
                     }
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <CustomSelect 
-                        label="State" 
-                        value={formData.state || ''} 
-                        onChange={handleSelectChange('state')} 
-                        options={availableStates.map(s => ({value: s, label: s}))}
-                        icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4"/>}
-                        disabled={!formData.country}
+                    <CustomSelect
+                        label="State"
+                        value={formData.state || ''}
+                        onChange={handleSelectChange('state')}
+                        options={availableStates.map(s => ({ value: s, label: s }))}
+                        icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
+                        disabled={!formData.country || isStrictReadOnly}
                         searchable
                         isSynced={syncedFields.has('state')}
                     />
-                    <CustomSelect 
-                        label="City" 
-                        value={formData.city || ''} 
-                        onChange={handleSelectChange('city')} 
-                        options={availableCities.map(c => ({value: c, label: c}))}
-                        icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4"/>}
-                        disabled={!formData.state}
+                    <CustomSelect
+                        label="City"
+                        value={formData.city || ''}
+                        onChange={handleSelectChange('city')}
+                        options={availableCities.map(c => ({ value: c, label: c }))}
+                        icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
+                        disabled={!formData.state || isStrictReadOnly}
                         searchable
                         isSynced={syncedFields.has('city')}
                     />
-                    <PremiumFloatingInput 
-                        label="Pin Code" 
-                        name="pin_code" 
-                        value={formData.pin_code} 
-                        onChange={handleChange} 
+                    <PremiumFloatingInput
+                        label="Pin Code"
+                        name="pin_code"
+                        value={formData.pin_code}
+                        onChange={handleChange}
                         isSynced={syncedFields.has('pin_code')}
-                        icon={<LocationIcon className="w-4 h-4"/>} 
+                        icon={<LocationIcon className="w-4 h-4" />}
+                        disabled={isStrictReadOnly}
                     />
                 </div>
             </div>
