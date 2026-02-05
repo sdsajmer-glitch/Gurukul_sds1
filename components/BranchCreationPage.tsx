@@ -19,6 +19,9 @@ import { SparklesIcon } from './icons/SparklesIcon';
 import { CheckoutIcon } from './icons/CheckoutIcon';
 import { EditIcon } from './icons/EditIcon';
 import { GoogleGenAI } from '@google/genai';
+import { NodeRegistry } from './network/NodeRegistry';
+import { NodeCard } from './network/NodeCard';
+import { ExpandNetworkCard } from './network/ExpandNetworkCard';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface BranchCreationPageProps {
@@ -889,102 +892,23 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <NodeRegistry>
                     {/* Node Cards - Enterprise Infrastructure Design */}
                     {branches.map(branch => (
-                        <article
+                        <NodeCard
                             key={branch.id}
-                            className="group relative bg-gradient-to-br from-[#0a0a0b] to-[#0f0f12] border border-white/10 hover:border-white/20 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1 flex flex-col"
-                        >
-                            {/* Card Header */}
-                            <div className="p-6 pb-4 border-b border-white/5">
-                                <div className="flex items-start justify-between mb-4">
-                                    {/* Node Type Icon */}
-                                    <div className={`p-3 rounded-xl transition-all duration-300 ${branch.is_main_branch ? 'bg-primary/10 text-primary ring-2 ring-primary/20' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
-                                        <SchoolIcon className="w-6 h-6" />
-                                    </div>
-
-                                    {/* Action Buttons - Accessible & Clear */}
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleOpenEdit(branch)}
-                                            className="p-2.5 text-white/20 hover:text-white hover:bg-white/5 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                                            title="Edit node configuration"
-                                            aria-label={`Edit ${branch.name} configuration`}
-                                        >
-                                            <EditIcon className="w-4 h-4" />
-                                        </button>
-                                        {!branch.is_main_branch && (
-                                            <button
-                                                onClick={() => setDeletingBranch(branch)}
-                                                className="p-2.5 text-white/20 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-red-500/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                                                title="Remove node from network"
-                                                aria-label={`Remove ${branch.name} from network`}
-                                            >
-                                                <XIcon className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Node Information */}
-                                <div>
-                                    <h3 className="text-lg font-black text-white tracking-tight leading-tight mb-2 line-clamp-2">{branch.name}</h3>
-                                    <p className="text-xs text-white/30 font-medium uppercase tracking-wide flex items-center gap-2">
-                                        <LocationIcon className="w-3.5 h-3.5 flex-shrink-0" />
-                                        <span className="truncate">{branch.city}, {branch.state}</span>
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Card Footer - Status & Metadata */}
-                            <div className="p-6 pt-4 mt-auto">
-                                <div className="flex items-center justify-between">
-                                    {/* Status Badge - Clear Visual Indicator */}
-                                    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${branch.is_main_branch
-                                        ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
-                                        : 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20'
-                                        }`}>
-                                        <div className={`w-1.5 h-1.5 rounded-full ${branch.is_main_branch ? 'bg-primary' : 'bg-blue-400'} animate-pulse`} />
-                                        <span>{branch.is_main_branch ? 'Head Office' : 'Branch Node'}</span>
-                                    </div>
-
-                                    {/* Administrator Avatar */}
-                                    <div
-                                        className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-white/60 uppercase"
-                                        title={branch.admin_name || 'Administrator'}
-                                    >
-                                        {branch.admin_name?.[0] || '?'}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Hover Glow Effect */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-primary/0 via-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                        </article>
+                            name={branch.name}
+                            location={`${branch.city}, ${branch.state}`}
+                            adminName={branch.admin_name}
+                            isMain={branch.is_main_branch}
+                            onEdit={() => handleOpenEdit(branch)}
+                            onDelete={() => setDeletingBranch(branch)}
+                        />
                     ))}
 
                     {/* Add New Node Card - Expansion Affordance */}
-                    <button
-                        onClick={() => handleOpenCreate()}
-                        className="group relative border-2 border-dashed border-white/10 hover:border-primary/40 rounded-2xl p-12 flex flex-col items-center justify-center text-center gap-6 cursor-pointer transition-all duration-300 hover:bg-white/[0.01] focus:outline-none focus:ring-4 focus:ring-primary/20 min-h-[280px]"
-                        aria-label="Add new branch to network"
-                    >
-                        {/* Icon */}
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-primary/10 rounded-2xl blur-xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            <div className="relative w-16 h-16 rounded-2xl bg-white/5 group-hover:bg-primary/10 border border-white/10 group-hover:border-primary/30 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
-                                <PlusIcon className="w-8 h-8 text-white/20 group-hover:text-primary transition-colors duration-300 group-hover:rotate-90" />
-                            </div>
-                        </div>
-
-                        {/* Text */}
-                        <div className="space-y-2">
-                            <h3 className="text-base font-black text-white/60 group-hover:text-white uppercase tracking-tight transition-colors">Add Branch</h3>
-                            <p className="text-xs text-white/20 group-hover:text-white/40 font-medium transition-colors">Expand institutional reach</p>
-                        </div>
-                    </button>
-                </div>
+                    <ExpandNetworkCard onClick={() => handleOpenCreate()} />
+                </NodeRegistry>
             )
             }
 
