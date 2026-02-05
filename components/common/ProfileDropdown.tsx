@@ -84,19 +84,26 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
 
             // Channel 3: Check whether this user's email is registered as a branch admin email
             try {
-                const branchCheck = await supabase
-                    .from('school_branches')
-                    .select('id, admin_email')
-                    .ilike('admin_email', profile.email)
-                    .maybeSingle();
-
-                if (branchCheck && (branchCheck as any).data && (branchCheck as any).data.admin_email) {
-                    setIsBranchAdminEmailMatch(true);
-                } else {
+                const normalizedUserEmail = profile.email?.toLowerCase().trim();
+                if (!normalizedUserEmail) {
                     setIsBranchAdminEmailMatch(false);
+                } else {
+                    const { data: branches, error: branchError } = await supabase
+                        .from('school_branches')
+                        .select('id, admin_email');
+
+                    if (!branchError && branches && branches.length > 0) {
+                        const isMatch = branches.some(branch =>
+                            branch.admin_email?.toLowerCase().trim() === normalizedUserEmail
+                        );
+                        setIsBranchAdminEmailMatch(isMatch);
+                    } else {
+                        setIsBranchAdminEmailMatch(false);
+                    }
                 }
             } catch (e) {
                 console.error('Branch admin email check failed', e);
+                setIsBranchAdminEmailMatch(false);
             }
 
             setCompletedRoles(found);
@@ -126,6 +133,11 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
 
     // Logic Gate: Identify contexts where user profile ALREADY exists
     const authorizedScopes = useMemo(() => {
+        // If the user's email matches a branch admin email, restrict STRICTLY to School Administration only
+        if (isBranchAdminEmailMatch) {
+            return roles.filter(r => r === BuiltInRoles.SCHOOL_ADMINISTRATION);
+        }
+
         const base = roles
             .filter(r => completedRoles.has(r))
             .sort((a, b) => {
@@ -134,13 +146,8 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                 return ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b);
             });
 
-        // If the user's email matches a branch admin email, restrict visible scopes to School Administration only
-        if (isBranchAdminEmailMatch) {
-            return base.filter(r => r === BuiltInRoles.SCHOOL_ADMINISTRATION || r === profile.role);
-        }
-
         return base;
-    }, [roles, completedRoles, profile.role]);
+    }, [roles, completedRoles, profile.role, isBranchAdminEmailMatch]);
 
     // Logic Gate: Identify available paths user has NOT yet onboarded to
     const registerableScopes = useMemo(() => {
