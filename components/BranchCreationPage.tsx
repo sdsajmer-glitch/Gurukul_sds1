@@ -533,18 +533,18 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                         </div>
                         <div>
                             <h4 className="text-[11px] font-black uppercase text-white tracking-[0.3em]">Node Architecture</h4>
-                            <p className="text-[9px] font-medium text-white/20 uppercase tracking-widest mt-1">Configure campus hardware identity</p>
+                            <p className="text-[9px] font-medium text-white/20 uppercase tracking-widest mt-1">Define school identity and location</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-8">
                         <FloatingLabelInput
-                            label="Campus Designation"
+                            label="School/Campus Name"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                             required
                             error={formErrors.name}
-                            hint="Physical name of the institution or branch"
+                            hint="Official name of the school or branch campus"
                             icon={<SchoolIcon className="w-4 h-4" />}
                         />
                         <FloatingLabelInput
@@ -553,7 +553,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                             onChange={e => setFormData({ ...formData, address: e.target.value })}
                             required
                             error={formErrors.address}
-                            hint="Enter street address for automated satellite positioning"
+                            hint="Complete street address for precise location mapping"
                             icon={<LocationIcon className="w-4 h-4" />}
                             action={
                                 <button
@@ -565,7 +565,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                                     {isResolvingAddress ? <Spinner size="sm" /> : (
                                         <>
                                             <SparklesIcon className="w-4 h-4 transition-transform group-hover/btn:scale-125" />
-                                            <span className="text-[9px] font-black uppercase tracking-widest">Auto-Position</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest">Get My Location</span>
                                         </>
                                     )}
                                 </button>
@@ -582,7 +582,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                         </div>
                         <div>
                             <h4 className="text-[11px] font-black uppercase text-white tracking-[0.3em]">Geo-Location</h4>
-                            <p className="text-[9px] font-medium text-white/20 uppercase tracking-widest mt-1">Regional jurisdiction mapping</p>
+                            <p className="text-[9px] font-medium text-white/20 uppercase tracking-widest mt-1">Define regional administrative boundaries</p>
                         </div>
                     </div>
 
