@@ -30,6 +30,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
 
     const [completedRoles, setCompletedRoles] = useState<Set<string>>(new Set());
     const [checkingRoles, setCheckingRoles] = useState(false);
+    const [isBranchAdminEmailMatch, setIsBranchAdminEmailMatch] = useState(false);
 
 
     useEffect(() => {
@@ -81,6 +82,23 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                 found.add(BuiltInRoles.SUPER_ADMIN);
             }
 
+            // Channel 3: Check whether this user's email is registered as a branch admin email
+            try {
+                const branchCheck = await supabase
+                    .from('school_branches')
+                    .select('id, admin_email')
+                    .ilike('admin_email', profile.email)
+                    .maybeSingle();
+
+                if (branchCheck && (branchCheck as any).data && (branchCheck as any).data.admin_email) {
+                    setIsBranchAdminEmailMatch(true);
+                } else {
+                    setIsBranchAdminEmailMatch(false);
+                }
+            } catch (e) {
+                console.error('Branch admin email check failed', e);
+            }
+
             setCompletedRoles(found);
         } catch (e) {
             console.error("Critical Identity Discovery Failure:", e);
@@ -108,13 +126,20 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
 
     // Logic Gate: Identify contexts where user profile ALREADY exists
     const authorizedScopes = useMemo(() => {
-        return roles
+        const base = roles
             .filter(r => completedRoles.has(r))
             .sort((a, b) => {
                 if (a === profile.role) return -1;
                 if (b === profile.role) return 1;
                 return ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b);
             });
+
+        // If the user's email matches a branch admin email, restrict visible scopes to School Administration only
+        if (isBranchAdminEmailMatch) {
+            return base.filter(r => r === BuiltInRoles.SCHOOL_ADMINISTRATION || r === profile.role);
+        }
+
+        return base;
     }, [roles, completedRoles, profile.role]);
 
     // Logic Gate: Identify available paths user has NOT yet onboarded to
@@ -169,12 +194,14 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                             </div>
                         </div>
 
-                        {/* Node Control Strip */}
-                        <div className="p-2 border-b border-white/5 bg-black/20">
-                            <button onClick={() => { onProfileClick?.(); setIsOpen(false); }} className="w-full flex items-center gap-3 p-4 rounded-2xl text-[10px] font-black text-white/40 hover:text-white hover:bg-white/5 transition-all uppercase tracking-[0.4em] group">
-                                <SettingsIcon className="w-4 h-4 text-white/10 group-hover:text-primary transition-colors" /> Node Management
-                            </button>
-                        </div>
+                        {/* Node Control Strip (hidden for branch-admin-email-restricted users) */}
+                        {!isBranchAdminEmailMatch && (
+                            <div className="p-2 border-b border-white/5 bg-black/20">
+                                <button onClick={() => { onProfileClick?.(); setIsOpen(false); }} className="w-full flex items-center gap-3 p-4 rounded-2xl text-[10px] font-black text-white/40 hover:text-white hover:bg-white/5 transition-all uppercase tracking-[0.4em] group">
+                                    <SettingsIcon className="w-4 h-4 text-white/10 group-hover:text-primary transition-colors" /> Node Management
+                                </button>
+                            </div>
+                        )}
 
                         {/* Discovery Workspace */}
                         <div className="flex-grow max-h-[480px] overflow-y-auto custom-scrollbar">
@@ -228,8 +255,8 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                                         </div>
                                     )}
 
-                                    {/* UNLINKED SCOPES (Provisioning Paths) */}
-                                    {registerableScopes.length > 0 && (
+                                    {/* UNLINKED SCOPES (Provisioning Paths) - hidden for branch-admin-email-restricted users */}
+                                    {!isBranchAdminEmailMatch && registerableScopes.length > 0 && (
                                         <div className="p-4 pt-2 border-t border-white/5 mt-4 bg-black/40 pb-6">
                                             <p className="px-5 py-5 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] flex items-center gap-2">
                                                 <PlusIcon className="w-3.5 h-3.5 opacity-40" /> Register New Scope
