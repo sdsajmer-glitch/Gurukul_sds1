@@ -3153,42 +3153,8 @@ CREATE OR REPLACE FUNCTION public.update_enquiry_status(p_enquiry_id bigint, p_n
  SECURITY DEFINER
 AS $function$ BEGIN UPDATE public.enquiries SET status = p_new_status, notes = p_notes WHERE id = p_enquiry_id; END; $function$;
 
-CREATE OR REPLACE FUNCTION public.admin_import_record_from_share_code(p_admission_id bigint, p_code_type text, p_branch_id bigint)
- RETURNS void
- LANGUAGE plpgsql
- SECURITY DEFINER
-AS $function$
-BEGIN
-    IF p_code_type = 'Enquiry' THEN
-        -- For Enquiry codes: Only set branch_id if null, ensure enquiry record exists, DO NOT set status
-        UPDATE public.admissions
-        SET branch_id = COALESCE(branch_id, p_branch_id)
-        WHERE id = p_admission_id AND branch_id IS NULL;
-
-        INSERT INTO public.enquiries (
-            admission_id,
-            applicant_name,
-            grade,
-            branch_id,
-            user_id,
-            parent_name,
-            parent_email,
-            parent_phone
-        )
-        SELECT id, applicant_name, grade, p_branch_id, parent_id, parent_name, parent_email, parent_phone
-        FROM public.admissions
-        WHERE id = p_admission_id
-        ON CONFLICT (admission_id) DO UPDATE SET branch_id = EXCLUDED.branch_id;
-    ELSE
-        -- For Admission codes: Set branch_id and valid admission status
-        UPDATE public.admissions
-        SET branch_id = p_branch_id, status = 'Pending Review'
-        WHERE id = p_admission_id;
-    END IF;
-
-    UPDATE public.admission_share_codes SET status = 'Redeemed' WHERE admission_id = p_admission_id;
-END;
-$function$;
+-- REMOVED: Old 3-parameter version of admin_import_record_from_share_code (conflicted with correct 4-parameter version at line 1156)
+-- The function is correctly defined earlier with proper support for both share_codes and admission_share_codes tables
 
 CREATE OR REPLACE FUNCTION public.revoke_my_share_code(p_code_id bigint)
  RETURNS void
