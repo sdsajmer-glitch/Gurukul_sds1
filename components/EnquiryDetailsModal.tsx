@@ -238,6 +238,8 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
     };
 
     const handleFinalizeSave = async () => {
+        if (loading.saving || loading.converting) return; // Guard against concurrent actions
+
         if (pendingStatus === 'ENQUIRY_CONVERTED') {
             handleConvert();
             return;
@@ -258,10 +260,12 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
     };
 
     const handleConvert = async () => {
+        if (loading.converting) return; // Guard
         setLoading(prev => ({ ...prev, converting: true }));
         try {
             const result = await EnquiryService.convertToAdmission(String(enquiry.id));
             if (result.success) {
+                // Proactive refresh and navigation
                 onUpdate();
                 onClose();
                 onNavigate?.('Admissions');
@@ -485,10 +489,10 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                                 {hasStatusChanged && (
                                     <button
                                         onClick={handleFinalizeSave}
-                                        disabled={loading.saving}
-                                        className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-900/20 active:scale-95 transition-all mt-2"
+                                        disabled={loading.saving || loading.converting}
+                                        className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-900/20 active:scale-95 transition-all mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {loading.saving ? <Spinner size="sm" /> : "Commit Change"}
+                                        {(loading.saving || loading.converting) ? <Spinner size="sm" /> : "Commit Change"}
                                     </button>
                                 )}
                             </section>
