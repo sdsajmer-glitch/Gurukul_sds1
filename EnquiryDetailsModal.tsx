@@ -29,14 +29,14 @@ const LocalSendIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const STATUS_CONFIG: Record<string, { icon: React.ReactNode, label: string, color: string }> = {
-    'NEW': { icon: <div className="w-2 h-2 rounded-full bg-blue-500/80 shadow-sm" />, label: 'New', color: 'text-blue-400' },
-    'ENQUIRY_ACTIVE': { icon: <div className="w-2 h-2 rounded-full bg-blue-500/80 shadow-sm" />, label: 'Active', color: 'text-blue-400' },
-    'ENQUIRY_VERIFIED': { icon: <ShieldCheckIcon className="w-4 h-4 text-teal-500/80" />, label: 'Verified', color: 'text-teal-500' },
-    'ENQUIRY_IN_REVIEW': { icon: <ClockIcon className="w-4 h-4 text-purple-500/80" />, label: 'In Review', color: 'text-purple-500' },
-    'ENQUIRY_CONTACTED': { icon: <CommunicationIcon className="w-4 h-4 text-amber-500/80" />, label: 'Contacted', color: 'text-amber-500' },
-    'ENQUIRY_REJECTED': { icon: <ShieldAlertIcon className="w-4 h-4 text-red-500/80" />, label: 'Rejected', color: 'text-red-500' },
-    'ENQUIRY_CONVERTED': { icon: <CheckCircleIcon className="w-4 h-4 text-emerald-500/80" />, label: 'Promoted to Admission', color: 'text-emerald-500' },
+const STATUS_CONFIG: Record<string, { icon: React.ReactNode, label: string, color: string, glow: string }> = {
+    'NEW': { icon: <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />, label: 'NEW HANDSHAKE', color: 'text-blue-400', glow: 'shadow-blue-500/20' },
+    'ENQUIRY_ACTIVE': { icon: <div className="w-2.5 h-2.5 rounded-full bg-blue-500/80 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />, label: 'ACTIVE SIGNAL', color: 'text-blue-400', glow: 'shadow-blue-500/10' },
+    'ENQUIRY_VERIFIED': { icon: <ShieldCheckIcon className="w-5 h-5 text-teal-400" />, label: 'IDENTITY VERIFIED', color: 'text-teal-400', glow: 'shadow-teal-500/20' },
+    'ENQUIRY_IN_REVIEW': { icon: <ClockIcon className="w-5 h-5 text-purple-400" />, label: 'IN DEEP REVIEW', color: 'text-purple-400', glow: 'shadow-purple-500/20' },
+    'ENQUIRY_CONTACTED': { icon: <CommunicationIcon className="w-5 h-5 text-amber-400" />, label: 'CONTACT ESTABLISHED', color: 'text-amber-400', glow: 'shadow-amber-500/20' },
+    'ENQUIRY_REJECTED': { icon: <ShieldAlertIcon className="w-5 h-5 text-rose-400" />, label: 'REJECTED NODE', color: 'text-rose-400', glow: 'shadow-rose-500/20' },
+    'ENQUIRY_CONVERTED': { icon: <CheckCircleIcon className="w-5 h-5 text-emerald-400" />, label: 'PROMOTED TO ADMISSION', color: 'text-emerald-400', glow: 'shadow-emerald-500/20' },
 };
 
 const ORDERED_STATUSES: EnquiryStatus[] = ['ENQUIRY_ACTIVE', 'ENQUIRY_VERIFIED', 'ENQUIRY_IN_REVIEW', 'ENQUIRY_CONTACTED', 'ENQUIRY_REJECTED'];
@@ -48,20 +48,20 @@ const TimelineEntry: React.FC<{ item: TimelineItem }> = ({ item }) => {
         const isParent = !item.is_admin;
         return (
             <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex w-full mb-2 ${isParent ? 'justify-start' : 'justify-end'}`}
+                initial={{ opacity: 0, x: isParent ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className={`flex w-full mb-6 ${isParent ? 'justify-start' : 'justify-end'}`}
             >
-                <div className={`flex flex-col gap-1.5 max-w-[85%] sm:max-w-[75%] ${isParent ? 'items-start' : 'items-end'}`}>
-                    <div className={`relative px-4 py-2.5 shadow-sm ${isParent ? 'bg-[#1a1d23] text-white/90 rounded-21xl rounded-tl-none border border-white/[0.04]' : 'bg-primary/95 text-white rounded-21xl rounded-tr-none shadow-primary/10'}`}>
-                        {/* Message Tail */}
-                        <div className={`absolute top-0 w-3 h-3 ${isParent ? '-left-1.5 bg-[#1a1d23] border-l border-t border-white/[0.04]' : '-right-1.5 bg-primary'} rotate-45 transform pointer-events-none hidden sm:block`} />
+                <div className={`flex flex-col gap-2 max-w-[85%] sm:max-w-[70%] ${isParent ? 'items-start' : 'items-end'}`}>
+                    <div className={`relative px-6 py-4 rounded-[1.8rem] transition-all duration-300 ${isParent
+                        ? 'bg-[#12141a] text-white/90 rounded-tl-none border border-white/5 shadow-xl shadow-black/20'
+                        : 'bg-primary/90 text-white rounded-tr-none shadow-2xl shadow-primary/10 border border-white/10 backdrop-blur-md'
+                        }`}>
+                        <p className="text-[15px] leading-relaxed font-medium whitespace-pre-wrap relative z-10">{item.details.message}</p>
 
-                        <p className="text-[14.5px] leading-relaxed font-sans whitespace-pre-wrap relative z-10">{item.details.message}</p>
-
-                        <div className={`flex items-center gap-2 mt-1.5 justify-end relative z-10 opacity-60`}>
-                            <span className="text-[10px] font-sans font-medium uppercase tracking-tighter">{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            {!isParent && <CheckCircleIcon className="w-3 h-3" />}
+                        <div className={`flex items-center gap-2 mt-2 pt-2 border-t border-white/5 justify-end relative z-10 opacity-40 group`}>
+                            <span className="text-[9px] font-black uppercase tracking-widest">{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {!isParent && <CheckCircleIcon className="w-3.5 h-3.5 text-white/60" />}
                         </div>
                     </div>
                 </div>
@@ -70,10 +70,10 @@ const TimelineEntry: React.FC<{ item: TimelineItem }> = ({ item }) => {
     }
 
     return (
-        <div className="flex justify-center my-8">
-            <div className="flex items-center gap-3 px-5 py-2 rounded-full bg-white/[0.03] border border-white/5 shadow-inner">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-pulse" />
-                <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em]">
+        <div className="flex justify-center my-10">
+            <div className="flex items-center gap-4 px-6 py-2.5 rounded-full bg-white/[0.02] border border-white/5 shadow-inner backdrop-blur-xl group">
+                <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
+                <span className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em] group-hover:text-white/40 transition-colors">
                     {item.item_type.replace(/_/g, ' ')} • {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
             </div>
@@ -292,21 +292,25 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
             <div className="bg-[#08090a] rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-[1400px] h-full sm:h-[90vh] flex flex-col border border-white/5 overflow-hidden ring-1 ring-white/10 animate-in fade-in zoom-in-98 duration-300" onClick={e => e.stopPropagation()}>
 
                 {/* Header Area */}
-                <header className="px-8 py-6 border-b border-white/[0.04] bg-[#0c0d12]/80 flex justify-between items-center z-40 flex-shrink-0">
-                    <div className="flex items-center gap-6">
-                        <div className="w-14 h-14 bg-white/5 rounded-xl text-white/90 flex items-center justify-center border border-white/10 shadow-sm">
-                            <UsersIcon className="w-7 h-7" />
+                <header className="px-10 py-8 border-b border-white/[0.04] bg-gradient-to-r from-[#0c0d12] to-[#08090a] flex justify-between items-center z-40 flex-shrink-0">
+                    <div className="flex items-center gap-8">
+                        <div className="w-16 h-16 bg-white/[0.02] rounded-2xl text-white/90 flex items-center justify-center border border-white/10 shadow-2xl relative group">
+                            <div className="absolute inset-0 bg-primary/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl"></div>
+                            <UsersIcon className="w-8 h-8 relative z-10" />
                         </div>
                         <div>
-                            <div className="flex items-baseline gap-4 mb-0.5">
-                                <h2 className="text-xl md:text-2xl font-bold text-white/90 tracking-tight uppercase">{enquiry.applicant_name}</h2>
-                                <span className="text-[10px] font-mono text-white/20 uppercase tracking-widest bg-white/[0.03] px-2 py-0.5 rounded border border-white/5">NODE_{String(enquiry.id).substring(0, 8).toUpperCase()}</span>
+                            <div className="flex items-baseline gap-5 mb-1">
+                                <h2 className="text-2xl md:text-3xl font-serif font-black text-white tracking-tighter uppercase">{enquiry.applicant_name}</h2>
+                                <span className="text-[9px] font-mono text-white/10 uppercase tracking-widest bg-white/[0.02] px-3 py-1 rounded-lg border border-white/[0.05]">NODE::{String(enquiry.id).substring(0, 8).toUpperCase()}</span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <span className="text-[11px] font-semibold text-primary/80 uppercase tracking-widest">Secured Channel</span>
-                                <div className="w-1 h-1 rounded-full bg-white/10"></div>
-                                <span className="text-[11px] font-medium text-white/40 uppercase tracking-widest flex items-center gap-1.5">
-                                    Grade {enquiry.grade} Context
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">SECURED CHANNEL ACTIVE</span>
+                                </div>
+                                <div className="w-1 h-1 rounded-full bg-white/5"></div>
+                                <span className="text-[10px] font-bold text-primary/60 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    GRADE {enquiry.grade} ACADEMIC TARGET
                                 </span>
                             </div>
                         </div>
@@ -337,8 +341,10 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
 
                 <div className="flex-grow overflow-hidden flex flex-col lg:flex-row relative">
                     {/* Message Area */}
-                    <div className="flex-1 flex flex-col bg-transparent relative z-10 border-r border-white/[0.03]">
-                        <div className="flex-grow overflow-y-auto p-8 md:p-10 space-y-4 custom-scrollbar flex flex-col scroll-smooth bg-[#08090a]/40 relative">
+                    <div className="flex-1 flex flex-col bg-transparent relative z-10 border-r border-white/5">
+                        <div className="flex-grow overflow-y-auto p-10 space-y-2 custom-scrollbar flex flex-col scroll-smooth bg-[#08090a] relative">
+                            {/* Texture Overlay */}
+                            <div className="absolute inset-0 bg-[url('/textures/noise.png')] opacity-[0.02] pointer-events-none grayscale"></div>
                             {loading.timeline && timeline.length === 0 ? (
                                 <div className="m-auto flex flex-col items-center gap-4">
                                     <Spinner size="lg" className="text-primary/60" />
@@ -377,18 +383,18 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                         {/* Input Composer */}
                         <div className="p-8 border-t border-white/[0.03] bg-[#0c0d12] relative z-20">
                             <form onSubmit={handleSendMessage} className="flex gap-4 items-center max-w-5xl mx-auto group/composer">
-                                <div className="flex-grow relative">
+                                <div className="flex-grow relative group/input">
                                     <input
                                         type="text"
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         disabled={isLegacyNode || !!syncError}
-                                        placeholder={isLegacyNode ? "HANDSHAKE BLOCKED" : "Type a secure message..."}
-                                        className={`w-full h-14 pl-7 pr-16 rounded-[1.8rem] bg-[#050608] border border-white/5 text-[15px] text-white/90 placeholder:text-white/10 outline-none transition-all duration-300 focus:border-primary/40 focus:ring-4 focus:ring-primary/5 shadow-inner ${isLegacyNode || syncError ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                        placeholder={isLegacyNode ? "HANDSHAKE BLOCKED" : "TRANSMIT SECURE PACKET..."}
+                                        className={`w-full h-16 pl-8 pr-20 rounded-2xl bg-[#06070a] border border-white/5 text-[15px] text-white/90 placeholder:text-white/10 outline-none transition-all duration-500 focus:border-primary/40 focus:ring-8 focus:ring-primary/5 shadow-2xl ${isLegacyNode || syncError ? 'opacity-30 cursor-not-allowed' : ''}`}
                                     />
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                                        <div className="w-px h-6 bg-white/5" />
-                                        <SparklesIcon className="w-5 h-5 text-white/5 group-hover/composer:text-primary transition-colors duration-500" />
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-4">
+                                        <div className="w-px h-8 bg-white/10" />
+                                        <SparklesIcon className="w-6 h-6 text-white/5 group-focus-within/input:text-primary transition-all duration-700 animate-pulse" />
                                     </div>
                                 </div>
                                 <button
@@ -411,36 +417,51 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                     <div className="w-full lg:w-[400px] bg-[#090a0f] p-8 space-y-10 overflow-y-auto custom-scrollbar relative z-20">
 
                         {/* Status Focus Card */}
-                        <section className="space-y-6">
-                            <h3 className="text-[13px] font-semibold uppercase text-white/30 tracking-wider">Lifecycle Status</h3>
+                        <section className="space-y-8">
+                            <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Current Lifecycle</h3>
 
-                            <div className="bg-[#13151b] border border-white/10 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center">
-                                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 mb-5">
-                                    <CheckCircleIcon className="w-10 h-10 text-primary" />
-                                </div>
-                                <div className="text-center">
-                                    <span className="text-[11px] font-black text-primary uppercase tracking-[0.4em]">
-                                        {STATUS_CONFIG[enquiry.status]?.label || 'ACTIVE'}
-                                    </span>
+                            <div className="relative group/status">
+                                <div className={`absolute inset-0 bg-primary/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000`}></div>
+                                <div className="relative bg-[#0d0f14] border border-white/5 rounded-[2rem] p-8 shadow-2xl flex flex-col items-center justify-center border-b-primary/20 border-b-2 overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-4 opacity-5">
+                                        <ShieldCheckIcon className="w-20 h-20 rotate-12" />
+                                    </div>
+                                    <div className={`w-24 h-24 rounded-3xl bg-primary/5 flex items-center justify-center border border-primary/20 mb-6 shadow-2xl shadow-primary/5 group-hover:scale-110 transition-transform duration-700`}>
+                                        <div className="animate-pulse">
+                                            {STATUS_CONFIG[enquiry.status]?.icon}
+                                        </div>
+                                    </div>
+                                    <div className="text-center space-y-2">
+                                        <span className={`text-[11px] font-black uppercase tracking-[0.5em] ${STATUS_CONFIG[enquiry.status]?.color}`}>
+                                            {STATUS_CONFIG[enquiry.status]?.label || 'ACTIVE NODAL STATE'}
+                                        </span>
+                                        <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest">Identity Protocol Sync Active</p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {ORDERED_STATUSES.filter(s => s !== enquiry.status).map(s => (
                                     <button
                                         key={s}
                                         onClick={() => setPendingStatus(s)}
                                         disabled={loading.saving || enquiry.status === 'ENQUIRY_CONVERTED' || enquiry.status === 'ENQUIRY_REJECTED'}
-                                        className={`w-full flex items-center justify-between px-5 py-4 rounded-xl border transition-all duration-200 group/btn ${pendingStatus === s ? 'bg-primary/10 border-primary/40 text-white' : 'bg-white/[0.01] border-white/[0.03] text-white/20 hover:border-white/10'}`}
+                                        className={`w-full flex items-center justify-between px-6 py-5 rounded-2xl border transition-all duration-500 group/btn relative overflow-hidden ${pendingStatus === s
+                                            ? 'bg-primary/10 border-primary/40 text-white shadow-2xl shadow-primary/5'
+                                            : 'bg-white/[0.01] border-white/5 text-white/20 hover:border-white/20 hover:bg-white/[0.03]'
+                                            }`}
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div className="transition-transform group-hover/btn:scale-105">
+                                        <div className="flex items-center gap-5 relative z-10">
+                                            <div className="opacity-60 transition-transform group-hover/btn:scale-110 duration-500">
                                                 {STATUS_CONFIG[s]?.icon}
                                             </div>
-                                            <span className={`text-[12px] font-semibold uppercase tracking-wider ${pendingStatus === s ? 'text-primary' : ''}`}>
+                                            <span className={`text-[11px] font-black uppercase tracking-[0.3em] ${pendingStatus === s ? 'text-primary' : 'group-hover:text-white/60'}`}>
                                                 {STATUS_CONFIG[s]?.label}
                                             </span>
                                         </div>
+                                        {pendingStatus === s && (
+                                            <motion.div layoutId="active-bg" className="absolute inset-0 bg-primary/5 pointer-events-none" />
+                                        )}
                                     </button>
                                 ))}
                             </div>
@@ -455,70 +476,80 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                         </section>
 
                         {/* Identity Intel Section */}
-                        <section className="space-y-6">
+                        <section className="space-y-8">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-[13px] font-semibold uppercase text-white/30 tracking-wider">Identity Intel</h3>
+                                <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Identity Intel</h3>
                                 <button
                                     onClick={handleAIGenerateSummary}
                                     disabled={loading.ai || isLegacyNode || !!syncError}
-                                    className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-all disabled:opacity-20 border border-primary/10"
+                                    className="p-2 rounded-xl bg-primary/5 hover:bg-primary/10 text-primary transition-all disabled:opacity-20 border border-primary/10 group/ai"
                                     title="AI Synthesis"
                                 >
-                                    {loading.ai ? <Spinner size="sm" /> : <SparklesIcon className="w-4 h-4" />}
+                                    {loading.ai ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5 group-hover:rotate-12 transition-transform duration-500" />}
                                 </button>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 {aiSummary ? (
-                                    <div className="bg-primary/[0.03] border border-primary/10 p-6 rounded-2xl animate-in fade-in duration-500">
-                                        <p className="text-[13px] font-sans text-white/70 leading-relaxed italic">"{aiSummary}"</p>
-                                        <button onClick={() => setAiSummary(null)} className="mt-4 text-[10px] font-bold uppercase text-white/20 hover:text-white/40 transition-colors">Discard</button>
+                                    <div className="bg-primary/[0.02] border border-primary/20 p-8 rounded-[2rem] animate-in fade-in zoom-in-95 duration-700 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-4 opacity-5">
+                                            <SparklesIcon className="w-16 h-16" />
+                                        </div>
+                                        <p className="text-[14px] font-serif font-medium text-white/80 leading-relaxed italic relative z-10">"{aiSummary}"</p>
+                                        <div className="mt-6 pt-6 border-t border-white/5 flex justify-between items-center">
+                                            <span className="text-[8px] font-black uppercase tracking-[0.4em] text-white/20">AI GENERATED INSIGHT</span>
+                                            <button onClick={() => setAiSummary(null)} className="text-[9px] font-black uppercase text-white/20 hover:text-white/60 transition-colors tracking-widest">Discard</button>
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="space-y-3">
-                                        <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] group/intel transition-all hover:border-white/10">
-                                            <div className="flex items-center gap-4 mb-4 pb-4 border-b border-white/[0.03]">
-                                                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-                                                    <UserIcon className="w-5 h-5" />
+                                    <div className="space-y-4">
+                                        <div className="p-8 rounded-[2rem] bg-white/[0.01] border border-white/5 group/intel transition-all duration-500 hover:border-white/10 hover:bg-white/[0.02] relative overflow-hidden">
+                                            <div className="absolute -right-8 -bottom-8 opacity-[0.02] group-hover/intel:opacity-[0.05] transition-opacity duration-1000">
+                                                <UserIcon className="w-32 h-32" />
+                                            </div>
+                                            <div className="flex items-center gap-6 mb-8 relative z-10">
+                                                <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 shadow-2xl">
+                                                    <UserIcon className="w-7 h-7" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-[14px] font-bold text-white/85 truncate uppercase tracking-tight">{enquiry.parent_name || 'Anonymous'}</p>
-                                                    <span className="text-[10px] font-medium text-white/20 uppercase tracking-widest">Parent Node</span>
+                                                    <p className="text-lg font-serif font-black text-white group-hover/intel:text-indigo-400 transition-colors duration-500 uppercase tracking-tight truncate">{enquiry.parent_name || 'ANONYMOUS NODAL ENTRY'}</p>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em]">PARENT IDENTITY NODE</span>
                                                 </div>
                                             </div>
 
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <MailIcon className="w-4 h-4 text-white/15" />
-                                                        <span className="text-[13px] text-white/60 font-medium truncate max-w-[200px]">{enquiry.parent_email}</span>
+                                            <div className="space-y-4 relative z-10">
+                                                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
+                                                    <div className="flex items-center gap-4">
+                                                        <MailIcon className="w-4 h-4 text-white/10" />
+                                                        <span className="text-sm text-white/60 font-medium truncate max-w-[200px]">{enquiry.parent_email}</span>
                                                     </div>
                                                     <button onClick={() => handleCopy(enquiry.parent_email, 'email')} className="text-white/10 hover:text-white/40 transition-colors">
-                                                        {copiedField === 'email' ? <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-500" /> : <CopyIcon className="w-3.5 h-3.5" />}
+                                                        {copiedField === 'email' ? <CheckCircleIcon className="w-4 h-4 text-emerald-500" /> : <CopyIcon className="w-4 h-4" />}
                                                     </button>
                                                 </div>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <PhoneIcon className="w-4 h-4 text-white/15" />
-                                                        <span className="text-[13px] text-white/60 font-medium tracking-wider">{enquiry.parent_phone || '—'}</span>
+                                                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
+                                                    <div className="flex items-center gap-4">
+                                                        <PhoneIcon className="w-4 h-4 text-white/10" />
+                                                        <span className="text-sm text-white/60 font-medium tracking-[0.2em]">{enquiry.parent_phone || 'NO SIGNAL'}</span>
                                                     </div>
                                                     {enquiry.parent_phone && (
                                                         <button onClick={() => handleCopy(enquiry.parent_phone, 'phone')} className="text-white/10 hover:text-white/40 transition-colors">
-                                                            {copiedField === 'phone' ? <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-500" /> : <CopyIcon className="w-3.5 h-3.5" />}
+                                                            {copiedField === 'phone' ? <CheckCircleIcon className="w-4 h-4 text-emerald-500" /> : <CopyIcon className="w-4 h-4" />}
                                                         </button>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] transition-all hover:border-white/10">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20 shadow-sm">
-                                                    <GraduationCapIcon className="w-5 h-5" />
+                                        <div className="p-8 rounded-[2rem] bg-indigo-500/[0.02] border border-white/5 transition-all duration-700 hover:border-indigo-500/20 group/grade relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-indigo-500/[0.02] opacity-0 group-hover/grade:opacity-100 transition-opacity"></div>
+                                            <div className="flex items-center gap-6 relative z-10">
+                                                <div className="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20 shadow-2xl group-hover:scale-110 transition-transform duration-700">
+                                                    <GraduationCapIcon className="w-7 h-7" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-lg font-bold text-white/85 tracking-widest uppercase">GRADE {enquiry.grade}</p>
-                                                    <span className="text-[10px] font-medium text-white/20 uppercase tracking-widest">Academic Target</span>
+                                                    <p className="text-3xl font-serif font-black text-white tracking-widest uppercase">GRADE {enquiry.grade}</p>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em]">ACADEMIC TARGET VECTOR</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -528,32 +559,41 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                         </section>
 
                         {enquiry.status === 'ENQUIRY_CONVERTED' ? (
-                            <section className="pt-6 border-t border-white/[0.04]">
-                                <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-center">
-                                    <div className="flex items-center justify-center gap-2 text-emerald-500 mb-1">
-                                        <CheckCircleIcon className="w-5 h-5" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Handoff Complete</span>
+                            <section className="pt-8 border-t border-white/5 mt-auto">
+                                <div className="p-8 rounded-[2.5rem] bg-emerald-500/[0.02] border border-emerald-500/20 text-center relative overflow-hidden group/final">
+                                    <div className="absolute inset-0 bg-emerald-500/[0.01] opacity-0 group-hover/final:opacity-100 transition-opacity"></div>
+                                    <div className="flex flex-col items-center justify-center gap-4 relative z-10">
+                                        <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-2xl animate-bounce-subtle">
+                                            <CheckCircleIcon className="w-10 h-10 text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <span className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.5em] block mb-2">HANDOFF FINALIZED</span>
+                                            <p className="text-[10px] text-white/30 uppercase tracking-[0.3em] font-bold">NODE PROMOTED TO SECURE VAULT</p>
+                                        </div>
+                                        <button
+                                            onClick={() => onNavigate?.('Admissions')}
+                                            className="mt-6 w-full py-5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-black uppercase tracking-[0.4em] border border-emerald-500/20 transition-all duration-500 shadow-2xl shadow-emerald-500/5 active:scale-95"
+                                        >
+                                            VIEW ADMISSION REGISTRY
+                                        </button>
                                     </div>
-                                    <p className="text-[10px] text-white/20 uppercase tracking-widest font-bold">Node promoted to Vault</p>
-                                    <button
-                                        onClick={() => onNavigate?.('Admissions')}
-                                        className="mt-4 w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
-                                    >
-                                        View Admission File
-                                    </button>
                                 </div>
                             </section>
                         ) : (
-                            <section className="pt-6 border-t border-white/[0.04]">
+                            <section className="pt-8 border-t border-white/5 mt-auto">
                                 <button
                                     onClick={handleConvert}
                                     disabled={loading.converting || ['ENQUIRY_ACTIVE', 'ENQUIRY_REJECTED'].includes(enquiry.status)}
-                                    className={`w-full h-14 rounded-xl flex items-center justify-center gap-3 font-bold text-xs uppercase tracking-widest transition-all ${!['ENQUIRY_ACTIVE', 'ENQUIRY_REJECTED'].includes(enquiry.status) ? 'bg-[#10b981]/90 text-white hover:bg-[#10b981] shadow-lg shadow-emerald-900/20' : 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5 grayscale'}`}
+                                    className={`w-full h-16 rounded-2xl flex items-center justify-center gap-5 font-black text-[11px] uppercase tracking-[0.4em] transition-all duration-700 relative overflow-hidden group/promote shadow-2xl ${!['ENQUIRY_ACTIVE', 'ENQUIRY_REJECTED'].includes(enquiry.status)
+                                        ? 'bg-[#10b981] text-white hover:bg-[#0da271] hover:shadow-emerald-500/30'
+                                        : 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5 grayscale'
+                                        }`}
                                 >
-                                    {loading.converting ? <Spinner size="sm" /> : (
+                                    <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover/promote:translate-x-[100%] transition-transform duration-1000"></div>
+                                    {loading.converting ? <Spinner size="sm" color="white" /> : (
                                         <>
-                                            <GraduationCapIcon className="w-5 h-5 opacity-60" />
-                                            <span>Promote to Admission</span>
+                                            <GraduationCapIcon className="w-6 h-6 relative z-10 group-hover:scale-110 transition-transform duration-500" />
+                                            <span className="relative z-10">PROMOTE TO ADMISSION</span>
                                         </>
                                     )}
                                 </button>
