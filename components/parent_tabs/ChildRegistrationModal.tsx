@@ -183,8 +183,13 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
 
     useEffect(() => {
         const fetchParent = async () => {
-            const { data } = await supabase.from('profiles').select('display_name, email, phone').eq('id', currentUserId).maybeSingle();
-            if (data) setParentProfile({ name: data.display_name || '', email: data.email, phone: data.phone || '' });
+            const { data } = await supabase.from('profiles').select('display_name, email, phone, branch_id').eq('id', currentUserId).maybeSingle();
+            if (data) setParentProfile({
+                name: data.display_name || '',
+                email: data.email,
+                phone: data.phone || '',
+                branch_id: data.branch_id
+            } as any);
         };
         fetchParent();
     }, [currentUserId]);
@@ -277,6 +282,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                 parent_name: parentProfile?.name || '',
                 parent_email: parentProfile?.email || '',
                 parent_phone: parentProfile?.phone || '',
+                branch_id: (parentProfile as any)?.branch_id || null,
                 status: 'Pending Review'
             };
 
