@@ -329,7 +329,7 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
 
     const formErrors = useMemo(() => {
         const errors: Record<string, string> = {};
-        if (!formData.name.trim()) errors.name = "Designation required";
+        if (!formData.name.trim()) errors.name = "School/Campus name required";
         if (!formData.address.trim()) errors.address = "Geo-location required";
         if (!formData.country) errors.country = "Select jurisdiction";
         if (!formData.state) errors.state = "Select administrative state";
@@ -350,8 +350,10 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
         if (!isMounted.current) return;
         setEditingBranch(null);
         const isHeadOffice = branches.length === 0;
+        const defaultName = currentSchoolData?.school_name || '';
+
         setFormData({
-            name: (isHeadOffice && currentSchoolData?.school_name) || '',
+            name: defaultName,
             address: (isHeadOffice && currentSchoolData?.address) || '',
             country: (isHeadOffice && currentSchoolData?.country) || 'India',
             state: (isHeadOffice && currentSchoolData?.state) || '',
@@ -384,20 +386,42 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     };
 
     const handleResolveAddress = async () => {
-        if (!formData.address?.trim()) return;
-        setIsResolvingAddress(true);
         setModalError(null);
+        let addressToResolve = formData.address;
+
+        if (!addressToResolve?.trim()) {
+            setIsResolvingAddress(true);
+            try {
+                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        timeout: 10000,
+                        enableHighAccuracy: true
+                    });
+                });
+                const { latitude, longitude } = position.coords;
+                addressToResolve = `${latitude}, ${longitude}`;
+            } catch (err) {
+                setModalError("Unable to access GPS location. Please enter address manually.");
+                setIsResolvingAddress(false);
+                return;
+            }
+        }
+
+        setIsResolvingAddress(true);
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-            const prompt = `Based on the street address "${formData.address}", identify the city, state, and country. 
-            Output ONLY strictly as a valid JSON object: {"city": "string", "state": "string", "country": "string"}.
-            Country must be exactly one of: ${countries.join(', ')}.`;
+            const prompt = `Based on the location input "${addressToResolve}" (which could be an address or coordinates), identify the precise street address, city, state, and country. 
+            Output strictly as a valid JSON object: {"address": "full street address", "city": "city name", "state": "state name", "country": "country name"}.
+            
+            Contextual Requirements:
+            1. Country MUST be one of: ${countries.join(', ')}.
+            2. State MUST be a valid administrative subdivision for that country.
+            3. If coordinates were provided, reverse-geocode them to a human-readable street address.`;
 
-            // Use gemini-2.5-flash as primary (project standard), but ready for property vs function response
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: { tools: [{ googleMaps: {} }] }
+                model: 'gemini-2.0-flash',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                tools: [{ googleMaps: {} }]
             });
 
             // Defensive extraction: SDKs vary between .text (property) and .text() (function)
@@ -422,11 +446,12 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 const data = JSON.parse(jsonMatch[0]);
                 setFormData(prev => ({
                     ...prev,
+                    address: data.address || prev.address,
                     city: data.city || prev.city,
                     state: data.state || prev.state,
                     country: data.country || prev.country
                 }));
-                setModalError(null); // Explicitly clear on success
+                setModalError(null);
             } else {
                 console.warn('No JSON found in AI response:', text);
                 setModalError("Unable to locate address metadata. Please enter manually.");
