@@ -4107,7 +4107,7 @@ BEGIN
         jsonb_build_object('message', m.message)::jsonb,
         m.created_at::timestamptz,
         COALESCE(p.display_name, 'Institutional Node')::text,
-        COALESCE(m.is_admin, false)::boolean
+        COALESCE(m.is_admin_message, false)::boolean
     FROM public.enquiry_messages m
     LEFT JOIN public.profiles p ON m.sender_id = p.id
     WHERE m.enquiry_id = p_enquiry_id
@@ -4134,7 +4134,7 @@ BEGIN
         AND role IN ('School Administration', 'Branch Admin', 'Super Admin')
     ) INTO v_is_admin;
 
-    INSERT INTO public.enquiry_messages (enquiry_id, sender_id, message, is_admin)
+    INSERT INTO public.enquiry_messages (enquiry_id, sender_id, message, is_admin_message)
     VALUES (p_enquiry_id, auth.uid(), p_message, v_is_admin);
     
     UPDATE public.enquiries SET updated_at = now() WHERE id = p_enquiry_id;

@@ -399,7 +399,7 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
         setSending(true);
         try {
             const { error } = await supabase.rpc('send_enquiry_message_v3', {
-                p_enquiry_id: String(enquiry.id),
+                p_enquiry_id: enquiry.id,
                 p_message: msg
             });
 
