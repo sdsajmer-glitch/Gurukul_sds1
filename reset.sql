@@ -38,37 +38,38 @@ DROP FUNCTION IF EXISTS public.admin_generate_bulk_invoices(bigint, bigint, text
 DROP FUNCTION IF EXISTS public.admin_quick_add_student(text, text, text, text) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_quick_add_student(text, text, text, text, text, text, text) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_reconcile_student_account(uuid) CASCADE;
-DROP FUNCTION IF EXISTS public.admin_sync_student_billing CASCADE;
+DROP FUNCTION IF EXISTS public.admin_sync_student_billing(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_update_enquiry_status(uuid, text, text) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_update_enquiry_status(text, text, text) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_update_enquiry_status(text, text) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_verify_enquiry_code(text, bigint) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_verify_enquiry_code(text) CASCADE;
-DROP FUNCTION IF EXISTS public.complete_branch_step CASCADE;
-DROP FUNCTION IF EXISTS public.convert_enquiry_to_admission CASCADE;
-DROP FUNCTION IF EXISTS public.generate_student_ledger_for_student CASCADE;
+DROP FUNCTION IF EXISTS public.complete_branch_step() CASCADE;
+DROP FUNCTION IF EXISTS public.convert_enquiry_to_admission(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.generate_student_ledger_for_student(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.get_all_classes_for_admin() CASCADE;
-DROP FUNCTION IF EXISTS public.get_all_teachers_for_admin CASCADE;
-DROP FUNCTION IF EXISTS public.get_all_users_for_admin CASCADE;
-DROP FUNCTION IF EXISTS public.get_class_roster CASCADE;
-DROP FUNCTION IF EXISTS public.get_finance_dashboard_data CASCADE;
-DROP FUNCTION IF EXISTS public.get_my_children_profiles CASCADE; -- Added prevent conflict
-DROP FUNCTION IF EXISTS public.get_school_branches CASCADE;
-DROP FUNCTION IF EXISTS public.get_student_financial_node CASCADE;
-DROP FUNCTION IF EXISTS public.get_student_financial_nodes CASCADE;
-DROP FUNCTION IF EXISTS public.get_student_running_ledger CASCADE;
-DROP FUNCTION IF EXISTS public.handle_new_user CASCADE;
-DROP FUNCTION IF EXISTS public.initialize_school_admin CASCADE;
+DROP FUNCTION IF EXISTS public.get_all_teachers_for_admin() CASCADE;
+DROP FUNCTION IF EXISTS public.get_all_users_for_admin() CASCADE;
+DROP FUNCTION IF EXISTS public.get_class_roster(bigint) CASCADE;
+DROP FUNCTION IF EXISTS public.get_finance_dashboard_data() CASCADE;
+DROP FUNCTION IF EXISTS public.get_finance_dashboard_data(bigint) CASCADE;
+DROP FUNCTION IF EXISTS public.get_my_children_profiles() CASCADE; -- Added prevent conflict
+DROP FUNCTION IF EXISTS public.get_school_branches() CASCADE;
+DROP FUNCTION IF EXISTS public.get_student_financial_node(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.get_student_financial_nodes(bigint) CASCADE;
+DROP FUNCTION IF EXISTS public.get_student_running_ledger(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS public.initialize_school_admin() CASCADE;
 DROP FUNCTION IF EXISTS public.reconcile_finance_registry_v2 CASCADE;
-DROP FUNCTION IF EXISTS public.switch_active_role CASCADE;
-DROP FUNCTION IF EXISTS public.trigger_on_student_placement CASCADE;
-DROP FUNCTION IF EXISTS public.update_school_plan CASCADE;
-DROP FUNCTION IF EXISTS public.upsert_ecommerce_profile CASCADE;
-DROP FUNCTION IF EXISTS public.upsert_parent_profile CASCADE;
-DROP FUNCTION IF EXISTS public.upsert_student_profile CASCADE;
-DROP FUNCTION IF EXISTS public.upsert_teacher_profile CASCADE;
-DROP FUNCTION IF EXISTS public.upsert_transport_profile CASCADE;
-DROP FUNCTION IF EXISTS public.verify_and_link_branch_admin CASCADE;
+DROP FUNCTION IF EXISTS public.switch_active_role(text) CASCADE;
+DROP FUNCTION IF EXISTS public.trigger_on_student_placement() CASCADE;
+DROP FUNCTION IF EXISTS public.update_school_plan(text) CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_ecommerce_profile(uuid, text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_parent_profile(uuid, text, text, text, integer, text, text, text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_student_profile(uuid, text, text, text, date) CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_teacher_profile(uuid, text, text, text, text, text, text, text, numeric, date) CASCADE;
+DROP FUNCTION IF EXISTS public.upsert_transport_profile(uuid, text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.verify_and_link_branch_admin(text) CASCADE;
 
 -- Drop Tables (Comprehensive list)
 DROP TABLE IF EXISTS
