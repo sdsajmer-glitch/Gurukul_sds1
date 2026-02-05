@@ -34,9 +34,10 @@ DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Public can view branches" ON public.school_branches;
 
 -- Drop Functions (Comprehensive)
-DROP FUNCTION IF EXISTS public.admin_generate_bulk_invoices CASCADE;
-DROP FUNCTION IF EXISTS public.admin_quick_add_student CASCADE;
-DROP FUNCTION IF EXISTS public.admin_reconcile_student_account CASCADE;
+DROP FUNCTION IF EXISTS public.admin_generate_bulk_invoices(bigint, bigint, text, text, date) CASCADE;
+DROP FUNCTION IF EXISTS public.admin_quick_add_student(text, text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.admin_quick_add_student(text, text, text, text, text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.admin_reconcile_student_account(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.admin_sync_student_billing CASCADE;
 DROP FUNCTION IF EXISTS public.admin_update_enquiry_status CASCADE;
 DROP FUNCTION IF EXISTS public.admin_verify_enquiry_code CASCADE;
@@ -1585,7 +1586,7 @@ BEGIN
   SET role = 'School Administration', 
       branch_id = v_invitation.branch_id
   WHERE id = v_user_id;
-  
+
   -- Update school_branches table
   UPDATE public.school_branches
   SET branch_admin_id = v_user_id
@@ -1617,7 +1618,7 @@ BEGIN
   SELECT id INTO v_enquiry_id FROM public.enquiries 
   WHERE enquiry_code = p_code AND (branch_id = p_branch_id OR p_branch_id IS NULL)
   LIMIT 1;
-  
+
   IF v_enquiry_id IS NOT NULL THEN
     RETURN jsonb_build_object('success', true, 'message', 'Verified', 'enquiry_id', v_enquiry_id);
   ELSE
@@ -1680,7 +1681,7 @@ BEGIN
   SELECT COALESCE(SUM(total_amount - paid_amount), 0) INTO v_pending FROM public.fee_invoices WHERE (branch_id = p_branch_id OR p_branch_id IS NULL) AND status != 'paid';
   SELECT COALESCE(SUM(amount), 0) INTO v_monthly FROM public.fee_payments WHERE (branch_id = p_branch_id OR p_branch_id IS NULL) AND payment_date >= date_trunc('month', now());
   SELECT COALESCE(SUM(amount), 0) INTO v_online FROM public.fee_payments WHERE (branch_id = p_branch_id OR p_branch_id IS NULL) AND payment_method = 'Online';
-  
+
   RETURN jsonb_build_object(
     'revenue_ytd', v_revenue,
     'pending_dues', v_pending,
@@ -2182,7 +2183,7 @@ DECLARE
 BEGIN
   -- Fetch email from auth.users
   SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
-  
+
   -- Ensure the profile row exists first (UPSERT)
   INSERT INTO public.profiles (id, email, display_name, phone, role, profile_completed)
   VALUES (p_user_id, COALESCE(v_email, p_email, ''), p_display_name, p_phone, 'Teacher', false)
@@ -2243,7 +2244,7 @@ DECLARE
 BEGIN
   -- Fetch email from auth.users
   SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
-  
+
   -- Ensure the profile row exists first (UPSERT)
   INSERT INTO public.profiles (id, email, display_name, role, profile_completed)
   VALUES (p_user_id, COALESCE(v_email, ''), p_display_name, 'Student', false)
@@ -2292,7 +2293,7 @@ DECLARE
 BEGIN
   -- Fetch email from auth.users to ensure we have the correct email for the profile
   SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
-  
+
   -- Ensure the profile row exists first (UPSERT), then update with display name and role
   INSERT INTO public.profiles (id, email, display_name, role, profile_completed)
   VALUES (p_user_id, COALESCE(v_email, ''), p_display_name, 'Parent/Guardian', false)
@@ -2339,7 +2340,7 @@ DECLARE
 BEGIN
   -- Fetch email from auth.users
   SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
-  
+
   -- Ensure the profile row exists first (UPSERT)
   INSERT INTO public.profiles (id, email, display_name, role, profile_completed)
   VALUES (p_user_id, COALESCE(v_email, ''), p_display_name, 'Transport Staff', false)
@@ -2376,7 +2377,7 @@ DECLARE
 BEGIN
   -- Fetch email from auth.users
   SELECT email INTO v_email FROM auth.users WHERE id = p_user_id;
-  
+
   -- Ensure the profile row exists first (UPSERT)
   INSERT INTO public.profiles (id, email, display_name, role, profile_completed)
   VALUES (p_user_id, COALESCE(v_email, ''), p_display_name, 'Ecommerce Operator', false)
@@ -2519,11 +2520,11 @@ BEGIN
   FROM public.admissions
   WHERE id = p_new_admission_id
     AND (parent_id = auth.uid() OR parent_email = (SELECT email FROM public.profiles WHERE id = auth.uid()));
-  
+
   IF v_admission IS NULL THEN
     RETURN jsonb_build_object('success', false, 'message', 'Admission not found or access denied');
   END IF;
-  
+
   RETURN jsonb_build_object('success', true, 'admission_id', p_new_admission_id);
 END;
 $$;
@@ -2774,7 +2775,7 @@ BEGIN
   IF v_user_id IS NULL THEN
      RETURN jsonb_build_object('success', false, 'message', 'Not authenticated');
   END IF;
-  
+
   -- Get current user email
   SELECT email INTO v_user_email FROM auth.users WHERE id = v_user_id;
 
@@ -2792,7 +2793,7 @@ BEGIN
 
   -- Check Branch Admin Email Restriction
   SELECT * INTO v_branch FROM public.school_branches WHERE id = v_invitation.branch_id;
-  
+
   -- If the branch has a designated admin email, enforce it
   IF v_branch.admin_email IS NOT NULL AND lower(v_branch.admin_email) != lower(v_user_email) THEN
       RETURN jsonb_build_object(
@@ -2812,7 +2813,7 @@ BEGIN
   SET role = 'School Administration', 
       branch_id = v_invitation.branch_id
   WHERE id = v_user_id;
-  
+
   -- Update school_branches table
   UPDATE public.school_branches
   SET branch_admin_id = v_user_id
@@ -2841,7 +2842,7 @@ BEGIN
   IF v_user_id IS NULL THEN
      RETURN jsonb_build_object('success', false, 'message', 'Not authenticated');
   END IF;
-  
+
   -- Get current user email
   SELECT email INTO v_user_email FROM auth.users WHERE id = v_user_id;
 
@@ -2859,7 +2860,7 @@ BEGIN
 
   -- Check Branch Admin Email Restriction
   SELECT * INTO v_branch FROM public.school_branches WHERE id = v_invitation.branch_id;
-  
+
   -- If the branch has a designated admin email, enforce it
   IF v_branch.admin_email IS NOT NULL AND lower(v_branch.admin_email) != lower(v_user_email) THEN
       RETURN jsonb_build_object(
@@ -2886,7 +2887,7 @@ BEGIN
   VALUES (v_user_id, 'completed')
   ON CONFLICT (user_id) DO UPDATE SET
     onboarding_step = 'completed';
-  
+
   -- Update school_branches table
   UPDATE public.school_branches
   SET branch_admin_id = v_user_id
