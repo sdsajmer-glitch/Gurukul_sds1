@@ -1,8 +1,7 @@
 -- ==============================================================================
--- ROLE SELECTION & ONBOARDING PROTOCOL: BRANCH ADMIN DETECTION
+-- ROLE SELECTION & ONBOARDING PROTOCOL: ADMIN DETECTION ENHANCEMENT
 -- ==============================================================================
--- This script adds the capability to check if a user is eligible for Branch Admin
--- role based on their email matching a registered branch admin email.
+-- Updated to check both school_admin_profiles and school_branches for email match.
 
 CREATE OR REPLACE FUNCTION public.check_branch_admin_eligibility()
 RETURNS jsonb
@@ -12,22 +11,30 @@ AS $$
 DECLARE
     v_user_email text;
     v_eligible boolean := false;
+    v_is_school_admin boolean := false;
 BEGIN
     v_user_email := (select email from auth.users where id = auth.uid());
     
     IF v_user_email IS NULL THEN
-        RETURN jsonb_build_object('eligible', false);
+        RETURN jsonb_build_object('eligible', false, 'is_school_admin', false);
     END IF;
 
     -- Check if email matches any branch admin email (case-insensitive)
-    -- We only care about branches that don't have a branch_admin_id yet, 
-    -- or perhaps all branches to be safe in case of re-linking.
     SELECT EXISTS (
         SELECT 1 FROM public.school_branches 
         WHERE lower(admin_email) = lower(v_user_email)
     ) INTO v_eligible;
+    
+    -- Also check if email matches any school admin profile email (case-insensitive)
+    SELECT EXISTS (
+        SELECT 1 FROM public.school_admin_profiles 
+        WHERE lower(admin_contact_email) = lower(v_user_email)
+    ) INTO v_is_school_admin;
 
-    RETURN jsonb_build_object('eligible', v_eligible);
+    RETURN jsonb_build_object(
+        'eligible', v_eligible OR v_is_school_admin,
+        'is_school_admin', v_is_school_admin
+    );
 END;
 $$;
 
