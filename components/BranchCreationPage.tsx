@@ -363,19 +363,33 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
             // Reset for "Create New" in modal
             setEditingBranch(null);
             setFormData({
-                name: '', address: '', country: 'India', city: '', state: '',
-                adminName: '', adminPhone: '', adminEmail: '', isMain: false
+                name: schoolData?.school_name || '',
+                address: schoolData?.address || '',
+                country: schoolData?.country || 'India',
+                city: schoolData?.city || '',
+                state: schoolData?.state || '',
+                adminName: schoolData?.admin_contact_name || '',
+                adminPhone: schoolData?.admin_contact_phone || '',
+                adminEmail: schoolData?.admin_contact_email || '',
+                isMain: branches.length === 0
             });
         }
-    }, [initialBranch, hideHero]);
+    }, [initialBranch, hideHero, schoolData, branches.length]);
 
     const isDirty = useMemo(() => {
         const base = editingBranch ? {
             name: editingBranch.name, address: editingBranch.address, country: editingBranch.country || 'India', state: editingBranch.state || '', city: editingBranch.city || '',
             adminName: editingBranch.admin_name || '', adminPhone: editingBranch.admin_phone || '', adminEmail: editingBranch.admin_email || '', isMain: editingBranch.is_main_branch
         } : {
-            name: '', address: '', country: 'India', city: '', state: '',
-            adminName: '', adminPhone: '', adminEmail: '', isMain: branches.length === 0
+            name: schoolData?.school_name || '',
+            address: (branches.length === 0 && schoolData?.address) || '',
+            country: (branches.length === 0 && schoolData?.country) || 'India',
+            city: (branches.length === 0 && schoolData?.city) || '',
+            state: (branches.length === 0 && schoolData?.state) || '',
+            adminName: (branches.length === 0 && schoolData?.admin_contact_name) || '',
+            adminPhone: (branches.length === 0 && schoolData?.admin_contact_phone) || '',
+            adminEmail: (branches.length === 0 && schoolData?.admin_contact_email) || '',
+            isMain: branches.length === 0
         };
         // Simple string comparison for dirty check
         return JSON.stringify(formData) !== JSON.stringify(base);
@@ -383,17 +397,17 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
 
     const formErrors = useMemo(() => {
         const errors: Record<string, string> = {};
-        if (!formData.name.trim()) errors.name = "School/Campus name required";
-        if (!formData.address.trim()) errors.address = "Geo-location required";
-        if (!formData.country) errors.country = "Select jurisdiction";
-        if (!formData.state) errors.state = "Select administrative state";
-        if (!formData.city) errors.city = "Select city node";
+        if (!formData.name.trim()) errors.name = "School/Campus Name is required";
+        if (!formData.address.trim()) errors.address = "Geo-location Address is required";
+        if (!formData.country) errors.country = "Please select a jurisdiction";
+        if (!formData.state) errors.state = "Select an administrative state";
+        if (!formData.city) errors.city = "City Node selection is required";
 
         if (formData.adminEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.adminEmail)) {
-            errors.adminEmail = "Invalid protocol email";
+            errors.adminEmail = "Invalid protocol email format";
         }
-        if (!formData.adminEmail) errors.adminEmail = "Protocol email required";
-        if (!formData.adminName) errors.adminName = "Administrator identity required";
+        if (!formData.adminEmail) errors.adminEmail = "Protocol Email is required";
+        if (!formData.adminName) errors.adminName = "Administrator Identity is required";
 
         return errors;
     }, [formData]);
