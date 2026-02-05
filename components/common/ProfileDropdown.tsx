@@ -30,7 +30,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
 
     const [completedRoles, setCompletedRoles] = useState<Set<string>>(new Set());
     const [checkingRoles, setCheckingRoles] = useState(false);
-    const [isRestricted, setIsRestricted] = useState(false);
+
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -93,18 +93,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
         if (isOpen) discoverIdentities();
     }, [isOpen, discoverIdentities]);
 
-    useEffect(() => {
-        const checkRestriction = async () => {
-            if (!profile?.id) return;
-            try {
-                const { data } = await supabase.rpc('check_branch_admin_eligibility');
-                if (data?.eligible) setIsRestricted(true);
-            } catch (e) {
-                console.error("Restriction check failed", e);
-            }
-        };
-        checkRestriction();
-    }, [profile?.id]);
+
 
     const handleAction = async (actionRole: Role, isExisting: boolean) => {
         if (!onSelectRole) return;
@@ -119,7 +108,6 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
 
     // Logic Gate: Identify contexts where user profile ALREADY exists
     const authorizedScopes = useMemo(() => {
-        if (isRestricted) return [profile.role || BuiltInRoles.SCHOOL_ADMINISTRATION]; // Restricted: Show only current
         return roles
             .filter(r => completedRoles.has(r))
             .sort((a, b) => {
@@ -127,18 +115,17 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                 if (b === profile.role) return 1;
                 return ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b);
             });
-    }, [roles, completedRoles, profile.role, isRestricted]);
+    }, [roles, completedRoles, profile.role]);
 
     // Logic Gate: Identify available paths user has NOT yet onboarded to
     const registerableScopes = useMemo(() => {
-        if (isRestricted) return []; // Restricted: No new scopes
         return roles
             .filter(r =>
                 !completedRoles.has(r) &&
                 r !== profile.role &&
                 r !== BuiltInRoles.SUPER_ADMIN
             );
-    }, [roles, completedRoles, profile.role, isRestricted]);
+    }, [roles, completedRoles, profile.role]);
 
     return (
         <div className="relative z-50" ref={dropdownRef}>
@@ -160,7 +147,6 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                     <span className="text-xs font-bold text-white leading-tight max-w-[120px] truncate">{profile.display_name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[9px] font-black text-white/30 max-w-[120px] truncate uppercase tracking-widest leading-none">{profile.role || 'Provisioning'}</span>
-                        {isRestricted && <LockIcon className="w-2.5 h-2.5 text-red-500 opacity-80" />}
                     </div>
                 </div>
                 <ChevronDownIcon className={`h-3 w-3 text-white/20 transition-transform duration-500 ${isOpen ? 'rotate-180 text-primary opacity-100' : ''}`} />

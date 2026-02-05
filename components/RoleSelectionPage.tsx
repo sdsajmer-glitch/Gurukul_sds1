@@ -266,48 +266,27 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
             {isSchoolAdminModalOpen && (
                 <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex justify-center items-center z-[100] p-4 animate-in fade-in duration-300" onClick={() => !createLoading && !joinLoading && setIsSchoolAdminModalOpen(false)}>
                     <div className="bg-card w-full max-w-4xl rounded-[2rem] md:rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden transform transition-all scale-100 flex flex-col" onClick={e => e.stopPropagation()}>
-                        {isBranchAdminEligible && (
-                            <div className="bg-primary/10 border-b border-primary/20 px-8 py-4 flex items-center justify-between animate-in slide-in-from-top duration-500">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-                                        <ShieldCheckIcon className="w-5 h-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Identity Protocol: Registry Match Detected</p>
-                                        <p className="text-[9px] font-bold text-primary/60 uppercase tracking-widest">Email verified in Institutional Registry. Proceed to node verification.</p>
-                                    </div>
-                                </div>
-                                <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-primary/5 rounded-full">
-                                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                                    <span className="text-[8px] font-black text-primary uppercase tracking-tighter">Secure Handshake Active</span>
-                                </div>
-                            </div>
-                        )}
+
                         <div className="flex flex-col md:flex-row h-full min-h-[60vh] md:min-h-[500px]">
 
                             <button
                                 onClick={handleCreateNewSchool}
-                                disabled={createLoading || joinLoading || isBranchAdminEligible}
-                                className={`flex-1 p-6 md:p-12 text-center group relative overflow-hidden transition-all ${isBranchAdminEligible ? 'bg-muted/10 cursor-not-allowed grayscale-[0.5]' : 'hover:bg-primary/5 cursor-pointer'} disabled:opacity-50`}
+                                disabled={createLoading || joinLoading}
+                                className="flex-1 p-6 md:p-12 text-center group relative overflow-hidden transition-all hover:bg-primary/5 cursor-pointer disabled:opacity-50"
                             >
                                 <div className="relative z-10 flex flex-col items-center">
-                                    <div className={`w-24 h-24 ${isBranchAdminEligible ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'} rounded-3xl flex items-center justify-center mb-8 group-hover:${isBranchAdminEligible ? '' : 'scale-110'} transition-transform duration-500 shadow-inner border ${isBranchAdminEligible ? 'border-border' : 'border-primary/20'}`}>
+                                    <div className="w-24 h-24 bg-primary/10 text-primary rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500 shadow-inner border border-primary/20">
                                         {createLoading ? <Spinner size="lg" className="text-primary" /> : <SchoolIcon className="w-12 h-12" />}
                                     </div>
-                                    <h3 className={`text-3xl font-serif font-black ${isBranchAdminEligible ? 'text-muted-foreground' : 'text-foreground'} tracking-tight mb-4`}>Establish New School</h3>
+                                    <h3 className="text-3xl font-serif font-black text-foreground tracking-tight mb-4">Establish New School</h3>
                                     <p className="text-muted-foreground max-w-xs mx-auto text-sm font-medium leading-relaxed">
                                         Initialize a head office and set up global academic infrastructure.
                                     </p>
 
-                                    {isBranchAdminEligible ? (
-                                        <div className="mt-10 px-6 py-4 bg-orange-500/10 border border-orange-500/20 text-orange-600 rounded-2xl text-[10px] font-black uppercase tracking-widest max-w-[240px]">
-                                            This action is restricted. Use "Join Existing Group" to access your assigned node.
-                                        </div>
-                                    ) : (
-                                        <div className={`mt-10 inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-xl transition-all ${createLoading ? 'bg-primary/70 animate-pulse cursor-wait' : 'bg-primary hover:scale-105 shadow-primary/25'}`}>
-                                            {createLoading ? 'Provisioning Hub...' : 'Get Started'}
-                                        </div>
-                                    )}
+
+                                    <div className={`mt-10 inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-xl transition-all ${createLoading ? 'bg-primary/70 animate-pulse cursor-wait' : 'bg-primary hover:scale-105 shadow-primary/25'}`}>
+                                        {createLoading ? 'Provisioning Hub...' : 'Get Started'}
+                                    </div>
                                 </div>
                             </button>
 
