@@ -247,11 +247,15 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
     };
 
     const handleConvert = async () => {
+        if (loading.converting || enquiry.status === 'ENQUIRY_CONVERTED') return;
         setLoading(prev => ({ ...prev, converting: true }));
         try {
             const result = await EnquiryService.convertToAdmission(String(enquiry.id));
             if (result.success) {
                 onUpdate();
+                if (result.message?.includes('already finalized')) {
+                    alert(result.message);
+                }
                 onClose();
                 onNavigate?.('Admissions');
             }
@@ -527,15 +531,35 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                             </div>
                         </section>
 
-                        {enquiry.status !== 'ENQUIRY_CONVERTED' && (
+                        {enquiry.status === 'ENQUIRY_CONVERTED' ? (
+                            <section className="pt-6 border-t border-white/[0.04]">
+                                <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-center">
+                                    <div className="flex items-center justify-center gap-2 text-emerald-500 mb-1">
+                                        <CheckCircleIcon className="w-5 h-5" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Handoff Complete</span>
+                                    </div>
+                                    <p className="text-[10px] text-white/20 uppercase tracking-widest font-bold">Node promoted to Vault</p>
+                                    <button
+                                        onClick={() => onNavigate?.('Admissions')}
+                                        className="mt-4 w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold uppercase tracking-widest border border-white/5 transition-all"
+                                    >
+                                        View Admission File
+                                    </button>
+                                </div>
+                            </section>
+                        ) : (
                             <section className="pt-6 border-t border-white/[0.04]">
                                 <button
                                     onClick={handleConvert}
-                                    disabled={loading.converting || ['ENQUIRY_ACTIVE', 'ENQUIRY_REJECTED', 'ENQUIRY_CONVERTED'].includes(enquiry.status)}
-                                    className={`w-full h-14 rounded-xl flex items-center justify-center gap-3 font-bold text-xs uppercase tracking-widest transition-all ${!['ENQUIRY_ACTIVE', 'ENQUIRY_REJECTED', 'ENQUIRY_CONVERTED'].includes(enquiry.status) ? 'bg-[#10b981]/90 text-white hover:bg-[#10b981] shadow-lg shadow-emerald-900/20' : 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5 grayscale'}`}
+                                    disabled={loading.converting || ['ENQUIRY_ACTIVE', 'ENQUIRY_REJECTED'].includes(enquiry.status)}
+                                    className={`w-full h-14 rounded-xl flex items-center justify-center gap-3 font-bold text-xs uppercase tracking-widest transition-all ${!['ENQUIRY_ACTIVE', 'ENQUIRY_REJECTED'].includes(enquiry.status) ? 'bg-[#10b981]/90 text-white hover:bg-[#10b981] shadow-lg shadow-emerald-900/20' : 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5 grayscale'}`}
                                 >
-                                    <GraduationCapIcon className="w-5 h-5 opacity-60" />
-                                    <span>Promote to Admission</span>
+                                    {loading.converting ? <Spinner size="sm" /> : (
+                                        <>
+                                            <GraduationCapIcon className="w-5 h-5 opacity-60" />
+                                            <span>Promote to Admission</span>
+                                        </>
+                                    )}
                                 </button>
                             </section>
                         )}

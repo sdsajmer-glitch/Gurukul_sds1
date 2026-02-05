@@ -43,13 +43,15 @@ export const EnquiryService = {
     async updateStatus(enquiryId: string, status: string, notes?: string | null) {
         try {
             if (!enquiryId) throw new Error("Node ID required for status update.");
-            
-            const { error } = await supabase.rpc('admin_update_enquiry_status', {
+
+            const { data, error } = await supabase.rpc('admin_update_enquiry_status', {
                 p_enquiry_id: enquiryId,
                 p_status: status,
                 p_notes: notes || null
             });
             if (error) throw error;
+            if (data && !data.success) throw new Error(data.message || data.error || "Update protocol rejected.");
+
             return { success: true };
         } catch (err) {
             const formatted = formatError(err);
