@@ -44,9 +44,15 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     .eq('user_id', user.id)
                     .maybeSingle();
 
-                if (!error && data) {
-                    console.log('Administrative identity detected. Restricting Parent Portal mutation access.');
+                // Source of Truth: Branch-based administrators are restricted from mutating Parent data
+                // to prevent cross-node profile misuse. School-level administrators (those who
+                // established the node with no branch assignment) retain mutation authority.
+                if (!error && data && !!profile.branch_id) {
+                    console.log('Branch-based administrative identity detected. Restricting Parent Portal mutation access.');
                     setIsStrictReadOnly(true);
+                } else {
+                    console.log('Identity verified: Administrative lock exempt or not detected.');
+                    setIsStrictReadOnly(false);
                 }
             } catch (e) {
                 console.error('Identity handshake failed:', e);
