@@ -610,6 +610,7 @@ CREATE TABLE public.enquiries (
   is_archived boolean DEFAULT false,
   is_deleted boolean DEFAULT false,
   converted_at timestamp with time zone,
+  profile_photo_url text,
   CONSTRAINT enquiries_pkey PRIMARY KEY (id),
   CONSTRAINT enquiries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
   CONSTRAINT enquiries_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.school_branches(id)

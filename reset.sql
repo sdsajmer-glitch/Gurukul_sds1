@@ -318,7 +318,8 @@ CREATE TABLE public.enquiries (
   is_deleted boolean DEFAULT false,
   received_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  converted_at timestamp with time zone
+  converted_at timestamp with time zone,
+  profile_photo_url text
 );
 
 CREATE TABLE public.admissions (
