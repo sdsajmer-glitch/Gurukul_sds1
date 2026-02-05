@@ -9,7 +9,7 @@ BEGIN;
 -- 1. Ensure Messages Table Exists
 CREATE TABLE IF NOT EXISTS public.enquiry_messages (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    enquiry_id uuid NOT NULL_REFERENCES public.enquiries(id) ON DELETE CASCADE,
+    enquiry_id uuid NOT NULL REFERENCES public.enquiries(id) ON DELETE CASCADE,
     sender_id uuid REFERENCES auth.users(id),
     message text NOT NULL,
     is_admin boolean DEFAULT false,
