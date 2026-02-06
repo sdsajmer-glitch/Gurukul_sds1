@@ -212,4 +212,33 @@ BEGIN
 END;
 $$;
 
+-- [4] RLS STRENGTHENING: ENSURE ADMIN ACCESS
+ALTER TABLE public.student_profiles ENABLE ROW LEVEL SECURITY;
+
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'student_profiles' AND policyname = 'Admins can manage all students in their branch') THEN
+        CREATE POLICY "Admins can manage all students in their branch"
+        ON public.student_profiles
+        FOR ALL
+        TO authenticated
+        USING (
+            EXISTS (
+                SELECT 1 FROM public.profiles
+                WHERE profiles.id = auth.uid()
+                AND (profiles.role IN ('School Administration', 'Branch Admin', 'Principal', 'Admin'))
+                AND (profiles.branch_id = student_profiles.branch_id OR profiles.branch_id IS NULL)
+            )
+        )
+        WITH CHECK (
+            EXISTS (
+                SELECT 1 FROM public.profiles
+                WHERE profiles.id = auth.uid()
+                AND (profiles.role IN ('School Administration', 'Branch Admin', 'Principal', 'Admin'))
+                AND (profiles.branch_id = student_profiles.branch_id OR profiles.branch_id IS NULL)
+            )
+        );
+    END IF;
+END $$;
+
 COMMIT;

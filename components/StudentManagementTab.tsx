@@ -175,7 +175,9 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
         try {
             // FIX: Select profile_photo_url from profiles relationship
             let query = supabase.from('student_profiles').select(`*, profiles!inner (email, display_name, phone, role, is_active, profile_completed, created_at, profile_photo_url), school_classes (name)`).eq('profiles.role', 'Student');
-            if (branchId !== null && branchId !== undefined) query = query.eq('branch_id', branchId);
+            if (branchId !== null && branchId !== undefined) {
+                query = query.eq('branch_id', Number(branchId));
+            }
 
             const { data, error: dbError } = await query;
             if (dbError) throw dbError;
