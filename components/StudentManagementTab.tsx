@@ -85,15 +85,12 @@ export const AddStudentModal: React.FC<{ onClose: () => void; onSave: () => void
                 p_display_name: formData.display_name,
                 p_email: formData.email,
                 p_grade: formData.grade,
-                p_parent_details: formData.parent_guardian_details
+                p_parent_details: formData.parent_guardian_details,
+                p_branch_id: branchId
             });
 
             if (rpcError) throw rpcError;
             if (data && data.success === false) throw new Error(data.message || "Registration failed");
-
-            if (branchId && data?.user_id) {
-                await supabase.from('student_profiles').update({ branch_id: branchId }).eq('user_id', data.user_id);
-            }
 
             onSave();
             onClose();
