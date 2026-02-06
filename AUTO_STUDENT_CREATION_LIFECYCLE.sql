@@ -153,8 +153,8 @@ BEGIN
         'timestamp', now()
     ));
 
-    INSERT INTO public.admission_audit_logs (admission_id, previous_status, new_status, changed_by, changed_by_name, details)
-    VALUES (p_admission_id, 'Approved', 'Enrolled', auth.uid(), 'System Admin', jsonb_build_object('action', 'STUDENT_MASTER_AUTO_CREATED', 'sid', v_sid));
+    INSERT INTO public.admission_audit_logs (admission_id, item_type, previous_status, new_status, changed_by, changed_by_name, details)
+    VALUES (p_admission_id, 'ADMISSION', 'Approved', 'Enrolled', auth.uid(), 'System Admin', jsonb_build_object('action', 'STUDENT_MASTER_AUTO_CREATED', 'sid', v_sid));
 
     RETURN jsonb_build_object(
         'success', true, 
