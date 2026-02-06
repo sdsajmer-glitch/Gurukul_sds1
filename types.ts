@@ -495,6 +495,7 @@ export interface StudentForAdmin extends UserProfile {
     gender?: string;
     date_of_birth?: string;
     address?: string;
+    admission_id?: string;
 }
 
 export interface VerifiedShareCodeData {

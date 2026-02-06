@@ -17,6 +17,8 @@ import { StorageService, BUCKETS } from '../../services/storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusIcon } from '../icons/PlusIcon';
 import { RefreshCwIcon } from '../icons/RefreshCwIcon';
+import StudentProfileModal from '../students/StudentProfileModal';
+import { StudentForAdmin } from '../../types';
 
 interface AdmissionDetailsModalProps {
     admission: AdmissionApplication;
@@ -34,6 +36,8 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     const [newDocName, setNewDocName] = useState('');
     const [requestingLoading, setRequestingLoading] = useState(false);
     const [expandedDoc, setExpandedDoc] = useState<number | null>(null);
+    const [viewStudentProfile, setViewStudentProfile] = useState(false);
+    const [studentData, setStudentData] = useState<StudentForAdmin | null>(null);
 
     const isMounted = useRef(true);
 
@@ -67,6 +71,47 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     useEffect(() => {
         fetchDocs();
     }, [fetchDocs]);
+
+    useEffect(() => {
+        const fetchStudentNode = async () => {
+            if (!admission.student_user_id) return;
+            try {
+                const { data, error } = await supabase
+                    .from('student_profiles')
+                    .select(`*, profiles!inner (*), school_classes (name)`)
+                    .eq('user_id', admission.student_user_id)
+                    .single();
+
+                if (error) throw error;
+                if (data && isMounted.current) {
+                    setStudentData({
+                        id: data.user_id,
+                        email: data.profiles?.email || '',
+                        display_name: data.profiles?.display_name || '',
+                        phone: data.profiles?.phone,
+                        role: data.profiles?.role,
+                        is_active: data.profiles?.is_active,
+                        profile_completed: data.profiles?.profile_completed,
+                        created_at: data.created_at || data.profiles?.created_at,
+                        profile_photo_url: data.profiles?.profile_photo_url,
+                        gender: data.gender,
+                        date_of_birth: data.date_of_birth,
+                        address: data.address,
+                        student_id_number: data.student_id_number,
+                        grade: data.grade,
+                        roll_number: data.roll_number,
+                        parent_guardian_details: data.parent_guardian_details,
+                        assigned_class_id: data.assigned_class_id,
+                        assigned_class_name: data.school_classes?.name || null
+                    });
+                }
+            } catch (err) {
+                console.error("Student Node Fetch Error:", err);
+            }
+        };
+
+        fetchStudentNode();
+    }, [admission.student_user_id]);
 
     const handleDownload = async (doc: any) => {
         const file = doc.admission_documents?.[0];
@@ -197,9 +242,19 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                     {admission.application_number || 'PENDING_REGISTRATION'}
                                 </span>
                                 {admission.student_user_id && (
-                                    <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] uppercase font-black tracking-widest">
-                                        <ShieldCheckIcon className="w-3 h-3" /> Identity Linked
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] uppercase font-black tracking-widest">
+                                            <ShieldCheckIcon className="w-3 h-3" /> Student Master Active
+                                        </span>
+                                        {admission.status === 'Enrolled' && (
+                                            <button
+                                                onClick={() => setViewStudentProfile(true)}
+                                                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] uppercase font-black tracking-widest hover:bg-indigo-500/20 transition-all"
+                                            >
+                                                <UserIcon className="w-3 h-3" /> View Profile
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -269,10 +324,17 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                     <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] p-8 space-y-8 backdrop-blur-md relative overflow-hidden group shadow-2xl transition-all hover:bg-white/[0.04]">
                                         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] -mr-32 -mt-32 group-hover:bg-indigo-500/10 transition-all duration-700" />
 
-                                        <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                            <button className="p-2 text-white/20 hover:text-white/50 transition-colors" title="Modify Registry Entry">
-                                                <RefreshCwIcon className="w-4 h-4" />
-                                            </button>
+                                        <div className="absolute top-6 right-6">
+                                            {admission.status === 'Enrolled' ? (
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <span className="text-[8px] font-black text-emerald-500/40 uppercase tracking-widest">Archive State</span>
+                                                    <span className="text-[7px] font-bold text-white/10 uppercase tracking-tight">Identity Locked</span>
+                                                </div>
+                                            ) : (
+                                                <button className="p-2 text-white/20 hover:text-white/50 transition-colors opacity-0 group-hover:opacity-100" title="Modify Registry Entry">
+                                                    <RefreshCwIcon className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div className="flex items-start gap-6 relative z-10 transition-transform group-hover:translate-x-1 duration-300">
@@ -628,6 +690,13 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                     </div>
                 </div>
             </div>
+            {viewStudentProfile && studentData && (
+                <StudentProfileModal
+                    student={studentData}
+                    onClose={() => setViewStudentProfile(false)}
+                    onUpdate={() => { }}
+                />
+            )}
         </div>
     );
 };

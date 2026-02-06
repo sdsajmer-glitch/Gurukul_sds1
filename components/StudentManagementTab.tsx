@@ -27,12 +27,12 @@ interface StudentManagementTabProps {
     branchId?: number | null;
 }
 
-const KPICard: React.FC<{ 
-    title: string; 
-    value: number; 
-    icon: React.ReactNode; 
-    color: string; 
-    onClick?: () => void; 
+const KPICard: React.FC<{
+    title: string;
+    value: number;
+    icon: React.ReactNode;
+    color: string;
+    onClick?: () => void;
     active?: boolean;
     description?: string;
     loading?: boolean;
@@ -40,7 +40,7 @@ const KPICard: React.FC<{
     const colorBase = color.split('-')[1] || 'primary';
 
     return (
-        <div 
+        <div
             onClick={onClick}
             className={`relative overflow-hidden p-6 rounded-[2rem] border transition-all duration-500 cursor-pointer group ${active ? 'bg-card border-primary ring-4 ring-primary/5 shadow-2xl scale-[1.02] z-10' : 'bg-card/40 border-white/5 hover:border-primary/40 hover:bg-card/60 shadow-sm'}`}
         >
@@ -112,7 +112,7 @@ export const AddStudentModal: React.FC<{ onClose: () => void; onSave: () => void
                         <h3 className="text-xl font-black text-white uppercase tracking-tight font-serif">Register Node</h3>
                         <p className="text-sm font-bold text-white/30 uppercase tracking-widest mt-1">Quick Enrollment</p>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors"><XIcon className="w-5 h-5 text-white/50 hover:text-white"/></button>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors"><XIcon className="w-5 h-5 text-white/50 hover:text-white" /></button>
                 </div>
 
                 <form onSubmit={handleSave} className="space-y-5 relative z-10">
@@ -124,20 +124,20 @@ export const AddStudentModal: React.FC<{ onClose: () => void; onSave: () => void
                     )}
                     <div className="space-y-1.5">
                         <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-1">Full Name</label>
-                        <input required value={formData.display_name} onChange={e => setFormData({...formData, display_name: e.target.value})} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="e.g. Alex Doe" />
+                        <input required value={formData.display_name} onChange={e => setFormData({ ...formData, display_name: e.target.value })} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="e.g. Alex Doe" />
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-1">Email Access</label>
-                        <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="student@school.id" />
+                        <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="student@school.id" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-1">Grade</label>
-                            <input required value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="e.g. 10" />
+                            <input required value={formData.grade} onChange={e => setFormData({ ...formData, grade: e.target.value })} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="e.g. 10" />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-1">Parent Info</label>
-                            <input value={formData.parent_guardian_details} onChange={e => setFormData({...formData, parent_guardian_details: e.target.value})} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="Optional" />
+                            <input value={formData.parent_guardian_details} onChange={e => setFormData({ ...formData, parent_guardian_details: e.target.value })} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="Optional" />
                         </div>
                     </div>
                     <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
@@ -174,7 +174,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
         setError(null);
         try {
             // FIX: Select profile_photo_url from profiles relationship
-            let query = supabase.from('student_profiles').select(`*, profiles!inner (email, display_name, phone, role, is_active, profile_completed, created_at, profile_photo_url), school_classes (name)` ).eq('profiles.role', 'Student');
+            let query = supabase.from('student_profiles').select(`*, profiles!inner (email, display_name, phone, role, is_active, profile_completed, created_at, profile_photo_url), school_classes (name)`).eq('profiles.role', 'Student');
             if (branchId !== null && branchId !== undefined) query = query.eq('branch_id', branchId);
 
             const { data, error: dbError } = await query;
@@ -190,7 +190,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                 profile_completed: s.profiles?.profile_completed,
                 created_at: s.created_at || s.profiles?.created_at,
                 // FIX: Map correctly from nested relationship
-                profile_photo_url: s.profiles?.profile_photo_url || s.profile_photo_url, 
+                profile_photo_url: s.profiles?.profile_photo_url || s.profile_photo_url,
                 gender: s.gender,
                 date_of_birth: s.date_of_birth,
                 address: s.address,
@@ -199,7 +199,8 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                 roll_number: s.roll_number,
                 parent_guardian_details: s.parent_guardian_details,
                 assigned_class_id: s.assigned_class_id,
-                assigned_class_name: s.school_classes?.name || null
+                assigned_class_name: s.school_classes?.name || null,
+                admission_id: s.admission_id
             }));
 
             setAllStudents(mappedStudents);
@@ -267,10 +268,10 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KPICard title="Total Roster" value={stats.total} icon={<StudentsIcon className="w-8 h-8"/>} color="bg-indigo-600" active={quickFilter === 'All'} onClick={() => setQuickFilter('All')} />
-                <KPICard title="Active Stream" value={stats.active} icon={<CheckCircleIcon className="w-8 h-8"/>} color="bg-emerald-600" active={quickFilter === 'Active'} onClick={() => setQuickFilter('Active')} />
-                <KPICard title="Placement Pending" value={stats.pending} icon={<ClockIcon className="w-8 h-8"/>} color="bg-amber-600" active={quickFilter === 'Pending'} onClick={() => setQuickFilter('Pending')} />
-                <KPICard title="Newly Registered" value={stats.new} icon={<GraduationCapIcon className="w-8 h-8"/>} color="bg-purple-600" active={quickFilter === 'New'} onClick={() => setQuickFilter('New')} />
+                <KPICard title="Total Roster" value={stats.total} icon={<StudentsIcon className="w-8 h-8" />} color="bg-indigo-600" active={quickFilter === 'All'} onClick={() => setQuickFilter('All')} />
+                <KPICard title="Active Stream" value={stats.active} icon={<CheckCircleIcon className="w-8 h-8" />} color="bg-emerald-600" active={quickFilter === 'Active'} onClick={() => setQuickFilter('Active')} />
+                <KPICard title="Placement Pending" value={stats.pending} icon={<ClockIcon className="w-8 h-8" />} color="bg-amber-600" active={quickFilter === 'Pending'} onClick={() => setQuickFilter('Pending')} />
+                <KPICard title="Newly Registered" value={stats.new} icon={<GraduationCapIcon className="w-8 h-8" />} color="bg-purple-600" active={quickFilter === 'New'} onClick={() => setQuickFilter('New')} />
             </div>
 
             <div className="bg-card border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col min-h-[650px] relative">
@@ -295,11 +296,14 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
 
                 <div className="overflow-x-auto flex-grow custom-scrollbar">
                     {loading && allStudents.length > 0 ? (
-                        <div className="p-20 flex justify-center"><Spinner size="lg" className="text-primary"/></div>
+                        <div className="p-20 flex justify-center"><Spinner size="lg" className="text-primary" /></div>
                     ) : paginatedData.length === 0 ? (
-                        <div className="p-32 text-center opacity-40">
-                            <StudentsIcon className="w-16 h-16 mx-auto mb-4"/>
-                            <p className="text-lg font-bold uppercase tracking-widest">No Records Found</p>
+                        <div className="p-32 text-center flex flex-col items-center justify-center">
+                            <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 opacity-20">
+                                <StudentsIcon className="w-12 h-12" />
+                            </div>
+                            <p className="text-xl font-serif font-black text-white uppercase tracking-tighter mb-2">No enrolled students yet.</p>
+                            <p className="text-sm font-medium text-white/30 max-w-sm mx-auto italic">Students will appear here once admission is completed in the Admission Vault.</p>
                         </div>
                     ) : (
                         <table className="w-full text-left text-sm whitespace-nowrap">
@@ -319,8 +323,18 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                                             <div className="flex items-center gap-6">
                                                 <PremiumAvatar src={student.profile_photo_url} name={student.display_name} size="xs" className="w-14 h-14 rounded-2xl border border-white/10 shadow-2xl" />
                                                 <div>
-                                                    <p className="font-serif font-black text-white text-lg tracking-tight uppercase group-hover:text-primary transition-colors">{student.display_name}</p>
-                                                    <p className="text-[10px] text-white/30 font-mono tracking-widest uppercase">{student.student_id_number || 'ID_PENDING'}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-serif font-black text-white text-lg tracking-tight uppercase group-hover:text-primary transition-colors">{student.display_name}</p>
+                                                        {student.created_at && (new Date(student.created_at).getTime() > Date.now() - 86400000) && (
+                                                            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-widest animate-pulse">Newly Enrolled</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-[10px] text-white/30 font-mono tracking-widest uppercase">{student.student_id_number || 'ID_PENDING'}</p>
+                                                        {student.admission_id && (
+                                                            <span className="text-[8px] text-white/10 font-mono uppercase tracking-tighter">Ref: {student.admission_id.substring(0, 8)}...</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
@@ -336,7 +350,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                                             <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${student.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>{student.is_active ? 'Active' : 'Suspended'}</span>
                                         </td>
                                         <td className="p-8 text-right pr-10">
-                                            <button className="p-4 rounded-2xl bg-white/5 text-white/10 opacity-0 group-hover:opacity-100 hover:text-white transition-all"><MoreVerticalIcon className="w-5 h-5"/></button>
+                                            <button className="p-4 rounded-2xl bg-white/5 text-white/10 opacity-0 group-hover:opacity-100 hover:text-white transition-all"><MoreVerticalIcon className="w-5 h-5" /></button>
                                         </td>
                                     </tr>
                                 ))}
@@ -348,8 +362,8 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                 <div className="p-8 border-t border-white/5 bg-[#0a0a0c]/80 flex justify-between items-center relative z-10">
                     <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Sequence <span className="text-white/60">{currentPage}</span> of {totalPages || 1}</span>
                     <div className="flex gap-3">
-                        <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-4 rounded-2xl border border-white/5 bg-white/5 text-white/40 hover:text-white disabled:opacity-20 transition-all"><ChevronLeftIcon className="w-6 h-6"/></button>
-                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage === totalPages} className="p-4 rounded-2xl border border-white/5 bg-white/5 text-white/40 hover:text-white disabled:opacity-20 transition-all"><ChevronRightIcon className="w-6 h-6"/></button>
+                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-4 rounded-2xl border border-white/5 bg-white/5 text-white/40 hover:text-white disabled:opacity-20 transition-all"><ChevronLeftIcon className="w-6 h-6" /></button>
+                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-4 rounded-2xl border border-white/5 bg-white/5 text-white/40 hover:text-white disabled:opacity-20 transition-all"><ChevronRightIcon className="w-6 h-6" /></button>
                     </div>
                 </div>
             </div>

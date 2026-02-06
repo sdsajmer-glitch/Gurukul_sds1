@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase, formatError } from '../services/supabase';
 import { AdmissionApplication } from '../types';
 import Spinner from './common/Spinner';
@@ -61,7 +61,7 @@ const AdmissionsTab: React.FC<{ branchId?: number | null }> = ({ branchId }) => 
     }, []);
 
     const filteredApps = applicants.filter(app => {
-        if (filterStatus === 'All') return app.status !== 'Enrolled';
+        if (filterStatus === 'All') return true; // Show everything in the ledger
         return app.status === filterStatus;
     });
 
@@ -125,13 +125,13 @@ const AdmissionsTab: React.FC<{ branchId?: number | null }> = ({ branchId }) => 
                         <AnimatePresence>
                             {isFilterOpen && (
                                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute top-full left-0 mt-4 w-60 bg-[#0c0d12]/95 backdrop-blur-2xl border border-white/10 rounded-3xl p-2 shadow-2xl z-50">
-                                    {['All', 'Pending Review', 'Verified', 'Approved', 'Rejected'].map(opt => (
+                                    {['All', 'Pending Review', 'Verified', 'Approved', 'Enrolled', 'Rejected'].map(opt => (
                                         <button
                                             key={opt}
                                             onClick={() => { setFilterStatus(opt); setIsFilterOpen(false); }}
                                             className={clsx("w-full text-left px-5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all", filterStatus === opt ? "bg-indigo-600 text-white" : "text-white/30 hover:bg-white/5 hover:text-white")}
                                         >
-                                            {opt === 'All' ? 'Active Desk' : opt}
+                                            {opt === 'All' ? 'Full Ledger' : opt}
                                         </button>
                                     ))}
                                 </motion.div>
@@ -168,6 +168,11 @@ const AdmissionsTab: React.FC<{ branchId?: number | null }> = ({ branchId }) => 
                                                 <p className="text-xl font-black text-white/90 group-hover:text-white transition-all uppercase tracking-tight">{app.applicant_name}</p>
                                                 <div className="flex items-center gap-3 mt-2">
                                                     <span className="text-[9px] font-black text-white/20 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5">Grade {app.grade}</span>
+                                                    {app.status === 'Enrolled' && (
+                                                        <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
+                                                            <ShieldCheckIcon className="w-2.5 h-2.5" /> Student Created
+                                                        </span>
+                                                    )}
                                                     {app.application_number && <span className="text-[9px] font-mono text-white/10 uppercase tracking-[0.2em]">{app.application_number}</span>}
                                                 </div>
                                             </div>
