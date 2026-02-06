@@ -444,7 +444,7 @@ export interface MyEnquiry extends Enquiry {
 }
 
 export interface TimelineItem {
-    item_type: 'MESSAGE' | 'STATUS_CHANGE' | 'DOCUMENT_REQUEST';
+    item_type: 'MESSAGE' | 'STATUS_CHANGE' | 'DOCUMENT_REQUEST' | 'ENQUIRY_RECEIVED';
     created_at: string;
     created_by_name: string;
     is_admin: boolean;

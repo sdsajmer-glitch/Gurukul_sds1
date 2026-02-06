@@ -1,54 +1,27 @@
-
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, formatError } from '../../services/supabase';
 import { Communication, EnquiryStatus, MyEnquiry, TimelineItem } from '../../types';
 import Spinner from '../common/Spinner';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
+import PremiumAvatar from '../common/PremiumAvatar';
 
 // --- Authoritative Icons ---
-const MegaphoneIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-);
-const ShieldCheckIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-    </svg>
-);
-const RadarIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-);
-const TerminalIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
-    </svg>
-);
-const SendIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="currentColor" viewBox="0 0 24 24">
-        <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-    </svg>
-);
+const MegaphoneIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+const ShieldCheckIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>;
+const RadarIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+const TerminalIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" /></svg>;
+const SendIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg>;
+const RefreshIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>;
 
-const RefreshIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-    </svg>
-);
-
-type Tab = 'broadcasts' | 'enquiries';
-
-const statusConfig: { [key in EnquiryStatus]: { color: string; bg: string } } = {
-    'ENQUIRY_ACTIVE': { color: 'text-blue-400', bg: 'bg-blue-400/10' },
-    'ENQUIRY_VERIFIED': { color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-    'ENQUIRY_IN_REVIEW': { color: 'text-purple-400', bg: 'bg-purple-400/10' },
-    'ENQUIRY_CONTACTED': { color: 'text-amber-400', bg: 'bg-amber-400/10' },
-    'ENQUIRY_REJECTED': { color: 'text-rose-400', bg: 'bg-rose-400/10' },
-    'ENQUIRY_CONVERTED': { color: 'text-indigo-400', bg: 'bg-indigo-400/10' },
+const STATUS_CONFIG: { [key in EnquiryStatus]: { label: string; color: string; bg: string; icon: any } } = {
+    'NEW': { label: 'New', color: 'text-blue-400', bg: 'bg-blue-400/10', icon: null },
+    'ENQUIRY_ACTIVE': { label: 'Active', color: 'text-blue-400', bg: 'bg-blue-400/10', icon: null },
+    'ENQUIRY_VERIFIED': { label: 'Verified', color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: null },
+    'ENQUIRY_IN_REVIEW': { label: 'In Review', color: 'text-purple-400', bg: 'bg-purple-400/10', icon: null },
+    'ENQUIRY_CONTACTED': { label: 'Contacted', color: 'text-amber-400', bg: 'bg-amber-400/10', icon: null },
+    'ENQUIRY_REJECTED': { label: 'Rejected', color: 'text-rose-400', bg: 'bg-rose-400/10', icon: null },
+    'ENQUIRY_CONVERTED': { label: 'Converted', color: 'text-indigo-400', bg: 'bg-indigo-400/10', icon: null },
 };
 
 const formatTimeAgo = (dateString: string) => {
@@ -62,7 +35,7 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 export default function MessagesTab() {
-    const [activeTab, setActiveTab] = useState<Tab>('broadcasts');
+    const [activeTab, setActiveTab] = useState<'broadcasts' | 'enquiries'>('broadcasts');
     const [enquiries, setEnquiries] = useState<MyEnquiry[]>([]);
     const [announcements, setAnnouncements] = useState<Communication[]>([]);
     const [loading, setLoading] = useState(true);
@@ -102,7 +75,7 @@ export default function MessagesTab() {
         return () => { supabase.removeChannel(sub); };
     }, [fetchData]);
 
-    const handleSwitchTab = (t: Tab) => {
+    const handleSwitchTab = (t: 'broadcasts' | 'enquiries') => {
         setActiveTab(t);
         if (t === 'broadcasts' && announcements.length > 0) setSelectedAnnouncement(announcements[0]);
         else if (t === 'enquiries' && enquiries.length > 0) setSelectedEnquiry(enquiries[0]);
@@ -111,195 +84,142 @@ export default function MessagesTab() {
     if (loading && announcements.length === 0 && enquiries.length === 0) {
         return (
             <div className="h-[80vh] flex flex-col items-center justify-center space-y-8">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse"></div>
-                    <div className="relative w-20 h-20 bg-primary/10 rounded-3xl border border-primary/20 flex items-center justify-center shadow-2xl">
-                        <RadarIcon className="w-10 h-10 text-primary animate-spin-slow" />
-                    </div>
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white animate-pulse">Synchronizing verified message history…</p>
-                    <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Establishing secure node handshake</p>
-                </div>
+                <RadarIcon className="w-20 h-20 text-indigo-500 animate-spin-slow opacity-20" />
+                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40">Synchronizing Official Registry…</p>
             </div>
         );
     }
 
     return (
-        <div className="max-w-[1600px] mx-auto py-6 px-4 md:px-8 space-y-8 h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] flex flex-col">
-            {/* Page Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10 border-b border-white/[0.03] pb-10 shrink-0">
-                <div className="max-w-2xl">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-                        <span className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">Official Registry</span>
-                    </div>
-                    <h2 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-[0.9]">
-                        Inbox <span className="opacity-30 font-normal">Channel.</span>
-                    </h2>
-                    <p className="text-white/40 text-[15px] leading-relaxed mt-8 max-w-lg italic font-serif">
-                        Synchronized handshake terminal for institutional communications and verification workflows.
-                    </p>
-                </div>
-
+        <div className="h-[calc(100vh-100px)] flex flex-col overflow-hidden bg-[#050505] rounded-[2.5rem] border border-white/5 shadow-2xl">
+            {/* Page Header (Compact) */}
+            <header className="px-10 py-6 border-b border-white/[0.03] bg-black/40 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-6">
-                    <div className="hidden md:flex items-center gap-4 bg-[#0c0d12] px-6 py-3 rounded-2xl border border-white/5 shadow-2xl">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_12px_#10b981]"></div>
-                        <span className="text-[10px] font-black text-white/60 tracking-[0.3em] uppercase">Uplink Secured</span>
+                    <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+                        <TerminalIcon className="w-5 h-5 text-indigo-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-serif font-black text-white uppercase tracking-tight">Inbox <span className="opacity-30 font-normal">Channel.</span></h2>
+                        <span className="text-[8px] font-black uppercase text-white/20 tracking-[0.3em]">Institutional Communication Gateway</span>
                     </div>
                 </div>
-            </div>
+                <div className="hidden md:flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-full">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Protocol Secured</span>
+                </div>
+            </header>
 
-            <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6">
-                {/* 1. Sidebar - Ledger Panel */}
+            <div className="flex-1 flex min-h-0">
+                {/* 1. Sidebar (Enquiries/Broadcasts List) */}
                 <div className={clsx(
-                    "lg:w-[420px] flex flex-col shrink-0 transition-all duration-500 lg:translate-x-0 relative",
-                    isMobileMenuOpen ? "fixed inset-0 z-50 bg-[#08090d]" : "hidden lg:flex"
+                    "w-[380px] border-r border-white/[0.03] bg-black/20 flex flex-col shrink-0 transition-all z-40",
+                    isMobileMenuOpen ? "fixed inset-0 bg-[#08090d]" : "hidden lg:flex"
                 )}>
-                    <div className="bg-[#0c0d12] rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl h-full relative">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-primary/[0.01] to-transparent pointer-events-none"></div>
-
-                        <div className="p-8 pb-4 relative z-10">
-                            <div className="flex items-center justify-between mb-6 lg:hidden">
-                                <h3 className="text-[10px] font-black text-white/40 tracking-[0.4em] uppercase">Select Payload</h3>
-                                <button onClick={() => setIsMobileMenuOpen(false)} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 text-white/40">&times;</button>
-                            </div>
-                            <div className="flex p-1.5 bg-black/40 rounded-[1.5rem] border border-white/5 shadow-inner">
-                                {(['broadcasts', 'enquiries'] as Tab[]).map(t => (
-                                    <button
-                                        key={t}
-                                        onClick={() => { handleSwitchTab(t); if (window.innerWidth < 1024) setIsMobileMenuOpen(false); }}
-                                        className={clsx(
-                                            "flex-1 py-3.5 text-[9px] font-black uppercase tracking-[0.25em] rounded-xl transition-all duration-500",
-                                            activeTab === t
-                                                ? "bg-primary text-white shadow-[0_0_20px_rgba(var(--primary),0.3)]"
-                                                : "text-white/20 hover:text-white/40"
-                                        )}
-                                    >
-                                        {t}
-                                    </button>
-                                ))}
-                            </div>
+                    {/* Tab Switcher */}
+                    <div className="p-6 pb-2">
+                        <div className="flex p-1 bg-white/[0.02] rounded-2xl border border-white/5">
+                            <button
+                                onClick={() => handleSwitchTab('broadcasts')}
+                                className={clsx("flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all", activeTab === 'broadcasts' ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/40" : "text-white/20 hover:text-white/40")}
+                            >
+                                Broadcasts
+                            </button>
+                            <button
+                                onClick={() => handleSwitchTab('enquiries')}
+                                className={clsx("flex-1 py-3 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all", activeTab === 'enquiries' ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/40" : "text-white/20 hover:text-white/40")}
+                            >
+                                Enquiries
+                            </button>
                         </div>
+                    </div>
 
-                        <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar relative z-10 pb-20">
-                            <AnimatePresence mode="wait">
-                                {activeTab === 'broadcasts' ? (
-                                    <motion.div key="broadcast-list" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-3">
-                                        {announcements.length === 0 ? <EmptyNode label="Broadcasts" /> : announcements.map(msg => (
-                                            <button
-                                                key={msg.id}
-                                                onClick={() => { setSelectedAnnouncement(msg); setIsMobileMenuOpen(false); }}
-                                                className={clsx(
-                                                    "w-full p-6 text-left transition-all duration-500 rounded-[2rem] border relative group",
-                                                    selectedAnnouncement?.id === msg.id
-                                                        ? "bg-primary/[0.08] border-primary/40 shadow-xl"
-                                                        : "bg-white/[0.01] border-white/5 hover:border-white/10 hover:bg-white/[0.03]"
-                                                )}
-                                            >
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className={clsx("p-1.5 rounded-lg border", selectedAnnouncement?.id === msg.id ? "bg-primary/20 border-primary/20 text-primary" : "bg-white/5 border-white/10 text-white/20")}>
-                                                            <MegaphoneIcon className="w-3 h-3" />
-                                                        </div>
-                                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">{msg.sender_name || 'Authority'}</span>
-                                                    </div>
-                                                    <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(msg.sent_at)}</span>
+                    {/* Scrollable List */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                        <AnimatePresence mode="wait">
+                            {activeTab === 'broadcasts' ? (
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
+                                    {announcements.map(msg => (
+                                        <button
+                                            key={msg.id}
+                                            onClick={() => setSelectedAnnouncement(msg)}
+                                            className={clsx(
+                                                "w-full p-5 text-left rounded-3xl border transition-all group relative overflow-hidden",
+                                                selectedAnnouncement?.id === msg.id
+                                                    ? "bg-indigo-500/10 border-indigo-500/30 ring-1 ring-indigo-500/20"
+                                                    : "bg-white/[0.01] border-white/5 hover:bg-white/[0.03]"
+                                            )}
+                                        >
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-indigo-400">{msg.sender_name || 'Authority'}</span>
+                                                <span className="text-[8px] font-bold text-white/10">{formatTimeAgo(msg.sent_at)}</span>
+                                            </div>
+                                            <h4 className="text-xs font-bold text-white/80 line-clamp-1">{msg.subject}</h4>
+                                            <p className="text-[10px] text-white/20 mt-1 line-clamp-1 italic">{msg.body}</p>
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            ) : (
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
+                                    {enquiries.map(enq => (
+                                        <button
+                                            key={enq.id}
+                                            onClick={() => setSelectedEnquiry(enq)}
+                                            className={clsx(
+                                                "w-full p-5 text-left rounded-3xl border transition-all group relative",
+                                                selectedEnquiry?.id === enq.id
+                                                    ? "bg-indigo-500/10 border-indigo-500/30 ring-1 ring-indigo-500/20"
+                                                    : "bg-white/[0.01] border-white/5 hover:bg-white/[0.03]"
+                                            )}
+                                        >
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-white/30 truncate max-w-[150px]">{enq.applicant_name}</span>
+                                                <span className="text-[8px] font-bold text-white/10">{formatTimeAgo(enq.updated_at)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className={clsx("px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest", STATUS_CONFIG[enq.status as EnquiryStatus]?.bg, STATUS_CONFIG[enq.status as EnquiryStatus]?.color)}>
+                                                    {STATUS_CONFIG[enq.status as EnquiryStatus]?.label || enq.status}
                                                 </div>
-                                                <h4 className={clsx("text-xs font-bold uppercase tracking-tight transition-all", selectedAnnouncement?.id === msg.id ? "text-white" : "text-white/60 group-hover:text-primary")}>{msg.subject}</h4>
-                                                <p className="text-[10px] text-white/20 mt-2 font-medium line-clamp-1 italic">{msg.body}</p>
-                                                {selectedAnnouncement?.id === msg.id && <div className="absolute top-6 right-6"><div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)]"></div></div>}
-                                            </button>
-                                        ))}
-                                    </motion.div>
-                                ) : (
-                                    <motion.div key="enquiry-list" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-3">
-                                        {enquiries.length === 0 ? <EmptyNode label="Enquiries" /> : enquiries.map(enq => (
-                                            <button
-                                                key={enq.id}
-                                                onClick={() => { setSelectedEnquiry(enq); setIsMobileMenuOpen(false); }}
-                                                className={clsx(
-                                                    "w-full p-6 text-left transition-all duration-500 rounded-[2rem] border relative group",
-                                                    selectedEnquiry?.id === enq.id
-                                                        ? "bg-indigo-500/[0.08] border-indigo-500/40 shadow-xl"
-                                                        : "bg-white/[0.01] border-white/5 hover:border-white/10 hover:bg-white/[0.03]"
-                                                )}
-                                            >
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className={clsx("p-1.5 rounded-lg border", selectedEnquiry?.id === enq.id ? "bg-indigo-500/20 border-indigo-500/20 text-indigo-400" : "bg-white/5 border-white/10 text-white/20")}>
-                                                            <TerminalIcon className="w-3 h-3" />
-                                                        </div>
-                                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40">Node {String(enq.id).slice(0, 6)}</span>
-                                                    </div>
-                                                    <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(enq.updated_at)}</span>
-                                                </div>
-                                                <h4 className={clsx("text-[13px] font-bold tracking-tight transition-all", selectedEnquiry?.id === enq.id ? "text-white" : "text-white/60 group-hover:text-indigo-400")}>{enq.applicant_name}</h4>
-                                                <div className="flex items-center gap-3 mt-4">
-                                                    <span className={clsx(
-                                                        "text-[7px] font-black uppercase px-2.5 py-1 rounded-lg border tracking-[0.15em]",
-                                                        statusConfig[enq.status as EnquiryStatus]?.bg || 'bg-white/5',
-                                                        statusConfig[enq.status as EnquiryStatus]?.color || 'text-white/20 border-white/10'
-                                                    )}>
-                                                        {enq.status.replace('ENQUIRY_', '')}
-                                                    </span>
-                                                    <div className="w-1 h-1 rounded-full bg-white/5"></div>
-                                                    <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Grade {enq.grade}</span>
-                                                </div>
-                                                {selectedEnquiry?.id === enq.id && <div className="absolute top-6 right-6"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_12px_rgba(129,140,248,0.8)]"></div></div>}
-                                            </button>
-                                        ))}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        <div className="absolute top-32 left-0 right-0 h-10 bg-gradient-to-b from-[#0c0d12] to-transparent pointer-events-none z-20"></div>
-                        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0c0d12] to-transparent pointer-events-none z-20"></div>
+                                                <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest">Grade {enq.grade}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
-                {/* 2. Main Viewport */}
-                <div className="flex-1 flex flex-col bg-[#0c0d12]/40 backdrop-blur-3xl rounded-[3rem] border border-white/5 relative overflow-hidden min-w-0">
-                    <button
-                        onClick={() => setIsMobileMenuOpen(true)}
-                        className="lg:hidden absolute top-4 left-4 z-10 p-3 bg-white/5 border border-white/10 rounded-2xl text-white/60 hover:text-white"
-                    >
-                        <RadarIcon className="w-5 h-5" />
-                    </button>
-
+                {/* 2. Main Stream */}
+                <div className="flex-1 flex flex-col min-w-0 bg-black/40 relative">
                     <AnimatePresence mode="wait">
                         {activeTab === 'broadcasts' ? (
                             selectedAnnouncement ? (
-                                <motion.div key={`view-${selectedAnnouncement.id}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col h-full uppercase">
-                                    <header className="p-8 md:p-10 border-b border-white/[0.05] bg-black/20 flex flex-col gap-4">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em]">Official Handshake</span>
-                                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">{formatTimeAgo(selectedAnnouncement.sent_at)}</span>
-                                        </div>
-                                        <h2 className="text-2xl md:text-3xl font-serif font-black text-white leading-tight tracking-tight uppercase">{selectedAnnouncement.subject}</h2>
-                                        <div className="flex items-center gap-2 pt-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
-                                            <span className="text-[11px] font-black text-white/40 uppercase tracking-widest leading-none">Authority: {selectedAnnouncement.sender_name || 'Central Command'}</span>
+                                <motion.div key={selectedAnnouncement.id} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col h-full uppercase">
+                                    <header className="p-10 border-b border-white/[0.03] bg-black/20">
+                                        <div className="max-w-3xl mx-auto">
+                                            <span className="text-[10px] font-black text-indigo-400 tracking-[0.5em] mb-4 block">Official Broadcast</span>
+                                            <h2 className="text-3xl font-serif font-black text-white leading-tight tracking-tight">{selectedAnnouncement.subject}</h2>
+                                            <div className="flex items-center gap-4 mt-6">
+                                                <span className="text-[11px] font-black text-white/40 uppercase tracking-widest leading-none italic">{selectedAnnouncement.sender_name || 'Central Command'}</span>
+                                                <div className="w-1 h-1 rounded-full bg-white/10" />
+                                                <span className="text-[10px] font-bold text-white/10 uppercase tracking-widest">{formatTimeAgo(selectedAnnouncement.sent_at)}</span>
+                                            </div>
                                         </div>
                                     </header>
-                                    <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
-                                        <div className="max-w-2xl mx-auto space-y-12">
-                                            <div className="w-12 h-1.5 bg-primary/20 rounded-full"></div>
-                                            <p className="text-base md:text-xl text-white/60 font-serif leading-relaxed italic border-l-2 border-white/5 pl-8 normal-case">
+                                    <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+                                        <div className="max-w-2xl mx-auto space-y-10">
+                                            <div className="w-10 h-1 bg-indigo-500/20 rounded-full" />
+                                            <p className="text-xl text-white/70 font-serif leading-relaxed italic border-l-2 border-white/5 pl-10 normal-case">
                                                 {selectedAnnouncement.body}
                                             </p>
-                                            <div className="pt-20 opacity-10 flex items-center gap-4 text-[10px] font-black grayscale flex-wrap">
-                                                <ShieldCheckIcon className="w-6 h-6 shrink-0" /> INTEGRITY LEDGER: {selectedAnnouncement.id}
-                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>
-                            ) : <ReadingStandby title="BROADCAST PAYLOAD STANDBY" />
+                            ) : <Standby title="Broadcast Stream" />
                         ) : (
                             selectedEnquiry ? (
-                                <EnquiryHandshakeChannel enquiry={selectedEnquiry} refresh={fetchData} />
-                            ) : <ReadingStandby title="ENQUIRY PAYLOAD STANDBY" />
+                                <EnquiryHandshake enquiry={selectedEnquiry} key={selectedEnquiry.id} refresh={fetchData} />
+                            ) : <Standby title="Enquiry Channel" />
                         )}
                     </AnimatePresence>
                 </div>
@@ -308,54 +228,27 @@ export default function MessagesTab() {
     );
 }
 
-function EmptyNode({ label }: { label: string }) {
+function Standby({ title }: { title: string }) {
     return (
-        <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-6 opacity-30">
-            <RadarIcon className="w-12 h-12 text-white/20" />
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] leading-relaxed">No active {label} payloads detected in registry.</p>
+        <div className="h-full flex flex-col items-center justify-center p-20 text-center space-y-8 opacity-20 select-none">
+            <RadarIcon className="w-16 h-16 animate-pulse" />
+            <h3 className="text-2xl font-serif font-black text-white uppercase tracking-[0.3em]">{title}</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] italic max-w-xs leading-relaxed">Awaiting node selection for institutional handshake</p>
         </div>
     );
 }
 
-function ReadingStandby({ title }: { title: string }) {
-    return (
-        <div className="flex flex-col items-center justify-center h-full p-20 text-center animate-in fade-in duration-1000 relative">
-            <div className="relative mb-16">
-                <div className="absolute -inset-10 bg-primary/20 blur-[100px] rounded-full animate-pulse"></div>
-                <div className="w-32 h-32 rounded-[2.5rem] bg-white/[0.02] border border-white/5 flex items-center justify-center relative z-10 shadow-3xl">
-                    <RadarIcon className="w-14 h-14 text-white/10" />
-                </div>
-            </div>
-            <h3 className="text-3xl font-serif font-black text-white uppercase tracking-widest mb-6">{title}</h3>
-            <p className="text-sm font-serif italic text-white/30 max-w-sm leading-relaxed border-l border-white/5 pl-8 text-left mx-auto">
-                "Select a registry node to decrypt and initialize the institutional handshake channel."
-            </p>
-
-            <div className="absolute bottom-12 flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/5">
-                <div className="w-12 h-px bg-white/5"></div>
-                <ShieldCheckIcon className="w-5 h-5" />
-                <span>Identity Payload Protocol v8.4.2</span>
-                <div className="w-12 h-px bg-white/5"></div>
-            </div>
-        </div>
-    );
-}
-
-function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, refresh: (s?: boolean) => void }) {
+function EnquiryHandshake({ enquiry, refresh }: { enquiry: MyEnquiry; refresh: (silent?: boolean) => void }) {
     const [messages, setMessages] = useState<TimelineItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const isAtBottom = useRef(true);
 
     const loadTimeline = useCallback(async () => {
-        setLoading(true);
         const { data, error } = await supabase.rpc('get_enquiry_timeline_v3', { p_enquiry_id: String(enquiry.id) });
         if (!error && data) {
-            // Sort by created_at ascending (Oldest -> Newest) so new messages appear at the bottom
-            const sortedData = [...data].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-            setMessages(sortedData);
+            setMessages((data as TimelineItem[]).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
         }
         setLoading(false);
     }, [enquiry.id]);
@@ -368,28 +261,9 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
         return () => { supabase.removeChannel(sub); };
     }, [loadTimeline, enquiry.id]);
 
-    const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTo({
-                top: scrollRef.current.scrollHeight,
-                behavior
-            });
-        }
-    };
-
     useEffect(() => {
-        if (isAtBottom.current) {
-            scrollToBottom('auto');
-        }
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [messages]);
-
-    const handleScroll = () => {
-        if (scrollRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-            const threshold = 100;
-            isAtBottom.current = scrollHeight - scrollTop - clientHeight < threshold;
-        }
-    };
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -398,193 +272,129 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
 
         setSending(true);
         try {
-            const { error } = await supabase.rpc('send_enquiry_message_v3', {
-                p_enquiry_id: enquiry.id,
-                p_message: msg
-            });
-
+            const { error } = await supabase.rpc('send_enquiry_message_v3', { p_enquiry_id: String(enquiry.id), p_message: msg });
             if (error) throw error;
-
             setText('');
-            isAtBottom.current = true;
             await loadTimeline();
             refresh(true);
         } catch (err: any) {
-            console.error("Transmission Failure:", err);
-            alert(`Transmission Failure: ${err.message || 'Node Handshake Refused'}`);
+            alert(formatError(err));
         } finally {
             setSending(false);
         }
     };
 
     return (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col lg:flex-row h-full bg-transparent divide-x divide-white/[0.03]">
-            {/* Chat Area */}
+        <div className="flex h-full min-w-0">
+            {/* Chat Stream */}
             <div className="flex-1 flex flex-col min-w-0 h-full">
-                {/* Header - Fixed */}
-                <header className="px-8 md:px-12 py-10 border-b border-white/[0.03] bg-black/40 backdrop-blur-md shrink-0 z-10">
-                    <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-8">
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Node Connection Established</span>
-                            </div>
-                            <h2 className="text-3xl md:text-4xl font-serif font-black text-white leading-tight tracking-tight uppercase">{enquiry.applicant_name}</h2>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => loadTimeline()}
-                                className="h-14 px-6 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center gap-3 hover:bg-white/[0.05] text-white/40 hover:text-white transition-all active:scale-95 group"
-                                title="Sync Node"
-                            >
-                                <RefreshIcon className={clsx("w-5 h-5 group-hover:rotate-180 transition-transform duration-700", loading && "animate-spin")} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Sync</span>
-                            </button>
-                            <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-lg shadow-indigo-500/5">
-                                <ShieldCheckIcon className="w-6 h-6 text-indigo-400" />
-                            </div>
-                        </div>
+                <header className="px-10 py-6 border-b border-white/[0.03] bg-black/40 flex items-center justify-between shrink-0">
+                    <div>
+                        <h2 className="text-xl font-serif font-black text-white uppercase tracking-tight truncate max-w-[200px] md:max-w-sm">{enquiry.applicant_name}</h2>
+                        <span className="text-[8px] font-black uppercase text-white/20 tracking-[0.3em]">Node Connection ID: {String(enquiry.id).slice(0, 8)}</span>
                     </div>
                 </header>
 
-                {/* Message Stream - Scrollable */}
-                <div
-                    ref={scrollRef}
-                    onScroll={handleScroll}
-                    className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar"
-                >
-                    {loading && messages.length === 0 ? (
-                        <div className="h-full flex items-center justify-center opacity-10"><Spinner /></div>
-                    ) : messages.filter(m => m.item_type === 'MESSAGE').length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center opacity-10 select-none text-center">
-                            <div className="relative mb-6">
-                                <RadarIcon className="w-20 h-20" />
-                                <motion.div
-                                    animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                                    className="absolute inset-0 bg-primary/20 rounded-full blur-xl"
-                                />
-                            </div>
-                            <p className="text-[12px] font-black uppercase tracking-[0.8em]">Channel Standby</p>
-                            <p className="text-[9px] mt-4 max-w-xs leading-relaxed font-serif italic text-white/40">"Awaiting institutional handshake. Verified communications will appear here."</p>
-                        </div>
+                <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 md:px-12 py-10 space-y-1 custom-scrollbar">
+                    {loading ? (
+                        <div className="h-full flex items-center justify-center opacity-30"><Spinner /></div>
                     ) : (
-                        <div className="max-w-4xl mx-auto flex flex-col space-y-6">
-                            {messages
-                                .filter(item => item.item_type === 'MESSAGE')
-                                .map((item, i) => {
-                                    const isMe = !item.is_admin;
-                                    return (
-                                        <motion.div
-                                            key={`${item.id}-${i}`}
-                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                                        >
-                                            <div className={`flex flex-col max-w-[85%] md:max-w-[70%] space-y-1 ${isMe ? 'items-end' : 'items-start'}`}>
-                                                <div className={`flex items-center gap-2 px-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest ${isMe ? 'text-indigo-400' : 'text-emerald-400'}`}>
-                                                        {isMe ? 'Official Response' : 'Institutional Authority'}
-                                                    </span>
-                                                    <div className="w-0.5 h-0.5 rounded-full bg-white/10"></div>
-                                                    <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest leading-none">
-                                                        {formatTimeAgo(item.created_at)}
-                                                    </span>
-                                                </div>
-                                                <div className={`p-4 md:p-6 rounded-[2rem] text-sm leading-relaxed border shadow-2xl relative overflow-hidden group/bubble ${!isMe
-                                                    ? 'bg-gradient-to-br from-[#1a1b26] to-[#0f1016] text-white/90 border-white/10 rounded-tl-none'
-                                                    : 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-indigo-400/20 rounded-tr-none shadow-indigo-500/20'}`}
-                                                >
-                                                    {/* Glossy effect */}
-                                                    <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent pointer-events-none"></div>
+                        <div className="max-w-4xl mx-auto flex flex-col pt-10">
+                            {messages.map((item, idx) => {
+                                const isSystem = item.item_type !== 'MESSAGE' || item.details.message?.includes('PROTOCOL UPDATE');
+                                const isMe = !item.is_admin;
+                                const prevItem = idx > 0 ? messages[idx - 1] : null;
+                                const isGrouped = prevItem && prevItem.is_admin === item.is_admin && !isSystem && (prevItem.item_type === 'MESSAGE');
 
-                                                    <p className="font-medium whitespace-pre-wrap break-words normal-case relative z-10">
-                                                        {item.details.message}
-                                                    </p>
-                                                </div>
+                                if (isSystem) {
+                                    return (
+                                        <div key={idx} className="flex justify-center my-8">
+                                            <div className="px-5 py-2 rounded-full bg-white/5 border border-white/5 flex items-center gap-3">
+                                                <div className="w-1 h-1 rounded-full bg-indigo-400 animate-pulse" />
+                                                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 truncate max-w-[300px]">
+                                                    {item.details.status || item.details.message?.split(':')[1]?.trim() || 'Registry Activity'}
+                                                </span>
                                             </div>
-                                        </motion.div>
+                                        </div>
                                     );
-                                })}
+                                }
+
+                                return (
+                                    <motion.div
+                                        key={idx}
+                                        initial={{ opacity: 0, x: isMe ? 20 : -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className={clsx("flex flex-col mb-1", isMe ? "items-end" : "items-start", !isGrouped && "mt-6")}
+                                    >
+                                        {!isGrouped && (
+                                            <div className={clsx("flex items-center gap-2 mb-1 px-1", isMe ? "flex-row-reverse" : "flex-row")}>
+                                                <span className="text-[8px] font-black uppercase text-white/20 tracking-widest">{isMe ? 'Verified Parent' : 'Institutional Authority'}</span>
+                                                <span className="text-[8px] font-mono text-white/10">{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                        )}
+                                        <div className={clsx(
+                                            "max-w-[85%] px-5 py-3 rounded-2xl text-[14px] leading-relaxed border shadow-xl",
+                                            isMe
+                                                ? "bg-indigo-600 text-white border-white/10 rounded-tr-none shadow-indigo-900/30"
+                                                : "bg-white/[0.03] text-white/70 border-white/5 rounded-tl-none"
+                                        )}>
+                                            <p className="normal-case font-medium whitespace-pre-wrap">{item.details.message}</p>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
 
-                {/* Composer - Fixed Bottom */}
-                <footer className="px-6 md:px-10 py-6 border-t border-white/[0.05] bg-black/20 backdrop-blur-xl shrink-0">
-                    <div className="max-w-4xl mx-auto">
-                        <form onSubmit={handleSend} className="relative group">
-                            <div className="relative flex gap-3 p-2 bg-white/[0.03] border border-white/5 rounded-[2.5rem] focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-inner">
-                                <input
-                                    type="text"
-                                    value={text}
-                                    onChange={e => setText(e.target.value)}
-                                    placeholder="Establish encrypted uplink (Parent Response)..."
-                                    className="flex-grow h-12 md:h-14 px-6 md:px-8 bg-transparent text-white placeholder:text-white/10 outline-none text-sm font-medium normal-case"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={!text.trim() || sending}
-                                    className="w-12 md:w-14 h-12 md:h-14 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 text-white rounded-full transition-all active:scale-90 disabled:opacity-20 shadow-2xl shrink-0"
-                                >
-                                    {sending ? <Spinner size="sm" /> : <SendIcon className="w-5 h-5" />}
-                                </button>
-                            </div>
-                        </form>
-                        <div className="mt-4 flex items-center justify-center gap-3 opacity-20">
-                            <ShieldCheckIcon className="w-3 h-3 text-emerald-400" />
-                            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white">Messages are encrypted and logged for institutional transparency.</span>
-                        </div>
-                    </div>
-                </footer>
+                <div className="px-10 py-6 border-t border-white/[0.03] bg-black/40 shrink-0">
+                    <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-4 p-1.5 bg-white/[0.03] border border-white/5 rounded-3xl focus-within:border-indigo-500/30 transition-all">
+                        <input
+                            type="text"
+                            value={text}
+                            onChange={e => setText(e.target.value)}
+                            placeholder="Type a verified response..."
+                            className="flex-1 bg-transparent px-6 py-3 text-white placeholder:text-white/10 outline-none text-sm normal-case"
+                        />
+                        <button
+                            type="submit"
+                            disabled={!text.trim() || sending}
+                            className="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.2rem] flex items-center justify-center transition-all disabled:opacity-20"
+                        >
+                            {sending ? <Spinner size="sm" /> : <SendIcon className="w-5 h-5" />}
+                        </button>
+                    </form>
+                </div>
             </div>
 
-            {/* Profile Sidebar - Desktop Only */}
-            <div className="w-80 flex-shrink-0 bg-white/[0.01] border-l border-white/[0.03] p-10 space-y-12 overflow-y-auto hidden xl:block custom-scrollbar">
-                <section className="space-y-8">
-                    <div className="flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
-                        <h3 className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Registry Status</h3>
-                    </div>
-                    <div className={clsx(
-                        "p-8 rounded-[2.5rem] border shadow-2xl flex flex-col items-center justify-center text-center gap-6 transition-all duration-700",
-                        statusConfig[enquiry.status as EnquiryStatus]?.bg || 'bg-white/5',
-                        statusConfig[enquiry.status as EnquiryStatus]?.color || 'text-white/20',
-                        "border-white/5"
-                    )}>
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-current opacity-20 blur-2xl rounded-full"></div>
-                            <ShieldCheckIcon className="w-12 h-12 relative z-10" />
-                        </div>
-                        <span className="text-[11px] font-black uppercase tracking-[0.3em] leading-none">
-                            {enquiry.status.replace('ENQUIRY_', '')}
+            {/* Registry Card (Right) */}
+            <div className="w-[320px] border-l border-white/[0.03] bg-black/20 p-8 space-y-8 hidden xl:flex flex-col shrink-0">
+                <section>
+                    <h3 className="text-[9px] font-black uppercase text-white/20 tracking-[0.4em] mb-6">Security Context</h3>
+                    <div className={clsx("p-6 rounded-[2rem] border flex flex-col items-center text-center gap-4", (STATUS_CONFIG[enquiry.status as EnquiryStatus]?.bg || 'bg-white/5'))}>
+                        <ShieldCheckIcon className={clsx("w-10 h-10", (STATUS_CONFIG[enquiry.status as EnquiryStatus]?.color || 'text-white/30'))} />
+                        <span className={clsx("text-[10px] font-black uppercase tracking-[0.3em]", (STATUS_CONFIG[enquiry.status as EnquiryStatus]?.color || 'text-white/30'))}>
+                            {STATUS_CONFIG[enquiry.status as EnquiryStatus]?.label || enquiry.status}
                         </span>
                     </div>
                 </section>
 
-                <section className="space-y-6">
-                    <h3 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Academic Context</h3>
-                    <div className="space-y-4">
-                        <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
-                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Grade Level</span>
-                            <span className="text-xl font-serif font-black text-white/90">Grade {enquiry.grade}</span>
-                        </div>
-                        <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
-                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] block mb-2">Institutional Target</span>
-                            <span className="text-sm font-serif font-black text-white/90 uppercase truncate block">{enquiry.branch_name || 'Main Campus'}</span>
-                        </div>
+                <section className="space-y-4">
+                    <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
+                        <span className="text-[8px] font-black text-white/20 uppercase tracking-widest block mb-1">Grade Level</span>
+                        <p className="text-xl font-serif font-black text-white/80">Grade {enquiry.grade}</p>
+                    </div>
+                    <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
+                        <span className="text-[8px] font-black text-white/20 uppercase tracking-widest block mb-1">Destination</span>
+                        <p className="text-[11px] font-bold text-white/60 lowercase tracking-tight italic truncate">{enquiry.branch_name || 'Main Campus'}</p>
                     </div>
                 </section>
 
-                <div className="pt-10 opacity-5 select-none grayscale text-center">
-                    <TerminalIcon className="w-10 h-10 mx-auto" />
-                    <p className="text-[8px] font-black uppercase tracking-[0.5em] mt-4 leading-relaxed">Identity Profile Node<br />Protocol V5.0.1</p>
+                <div className="mt-auto pt-10 opacity-5 grayscale text-center">
+                    <RadarIcon className="w-8 h-8 mx-auto" />
+                    <p className="text-[8px] font-black uppercase tracking-[0.5em] mt-3 leading-relaxed">Registry Protocol<br />V8.4.2</p>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }
-
-const DownloadIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-);
