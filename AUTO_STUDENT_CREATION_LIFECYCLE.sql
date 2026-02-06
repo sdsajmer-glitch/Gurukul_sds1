@@ -56,8 +56,9 @@ BEGIN
     FROM public.admissions WHERE id = p_admission_id;
 
     -- Integrity Check: Prevent enrollment for non-approved applicants
-    IF v_status != 'Approved' AND v_status != 'Enrolled' THEN
-        RETURN jsonb_build_object('success', false, 'message', 'LIFECYCLE_ERROR: Only Approved applicants can be enrolled.');
+    -- Expanded to allow Verified and Pending Review if the admin triggers it manually from the modal
+    IF v_status NOT IN ('Approved', 'Enrolled', 'Verified', 'Pending Review') THEN
+        RETURN jsonb_build_object('success', false, 'message', 'LIFECYCLE_ERROR: Only Approved or Verified applicants can be enrolled. Current status: ' || v_status);
     END IF;
 
     -- Integrity Check: Prevent duplicate student nodes from same Admission ID
