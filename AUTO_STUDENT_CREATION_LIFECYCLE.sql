@@ -46,6 +46,7 @@ DECLARE
     v_virtual_email TEXT;
     v_academic_year TEXT;
     v_existing_student_id UUID;
+    v_status TEXT;
 BEGIN
     -- [A] Handshake: Load identity node metadata and check current lifecycle
     SELECT 
