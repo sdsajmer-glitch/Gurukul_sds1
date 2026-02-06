@@ -173,8 +173,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
         setLoading(true);
         setError(null);
         try {
-            // FIX: Select profile_photo_url from profiles relationship
-            let query = supabase.from('student_profiles').select(`*, profiles!inner (email, display_name, phone, role, is_active, profile_completed, created_at, profile_photo_url), school_classes (name)`).eq('profiles.role', 'Student');
+            let query = supabase.from('student_profiles').select(`*, profiles(email, display_name, phone, role, is_active, profile_completed, created_at, profile_photo_url), school_classes(name)`);
             if (branchId !== null && branchId !== undefined) {
                 query = query.eq('branch_id', Number(branchId));
             }
@@ -185,14 +184,13 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
             const mappedStudents: StudentForAdmin[] = (data || []).map((s: any) => ({
                 id: s.user_id,
                 email: s.profiles?.email || '',
-                display_name: s.profiles?.display_name || 'Unknown Student',
+                display_name: s.profiles?.display_name || s.applicant_name || 'Academic Identity',
                 phone: s.profiles?.phone,
-                role: s.profiles?.role,
-                is_active: s.profiles?.is_active,
-                profile_completed: s.profiles?.profile_completed,
+                role: s.profiles?.role || 'Student',
+                is_active: s.profiles?.is_active ?? s.is_active ?? true,
+                profile_completed: s.profiles?.profile_completed ?? true,
                 created_at: s.created_at || s.profiles?.created_at,
-                // FIX: Map correctly from nested relationship
-                profile_photo_url: s.profiles?.profile_photo_url || s.profile_photo_url,
+                profile_photo_url: s.profiles?.profile_photo_url,
                 gender: s.gender,
                 date_of_birth: s.date_of_birth,
                 address: s.address,
@@ -296,16 +294,30 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                     </div>
                 </div>
 
-                <div className="overflow-x-auto flex-grow custom-scrollbar">
-                    {loading && allStudents.length > 0 ? (
-                        <div className="p-20 flex justify-center"><Spinner size="lg" className="text-primary" /></div>
-                    ) : paginatedData.length === 0 ? (
-                        <div className="p-32 text-center flex flex-col items-center justify-center">
-                            <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 opacity-20">
-                                <StudentsIcon className="w-12 h-12" />
+                <div className="overflow-x-auto flex-grow custom-scrollbar min-h-[400px]">
+                    {loading ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-30">
+                            <div className="flex flex-col items-center gap-4">
+                                <Spinner size="lg" className="text-primary scale-150" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40 animate-pulse">Syncing Registry...</span>
                             </div>
-                            <p className="text-xl font-serif font-black text-white uppercase tracking-tighter mb-2">No enrolled students yet.</p>
-                            <p className="text-sm font-medium text-white/30 max-w-sm mx-auto italic">Students will appear here once admission is completed in the Admission Vault.</p>
+                        </div>
+                    ) : paginatedData.length === 0 ? (
+                        <div className="h-full min-h-[400px] flex flex-col items-center justify-center p-20 animate-in fade-in zoom-in-95 duration-700">
+                            <div className="relative mb-8">
+                                <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full scale-150 animate-pulse" />
+                                <div className="w-24 h-24 bg-[#12141c] border border-white/5 rounded-3xl flex items-center justify-center shadow-3xl relative z-10">
+                                    <StudentsIcon className="w-12 h-12 text-white/10" />
+                                </div>
+                            </div>
+                            <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tighter mb-2">Registry Silent.</h3>
+                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-6">No active student nodes identified</p>
+                            <p className="text-xs font-medium text-white/30 max-w-xs mx-auto italic text-center leading-relaxed">
+                                Use the <span className="text-white/60">Admission Vault</span> to finalize enrollment and promote applicants to the Student Directory.
+                            </p>
+                            <button onClick={() => fetchData()} className="mt-8 px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/40 transition-all flex items-center gap-3 active:scale-95">
+                                <RefreshIcon className="w-4 h-4" /> Re-sync
+                            </button>
                         </div>
                     ) : (
                         <table className="w-full text-left text-sm whitespace-nowrap">
