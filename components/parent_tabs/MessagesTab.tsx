@@ -455,7 +455,7 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                 >
                     {loading && messages.length === 0 ? (
                         <div className="h-full flex items-center justify-center opacity-10"><Spinner /></div>
-                    ) : messages.length === 0 ? (
+                    ) : messages.filter(m => m.item_type === 'MESSAGE').length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center opacity-10 select-none text-center">
                             <div className="relative mb-6">
                                 <RadarIcon className="w-20 h-20" />
@@ -466,44 +466,46 @@ function EnquiryHandshakeChannel({ enquiry, refresh }: { enquiry: MyEnquiry, ref
                                 />
                             </div>
                             <p className="text-[12px] font-black uppercase tracking-[0.8em]">Channel Standby</p>
-                            <p className="text-[9px] mt-4 max-w-xs leading-relaxed font-serif italic text-white/40">"No enquiries yet. Verified conversations will appear here."</p>
+                            <p className="text-[9px] mt-4 max-w-xs leading-relaxed font-serif italic text-white/40">"Awaiting institutional handshake. Verified communications will appear here."</p>
                         </div>
                     ) : (
                         <div className="max-w-4xl mx-auto flex flex-col space-y-6">
-                            {messages.map((item, i) => {
-                                const isMe = !item.is_admin;
-                                return (
-                                    <motion.div
-                                        key={`${item.created_at}-${i}`}
-                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                                        className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                                    >
-                                        <div className={`flex flex-col max-w-[85%] md:max-w-[70%] space-y-1 ${isMe ? 'items-end' : 'items-start'}`}>
-                                            <div className={`flex items-center gap-2 px-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                                                <span className={`text-[8px] font-black uppercase tracking-widest ${isMe ? 'text-indigo-300' : 'text-emerald-400'}`}>
-                                                    {isMe ? 'Verified Parent' : 'School Official'}
-                                                </span>
-                                                <div className="w-0.5 h-0.5 rounded-full bg-white/10"></div>
-                                                <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest leading-none">
-                                                    {formatTimeAgo(item.created_at)}
-                                                </span>
-                                            </div>
-                                            <div className={`p-4 md:p-6 rounded-[2rem] text-sm leading-relaxed border shadow-2xl relative overflow-hidden group/bubble ${!isMe
-                                                ? 'bg-gradient-to-br from-[#1a1b26] to-[#0f1016] text-white/90 border-white/10 rounded-tl-none'
-                                                : 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-indigo-400/20 rounded-tr-none shadow-indigo-500/20'}`}
-                                            >
-                                                {/* Glossy effect */}
-                                                <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent pointer-events-none"></div>
+                            {messages
+                                .filter(item => item.item_type === 'MESSAGE')
+                                .map((item, i) => {
+                                    const isMe = !item.is_admin;
+                                    return (
+                                        <motion.div
+                                            key={`${item.id}-${i}`}
+                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                                        >
+                                            <div className={`flex flex-col max-w-[85%] md:max-w-[70%] space-y-1 ${isMe ? 'items-end' : 'items-start'}`}>
+                                                <div className={`flex items-center gap-2 px-2 ${isMe ? 'flex-row-reverse' : ''}`}>
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest ${isMe ? 'text-indigo-400' : 'text-emerald-400'}`}>
+                                                        {isMe ? 'Official Response' : 'Institutional Authority'}
+                                                    </span>
+                                                    <div className="w-0.5 h-0.5 rounded-full bg-white/10"></div>
+                                                    <span className="text-[8px] font-bold text-white/10 uppercase tracking-widest leading-none">
+                                                        {formatTimeAgo(item.created_at)}
+                                                    </span>
+                                                </div>
+                                                <div className={`p-4 md:p-6 rounded-[2rem] text-sm leading-relaxed border shadow-2xl relative overflow-hidden group/bubble ${!isMe
+                                                    ? 'bg-gradient-to-br from-[#1a1b26] to-[#0f1016] text-white/90 border-white/10 rounded-tl-none'
+                                                    : 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-indigo-400/20 rounded-tr-none shadow-indigo-500/20'}`}
+                                                >
+                                                    {/* Glossy effect */}
+                                                    <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent pointer-events-none"></div>
 
-                                                <p className="font-medium whitespace-pre-wrap break-words normal-case relative z-10">
-                                                    {item.details.message}
-                                                </p>
+                                                    <p className="font-medium whitespace-pre-wrap break-words normal-case relative z-10">
+                                                        {item.details.message}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
+                                        </motion.div>
+                                    );
+                                })}
                         </div>
                     )}
                 </div>

@@ -84,20 +84,29 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
         try {
             const branchToLink = branchId === undefined || branchId === null ? null : branchId;
 
-            // Validate admission_id is a proper UUID before passing to RPC
-            const admissionId = verifiedData.admission_id;
+            // ARCHITECTURE FIX: Support flexible ID resolution from many fields 
+            // to prevent "Invalid admission ID" errors.
+            const admissionId = verifiedData.admission_id || (verifiedData as any).enquiry_id;
+
+            console.log("Handshake Trace:", {
+                code_type: verifiedData.code_type,
+                id: verifiedData.id,
+                admission_id: admissionId,
+                branch: branchToLink
+            });
+
             if (!admissionId || typeof admissionId !== 'string') {
-                throw new Error('Invalid admission ID: missing or not a string');
+                console.error("Identity Handshake Failure: admission_id is missing or invalid in verifiedData:", verifiedData);
+                throw new Error('Identity Violation: Missing or invalid node ID in protocol payload.');
             }
 
             // Validate UUID format (basic check for UUID pattern)
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
             if (!uuidRegex.test(admissionId)) {
-                throw new Error(`Invalid admission ID format: ${admissionId}`);
+                throw new Error(`Protocol Violation: Invalid node identity format (${admissionId.substring(0, 8)}...)`);
             }
 
             // ARCHITECTURE FIX: Use unified ID-based RPC for all code types.
-            // This bypasses the redundant string lookups that cause 'invalid token' errors.
             const { data, error: impError } = await supabase.rpc('admin_import_record_from_share_code', {
                 p_admission_id: admissionId,
                 p_code_type: verifiedData.code_type,
@@ -112,9 +121,10 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
                 const targetTab = verifiedData.code_type === 'Enquiry' ? 'Enquiries' : 'Admissions';
                 setTimeout(() => onNavigate?.(targetTab), 1500);
             } else {
-                throw new Error(data?.message || "Import protocol rejected by node.");
+                throw new Error(data?.message || "Import protocol rejected by node authentication engine.");
             }
         } catch (err: any) {
+            console.error("Critical Sync Failure:", err);
             setError(formatError(err));
         } finally {
             setLoading(false);
