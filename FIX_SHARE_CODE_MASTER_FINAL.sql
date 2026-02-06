@@ -107,7 +107,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- 4. Enhanced Verification Function (Requirement 1 & 2)
+-- 4. Enhanced Verification Function (Resilient Fallback)
 CREATE OR REPLACE FUNCTION public.admin_verify_share_code(p_code text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -120,6 +120,7 @@ DECLARE
     v_contact_email text;
     v_contact_phone text;
     v_normalized_input text;
+    v_found_in_admission boolean := false;
 BEGIN
     -- Normalize input (remove dashes/spaces and uppercase)
     v_normalized_input := upper(regexp_replace(p_code, '[\s-]+', '', 'g'));
@@ -135,17 +136,33 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'Invalid or expired protocol key.');
     END IF;
 
-    -- Fetch limited data based on code type
-    IF v_code_record.code_type = 'Enquiry' THEN
-        SELECT applicant_name, grade, parent_email, parent_phone 
-        INTO v_applicant_name, v_grade, v_contact_email, v_contact_phone
-        FROM public.enquiries
-        WHERE id = v_code_record.enquiry_id;
-    ELSE
+    -- Fetch data based on code type, with fallback
+    IF v_code_record.code_type = 'Admission' THEN
+        -- Try Admissions first
         SELECT applicant_name, grade, parent_email, parent_phone
         INTO v_applicant_name, v_grade, v_contact_email, v_contact_phone
         FROM public.admissions
         WHERE id = v_code_record.admission_id;
+        
+        IF v_applicant_name IS NOT NULL THEN
+            v_found_in_admission := true;
+        ELSE
+            -- Fallback to Enquiry (maybe not converted yet)
+            SELECT applicant_name, grade, parent_email, parent_phone 
+            INTO v_applicant_name, v_grade, v_contact_email, v_contact_phone
+            FROM public.enquiries
+            WHERE id = v_code_record.admission_id; -- Note: p_admission_id column stored the ID
+        END IF;
+    ELSE
+        -- Strictly Enquiry
+        SELECT applicant_name, grade, parent_email, parent_phone 
+        INTO v_applicant_name, v_grade, v_contact_email, v_contact_phone
+        FROM public.enquiries
+        WHERE id = v_code_record.enquiry_id;
+    END IF;
+
+    IF v_applicant_name IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Protocol mismatch: Identity node not found in target vault.');
     END IF;
 
     RETURN jsonb_build_object(
@@ -157,7 +174,8 @@ BEGIN
         'grade', v_grade,
         'contact_email', v_contact_email,
         'contact_phone', v_contact_phone,
-        'purpose', v_code_record.purpose
+        'purpose', v_code_record.purpose,
+        'vault_source', CASE WHEN v_found_in_admission THEN 'ADMISSION' ELSE 'ENQUIRY' END
     );
 END;
 $$;

@@ -212,12 +212,13 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
+    // Intelligent Defaulting: Auto-choose protocol based on node status, but allow override
     useEffect(() => {
         const selected = myApplications.find(a => String(a.id) === selectedAdmission);
-        if (selected?.source_type) {
+        if (selected?.source_type && !generatedCode) {
             setCodeType(selected.source_type as ShareCodeType);
         }
-    }, [selectedAdmission, myApplications]);
+    }, [selectedAdmission, myApplications, generatedCode]);
 
     const handleGenerateCode = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -392,23 +393,23 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                 <div className="grid grid-cols-2 gap-4">
                                     <button
                                         type="button"
-                                        disabled
-                                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group/btn ${codeType === 'Enquiry' ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20 cursor-default' : 'bg-white/[0.02] border-white/5 opacity-10 cursor-not-allowed'}`}
+                                        onClick={() => setCodeType('Enquiry')}
+                                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group/btn ${codeType === 'Enquiry' ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20 shadow-xl' : 'bg-white/[0.02] border-white/5 opacity-40 hover:opacity-100'}`}
                                     >
-                                        <InfoIcon className={`w-5 h-5 transition-all ${codeType === 'Enquiry' ? 'text-primary' : 'text-white/20'}`} />
-                                        <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${codeType === 'Enquiry' ? 'text-primary' : 'text-white/20'}`}>Enquiry</span>
+                                        <InfoIcon className={`w-5 h-5 transition-all ${codeType === 'Enquiry' ? 'text-primary' : 'text-white/20 group-hover/btn:text-white/40'}`} />
+                                        <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${codeType === 'Enquiry' ? 'text-primary' : 'text-white/20 group-hover/btn:text-white/40'}`}>Enquiry</span>
                                     </button>
                                     <button
                                         type="button"
-                                        disabled
-                                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group/btn ${codeType === 'Admission' ? 'bg-indigo-500/5 border-indigo-500/30 ring-1 ring-indigo-500/20 cursor-default' : 'bg-white/[0.02] border-white/5 opacity-10 cursor-not-allowed'}`}
+                                        onClick={() => setCodeType('Admission')}
+                                        className={`flex flex-col items-center justify-center gap-3 p-6 rounded-[2rem] border transition-all duration-500 group/btn ${codeType === 'Admission' ? 'bg-indigo-500/5 border-indigo-500/30 ring-1 ring-indigo-500/20 shadow-xl' : 'bg-white/[0.02] border-white/5 opacity-40 hover:opacity-100'}`}
                                     >
-                                        <ShieldCheckIcon className={`w-5 h-5 transition-all ${codeType === 'Admission' ? 'text-indigo-400' : 'text-white/20'}`} />
-                                        <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${codeType === 'Admission' ? 'text-indigo-400' : 'text-white/20'}`}>Admission</span>
+                                        <ShieldCheckIcon className={`w-5 h-5 transition-all ${codeType === 'Admission' ? 'text-indigo-400' : 'text-white/20 group-hover/btn:text-white/40'}`} />
+                                        <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${codeType === 'Admission' ? 'text-indigo-400' : 'text-white/20 group-hover/btn:text-white/40'}`}>Admission</span>
                                     </button>
                                 </div>
                                 <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest text-center">
-                                    Protocol layer auto-determined by identity node status
+                                    Protocol layer auto-determined by status • Override available
                                 </p>
                             </div>
 
