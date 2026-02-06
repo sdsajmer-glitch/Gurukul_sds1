@@ -98,9 +98,14 @@ BEGIN
     UPDATE public.profiles 
     SET role = 'Student', 
         profile_completed = true, 
-        branch_id = v_branch_id,
+        branch_id = COALESCE(v_branch_id, branch_id), -- Preserve existing or update
         is_active = true 
     WHERE id = v_user_id;
+
+    -- 1b. Role Assignment (Legacy support for RLS)
+    INSERT INTO public.user_role_assignments (user_id, role_name, branch_id)
+    VALUES (v_user_id, 'Student', v_branch_id)
+    ON CONFLICT DO NOTHING;
 
     -- 2. Student Registry (The master roster record - AUTOMATIC CREATION)
     INSERT INTO public.student_profiles (
@@ -127,6 +132,9 @@ BEGIN
         student_id_number = v_sid, 
         admission_id = p_admission_id,
         enrollment_status = 'Active',
+        grade = EXCLUDED.grade,
+        branch_id = EXCLUDED.branch_id,
+        academic_year = EXCLUDED.academic_year,
         is_active = true;
 
     -- 3. Admissions Registry (Archive state: Update status and seal SID)
