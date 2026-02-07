@@ -49,6 +49,7 @@ type ConsentAction =
     | { type: 'SUBMIT_SUCCESS' };
 
 const consentReducer = (state: ConsentState, action: ConsentAction): ConsentState => {
+    // console.log('Consent Action:', action.type); // Debugging state transitions
     switch (action.type) {
         case 'GRANT_CONSENT':
             return state === 'noConsent' ? 'consentGranted' : state;
@@ -186,12 +187,14 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
 
     useEffect(() => {
         const fetchParent = async () => {
-            const { data } = await supabase.from('profiles').select('display_name, email, phone, branch_id').eq('id', currentUserId).maybeSingle();
+            const { data } = await supabase.from('profiles').select('display_name, email, phone, branch_id, address, city, state, country, pin_code').eq('id', currentUserId).maybeSingle();
             if (data) setParentProfile({
                 name: data.display_name || '',
                 email: data.email,
                 phone: data.phone || '',
-                branch_id: data.branch_id
+                branch_id: data.branch_id,
+                // Store full address for sync
+                full_address: [data.address, data.city, data.state, data.country, data.pin_code].filter(Boolean).join(', ')
             } as any);
         };
         fetchParent();
@@ -226,7 +229,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     }, [isDragging, handleMouseMove, handleMouseUp]);
 
     const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (consentState === 'noConsent') return;
+        if (consentState === 'noConsent' && !isEdit) return; // Allow photo change in edit mode without re-consenting if already consented? No, simplified.
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             if (file.size > 5 * 1024 * 1024) return alert("Image exceeds 5MB limit.");
@@ -243,6 +246,12 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         } else if (parentProfile) {
             setFormData(prev => ({ ...prev, emergency_contact: `${parentProfile.name} / ${parentProfile.phone || 'No Phone'}` }));
             setIsEmergencySynced(true);
+        }
+    };
+
+    const handleSyncAddress = () => {
+        if (parentProfile && (parentProfile as any).full_address) {
+            setFormData(prev => ({ ...prev, address: (parentProfile as any).full_address }));
         }
     };
 
@@ -361,7 +370,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                     <PlusIcon className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-serif font-black text-white tracking-tight uppercase flex items-center gap-1">Register Child<span className="text-primary animate-pulse">.</span></h3>
+                                    <h3 className="text-2xl font-serif font-black text-white tracking-tight uppercase flex items-center gap-1">{isEdit ? 'Edit Identity' : 'Register Child'}<span className="text-primary animate-pulse">.</span></h3>
                                     <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Identity Enrollment Node</p>
                                 </div>
                             </div>
@@ -499,14 +508,27 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                             icon={<UserIcon className="w-4 h-4" />}
                                         />
                                         <div className="md:col-span-2">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 group-focus-within:text-white/70 group-hover:text-white/60">
+                                                    Residential Address
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSyncAddress}
+                                                    className="text-[9px] font-bold text-primary hover:text-primary/80 uppercase tracking-widest flex items-center gap-1.5 transition-colors"
+                                                >
+                                                    <LocationIcon className="w-3 h-3" /> Use My Address
+                                                </button>
+                                            </div>
                                             <PremiumFloatingInput
-                                                label="Residential Address"
+                                                label="" // Label handled above for custom layout
                                                 name="address"
                                                 value={formData.address}
                                                 onChange={handleChange}
                                                 icon={<LocationIcon className="w-4 h-4" />}
                                                 placeholder="e.g. 123 Sky Tower, Downtown"
                                                 helperText="Official residential registry for student records."
+                                                className="mt-0"
                                             />
                                         </div>
                                     </div>
@@ -593,7 +615,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                 {loading ? <Spinner size="sm" className="text-white" /> : (
                                     <>
                                         <CheckCircleIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-500" />
-                                        <span className="text-xs font-black uppercase tracking-[0.3em]">Initialize Enrollment</span>
+                                        <span className="text-xs font-black uppercase tracking-[0.3em]">{isEdit ? 'Save Changes' : 'Initialize Enrollment'}</span>
                                     </>
                                 )}
                             </button>

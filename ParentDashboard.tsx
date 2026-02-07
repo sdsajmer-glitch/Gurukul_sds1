@@ -104,7 +104,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
             </main>
 
             <footer className="py-10 border-t border-white/5 bg-black/20 text-center px-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/10">Institutional Matrix v9.5.1 Parent Node</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/10">Institutional Matrix v9.5.2 Parent Node</p>
             </footer>
 
             <style>{`
