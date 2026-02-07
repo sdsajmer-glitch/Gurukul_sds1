@@ -67,20 +67,41 @@ const TabButton: React.FC<{
 }> = ({ id, label, icon, active, onClick }) => (
     <button
         onClick={() => onClick(id)}
-        className={`w-full flex items-center gap-3 px-6 py-4 rounded-xl transition-all duration-500 group relative overflow-hidden ${active
-            ? 'bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(var(--primary),0.05)]'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
-            }`}
+        className={`
+            w-full flex items-center gap-3.5 px-5 py-3.5 rounded-xl 
+            transition-all duration-200 group relative overflow-hidden
+            ${active
+                ? 'bg-indigo-500/10 text-white shadow-lg shadow-indigo-500/5 border border-indigo-500/20'
+                : 'text-white/50 hover:text-white/80 hover:bg-white/5 border border-transparent'
+            }
+        `}
+        aria-current={active ? 'page' : undefined}
     >
+        {/* Active Indicator Bar */}
         {active && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-[0_0_15px_rgba(var(--primary),0.5)]"></div>
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-r-full shadow-[0_0_12px_rgba(99,102,241,0.5)]"></div>
         )}
-        <div className={`relative z-10 transition-colors ${active ? 'text-primary scale-110' : 'text-muted-foreground group-hover:text-foreground group-hover:scale-110'} duration-500`}>
+
+        {/* Icon */}
+        <div className={`
+            relative z-10 transition-all duration-200
+            ${active ? 'text-indigo-400 scale-105' : 'text-white/40 group-hover:text-white/70 group-hover:scale-105'}
+        `}>
             {icon}
         </div>
-        <span className={`relative z-10 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${active ? 'text-foreground ml-1' : 'ml-0'}`}>
+
+        {/* Label */}
+        <span className={`
+            relative z-10 text-xs font-bold tracking-wide transition-all duration-200
+            ${active ? 'text-white' : 'text-white/60 group-hover:text-white/90'}
+        `}>
             {label}
         </span>
+
+        {/* Subtle Background Glow on Hover */}
+        {!active && (
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+        )}
     </button>
 );
 
@@ -251,53 +272,130 @@ const GuardianCard: React.FC<{
     isPrimary?: boolean;
     onEdit: () => void;
 }> = ({ title, data, isPrimary, onEdit }) => (
-    <div className="bg-[#13151b] border border-white/10 rounded-[2.5rem] p-8 shadow-lg relative overflow-hidden group flex flex-col h-full hover:border-white/20 transition-all">
-        <div className="flex justify-between items-start mb-6 z-10 relative">
-            <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-2xl ${isPrimary ? 'bg-indigo-500/10 text-indigo-400' : 'bg-white/5 text-white/40'}`}>
+    <div className={`
+        relative overflow-hidden group flex flex-col h-full
+        rounded-[2rem] p-8 
+        transition-all duration-300 ease-out
+        ${isPrimary
+            ? 'bg-gradient-to-br from-[#1a1d28] to-[#13151b] border-2 border-indigo-500/20 shadow-xl shadow-indigo-500/5'
+            : 'bg-[#13151b] border border-white/8 shadow-lg'
+        }
+        hover:shadow-2xl hover:shadow-black/20
+        ${isPrimary ? 'hover:border-indigo-500/30' : 'hover:border-white/15'}
+    `}>
+        {/* Subtle Background Gradient */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${isPrimary ? 'from-indigo-500/[0.03]' : 'from-white/[0.015]'} to-transparent pointer-events-none`}></div>
+
+        {/* Header Section */}
+        <div className="flex justify-between items-start mb-7 z-10 relative">
+            <div className="flex items-center gap-3.5">
+                <div className={`
+                    p-3.5 rounded-2xl transition-all duration-300
+                    ${isPrimary
+                        ? 'bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/20'
+                        : 'bg-white/5 text-white/40 ring-1 ring-white/5'
+                    }
+                    group-hover:scale-105
+                `}>
                     <UsersIcon className="w-6 h-6" />
                 </div>
                 <div>
-                    <h4 className="font-bold text-white text-lg">{title}</h4>
-                    <p className="text-[10px] uppercase font-bold text-white/30 tracking-widest">{data ? 'Linked' : 'Not Linked'}</p>
+                    <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-white text-base tracking-tight">{title}</h4>
+                        {isPrimary && (
+                            <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[9px] font-black uppercase tracking-wider rounded-md border border-indigo-500/20">
+                                Primary
+                            </span>
+                        )}
+                    </div>
+                    <p className={`text-[10px] font-bold tracking-wide mt-0.5 ${data ? 'text-emerald-400/70' : 'text-white/25'}`}>
+                        {data ? '● Verified' : '○ Not Linked'}
+                    </p>
                 </div>
             </div>
-            <button
-                onClick={onEdit}
-                className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-white/30 hover:text-white transition-all"
-            >
-                <EditIcon className="w-4 h-4" />
-            </button>
+            {data && (
+                <button
+                    onClick={onEdit}
+                    className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 hover:text-white transition-all duration-200 hover:scale-105 active:scale-95 ring-1 ring-white/5"
+                    aria-label={`Edit ${title}`}
+                >
+                    <EditIcon className="w-4 h-4" />
+                </button>
+            )}
         </div>
 
+        {/* Content Section */}
         {data ? (
-            <div className="space-y-5 relative z-10">
+            <div className="space-y-6 relative z-10 flex-grow">
+                {/* Full Name */}
                 <div>
-                    <p className="text-[10px] font-black uppercase text-white/20 tracking-widest mb-1">Full Name</p>
-                    <p className="text-base font-medium text-white">{data.name}</p>
+                    <p className="text-[9px] font-black uppercase text-white/25 tracking-[0.15em] mb-2">Full Name</p>
+                    <p className="text-base font-semibold text-white leading-relaxed">{data.name}</p>
                 </div>
-                <div className="grid grid-cols-1 gap-4">
+
+                {/* Relationship & Contact Grid */}
+                <div className="grid grid-cols-1 gap-5">
                     <div>
-                        <p className="text-[10px] font-black uppercase text-white/20 tracking-widest mb-1">Relationship</p>
-                        <p className="text-sm text-white/60">{data.relationship}</p>
+                        <p className="text-[9px] font-black uppercase text-white/25 tracking-[0.15em] mb-2">Relationship</p>
+                        <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-1 bg-white/5 text-white/70 text-xs font-medium rounded-lg border border-white/5">
+                                {data.relationship || 'Parent/Guardian'}
+                            </span>
+                        </div>
                     </div>
+
                     <div>
-                        <p className="text-[10px] font-black uppercase text-white/20 tracking-widest mb-1">Contact</p>
-                        <div className="flex flex-col gap-1">
-                            <p className="text-sm text-white/60 flex items-center gap-2"><MailIcon className="w-3 h-3 opacity-50" /> {data.email || '—'}</p>
-                            <p className="text-sm text-white/60 flex items-center gap-2"><PhoneIcon className="w-3 h-3 opacity-50" /> {data.phone || '—'}</p>
+                        <p className="text-[9px] font-black uppercase text-white/25 tracking-[0.15em] mb-2.5">Contact Information</p>
+                        <div className="space-y-2.5">
+                            <div className="flex items-center gap-2.5 group/contact">
+                                <div className="p-1.5 bg-white/5 rounded-lg group-hover/contact:bg-white/10 transition-colors">
+                                    <MailIcon className="w-3.5 h-3.5 text-white/40" />
+                                </div>
+                                <p className="text-sm text-white/70 font-medium">{data.email || 'Not provided'}</p>
+                            </div>
+                            <div className="flex items-center gap-2.5 group/contact">
+                                <div className="p-1.5 bg-white/5 rounded-lg group-hover/contact:bg-white/10 transition-colors">
+                                    <PhoneIcon className="w-3.5 h-3.5 text-white/40" />
+                                </div>
+                                <p className="text-sm text-white/70 font-medium">{data.phone || 'Not provided'}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         ) : (
-            <div className="flex-grow flex flex-col items-center justify-center text-center opacity-30 py-8">
-                <UserIcon className="w-16 h-16 mb-4" />
-                <p className="text-sm font-bold">No guardian linked</p>
+            /* Enhanced Empty State */
+            <div className="flex-grow flex flex-col items-center justify-center text-center py-10 px-4 relative z-10">
+                <div className="p-4 bg-white/5 rounded-2xl mb-4 ring-1 ring-white/5">
+                    <UserIcon className="w-12 h-12 text-white/20" />
+                </div>
+                <p className="text-sm font-semibold text-white/60 mb-1.5">No guardian linked yet</p>
+                <p className="text-xs text-white/35 leading-relaxed mb-6 max-w-[200px]">
+                    {isPrimary
+                        ? 'Link a primary guardian to establish the main point of contact'
+                        : 'Add a secondary guardian for additional emergency contacts'
+                    }
+                </p>
+                <button
+                    onClick={onEdit}
+                    className={`
+                        px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider
+                        transition-all duration-200 hover:scale-105 active:scale-95
+                        flex items-center gap-2
+                        ${isPrimary
+                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20'
+                            : 'bg-white/10 hover:bg-white/15 text-white/80 border border-white/10'
+                        }
+                    `}
+                >
+                    <PlusIcon className="w-4 h-4" />
+                    Link Guardian
+                </button>
             </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
+        {/* Subtle Inner Border for Depth */}
+        <div className="absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/5 pointer-events-none"></div>
     </div>
 );
 
@@ -351,37 +449,100 @@ const GuardianEditModal: React.FC<{
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-in fade-in zoom-in-95" onClick={onClose}>
-            <div className="bg-[#13151b] w-full max-w-md rounded-3xl shadow-2xl border border-white/10 p-8 relative overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none"><UsersIcon className="w-32 h-32" /></div>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
+            <div
+                className="bg-[#0f1115] w-full max-w-lg rounded-[2rem] shadow-2xl border border-white/10 p-10 relative overflow-hidden group"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Decorative Background Element */}
+                <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none transition-opacity duration-500 group-hover:opacity-[0.05]">
+                    <UsersIcon className="w-48 h-48" />
+                </div>
+                <div className="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none"></div>
 
-                <div className="flex justify-between items-center mb-8 relative z-10">
-                    <h3 className="font-bold text-xl text-white font-serif tracking-tight">Edit {type === 'primary' ? 'Primary' : 'Secondary'} Guardian</h3>
-                    <button onClick={onClose} className="p-2 rounded-full transition-colors text-white/50 hover:text-white"><XIcon className="w-5 h-5 text-white/50 hover:text-white" /></button>
+                {/* Header */}
+                <div className="flex justify-between items-start mb-10 relative z-10">
+                    <div>
+                        <h3 className="font-bold text-2xl text-white tracking-tight mb-1">
+                            Edit {type === 'primary' ? 'Primary' : 'Secondary'} Guardian
+                        </h3>
+                        <p className="text-white/40 text-xs font-medium tracking-wide">
+                            Update contact details and relationship info
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-200 hover:rotate-90"
+                    >
+                        <XIcon className="w-5 h-5" />
+                    </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Full Name</label>
-                        <input className="w-full p-4 rounded-2xl border border-white/10 bg-black/20 text-sm text-white focus:border-indigo-500 focus:bg-black/40 outline-none transition-all font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Relationship</label>
-                        <input className="w-full p-4 rounded-2xl border border-white/10 bg-black/20 text-sm text-white focus:border-indigo-500 focus:bg-black/40 outline-none transition-all font-medium" value={formData.relationship} onChange={e => setFormData({ ...formData, relationship: e.target.value })} />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Email</label>
-                        <input className="w-full p-4 rounded-2xl border border-white/10 bg-black/20 text-sm text-white focus:border-indigo-500 focus:bg-black/40 outline-none transition-all font-medium" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Phone</label>
-                        <input className="w-full p-4 rounded-2xl border border-white/10 bg-black/20 text-sm text-white focus:border-indigo-500 focus:bg-black/40 outline-none transition-all font-medium" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                    <div className="space-y-2 group/field">
+                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-indigo-400 transition-colors">
+                            Full Name
+                        </label>
+                        <input
+                            className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-[#16181d] text-sm text-white placeholder-white/20 focus:border-indigo-500/50 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium"
+                            value={formData.name}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="e.g. Dr. Rajesh Kumar"
+                        />
                     </div>
 
-                    <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-white/5">
-                        <button type="button" onClick={onClose} className="px-6 py-3 text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-colors uppercase tracking-wider">Cancel</button>
-                        <button type="submit" disabled={loading} className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-500/20 hover:bg-indigo-50 flex items-center gap-2 transition-all uppercase tracking-wider hover:-translate-y-0.5">
-                            {loading && <Spinner size="sm" className="text-white" />} Save Changes
+                    <div className="space-y-2 group/field">
+                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-indigo-400 transition-colors">
+                            Relationship
+                        </label>
+                        <input
+                            className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-[#16181d] text-sm text-white placeholder-white/20 focus:border-indigo-500/50 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium"
+                            value={formData.relationship}
+                            onChange={e => setFormData({ ...formData, relationship: e.target.value })}
+                            placeholder="e.g. Father"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-2 group/field">
+                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-indigo-400 transition-colors">
+                                Email
+                            </label>
+                            <input
+                                className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-[#16181d] text-sm text-white placeholder-white/20 focus:border-indigo-500/50 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium"
+                                value={formData.email}
+                                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                placeholder="name@example.com"
+                            />
+                        </div>
+                        <div className="space-y-2 group/field">
+                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-indigo-400 transition-colors">
+                                Phone
+                            </label>
+                            <input
+                                className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-[#16181d] text-sm text-white placeholder-white/20 focus:border-indigo-500/50 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium"
+                                value={formData.phone}
+                                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                placeholder="+91 98765 43210"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 mt-10 pt-6 border-t border-white/5">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-6 py-3.5 text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 flex items-center gap-2 transition-all uppercase tracking-widest hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? <Spinner size="sm" className="text-white" /> : 'Save Changes'}
                         </button>
                     </div>
                 </form>
@@ -532,6 +693,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
+            let parentAddress = null;
+
             // 1. Fetch Guardians (Parent & Secondary)
             const { data: parentRes } = await supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id });
             if (parentRes && parentRes.found) {
@@ -544,6 +707,10 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 });
 
                 if (parentRes.parent_id) {
+                    // Fetch Parent Address for Sync Fallback
+                    const { data: pProfile } = await supabase.from('profiles').select('address').eq('id', parentRes.parent_id).maybeSingle();
+                    if (pProfile) parentAddress = pProfile.address;
+
                     const { data: secParent } = await supabase
                         .from('parent_profiles')
                         .select('secondary_parent_name, secondary_parent_email, secondary_parent_phone, secondary_parent_relationship')
@@ -584,7 +751,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             // Secondary Fallback: Try fetching from enquiries if still missing key data
             const { data: enquiryData } = await supabase
                 .from('enquiries')
-                .select('applicant_name, profile_photo_url, parent_phone, parent_name, grade')
+                .select('applicant_name, profile_photo_url, parent_phone, parent_name, grade, address')
                 .eq('user_id', student.id)
                 .maybeSingle();
 
@@ -600,7 +767,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         ? (admissionLink?.applicant_name || enquiryData?.applicant_name || prev.display_name)
                         : prev.display_name,
                     phone: prev.phone || admissionLink?.parent_phone || enquiryData?.parent_phone,
-                    address: prev.address || admissionLink?.address,
+                    address: prev.address || admissionLink?.address || enquiryData?.address || parentAddress,
                 }));
 
                 // Fetch documents associated with the discovered admission
@@ -659,46 +826,80 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[150] flex items-center justify-center p-0 md:p-6 overflow-hidden">
             <div className="bg-[#08090a] w-full max-w-[1400px] h-full md:h-[92vh] md:rounded-[3rem] shadow-2xl border border-white/10 flex flex-col overflow-hidden relative ring-1 ring-white/5 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
 
-                <div className="px-10 py-8 border-b border-border/40 bg-card/80 flex justify-between items-center shrink-0 z-20 backdrop-blur-3xl">
-                    <div className="flex items-center gap-8">
+                <div className="px-8 py-6 border-b border-white/8 bg-[#0a0b0f]/95 flex justify-between items-center shrink-0 z-20 backdrop-blur-xl">
+                    <div className="flex items-center gap-6">
+                        {/* Profile Photo */}
                         <div className="relative group/photo">
-                            <div className="absolute -inset-1.5 bg-gradient-to-br from-primary via-indigo-600 to-indigo-400 rounded-2xl opacity-40 group-hover/photo:opacity-100 blur transition-opacity duration-700"></div>
-                            <PremiumAvatar src={syncedStudent.profile_photo_url} name={syncedStudent.display_name} size="lg" className="relative shadow-2xl border-2 border-background rounded-2xl scale-110" />
+                            <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/30 to-indigo-600/20 rounded-2xl opacity-60 group-hover/photo:opacity-100 blur-sm transition-opacity duration-300"></div>
+                            <PremiumAvatar
+                                src={syncedStudent.profile_photo_url}
+                                name={syncedStudent.display_name}
+                                size="lg"
+                                className="relative shadow-xl border-2 border-white/10 rounded-2xl"
+                            />
                         </div>
-                        <div className="ml-2">
-                            <h2 className="text-4xl font-serif font-black text-foreground tracking-tight uppercase leading-none mb-3">{syncedStudent.display_name}</h2>
-                            <div className="flex items-center gap-4">
-                                <span className="text-[11px] font-black text-muted-foreground/60 uppercase tracking-[0.3em] font-mono bg-muted/50 px-3 py-1.5 rounded-xl border border-border/40">ID: {syncedStudent.student_id_number || 'NODE_PENDING'}</span>
-                                <div className="w-1.5 h-1.5 rounded-full bg-border/40"></div>
-                                <div className="flex items-center gap-2.5">
-                                    <div className={`w-2 h-2 rounded-full ${syncedStudent.is_active ? 'bg-accent-success shadow-[0_0_15px_rgba(var(--accent-success),0.5)]' : 'bg-accent-error'} animate-pulse`}></div>
-                                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${syncedStudent.is_active ? 'text-accent-success' : 'text-accent-error'}`}>
-                                        {syncedStudent.is_active ? 'Active Status' : 'Suspended'}
+
+                        {/* Student Info */}
+                        <div>
+                            <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2.5">
+                                {syncedStudent.display_name}
+                            </h1>
+                            <div className="flex items-center gap-3">
+                                {/* Student ID */}
+                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider font-mono px-2.5 py-1 bg-white/5 rounded-lg border border-white/5">
+                                    ID: {syncedStudent.student_id_number || 'Pending'}
+                                </span>
+
+                                <div className="w-1 h-1 rounded-full bg-white/20"></div>
+
+                                {/* Status Badge */}
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${syncedStudent.is_active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-red-400'} animate-pulse`}></div>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${syncedStudent.is_active ? 'text-emerald-400/90' : 'text-red-400/90'}`}>
+                                        {syncedStudent.is_active ? 'Active' : 'Inactive'}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div className="flex gap-4">
-                        <button onClick={() => setIsEditing(true)} className="hidden md:flex items-center gap-3 px-8 py-3.5 bg-foreground text-background hover:bg-foreground/90 font-black text-[11px] rounded-2xl border border-transparent transition-all shadow-xl shadow-black/10 hover:-translate-y-1 active:scale-95 uppercase tracking-widest">
-                            <EditIcon className="w-4 h-4" /> Edit Profile
+
+                    {/* Actions */}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="hidden md:flex items-center gap-2.5 px-6 py-3 bg-white text-black hover:bg-white/90 font-bold text-xs rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 uppercase tracking-wide"
+                        >
+                            <EditIcon className="w-4 h-4" />
+                            Edit Profile
                         </button>
-                        <button onClick={onClose} className="p-3 rounded-2xl bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all border border-border/40"><XIcon className="w-6 h-6" /></button>
+                        <button
+                            onClick={onClose}
+                            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all border border-white/5"
+                            aria-label="Close"
+                        >
+                            <XIcon className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
 
                 <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
                     {/* Sidebar Nav */}
-                    <div className="w-full md:w-80 bg-card border-r border-border/40 flex-shrink-0 flex flex-col">
-                        <div className="p-8 space-y-2 overflow-y-auto custom-scrollbar flex-grow">
-                            <p className="px-6 text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.3em] mb-6 border-b border-border/40 pb-4">Core Registry</p>
+                    <div className="w-full md:w-72 bg-[#0a0b0f]/50 border-r border-white/5 flex-shrink-0 flex flex-col backdrop-blur-sm">
+                        <div className="p-6 space-y-1.5 overflow-y-auto custom-scrollbar flex-grow">
+                            {/* Core Registry Section */}
+                            <p className="px-4 text-[9px] font-bold text-white/25 uppercase tracking-[0.2em] mb-4 pb-2 border-b border-white/5">
+                                Core Registry
+                            </p>
                             <div className="space-y-1">
                                 <TabButton id="overview" label="Overview" icon={<ActivityIcon className="w-5 h-5" />} active={activeTab === 'overview'} onClick={setActiveTab} />
                                 <TabButton id="parents" label="Guardians" icon={<UsersIcon className="w-5 h-5" />} active={activeTab === 'parents'} onClick={setActiveTab} />
                                 <TabButton id="academic" label="Academics" icon={<GraduationCapIcon className="w-5 h-5" />} active={activeTab === 'academic'} onClick={setActiveTab} />
                             </div>
 
-                            <p className="px-6 text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.3em] mt-12 mb-6 border-b border-border/40 pb-4">Administration</p>
+                            {/* Administration Section */}
+                            <p className="px-4 text-[9px] font-bold text-white/25 uppercase tracking-[0.2em] mt-8 mb-4 pb-2 border-b border-white/5">
+                                Administration
+                            </p>
                             <div className="space-y-1">
                                 <TabButton id="documents" label="Documents" icon={<FileTextIcon className="w-5 h-5" />} active={activeTab === 'documents'} onClick={setActiveTab} />
                                 <TabButton id="fees" label="Financials" icon={<CreditCardIcon className="w-5 h-5" />} active={activeTab === 'fees'} onClick={setActiveTab} />
@@ -780,9 +981,27 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                     </div>
                                 )}
 
+
                                 {activeTab === 'parents' && (
-                                    <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500 max-w-5xl">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 max-w-6xl">
+                                        {/* Section Header */}
+                                        <div className="pb-6 border-b border-white/5">
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <h2 className="text-2xl font-bold text-white tracking-tight mb-2">Guardian Management</h2>
+                                                    <p className="text-sm text-white/50 leading-relaxed max-w-2xl">
+                                                        Manage primary and secondary guardian contacts for emergency communication and academic coordination.
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/20">
+                                                    <CheckCircleIcon className="w-3.5 h-3.5" />
+                                                    {(parentData || guardianData) ? 'Verified Records' : 'Pending Setup'}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Guardian Cards Grid */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                             <GuardianCard
                                                 title="Primary Guardian"
                                                 data={parentData}
@@ -795,6 +1014,21 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 onEdit={() => setShowGuardianEdit('secondary')}
                                             />
                                         </div>
+
+                                        {/* Informational Footer */}
+                                        {(!parentData || !guardianData) && (
+                                            <div className="mt-6 p-5 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex items-start gap-4">
+                                                <div className="p-2 bg-amber-500/10 rounded-lg">
+                                                    <InfoIcon className="w-5 h-5 text-amber-500" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-semibold text-amber-500/90 mb-1">Guardian Information Required</p>
+                                                    <p className="text-xs text-amber-500/60 leading-relaxed">
+                                                        At least one guardian contact is required for student enrollment. Guardian information is used for emergency notifications, academic updates, and official communications.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

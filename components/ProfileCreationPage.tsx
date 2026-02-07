@@ -250,7 +250,12 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     p_city: formData.city,
                     p_state: formData.state,
                     p_country: formData.country,
-                    p_pin_code: formData.pin_code
+                    p_pin_code: formData.pin_code,
+                    p_secondary_parent_name: formData.secondary_parent_name || null,
+                    p_secondary_parent_relationship: formData.secondary_parent_relationship || null,
+                    p_secondary_parent_gender: formData.secondary_parent_gender || null,
+                    p_secondary_parent_phone: formData.secondary_parent_phone || null,
+                    p_secondary_parent_email: formData.secondary_parent_email || null
                 });
                 if (pError) {
                     console.error('Parent profile error:', pError);

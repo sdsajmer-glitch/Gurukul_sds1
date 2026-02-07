@@ -208,45 +208,99 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
     if (activeTab === 'details') {
         return (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
-                <div className="flex items-center gap-4 mb-4">
-                    <div className="p-3 bg-primary/5 rounded-xl text-primary/60 border border-primary/10 shadow-inner">
-                        <UsersIcon className="w-5 h-5" />
+                {/* Primary Guardian Section */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-primary/5 rounded-xl text-primary/60 border border-primary/10 shadow-inner">
+                            <UsersIcon className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-white tracking-widest uppercase">Guardian Identity</h3>
+                            <p className="text-[11px] text-white/30 font-medium tracking-wider">Define your institutional role and relationship.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="text-sm font-bold text-white tracking-widest uppercase">Guardian Identity</h3>
-                        <p className="text-[11px] text-white/30 font-medium tracking-wider">Define your institutional role and relationship.</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} disabled={isStrictReadOnly} />
+
+                        <CustomSelect
+                            label="Relationship Status"
+                            value={formData.relationship_to_student || ''}
+                            onChange={handleSelectChange('relationship_to_student')}
+                            options={[{ value: 'Father', label: 'Father' }, { value: 'Mother', label: 'Mother' }, { value: 'Guardian', label: 'Legal Guardian' }, { value: 'Other', label: 'Authorized Affiliate' }]}
+                            icon={<UsersIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
+
+                        <CustomSelect
+                            label="Gender"
+                            value={formData.gender || ''}
+                            onChange={handleSelectChange('gender')}
+                            options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Diverse' }, { value: 'Prefer not to say', label: 'Prefer not to say' }]}
+                            icon={<UserIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
+
+                        <CustomSelect
+                            label="Family Size"
+                            value={String(formData.number_of_children || '1')}
+                            onChange={handleSelectChange('number_of_children')}
+                            options={[{ value: '1', label: 'Single Child' }, { value: '2', label: '2 Children' }, { value: '3', label: '3 Children' }, { value: '4', label: '4+ Children' }]}
+                            icon={<UsersIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} disabled={isStrictReadOnly} />
+                {/* Secondary Parent Section */}
+                <div className="space-y-6 pt-6 border-t border-white/5">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-emerald-500/5 rounded-xl text-emerald-500/60 border border-emerald-500/10 shadow-inner">
+                            <UsersIcon className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-white tracking-widest uppercase">Secondary Parent</h3>
+                            <p className="text-[11px] text-white/30 font-medium tracking-wider">Additional guardian details (Optional).</p>
+                        </div>
+                    </div>
 
-                    <CustomSelect
-                        label="Relationship Status"
-                        value={formData.relationship_to_student || ''}
-                        onChange={handleSelectChange('relationship_to_student')}
-                        options={[{ value: 'Father', label: 'Father' }, { value: 'Mother', label: 'Mother' }, { value: 'Guardian', label: 'Legal Guardian' }, { value: 'Other', label: 'Authorized Affiliate' }]}
-                        icon={<UsersIcon className="w-4 h-4" />}
-                        disabled={isStrictReadOnly}
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <PremiumFloatingInput
+                            label="Secondary Parent Name"
+                            name="secondary_parent_name"
+                            value={formData.secondary_parent_name || ''}
+                            onChange={handleChange}
+                            icon={<UserIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
 
-                    <CustomSelect
-                        label="Gender"
-                        value={formData.gender || ''}
-                        onChange={handleSelectChange('gender')}
-                        options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Diverse' }, { value: 'Prefer not to say', label: 'Prefer not to say' }]}
-                        icon={<UserIcon className="w-4 h-4" />}
-                        disabled={isStrictReadOnly}
-                    />
+                        <CustomSelect
+                            label="Relationship"
+                            value={formData.secondary_parent_relationship || ''}
+                            onChange={(val) => handleChange({ target: { name: 'secondary_parent_relationship', value: val } } as any)}
+                            options={[{ value: 'Father', label: 'Father' }, { value: 'Mother', label: 'Mother' }, { value: 'Guardian', label: 'Legal Guardian' }]}
+                            icon={<UsersIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
 
-                    <CustomSelect
-                        label="Family Size"
-                        value={String(formData.number_of_children || '1')}
-                        onChange={handleSelectChange('number_of_children')}
-                        options={[{ value: '1', label: 'Single Child' }, { value: '2', label: '2 Children' }, { value: '3', label: '3 Children' }, { value: '4', label: '4+ Children' }]}
-                        icon={<UsersIcon className="w-4 h-4" />}
-                        disabled={isStrictReadOnly}
-                    />
+                        <PremiumFloatingInput
+                            label="Secondary Contact No."
+                            name="secondary_parent_phone"
+                            value={formData.secondary_parent_phone || ''}
+                            onChange={handleChange}
+                            icon={<PhoneIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
+
+                        <CustomSelect
+                            label="Gender"
+                            value={formData.secondary_parent_gender || ''}
+                            onChange={(val) => handleChange({ target: { name: 'secondary_parent_gender', value: val } } as any)}
+                            options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Diverse' }]}
+                            icon={<UserIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
+                    </div>
                 </div>
             </div>
         );
