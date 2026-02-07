@@ -36,31 +36,50 @@ const KPICard: React.FC<{
     active?: boolean;
     description?: string;
     loading?: boolean;
-}> = ({ title, value, icon, color, onClick, active, description, loading }) => {
+    trend?: { value: number; label: string };
+}> = ({ title, value, icon, color, onClick, active, description, loading, trend }) => {
     const colorBase = color.split('-')[1] || 'primary';
 
     return (
         <div
             onClick={onClick}
-            className={`relative overflow-hidden p-6 rounded-[2rem] border transition-all duration-500 cursor-pointer group ${active ? 'bg-card border-primary ring-4 ring-primary/5 shadow-2xl scale-[1.02] z-10' : 'bg-card/40 border-white/5 hover:border-primary/40 hover:bg-card/60 shadow-sm'}`}
+            className={`relative overflow-hidden p-8 rounded-[2.5rem] border transition-all duration-700 cursor-pointer group ${active ? 'bg-[#0f1115] border-primary/40 ring-1 ring-primary/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] scale-[1.02] z-10' : 'bg-[#0a0a0c]/40 border-white/5 hover:border-white/20 hover:bg-[#0a0a0c]/60 shadow-sm'}`}
         >
-            <div className={`absolute -right-8 -top-8 w-32 h-32 bg-${colorBase}-500 opacity-0 group-hover:opacity-10 transition-opacity duration-700 rounded-full blur-3xl`}></div>
-            <div className="flex justify-between items-start mb-6 relative z-10">
-                <div className={`p-4 rounded-2xl text-white shadow-xl transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 ${color} ring-1 ring-white/10`}>
+            <div className={`absolute -right-12 -top-12 w-48 h-48 bg-${colorBase}-500 opacity-0 group-hover:opacity-[0.08] transition-opacity duration-1000 rounded-full blur-[80px]`}></div>
+            <div className={`absolute -left-12 -bottom-12 w-48 h-48 bg-primary/20 opacity-0 ${active ? 'opacity-[0.05]' : ''} transition-opacity duration-1000 rounded-full blur-[80px]`}></div>
+
+            <div className="flex justify-between items-start mb-8 relative z-10">
+                <div className={`p-4 rounded-2xl text-white shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 ${color} ring-1 ring-white/20`}>
                     {icon}
                 </div>
-                {active && <div className="p-1.5 bg-primary/10 rounded-full animate-in zoom-in"><CheckCircleIcon className="w-4 h-4 text-primary" /></div>}
+                {active && (
+                    <div className="flex flex-col items-end gap-1.5 animate-in zoom-in duration-500">
+                        <div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_12px_rgba(var(--primary-rgb),0.8)] animate-pulse" />
+                        <span className="text-[7px] font-black text-primary/60 uppercase tracking-[0.3em]">Viewing</span>
+                    </div>
+                )}
             </div>
+
             <div className="relative z-10">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mb-1">{title}</p>
-                <div className="flex items-center gap-2 min-h-[40px]">
+                <div className="flex items-center gap-2 mb-2">
+                    <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.4em]">{title}</p>
+                </div>
+                <div className="flex items-baseline gap-2 min-h-[48px]">
                     {loading ? (
-                        <div className="h-8 w-24 bg-white/5 rounded animate-pulse" />
+                        <div className="h-10 w-24 bg-white/5 rounded-xl animate-pulse" />
                     ) : (
-                        <h3 className="text-4xl font-serif font-black text-foreground tracking-tighter animate-in fade-in">{value.toLocaleString()}</h3>
+                        <h3 className="text-5xl font-serif font-black text-foreground tracking-tighter animate-in slide-in-from-bottom-2 duration-700">{value.toLocaleString()}</h3>
+                    )}
+                    {trend && !loading && (
+                        <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg ml-1 border border-emerald-500/10">+{trend.value}%</span>
                     )}
                 </div>
-                {description && <p className="text-[10px] text-muted-foreground/60 mt-2 font-medium italic">{description}</p>}
+                <div className="flex items-center justify-between mt-5 pt-5 border-t border-white/[0.03]">
+                    <p className="text-[9px] text-muted-foreground/30 font-bold uppercase tracking-[0.2em]">{description || 'Registry Analytics'}</p>
+                    <div className={`w-10 h-1 rounded-full bg-white/5 overflow-hidden`}>
+                        <div className={`h-full bg-${colorBase}-500/30 w-1/4 group-hover:w-full transition-all duration-1000 ease-out`} />
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -102,46 +121,57 @@ export const AddStudentModal: React.FC<{ onClose: () => void; onSave: () => void
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[150] flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="bg-[#0f1115] w-full max-w-md rounded-[2rem] shadow-2xl border border-white/10 p-8 animate-in zoom-in-95 relative overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center mb-8 relative z-10">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4 animate-in fade-in duration-500">
+            <div className="bg-[#0a0a0c] w-full max-w-xl rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 p-12 animate-in zoom-in-95 duration-500 relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-[100px]" />
+                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/5 rounded-full blur-[100px]" />
+
+                <div className="flex justify-between items-start mb-10 relative z-10">
                     <div>
-                        <h3 className="text-xl font-black text-white uppercase tracking-tight font-serif">Register Node</h3>
-                        <p className="text-sm font-bold text-white/30 uppercase tracking-widest mt-1">Quick Enrollment</p>
+                        <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tight">Register Node</h3>
+                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] mt-2">Provisioning Identity Protocol</p>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors"><XIcon className="w-5 h-5 text-white/50 hover:text-white" /></button>
+                    <button onClick={onClose} className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 text-white/40 hover:text-white transition-all"><XIcon className="w-5 h-5" /></button>
                 </div>
 
-                <form onSubmit={handleSave} className="space-y-5 relative z-10">
+                <form onSubmit={handleSave} className="space-y-8 relative z-10">
                     {error && (
-                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-500">
-                            <AlertTriangleIcon className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-4 text-red-500 animate-in slide-in-from-top-2">
+                            <AlertTriangleIcon className="w-6 h-6 shrink-0" />
                             <p className="text-xs font-bold leading-relaxed">{error}</p>
                         </div>
                     )}
-                    <div className="space-y-1.5">
-                        <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-1">Full Name</label>
-                        <input required value={formData.display_name} onChange={e => setFormData({ ...formData, display_name: e.target.value })} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="e.g. Alex Doe" />
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-1">Email Access</label>
-                        <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="student@school.id" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-1">Grade</label>
-                            <input required value={formData.grade} onChange={e => setFormData({ ...formData, grade: e.target.value })} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="e.g. 10" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2.5">
+                            <label className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1">Full Identity Name</label>
+                            <input required value={formData.display_name} onChange={e => setFormData({ ...formData, display_name: e.target.value })} className="w-full p-5 bg-white/[0.03] border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 focus:bg-white/[0.05] outline-none transition-all" placeholder="e.g. Alex Henderson" />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-1">Parent Info</label>
-                            <input value={formData.parent_guardian_details} onChange={e => setFormData({ ...formData, parent_guardian_details: e.target.value })} className="w-full p-4 bg-black/20 border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 outline-none" placeholder="Optional" />
+                        <div className="space-y-2.5">
+                            <label className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1">Institutional Email</label>
+                            <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full p-5 bg-white/[0.03] border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 focus:bg-white/[0.05] outline-none transition-all font-mono" placeholder="student@school.edu" />
                         </div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
-                        <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl text-xs font-bold text-white/40 hover:text-white uppercase tracking-widest">Cancel</button>
-                        <button type="submit" disabled={loading} className="px-8 py-3 bg-primary text-white font-black text-xs rounded-xl shadow-lg hover:bg-primary/90 flex items-center gap-2 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50">
-                            {loading ? <Spinner size="sm" className="text-white" /> : "Confirm Registration"}
-                        </button>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2.5">
+                            <label className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1">Academic Grade</label>
+                            <input required value={formData.grade} onChange={e => setFormData({ ...formData, grade: e.target.value })} className="w-full p-5 bg-white/[0.03] border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 focus:bg-white/[0.05] outline-none transition-all" placeholder="e.g. Grade 10" />
+                        </div>
+                        <div className="space-y-2.5">
+                            <label className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1">Guardian Context</label>
+                            <input value={formData.parent_guardian_details} onChange={e => setFormData({ ...formData, parent_guardian_details: e.target.value })} className="w-full p-5 bg-white/[0.03] border border-white/10 rounded-2xl text-sm font-bold text-white focus:border-primary/50 focus:bg-white/[0.05] outline-none transition-all" placeholder="Parent/Guardian Name" />
+                        </div>
+                    </div>
+
+                    <div className="pt-8 border-t border-white/[0.05] flex items-center justify-between">
+                        <p className="text-[9px] text-white/20 font-medium italic max-w-[200px]">Node will be provisioned with full identity and RLS clearance.</p>
+                        <div className="flex gap-4">
+                            <button type="button" onClick={onClose} className="px-8 py-4 rounded-2xl text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-all">Abort</button>
+                            <button type="submit" disabled={loading} className="px-10 py-4 bg-primary text-white font-black text-[10px] rounded-2xl shadow-2xl shadow-primary/40 hover:bg-primary/90 flex items-center gap-3 transition-all active:scale-95 uppercase tracking-[0.2em] disabled:opacity-50">
+                                {loading ? <Spinner size="sm" className="text-white" /> : "Authorize Node"}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -259,16 +289,55 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                     Student <span className="text-white/20 italic">Directory.</span>
                 </h1>
                 <div className="flex items-center gap-4 w-full xl:w-auto">
-                    <button onClick={() => setBulkAction('import')} className="flex-grow xl:flex-none px-10 py-5 bg-white/5 hover:bg-white/10 text-foreground font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl border border-white/10 transition-all flex items-center justify-center gap-3">Import</button>
-                    <button onClick={() => setIsAddModalOpen(true)} className="flex-grow xl:flex-none px-12 py-5 bg-primary text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-3 active:scale-95">Register Node</button>
+                    <button onClick={() => setBulkAction('import')} className="flex-grow xl:flex-none px-10 py-5 bg-[#0a0a0c]/40 hover:bg-white/[0.08] text-foreground font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl border border-white/5 hover:border-white/10 transition-all flex items-center justify-center gap-3 group">
+                        <UploadIcon className="w-4 h-4 text-white/20 group-hover:text-white transition-colors" />
+                        <span>Import</span>
+                    </button>
+                    <button onClick={() => setIsAddModalOpen(true)} className="flex-grow xl:flex-none px-12 py-5 bg-primary text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-[0_10px_40px_rgba(var(--primary-rgb),0.3)] hover:bg-primary/90 transition-all flex items-center justify-center gap-3 active:scale-95 group">
+                        <UserPlusIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <span>Register Node</span>
+                    </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KPICard title="Total Roster" value={stats.total} icon={<StudentsIcon className="w-8 h-8" />} color="bg-indigo-600" active={quickFilter === 'All'} onClick={() => setQuickFilter('All')} />
-                <KPICard title="Active Stream" value={stats.active} icon={<CheckCircleIcon className="w-8 h-8" />} color="bg-emerald-600" active={quickFilter === 'Active'} onClick={() => setQuickFilter('Active')} />
-                <KPICard title="Placement Pending" value={stats.pending} icon={<ClockIcon className="w-8 h-8" />} color="bg-amber-600" active={quickFilter === 'Pending'} onClick={() => setQuickFilter('Pending')} />
-                <KPICard title="Newly Registered" value={stats.new} icon={<GraduationCapIcon className="w-8 h-8" />} color="bg-purple-600" active={quickFilter === 'New'} onClick={() => setQuickFilter('New')} />
+                <KPICard
+                    title="Total Hosted"
+                    value={stats.total}
+                    icon={<StudentsIcon className="w-8 h-8" />}
+                    color="bg-indigo-600"
+                    active={quickFilter === 'All'}
+                    onClick={() => setQuickFilter('All')}
+                    description="Total identity nodes active"
+                />
+                <KPICard
+                    title="Active Stream"
+                    value={stats.active}
+                    icon={<CheckCircleIcon className="w-8 h-8" />}
+                    color="bg-emerald-600"
+                    active={quickFilter === 'Active'}
+                    onClick={() => setQuickFilter('Active')}
+                    description="Successfully routing traffic"
+                    trend={{ value: 2, label: 'daily' }}
+                />
+                <KPICard
+                    title="Placement Pending"
+                    value={stats.pending}
+                    icon={<ClockIcon className="w-8 h-8" />}
+                    color="bg-amber-600"
+                    active={quickFilter === 'Pending'}
+                    onClick={() => setQuickFilter('Pending')}
+                    description="Awaiting class allocation"
+                />
+                <KPICard
+                    title="Newly Registered"
+                    value={stats.new}
+                    icon={<GraduationCapIcon className="w-8 h-8" />}
+                    color="bg-purple-600"
+                    active={quickFilter === 'New'}
+                    onClick={() => setQuickFilter('New')}
+                    description="Provisioned last 24h"
+                />
             </div>
 
             <div className="bg-card border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col min-h-[650px] relative">
@@ -320,7 +389,12 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                         <table className="w-full text-left text-sm whitespace-nowrap">
                             <thead className="bg-[#0f1115]/80 border-b border-white/5 text-[10px] font-black uppercase text-white/20 tracking-[0.3em] sticky top-0 z-20 backdrop-blur-xl">
                                 <tr>
-                                    <th className="p-8 pl-10 cursor-pointer" onClick={() => handleSort('name')}>Identity Node</th>
+                                    <th className="p-8 pl-10 cursor-pointer group" onClick={() => handleSort('name')}>
+                                        <div className="flex items-center gap-2">
+                                            <span>Identity Node</span>
+                                            <div className="w-1 h-1 bg-primary/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                    </th>
                                     <th className="p-8">Guardian Context</th>
                                     <th className="p-8">Placement Status</th>
                                     <th className="p-8 text-center">Protocol Status</th>
@@ -328,40 +402,74 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {paginatedData.map(student => (
-                                    <tr key={student.id} className="hover:bg-white/[0.02] cursor-pointer group transition-all duration-300" onClick={() => setSelectedStudent(student)}>
+                                {paginatedData.map((student, idx) => (
+                                    <tr
+                                        key={student.id}
+                                        className="hover:bg-white/[0.02] cursor-pointer group transition-all duration-500 animate-in slide-in-from-bottom-4 duration-500"
+                                        style={{ animationDelay: `${idx * 50}ms` }}
+                                        onClick={() => setSelectedStudent(student)}
+                                    >
                                         <td className="p-8 pl-10">
                                             <div className="flex items-center gap-6">
-                                                <PremiumAvatar src={student.profile_photo_url} name={student.display_name} size="xs" className="w-14 h-14 rounded-2xl border border-white/10 shadow-2xl" />
+                                                <div className="relative">
+                                                    <PremiumAvatar src={student.profile_photo_url} name={student.display_name} size="xs" className="w-14 h-14 rounded-2xl border border-white/10 shadow-2xl relative z-10" />
+                                                    <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-75 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                                </div>
                                                 <div>
                                                     <div className="flex items-center gap-2">
-                                                        <p className="font-serif font-black text-white text-lg tracking-tight uppercase group-hover:text-primary transition-colors">{student.display_name}</p>
+                                                        <p className="font-serif font-black text-white text-lg tracking-tight uppercase group-hover:text-primary transition-colors duration-500">{student.display_name}</p>
                                                         {student.created_at && (new Date(student.created_at).getTime() > Date.now() - 86400000) && (
-                                                            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-widest animate-pulse">Newly Enrolled</span>
+                                                            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[6px] font-black uppercase tracking-widest animate-pulse">NEW_NODE</span>
                                                         )}
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="text-[10px] text-white/30 font-mono tracking-widest uppercase">{student.student_id_number || 'ID_PENDING'}</p>
-                                                        {student.admission_id && (
-                                                            <span className="text-[8px] text-white/10 font-mono uppercase tracking-tighter">Ref: {student.admission_id.substring(0, 8)}...</span>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <p className="text-[9px] text-white/40 font-mono tracking-widest uppercase bg-white/5 px-1.5 py-0.5 rounded-md">{student.student_id_number || 'ID_PENDING'}</p>
+                                                        {student.grade && (
+                                                            <span className="text-[9px] text-white/20 font-black uppercase tracking-widest border-l border-white/10 pl-2">Grade {student.grade}</span>
                                                         )}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="p-8"><p className="text-sm font-bold text-white/80">{student.parent_guardian_details || 'Unlinked'}</p></td>
+                                        <td className="p-8">
+                                            {student.parent_guardian_details ? (
+                                                <div className="flex flex-col gap-0.5">
+                                                    <p className="text-sm font-bold text-white/80">{student.parent_guardian_details}</p>
+                                                    <span className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em]">Verified Link</span>
+                                                </div>
+                                            ) : (
+                                                <div className="group/link flex items-center gap-2 text-white/20 hover:text-white/40 transition-colors">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Unlinked</span>
+                                                    <div className="w-1 h-1 bg-white/10 rounded-full" />
+                                                    <span className="text-[8px] font-bold italic opacity-0 group-hover/link:opacity-100 transition-opacity">Request Identity</span>
+                                                </div>
+                                            )}
+                                        </td>
                                         <td className="p-8">
                                             {student.assigned_class_id ? (
-                                                <span className="inline-flex items-center px-4 py-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-black uppercase tracking-widest shadow-sm">{student.assigned_class_name}</span>
+                                                <div className="flex flex-col gap-1.5">
+                                                    <span className="inline-flex items-center w-fit px-4 py-1.5 rounded-xl bg-indigo-500/10 text-indigo-100 border border-indigo-500/30 text-[9px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(99,102,241,0.1)]">{student.assigned_class_name}</span>
+                                                    <span className="text-[8px] text-white/20 font-black uppercase tracking-widest ml-1">Stream Active</span>
+                                                </div>
                                             ) : (
-                                                <button onClick={(e) => { e.stopPropagation(); setAssigningStudent(student); }} className="px-4 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-500/20 transition-all flex items-center gap-2 shadow-inner"><SparklesIcon className="w-3 h-3" /> Assign Class</button>
+                                                <button onClick={(e) => { e.stopPropagation(); setAssigningStudent(student); }} className="px-5 py-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-500/20 hover:border-amber-500/40 transition-all flex items-center gap-2 shadow-inner group/btn">
+                                                    <SparklesIcon className="w-3 h-3 group-hover:rotate-12 transition-transform" />
+                                                    Assign Class
+                                                </button>
                                             )}
                                         </td>
                                         <td className="p-8 text-center">
-                                            <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${student.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>{student.is_active ? 'Active' : 'Suspended'}</span>
+                                            <div className="flex flex-col items-center gap-1.5">
+                                                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm ${student.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
+                                                    <div className={`w-1 h-1 rounded-full ${student.is_active ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`} />
+                                                    {student.is_active ? 'Active' : 'Suspended'}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="p-8 text-right pr-10">
-                                            <button className="p-4 rounded-2xl bg-white/5 text-white/10 opacity-0 group-hover:opacity-100 hover:text-white transition-all"><MoreVerticalIcon className="w-5 h-5" /></button>
+                                            <button className="p-4 rounded-2xl bg-white/5 text-white/20 opacity-0 group-hover:opacity-100 hover:text-white hover:bg-white/10 transition-all active:scale-95 shadow-lg">
+                                                <MoreVerticalIcon className="w-5 h-5" />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
