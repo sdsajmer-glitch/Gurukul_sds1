@@ -25,28 +25,34 @@ const LocateFixedIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const PremiumFloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string; icon?: React.ReactNode; isTextArea?: boolean; isSynced?: boolean; action?: React.ReactNode }> = ({ label, icon, isTextArea, isSynced, action, className, ...props }) => (
     <div className="relative group w-full">
         {label && (
-            <label className={`absolute left-11 top-0 -translate-y-1/2 bg-slate-900/90 px-1.5 text-[10px] font-bold uppercase tracking-widest z-20 transition-all duration-300 pointer-events-none
-                ${isSynced ? 'text-primary' : 'text-white/30 group-focus-within:text-primary'}`}>
+            <label className={`absolute left-11 top-0 -translate-y-1/2 bg-[#0F1115] px-2 text-[10px] font-bold uppercase tracking-widest z-20 transition-all duration-300 pointer-events-none rounded
+                ${isSynced ? 'text-primary' : 'text-white/40 group-focus-within:text-primary group-focus-within:scale-105'}`}>
                 {label}
             </label>
         )}
-        <div className={`absolute ${isTextArea ? 'top-5' : 'top-1/2 -translate-y-1/2'} left-4 text-white/10 group-focus-within:text-primary transition-all duration-300 z-10 pointer-events-none ${isSynced ? 'text-primary/60' : ''}`}>
+        <div className={`absolute ${isTextArea ? 'top-5' : 'top-1/2 -translate-y-1/2'} left-4 text-white/20 group-focus-within:text-primary transition-all duration-300 z-10 pointer-events-none ${isSynced ? 'text-primary' : ''}`}>
             {icon}
         </div>
         {isTextArea ? (
             <textarea
                 {...(props as any)}
                 placeholder=" "
-                className={`peer block w-full h-24 rounded-xl border transition-all duration-300 px-5 pl-12 pr-12 pt-5 pb-2 text-[15px] text-white font-medium outline-none placeholder-transparent
-                    ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_15px_rgba(var(--primary),0.05)]' : 'border-white/10 bg-black/30 hover:border-white/20 focus:border-primary/40 focus:ring-4 focus:ring-primary/5'} 
+                className={`peer block w-full h-28 rounded-xl border transition-all duration-300 px-5 pl-12 pr-12 pt-6 pb-3 text-[15px] font-medium outline-none placeholder-transparent resize-none
+                    ${isSynced
+                        ? 'border-primary/30 bg-primary/5 text-white shadow-[0_0_20px_rgba(var(--primary),0.05)]'
+                        : 'border-white/10 bg-white/[0.03] text-white hover:border-white/20 hover:bg-white/[0.05] focus:border-primary/50 focus:bg-black/40 focus:ring-4 focus:ring-primary/10'
+                    } 
                     ${className}`}
             />
         ) : (
             <input
                 {...props}
                 placeholder=" "
-                className={`peer block w-full h-[48px] rounded-xl border transition-all duration-300 px-5 pl-12 pt-4 pb-1 text-[15px] text-white font-medium outline-none placeholder-transparent
-                    ${isSynced ? 'border-primary/40 bg-primary/5 shadow-[0_0_15px_rgba(var(--primary),0.05)]' : 'border-white/10 bg-black/30 hover:border-white/20 focus:border-primary/40 focus:ring-4 focus:ring-primary/5'} 
+                className={`peer block w-full h-[56px] rounded-xl border transition-all duration-300 px-5 pl-12 pt-1 text-[15px] font-medium outline-none placeholder-transparent
+                    ${isSynced
+                        ? 'border-primary/30 bg-primary/5 text-white shadow-[0_0_20px_rgba(var(--primary),0.05)]'
+                        : 'border-white/10 bg-white/[0.03] text-white hover:border-white/20 hover:bg-white/[0.05] focus:border-primary/50 focus:bg-black/40 focus:ring-4 focus:ring-primary/10'
+                    } 
                     ${className}`}
             />
         )}
@@ -57,7 +63,7 @@ const PremiumFloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement 
         )}
         {isSynced && !action && (
             <div className="absolute right-4 top-1/2 -translate-y-1/2 animate-in zoom-in-95 duration-500">
-                <CheckCircleIcon className="w-4 h-4 text-primary shadow-[0_0_10px_rgba(var(--primary),0.4)]" />
+                <CheckCircleIcon className="w-5 h-5 text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
             </div>
         )}
     </div>
@@ -169,7 +175,6 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                 Country must be full name. Use official registry names.`;
 
                 const response = await ai.models.generateContent({
-                    // FIX: Maps grounding is strictly supported on Gemini 2.5 series models only per GenAI guidelines
                     model: 'gemini-2.5-flash',
                     contents: prompt,
                     config: {
@@ -207,21 +212,29 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
 
     if (activeTab === 'details') {
         return (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
+            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-10">
                 {/* Primary Guardian Section */}
                 <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/5 rounded-xl text-primary/60 border border-primary/10 shadow-inner">
+                    <div className="flex items-center gap-4 mb-2">
+                        <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl text-primary border border-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.15)] ring-1 ring-white/5">
                             <UsersIcon className="w-5 h-5" />
                         </div>
                         <div>
                             <h3 className="text-sm font-bold text-white tracking-widest uppercase">Guardian Identity</h3>
-                            <p className="text-[11px] text-white/30 font-medium tracking-wider">Define your institutional role and relationship.</p>
+                            <p className="text-[11px] text-white/40 font-medium tracking-wide mt-0.5">Primary account holder and main contact.</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <PremiumFloatingInput label="Full Legal Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} disabled={isStrictReadOnly} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
+                        <PremiumFloatingInput
+                            label="Full Legal Name"
+                            name="display_name"
+                            value={formData.display_name}
+                            onChange={handleChange}
+                            required
+                            icon={<UserIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
 
                         <CustomSelect
                             label="Relationship Status"
@@ -230,6 +243,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             options={[{ value: 'Father', label: 'Father' }, { value: 'Mother', label: 'Mother' }, { value: 'Guardian', label: 'Legal Guardian' }, { value: 'Other', label: 'Authorized Affiliate' }]}
                             icon={<UsersIcon className="w-4 h-4" />}
                             disabled={isStrictReadOnly}
+                            placeholder="Select Relation..."
                         />
 
                         <CustomSelect
@@ -252,21 +266,24 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                     </div>
                 </div>
 
-                {/* Secondary Parent Section */}
-                <div className="space-y-6 pt-6 border-t border-white/5">
+                {/* Secondary Parent Section - De-emphasized */}
+                <div className="space-y-6 pt-8 border-t border-dashed border-white/10">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-500/5 rounded-xl text-emerald-500/60 border border-emerald-500/10 shadow-inner">
+                        <div className="p-3 bg-white/5 rounded-2xl text-white/40 border border-white/10 ring-1 ring-white/5">
                             <UsersIcon className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-bold text-white tracking-widest uppercase">Secondary Parent</h3>
-                            <p className="text-[11px] text-white/30 font-medium tracking-wider">Additional guardian details (Optional).</p>
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-sm font-bold text-white/80 tracking-widest uppercase">Secondary Parent</h3>
+                                <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-white/10 text-white/50 border border-white/5 uppercase tracking-widest">Optional</span>
+                            </div>
+                            <p className="text-[11px] text-white/30 font-medium tracking-wide mt-0.5">Additional guardian details for emergency contact.</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 opacity-90 hover:opacity-100 transition-opacity duration-300">
                         <PremiumFloatingInput
-                            label="Secondary Parent Name"
+                            label="Name (Optional)"
                             name="secondary_parent_name"
                             value={formData.secondary_parent_name || ''}
                             onChange={handleChange}
@@ -281,10 +298,11 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             options={[{ value: 'Father', label: 'Father' }, { value: 'Mother', label: 'Mother' }, { value: 'Guardian', label: 'Legal Guardian' }]}
                             icon={<UsersIcon className="w-4 h-4" />}
                             disabled={isStrictReadOnly}
+                            placeholder="Not Selected"
                         />
 
                         <PremiumFloatingInput
-                            label="Secondary Contact No."
+                            label="Contact No. (Optional)"
                             name="secondary_parent_phone"
                             value={formData.secondary_parent_phone || ''}
                             onChange={handleChange}
@@ -299,6 +317,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Diverse' }]}
                             icon={<UserIcon className="w-4 h-4" />}
                             disabled={isStrictReadOnly}
+                            placeholder="Not Selected"
                         />
                     </div>
                 </div>
@@ -307,15 +326,15 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
     }
 
     return (
-        <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
-            <div className="flex items-center justify-between gap-6 p-6 rounded-2xl bg-white/[0.02] border border-white/5 relative overflow-hidden group">
+        <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-10">
+            <div className="flex items-center justify-between gap-6 p-6 rounded-2xl bg-gradient-to-r from-white/[0.03] to-transparent border border-white/5 relative overflow-hidden group hover:border-white/10 transition-colors">
                 <div className="flex items-center gap-4 relative z-10">
-                    <div className="p-3 bg-indigo-500/5 rounded-xl text-indigo-400 border border-indigo-500/10 shadow-inner">
+                    <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.15)] ring-1 ring-white/5">
                         <HomeIcon className="w-5 h-5" />
                     </div>
                     <div>
                         <h3 className="text-sm font-bold text-white tracking-widest uppercase">Residency & Contact</h3>
-                        <p className="text-[11px] text-white/30 font-medium tracking-wider">{syncStatus || 'Primary contact and telemetry.'}</p>
+                        <p className="text-[11px] text-white/40 font-medium tracking-wide mt-0.5">{syncStatus || 'Primary residential address and telemetry.'}</p>
                     </div>
                 </div>
 
@@ -323,12 +342,12 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                     type="button"
                     onClick={handleAutoLocate}
                     disabled={isLocating || isStrictReadOnly}
-                    className={`h-[40px] px-6 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300 border
+                    className={`h-[40px] px-6 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300 border backdrop-blur-sm
                         ${isLocating
                             ? 'bg-primary/20 text-primary border-primary/40 animate-pulse'
                             : isStrictReadOnly
                                 ? 'bg-white/5 text-white/10 border-white/5 cursor-not-allowed hidden'
-                                : 'bg-white/5 text-white/50 border-white/5 hover:border-primary/40 hover:text-white active:scale-[0.98]'
+                                : 'bg-white/5 text-white/60 border-white/10 hover:border-primary/40 hover:text-white hover:bg-white/10 active:scale-[0.98] shadow-lg hover:shadow-primary/5'
                         }
                     `}
                 >
@@ -336,8 +355,8 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                 </button>
             </div>
 
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <PremiumFloatingInput
                         label="Primary Mobile"
                         name="phone"
@@ -377,7 +396,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                                 type="button"
                                 onClick={handleResolveAddress}
                                 disabled={isResolving || !formData.address?.trim()}
-                                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all disabled:opacity-30"
+                                className="p-2 text-primary bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-lg transition-all disabled:opacity-0 disabled:pointer-events-none"
                                 title="Auto-fill city, state, country"
                             >
                                 {isResolving ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5" />}
@@ -386,7 +405,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                     }
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <CustomSelect
                         label="State"
                         value={formData.state || ''}
@@ -396,6 +415,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                         disabled={!formData.country || isStrictReadOnly}
                         searchable
                         isSynced={syncedFields.has('state')}
+                        placeholder={!formData.country ? "Select Country First" : "Select State"}
                     />
                     <CustomSelect
                         label="City"
@@ -406,6 +426,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                         disabled={!formData.state || isStrictReadOnly}
                         searchable
                         isSynced={syncedFields.has('city')}
+                        placeholder={!formData.state ? "Select State First" : "Select City"}
                     />
                     <PremiumFloatingInput
                         label="Pin Code"

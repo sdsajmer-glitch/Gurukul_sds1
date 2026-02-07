@@ -454,185 +454,218 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
         <div className="w-full max-w-2xl mx-auto space-y-8 pb-32 font-sans">
             {role !== BuiltInRoles.SCHOOL_ADMINISTRATION && (
                 <div
-                    className="relative bg-slate-900/60 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/5 shadow-2xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4"
+                    className="relative bg-[#0a0a0b] overflow-hidden rounded-[2.5rem] border border-white/5 shadow-[0_0_50px_-12px_rgba(0,0,0,0.8)] transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 group"
                 >
-                    <div className="p-8 md:p-10 flex flex-col items-center relative z-10">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center text-3xl font-semibold text-white shadow-xl mb-6 relative group overflow-hidden">
-                            <span className="relative z-10">{(formData.display_name || 'U').charAt(0).toUpperCase()}</span>
-                            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {/* Subtle aesthetic background elements */}
+                    <div className="absolute top-0 left-0 w-full h-[200px] bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
+                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full blur-[80px] pointer-events-none group-hover:bg-primary/[0.05] transition-colors duration-700" />
+
+                    <div className="p-10 flex flex-col items-center relative z-10">
+                        <div className="w-28 h-28 rounded-full bg-[#111] border-4 border-[#1a1a1a] flex items-center justify-center text-3xl font-bold text-white shadow-2xl mb-6 relative group/avatar overflow-hidden">
+                            <span className="relative z-10 group-hover/avatar:scale-110 transition-transform duration-500">{(formData.display_name || 'U').charAt(0).toUpperCase()}</span>
+                            <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-500" />
                         </div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight text-center">
-                            {formData.display_name || 'New Identity'}
-                        </h2>
-                        <p className="text-primary/70 text-[10px] font-bold uppercase tracking-[0.3em] mt-3 flex items-center gap-2">
-                            <ShieldCheckIcon className="w-3 h-3" />
-                            {role}
-                        </p>
+
+                        <div className="text-center space-y-2">
+                            <h2 className="text-3xl font-bold text-white tracking-tight">
+                                {formData.display_name || 'New Identity'}
+                            </h2>
+                            <div className="flex items-center justify-center gap-2">
+                                <div className="px-3 py-1 bg-white/5 rounded-full border border-white/5 flex items-center gap-2">
+                                    <ShieldCheckIcon className="w-3 h-3 text-primary" />
+                                    <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.2em]">{role}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="px-8 border-t border-white/5 flex justify-center gap-10 bg-black/20">
-                        <button
-                            onClick={() => setActiveTab('details')}
-                            className={`py-4 text-[11px] font-bold uppercase tracking-widest relative transition-all duration-300 ${activeTab === 'details' ? 'text-primary' : 'text-white/30 hover:text-white/50'}`}
-                        >
-                            Core Registry {activeTab === 'details' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_12px_rgba(var(--primary),0.6)]"></div>}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('contact')}
-                            className={`py-4 text-[11px] font-bold uppercase tracking-widest relative transition-all duration-300 ${activeTab === 'contact' ? 'text-primary' : 'text-white/30 hover:text-white/50'}`}
-                        >
-                            Contact & Node {activeTab === 'contact' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_12px_rgba(var(--primary),0.6)]"></div>}
-                        </button>
+                    <div className="px-2 pb-2 bg-black/20">
+                        <div className="flex p-1 bg-white/[0.03] border border-white/5 rounded-[1.8rem] relative">
+                            {/* Animated Background Indicator */}
+                            <div
+                                className="absolute top-1 bottom-1 bg-[#1a1a1a] rounded-[1.5rem] border border-white/5 shadow-lg transition-all duration-500 ease-out"
+                                style={{
+                                    left: activeTab === 'details' ? '4px' : '50%',
+                                    width: 'calc(50% - 4px)',
+                                    opacity: 1
+                                }}
+                            />
+
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('details')}
+                                className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest relative z-10 transition-all duration-300 flex items-center justify-center gap-2
+                                    ${activeTab === 'details' ? 'text-white' : 'text-white/30 hover:text-white/60'}`}
+                            >
+                                <UserIcon className={`w-3.5 h-3.5 ${activeTab === 'details' ? 'text-primary' : 'opacity-0'}`} />
+                                Core Registry
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('contact')}
+                                className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest relative z-10 transition-all duration-300 flex items-center justify-center gap-2
+                                    ${activeTab === 'contact' ? 'text-white' : 'text-white/30 hover:text-white/60'}`}
+                            >
+                                <PhoneIcon className={`w-3.5 h-3.5 ${activeTab === 'contact' ? 'text-primary' : 'opacity-0'}`} />
+                                Contact & Node
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-5 rounded-2xl flex items-center gap-4 animate-in shake">
-                    <XIcon className="w-5 h-5 shrink-0" />
-                    <span className="text-xs font-semibold uppercase tracking-wider">{error}</span>
-                </div>
-            )}
+            {
+                error && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-5 rounded-2xl flex items-center gap-4 animate-in shake">
+                        <XIcon className="w-5 h-5 shrink-0" />
+                        <span className="text-xs font-semibold uppercase tracking-wider">{error}</span>
+                    </div>
+                )
+            }
 
             {/* Premium Success Overlay */}
-            {success && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-500">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
-                    <div className="relative bg-[#0a0a0b] border border-white/10 w-full max-w-md rounded-[3rem] p-12 text-center shadow-3xl overflow-hidden animate-in zoom-in-95 duration-500">
-                        {/* Background Sparkle */}
-                        <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/20 rounded-full blur-[80px]" />
-                        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-[80px]" />
+            {
+                success && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-500">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
+                        <div className="relative bg-[#0a0a0b] border border-white/10 w-full max-w-md rounded-[3rem] p-12 text-center shadow-3xl overflow-hidden animate-in zoom-in-95 duration-500">
+                            {/* Background Sparkle */}
+                            <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/20 rounded-full blur-[80px]" />
+                            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-[80px]" />
 
-                        <div className="relative z-10 space-y-8">
-                            <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]">
-                                <CheckCircleIcon className="w-12 h-12 text-emerald-500 animate-in zoom-in-50 duration-700" />
-                            </div>
-
-                            <div className="space-y-3">
-                                <h3 className="text-3xl font-serif font-black text-white tracking-tight uppercase italic transition-all">
-                                    Identity <span className="text-emerald-500">Secured</span>
-                                </h3>
-                                <p className="text-sm font-medium text-white/40 leading-relaxed uppercase tracking-widest px-4">
-                                    {success}
-                                </p>
-                            </div>
-
-                            <div className="pt-8 border-t border-white/5 flex flex-col items-center gap-4">
-                                <div className="flex items-center gap-3 py-2 px-5 bg-white/5 rounded-full border border-white/10">
-                                    <Spinner size="sm" className="text-primary" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
-                                        Accessing Command Center...
-                                    </span>
+                            <div className="relative z-10 space-y-8">
+                                <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]">
+                                    <CheckCircleIcon className="w-12 h-12 text-emerald-500 animate-in zoom-in-50 duration-700" />
                                 </div>
-                                <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em]">Institutional Node Handshake: 100%</p>
+
+                                <div className="space-y-3">
+                                    <h3 className="text-3xl font-serif font-black text-white tracking-tight uppercase italic transition-all">
+                                        Identity <span className="text-emerald-500">Secured</span>
+                                    </h3>
+                                    <p className="text-sm font-medium text-white/40 leading-relaxed uppercase tracking-widest px-4">
+                                        {success}
+                                    </p>
+                                </div>
+
+                                <div className="pt-8 border-t border-white/5 flex flex-col items-center gap-4">
+                                    <div className="flex items-center gap-3 py-2 px-5 bg-white/5 rounded-full border border-white/10">
+                                        <Spinner size="sm" className="text-primary" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
+                                            Accessing Command Center...
+                                        </span>
+                                    </div>
+                                    <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em]">Institutional Node Handshake: 100%</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Progress Checklist for School Admin */}
-            {role === BuiltInRoles.SCHOOL_ADMINISTRATION && !profile.profile_completed && (
-                <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl p-6 space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <ShieldCheckIcon className="w-5 h-5 text-primary" />
+            {
+                role === BuiltInRoles.SCHOOL_ADMINISTRATION && !profile.profile_completed && (
+                    <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl p-6 space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <ShieldCheckIcon className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Setup Progress</h3>
+                                <p className="text-xs text-white/40 mt-0.5">Complete all required fields to proceed</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Setup Progress</h3>
-                            <p className="text-xs text-white/40 mt-0.5">Complete all required fields to proceed</p>
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Institution Details */}
-                        <div className="bg-black/20 rounded-xl p-4 border border-white/5">
-                            <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                Institution Details
-                            </h4>
-                            <div className="space-y-2">
-                                <div className={`flex items-center gap-2 text-xs ${formData.school_name?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
-                                    {formData.school_name?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
-                                    <span>Institution Name</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* Institution Details */}
+                            <div className="bg-black/20 rounded-xl p-4 border border-white/5">
+                                <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    Institution Details
+                                </h4>
+                                <div className="space-y-2">
+                                    <div className={`flex items-center gap-2 text-xs ${formData.school_name?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
+                                        {formData.school_name?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
+                                        <span>Institution Name</span>
+                                    </div>
+                                    <div className={`flex items-center gap-2 text-xs ${formData.address?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
+                                        {formData.address?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
+                                        <span>Street Address</span>
+                                    </div>
                                 </div>
-                                <div className={`flex items-center gap-2 text-xs ${formData.address?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
-                                    {formData.address?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
-                                    <span>Street Address</span>
+                            </div>
+
+                            {/* Node Management */}
+                            <div className="bg-black/20 rounded-xl p-4 border border-white/5">
+                                <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    Node Management
+                                </h4>
+                                <div className="space-y-2">
+                                    <div className={`flex items-center gap-2 text-xs ${formData.admin_contact_name?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
+                                        {formData.admin_contact_name?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
+                                        <span>Admin Name</span>
+                                    </div>
+                                    <div className={`flex items-center gap-2 text-xs ${formData.admin_contact_email?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
+                                        {formData.admin_contact_email?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
+                                        <span>Admin Email</span>
+                                    </div>
+                                    <div className={`flex items-center gap-2 text-xs ${formData.admin_contact_phone_local?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
+                                        {formData.admin_contact_phone_local?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
+                                        <span>Phone Number</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Academic Settings */}
+                            <div className="bg-black/20 rounded-xl p-4 border border-white/5">
+                                <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    Academic Settings
+                                </h4>
+                                <div className="space-y-2">
+                                    <div className={`flex items-center gap-2 text-xs ${formData.academic_board?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
+                                        {formData.academic_board?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
+                                        <span>Education Board</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Node Management */}
-                        <div className="bg-black/20 rounded-xl p-4 border border-white/5">
-                            <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                Node Management
-                            </h4>
-                            <div className="space-y-2">
-                                <div className={`flex items-center gap-2 text-xs ${formData.admin_contact_name?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
-                                    {formData.admin_contact_name?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
-                                    <span>Admin Name</span>
-                                </div>
-                                <div className={`flex items-center gap-2 text-xs ${formData.admin_contact_email?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
-                                    {formData.admin_contact_email?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
-                                    <span>Admin Email</span>
-                                </div>
-                                <div className={`flex items-center gap-2 text-xs ${formData.admin_contact_phone_local?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
-                                    {formData.admin_contact_phone_local?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
-                                    <span>Phone Number</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Academic Settings */}
-                        <div className="bg-black/20 rounded-xl p-4 border border-white/5">
-                            <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                Academic Settings
-                            </h4>
-                            <div className="space-y-2">
-                                <div className={`flex items-center gap-2 text-xs ${formData.academic_board?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
-                                    {formData.academic_board?.trim() ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border border-white/20" />}
-                                    <span>Education Board</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="mt-4 pt-4 border-t border-white/5">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Completion</span>
-                            <span className="text-xs font-bold text-primary">
-                                {Math.round(([
-                                    formData.school_name?.trim(),
-                                    formData.address?.trim(),
-                                    formData.admin_contact_name?.trim(),
-                                    formData.admin_contact_email?.trim(),
-                                    formData.admin_contact_phone_local?.trim(),
-                                    formData.academic_board?.trim()
-                                ].filter(Boolean).length / 6) * 100)}%
-                            </span>
-                        </div>
-                        <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-500 rounded-full"
-                                style={{
-                                    width: `${([
+                        {/* Progress Bar */}
+                        <div className="mt-4 pt-4 border-t border-white/5">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Completion</span>
+                                <span className="text-xs font-bold text-primary">
+                                    {Math.round(([
                                         formData.school_name?.trim(),
                                         formData.address?.trim(),
                                         formData.admin_contact_name?.trim(),
                                         formData.admin_contact_email?.trim(),
                                         formData.admin_contact_phone_local?.trim(),
                                         formData.academic_board?.trim()
-                                    ].filter(Boolean).length / 6) * 100}%`
-                                }}
-                            />
+                                    ].filter(Boolean).length / 6) * 100)}%
+                                </span>
+                            </div>
+                            <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-500 rounded-full"
+                                    style={{
+                                        width: `${([
+                                            formData.school_name?.trim(),
+                                            formData.address?.trim(),
+                                            formData.admin_contact_name?.trim(),
+                                            formData.admin_contact_email?.trim(),
+                                            formData.admin_contact_phone_local?.trim(),
+                                            formData.academic_board?.trim()
+                                        ].filter(Boolean).length / 6) * 100}%`
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <form onSubmit={handleSubmit} className="space-y-10">
                 <div className="bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-3xl p-8 md:p-10 shadow-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
@@ -693,14 +726,16 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                 </div>
             </form>
 
-            {isStrictReadOnly && (
-                <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                    <LockIcon className="w-4 h-4 text-amber-500" />
-                    <p className="text-[10px] font-black uppercase text-amber-500 tracking-widest">
-                        Institutional Policy: Administrative nodes cannot mutate Parent data from this portal.
-                    </p>
-                </div>
-            )}
+            {
+                isStrictReadOnly && (
+                    <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                        <LockIcon className="w-4 h-4 text-amber-500" />
+                        <p className="text-[10px] font-black uppercase text-amber-500 tracking-widest">
+                            Institutional Policy: Administrative nodes cannot mutate Parent data from this portal.
+                        </p>
+                    </div>
+                )
+            }
 
             <div className="text-center py-4 opacity-40 animate-in fade-in duration-1000 delay-300">
                 <p className="text-[11px] font-medium tracking-wide flex items-center justify-center gap-2 text-white/60">
@@ -708,7 +743,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     Your information is encrypted and used only for institutional verification.
                 </p>
             </div>
-        </div>
+        </div >
     );
 };
 
