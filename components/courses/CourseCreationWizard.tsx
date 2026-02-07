@@ -60,13 +60,26 @@ export const CourseCreationWizard: React.FC<WizardProps> = ({ onClose, onSuccess
     const [teachers, setTeachers] = useState<UserProfile[]>([]);
     const [sectionInput, setSectionInput] = useState('');
 
+    const [userBranchId, setUserBranchId] = useState<number | null>(branchId || null);
+
     useEffect(() => {
-        const fetchTeachers = async () => {
-            const { data } = await supabase.from('profiles').select('*').eq('role', 'Teacher');
-            if (data) setTeachers(data);
+        const initData = async () => {
+            // 1. Fetch Teachers
+            const { data: teacherData } = await supabase.from('profiles').select('*').eq('role', 'Teacher');
+            if (teacherData) setTeachers(teacherData);
+
+            // 2. Ensure Branch ID
+            if (!branchId) {
+                const { data: branchIds, error } = await supabase.rpc('get_my_branch_ids');
+                if (!error && branchIds && branchIds.length > 0) {
+                    setUserBranchId(branchIds[0]);
+                }
+            } else {
+                setUserBranchId(branchId);
+            }
         };
-        fetchTeachers();
-    }, []);
+        initData();
+    }, [branchId]);
 
     const handleChange = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -131,7 +144,7 @@ export const CourseCreationWizard: React.FC<WizardProps> = ({ onClose, onSuccess
                 teacher_id: formData.teacher_id || null,
                 department: formData.department,
                 subject_type: formData.category,
-                branch_id: branchId
+                branch_id: userBranchId || branchId
             }).select().single();
             if (error) throw error;
             if (courseData && curriculum.length > 0) {
