@@ -15,7 +15,7 @@ interface CustomSelectProps {
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
-    icon?: React.ReactNode; 
+    icon?: React.ReactNode;
     label?: string;
     required?: boolean;
     disabled?: boolean;
@@ -25,14 +25,14 @@ interface CustomSelectProps {
     emptyState?: React.ReactNode;
 }
 
-const CustomSelect: React.FC<CustomSelectProps> = ({ 
-    options, 
-    value, 
-    onChange, 
-    placeholder = "Select...", 
-    icon, 
+const CustomSelect: React.FC<CustomSelectProps> = ({
+    options,
+    value,
+    onChange,
+    placeholder = "Select...",
+    icon,
     label,
-    disabled, 
+    disabled,
     className,
     searchable = false,
     isSynced = false,
@@ -40,6 +40,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [placement, setPlacement] = useState<'bottom' | 'top'>('bottom');
     const containerRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,31 +73,48 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         }
     }, [isOpen, searchable]);
 
+    const handleToggle = () => {
+        if (disabled) return;
+        if (!isOpen) {
+            if (containerRef.current) {
+                const rect = containerRef.current.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                // Check if we have enough space below (approx 250px-300px)
+                if (spaceBelow < 280) {
+                    setPlacement('top');
+                } else {
+                    setPlacement('bottom');
+                }
+            }
+        }
+        setIsOpen(!isOpen);
+    };
+
     const handleSelect = (optionValue: string) => {
         onChange(optionValue);
         setIsOpen(false);
     };
 
     return (
-        <div className={`relative group w-full ${className || ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} ref={containerRef}>
+        <div className={`relative group w-full ${className || ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${isOpen ? 'z-[100]' : 'z-30'}`} ref={containerRef}>
             {label && (
                 <label className={`absolute left-11 top-0 -translate-y-1/2 bg-slate-900 px-1.5 text-[10px] font-bold uppercase tracking-widest z-20 transition-all duration-300 
                     ${isOpen ? 'text-primary' : isSynced ? 'text-primary' : 'text-white/30'}`}>
                     {label}
                 </label>
             )}
-            
+
             <div className="relative h-[56px]">
                 <button
                     type="button"
-                    onClick={() => !disabled && setIsOpen(!isOpen)}
+                    onClick={handleToggle}
                     disabled={disabled}
                     className={`
                         peer w-full h-full text-left rounded-xl transition-all duration-300 ease-in-out outline-none select-none
                         flex items-center px-5
                         ${icon ? 'pl-12' : 'pl-5'}
-                        ${isOpen 
-                            ? 'bg-black/40 border border-primary/40 ring-4 ring-primary/5 shadow-xl' 
+                        ${isOpen
+                            ? 'bg-black/40 border border-primary/40 ring-4 ring-primary/5 shadow-xl'
                             : 'bg-transparent border border-transparent hover:border-white/10'
                         }
                     `}
@@ -109,7 +127,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                         )}
                     </span>
                 </button>
-                
+
                 {icon && (
                     <div className={`absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-300 ${isOpen ? 'text-primary' : 'text-white/20'}`}>
                         {icon}
@@ -123,12 +141,14 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.98, y: 4 }}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98, y: placement === 'bottom' ? 4 : -4 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.98, y: 4 }}
+                        exit={{ opacity: 0, scale: 0.98, y: placement === 'bottom' ? 4 : -4 }}
                         transition={{ duration: 0.15, ease: "easeOut" }}
-                        className="absolute z-[110] mt-2 w-full bg-[#0a0a0c] rounded-[1.8rem] shadow-[0_30px_80px_-15px_rgba(0,0,0,0.9)] border border-white/10 overflow-hidden origin-top backdrop-blur-2xl ring-1 ring-white/10"
+                        className={`absolute z-[110] w-full bg-[#0a0a0c] rounded-[1.8rem] shadow-[0_30px_80px_-15px_rgba(0,0,0,0.9)] border border-white/10 overflow-hidden backdrop-blur-2xl ring-1 ring-white/10
+                            ${placement === 'bottom' ? 'mt-2 origin-top' : 'bottom-full mb-2 origin-bottom'}
+                        `}
                     >
                         {searchable && (
                             <div className="p-4 border-b border-white/[0.05] bg-white/[0.01]">
@@ -158,8 +178,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                         }}
                                         className={`
                                             w-full flex items-center gap-3 px-5 py-4 text-xs font-bold uppercase tracking-widest rounded-xl transition-all duration-200 group select-none cursor-pointer mb-1 last:mb-0 border border-transparent
-                                            ${value === option.value 
-                                                ? 'bg-primary/20 text-primary border-primary/20 shadow-lg' 
+                                            ${value === option.value
+                                                ? 'bg-primary/20 text-primary border-primary/20 shadow-lg'
                                                 : 'text-white/40 hover:bg-white/[0.05] hover:text-white hover:border-white/5'
                                             }
                                         `}
