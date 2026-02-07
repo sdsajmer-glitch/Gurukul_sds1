@@ -70,8 +70,17 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             }
         };
 
-        const handleScroll = () => {
-            if (isOpen) setIsOpen(false); // Close on scroll for simplicity and safety
+        const handleScroll = (event: Event) => {
+            // Only close if scrolling something other than the dropdown list itself
+            if (isOpen) {
+                const target = event.target as HTMLElement;
+                const dropdownList = document.querySelector('.custom-select-list');
+                if (dropdownList && dropdownList.contains(target)) {
+                    return;
+                }
+                // If it's a scroll on the window or a parent container, close it to avoid floating
+                setIsOpen(false);
+            }
         };
 
         const handleResize = () => {
@@ -79,13 +88,14 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         };
 
         document.addEventListener('mousedown', handleClickOutside);
-        window.addEventListener('scroll', handleScroll, true);
         window.addEventListener('resize', handleResize);
+        // Using a more selective scroll listener or just closing on any scroll that's not internal
+        window.addEventListener('scroll', handleScroll, true);
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('scroll', handleScroll, true);
             window.removeEventListener('resize', handleResize);
+            window.removeEventListener('scroll', handleScroll, true);
         };
     }, [isOpen, label]);
 
@@ -141,125 +151,131 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             {isOpen && (
                 <div
                     id={`dropdown-portal-${label?.replace(/\s/g, '')}`}
-                    style={{
-                        position: 'absolute',
-                        top: dropdownStyles.top,
-                        left: dropdownStyles.left,
-                        width: dropdownStyles.width,
-                        zIndex: 99999
-                    }}
+                    className="fixed inset-0 z-[99999] pointer-events-none"
                 >
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.98, y: dropdownStyles.placement === 'bottom' ? -10 : 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.98, y: dropdownStyles.placement === 'bottom' ? -10 : 10 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
+                    <div
                         style={{
-                            transformOrigin: dropdownStyles.placement === 'bottom' ? 'top center' : 'bottom center',
-                            translateY: dropdownStyles.placement === 'top' ? '-100%' : '0'
+                            position: 'absolute',
+                            top: dropdownStyles.top,
+                            left: dropdownStyles.left,
+                            width: dropdownStyles.width,
+                            pointerEvents: 'auto'
                         }}
-                        className="bg-[#0a0a0c] rounded-[1.8rem] shadow-[0_20px_60px_-10px_rgba(0,0,0,0.9)] border border-white/10 overflow-hidden backdrop-blur-2xl ring-1 ring-white/10"
                     >
-                        {searchable && (
-                            <div className="p-4 border-b border-white/[0.05] bg-white/[0.01]">
-                                <div className="relative group/search">
-                                    <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within/search:text-primary transition-colors" />
-                                    <input
-                                        ref={searchInputRef}
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Filter records..."
-                                        className="w-full pl-11 pr-4 py-3 text-xs rounded-xl bg-black/60 border border-white/5 focus:border-primary/50 outline-none text-white placeholder:text-white/10 font-bold uppercase tracking-widest"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="max-h-60 overflow-auto p-2 custom-scrollbar">
-                            {filteredOptions.length > 0 ? (
-                                filteredOptions.map((option) => (
-                                    <button
-                                        key={option.value}
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleSelect(option.value);
-                                        }}
-                                        className={`
-                                            w-full flex items-center gap-3 px-5 py-4 text-xs font-bold uppercase tracking-widest rounded-xl transition-all duration-200 group select-none cursor-pointer mb-1 last:mb-0 border border-transparent
-                                            ${value === option.value
-                                                ? 'bg-primary/20 text-primary border-primary/20 shadow-lg'
-                                                : 'text-white/40 hover:bg-white/[0.05] hover:text-white hover:border-white/5'
-                                            }
-                                        `}
-                                    >
-                                        <span className="flex-grow text-left truncate">{option.label}</span>
-                                        {value === option.value && (
-                                            <CheckCircleIcon className="w-4 h-4 text-primary animate-in zoom-in-50" />
-                                        )}
-                                    </button>
-                                ))
-                            ) : (
-                                emptyState || (
-                                    <div className="px-6 py-12 text-center space-y-3">
-                                        <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5">
-                                            <SearchIcon className="w-6 h-6 text-white/10" />
-                                        </div>
-                                        <p className="text-[10px] text-white/20 text-center italic select-none font-black uppercase tracking-[0.2em]">
-                                            No Matching Registry Found
-                                        </p>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.98, y: dropdownStyles.placement === 'bottom' ? -10 : 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.98, y: dropdownStyles.placement === 'bottom' ? -10 : 10 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            style={{
+                                transformOrigin: dropdownStyles.placement === 'bottom' ? 'top center' : 'bottom center',
+                                translateY: dropdownStyles.placement === 'top' ? '-100%' : '0'
+                            }}
+                            className="bg-[#0f1116] rounded-2xl shadow-[0_20px_60px_-10px_rgba(0,0,0,0.9)] border border-white/10 overflow-hidden backdrop-blur-3xl ring-1 ring-white/10"
+                        >
+                            {searchable && (
+                                <div className="p-4 border-b border-white/[0.05] bg-white/[0.01]">
+                                    <div className="relative group/search">
+                                        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within/search:text-primary transition-colors" />
+                                        <input
+                                            ref={searchInputRef}
+                                            type="text"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            placeholder="Filter records..."
+                                            className="w-full pl-11 pr-4 py-3 text-xs rounded-xl bg-black/60 border border-white/5 focus:border-primary/50 outline-none text-white placeholder:text-white/10 font-bold uppercase tracking-widest"
+                                        />
                                     </div>
-                                )
+                                </div>
                             )}
-                        </div>
-                    </motion.div>
+
+                            <div className="max-h-60 overflow-auto p-2 custom-scrollbar custom-select-list">
+                                {filteredOptions.length > 0 ? (
+                                    filteredOptions.map((option) => (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleSelect(option.value);
+                                            }}
+                                            className={`
+                                                w-full flex items-center gap-3 px-5 py-4 text-xs font-bold uppercase tracking-widest rounded-xl transition-all duration-200 group select-none cursor-pointer mb-1 last:mb-0 border border-transparent
+                                                ${value === option.value
+                                                    ? 'bg-primary/20 text-primary border-primary/20 shadow-lg'
+                                                    : 'text-white/40 hover:bg-white/[0.05] hover:text-white hover:border-white/5'
+                                                }
+                                            `}
+                                        >
+                                            <span className="flex-grow text-left truncate">{option.label}</span>
+                                            {value === option.value && (
+                                                <CheckCircleIcon className="w-4 h-4 text-primary animate-in zoom-in-50" />
+                                            )}
+                                        </button>
+                                    ))
+                                ) : (
+                                    emptyState || (
+                                        <div className="px-6 py-12 text-center space-y-3">
+                                            <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5">
+                                                <SearchIcon className="w-6 h-6 text-white/10" />
+                                            </div>
+                                            <p className="text-[10px] text-white/20 text-center italic select-none font-black uppercase tracking-[0.2em]">
+                                                No Matching Registry Found
+                                            </p>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
                 </div>
             )}
         </AnimatePresence>
     );
 
     return (
-        <div className={`relative group w-full ${className || ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} ref={containerRef}>
+        <div className={`relative group w-full mb-1 ${className || ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} ref={containerRef}>
             {label && (
-                <label className={`absolute left-11 top-0 -translate-y-1/2 bg-[#0F1115] px-2 rounded text-[10px] font-bold uppercase tracking-widest z-20 transition-all duration-300
-                    ${isOpen ? 'text-primary' : isSynced ? 'text-primary' : 'text-white/30'}`}>
+                <label className={`block mb-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${isOpen ? 'text-primary' : isSynced ? 'text-primary' : 'text-white/40 group-hover:text-white/70'}`}>
                     {label}
                 </label>
             )}
 
-            <div className="relative h-[56px]">
+            <div className="relative h-[52px]">
                 <button
                     type="button"
                     onClick={handleToggle}
                     disabled={disabled}
                     className={`
                         peer w-full h-full text-left rounded-xl transition-all duration-300 ease-in-out outline-none select-none
-                        flex items-center px-5
+                        flex items-center px-5 border
                         ${icon ? 'pl-12' : 'pl-5'}
                         ${isOpen
-                            ? 'bg-[black]/40 border border-primary/40 ring-4 ring-primary/5 shadow-xl'
-                            : 'bg-transparent border border-transparent hover:border-white/10'
+                            ? 'bg-[#13151a] border-primary/50 ring-4 ring-primary/10 shadow-xl'
+                            : 'bg-[#0f1116] border-white/5 hover:border-white/10'
                         }
+                        ${isSynced && !isOpen ? 'border-primary/30 bg-primary/5' : ''}
                     `}
                 >
                     <span className="flex items-center h-full min-w-0 flex-grow">
                         {selectedOption ? (
-                            <span className="text-white font-bold text-[15px] tracking-tight truncate">{selectedOption.label}</span>
+                            <span className={`font-medium text-sm transition-colors ${isOpen ? 'text-white' : isSynced ? 'text-primary' : 'text-white'}`}>
+                                {selectedOption.label}
+                            </span>
                         ) : (
-                            <span className="text-white/40 font-medium text-[15px] truncate italic">{placeholder}</span>
+                            <span className="text-white/20 font-medium text-sm truncate italic italic-none">{placeholder}</span>
                         )}
                     </span>
                 </button>
 
                 {icon && (
-                    <div className={`absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-300 ${isOpen ? 'text-primary' : 'text-white/20'}`}>
+                    <div className={`absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-300 ${isOpen ? 'text-primary' : isSynced ? 'text-primary' : 'text-white/20 group-hover:text-white/40'}`}>
                         {icon}
                     </div>
                 )}
 
                 <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                    <ChevronDownIcon className={`h-4 w-4 text-white/20 transition-transform duration-500 ${isOpen ? 'rotate-180 text-primary opacity-100' : 'group-hover:opacity-60'}`} />
+                    <ChevronDownIcon className={`h-4 w-4 transition-transform duration-500 ${isOpen ? 'rotate-180 text-primary opacity-100' : 'text-white/20 group-hover:text-white/40'}`} />
                 </span>
             </div>
 

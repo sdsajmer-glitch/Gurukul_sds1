@@ -71,22 +71,23 @@ const ComplianceSectionHeader: React.FC<{
     purpose: string;
     badge?: string;
 }> = ({ title, icon, purpose, badge }) => (
-    <div className="mb-6 mt-4 border-b border-white/5 pb-2">
-        <div className="flex justify-between items-end mb-1">
-            <div className="flex items-center gap-2">
-                {icon && <span className="text-primary/80">{icon}</span>}
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">{title}</h4>
+    <div className="mb-6 mt-4 border-b border-white/[0.03] pb-3 relative group">
+        <div className="flex justify-between items-end mb-1.5">
+            <div className="flex items-center gap-2.5">
+                {icon && <span className="text-primary/60 group-hover:text-primary transition-colors duration-500">{icon}</span>}
+                <h4 className="text-[11px] font-black uppercase tracking-[0.25em] text-white/50 group-hover:text-white/80 transition-colors duration-500">{title}</h4>
             </div>
             {badge && (
-                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-white/5 border border-white/5 text-[9px] font-medium text-white/30">
+                <span className="hidden sm:inline-flex px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/5 text-[9px] font-black uppercase tracking-widest text-white/30 group-hover:text-primary/50 group-hover:border-primary/20 transition-all duration-500">
                     {badge}
                 </span>
             )}
         </div>
-        <p className="text-[10px] text-primary/40 font-mono tracking-tight uppercase flex items-center gap-1.5">
-            <span className="w-1 h-1 rounded-full bg-primary/40"></span>
+        <p className="text-[10px] text-primary/40 font-mono tracking-tight uppercase flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/30 group-hover:bg-primary group-hover:shadow-[0_0_8px_rgba(var(--primary),0.8)] transition-all duration-500"></span>
             {purpose}
         </p>
+        <div className="absolute bottom-0 left-0 w-0 h-[1px] bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0 group-hover:w-full transition-all duration-700"></div>
     </div>
 );
 
@@ -103,12 +104,12 @@ const PremiumFloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement 
             }
         `}</style>
 
-        <label className={`block mb-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${isSynced ? 'text-primary' : 'text-white/40 group-focus-within:text-white/70'}`}>
+        <label className={`block mb-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${isSynced ? 'text-primary' : 'text-white/40 group-focus-within:text-white/70 group-hover:text-white/60'}`}>
             {label} {props.required && <span className="text-accent-error">*</span>}
         </label>
 
         <div className="relative">
-            <div className={`absolute top-4 left-4 transition-colors duration-300 z-10 pointer-events-none ${isSynced ? 'text-primary' : 'text-white/20 group-focus-within:text-primary'}`}>
+            <div className={`absolute top-[18px] left-4 transition-all duration-300 z-10 pointer-events-none ${isSynced ? 'text-primary' : 'text-white/20 group-focus-within:text-primary group-focus-within:scale-110'}`}>
                 {icon}
             </div>
 
@@ -116,9 +117,9 @@ const PremiumFloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement 
                 <textarea
                     {...(props as any)}
                     className={clsx(
-                        "block w-full rounded-2xl border bg-[#0f1116] px-5 pl-12 py-4 text-sm font-medium text-white placeholder-white/10 outline-none transition-all duration-300",
+                        "block w-full rounded-xl border bg-[#0f1116] px-5 pl-12 py-4 text-sm font-medium text-white placeholder-white/5 outline-none transition-all duration-300",
                         "border-white/5 hover:border-white/10 focus:border-primary/50 focus:bg-[#13151a]",
-                        "focus:ring-4 focus:ring-primary/10 shadow-inner resize-none min-h-[100px]",
+                        "focus:ring-4 focus:ring-primary/10 shadow-inner resize-none min-h-[120px]",
                         className
                     )}
                 />
@@ -128,7 +129,7 @@ const PremiumFloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement 
                     data-lpignore="true"
                     {...props}
                     className={clsx(
-                        "block w-full h-[52px] rounded-xl border bg-[#0f1116] px-5 pl-12 text-sm font-medium text-white placeholder-white/10 outline-none transition-all duration-300",
+                        "block w-full h-[52px] rounded-xl border bg-[#0f1116] px-5 pl-12 text-sm font-medium text-white placeholder-white/5 outline-none transition-all duration-300",
                         "border-white/5 hover:border-white/10 focus:border-primary/50 focus:bg-[#13151a]",
                         "focus:ring-4 focus:ring-primary/10 shadow-inner",
                         isSynced && "border-primary/30 bg-primary/5 text-primary",
@@ -340,11 +341,11 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                 ref={modalRef}
                 style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
                 className={clsx(
-                    "bg-[#0a0a0c] shadow-2xl ring-1 ring-white/10 flex flex-col relative",
-                    "w-full h-[90dvh] md:h-[85vh] md:max-w-3xl",
-                    "md:rounded-[2.5rem]",
-                    "animate-in zoom-in-95 duration-500 overflow-hidden",
-                    isDragging && "scale-[1.01] shadow-primary/10 cursor-grabbing"
+                    "bg-[#0a0a0c]/90 shadow-[0_32px_120px_-10px_rgba(0,0,0,0.8)] backdrop-blur-3xl ring-1 ring-white/[0.08] flex flex-col relative",
+                    "w-full h-[95dvh] md:h-[90vh] md:max-w-4xl",
+                    "md:rounded-[3rem]",
+                    "animate-in zoom-in-95 duration-700 overflow-hidden",
+                    isDragging && "scale-[1.005] ring-primary/30 cursor-grabbing duration-200"
                 )}
             >
                 {consentState !== 'enrollmentCompleted' ? (
@@ -352,19 +353,20 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                         {/* Header - Fixed */}
                         <div
                             onMouseDown={handleMouseDown}
-                            className="shrink-0 px-6 py-5 md:px-10 md:py-6 border-b border-white/5 bg-[#0c0e12] flex justify-between items-center cursor-grab active:cursor-grabbing"
+                            className="shrink-0 px-8 py-7 md:px-12 md:py-8 border-b border-white/[0.03] bg-[#0c0e12]/50 backdrop-blur-md flex justify-between items-center cursor-grab active:cursor-grabbing relative"
                         >
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-[inset_0_0_10px_rgba(var(--primary),0.2)]">
-                                    <PlusIcon className="w-5 h-5" />
+                            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                            <div className="flex items-center gap-5">
+                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-[inset_0_0_15px_rgba(var(--primary),0.2)] border border-primary/20 group-hover:scale-110 transition-transform duration-500">
+                                    <PlusIcon className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-serif font-black text-white tracking-tight uppercase">Register Child<span className="text-primary">.</span></h3>
-                                    <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em]">Identity Enrollment Node</p>
+                                    <h3 className="text-2xl font-serif font-black text-white tracking-tight uppercase flex items-center gap-1">Register Child<span className="text-primary animate-pulse">.</span></h3>
+                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Identity Enrollment Node</p>
                                 </div>
                             </div>
-                            <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-white/5 text-white/30 hover:text-white transition-colors">
-                                <XIcon className="w-5 h-5" />
+                            <button type="button" onClick={onClose} className="p-3 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all duration-300 hover:rotate-90">
+                                <XIcon className="w-6 h-6" />
                             </button>
                         </div>
 
@@ -378,44 +380,45 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
 
                             {/* Privacy Handshake / Consent Checkpoint */}
                             <div className={clsx(
-                                "p-6 md:p-8 rounded-[2rem] border transition-all duration-500 relative overflow-hidden",
+                                "p-6 md:p-8 rounded-[2rem] border transition-all duration-700 relative overflow-hidden group/consent",
                                 isConsentActive
-                                    ? "bg-primary/10 border-primary/30 shadow-[0_0_40px_rgba(var(--primary),0.1)]"
-                                    : "bg-white/[0.02] border-white/10 hover:border-white/20"
+                                    ? "bg-primary/[0.08] border-primary/30 shadow-[0_0_50px_rgba(var(--primary),0.15)] ring-1 ring-primary/20"
+                                    : "bg-white/[0.02] border-white/5 hover:border-white/10"
                             )}>
-                                <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-[80px] pointer-events-none"></div>
+                                <div className="absolute -top-24 -right-24 w-60 h-60 bg-primary/10 rounded-full blur-[100px] pointer-events-none group-hover/consent:scale-110 transition-transform duration-1000"></div>
+                                <div className="absolute -bottom-24 -left-24 w-40 h-40 bg-primary/5 rounded-full blur-[80px] pointer-events-none"></div>
 
-                                <label className="relative z-10 flex items-start gap-5 cursor-pointer group">
+                                <label className="relative z-10 flex items-start gap-6 cursor-pointer">
                                     <div className="relative mt-1 shrink-0">
                                         <input
                                             type="checkbox"
                                             checked={isConsentActive}
                                             onChange={handleConsentChange}
-                                            className="peer appearance-none w-6 h-6 rounded-lg border border-white/20 bg-black/40 checked:bg-primary checked:border-primary transition-all cursor-pointer ring-offset-2 ring-offset-[#0a0a0c] focus:ring-2 focus:ring-primary/50"
+                                            className="peer appearance-none w-7 h-7 rounded-xl border border-white/10 bg-black/40 checked:bg-primary checked:border-primary transition-all duration-500 cursor-pointer ring-offset-4 ring-offset-[#0a0a0c] group-hover/consent:border-white/20"
                                         />
-                                        <CheckCircleIcon className="absolute inset-0 text-[#0a0a0c] w-6 h-6 scale-90 opacity-0 peer-checked:opacity-100 peer-checked:scale-110 transition-all pointer-events-none" />
+                                        <CheckCircleIcon className="absolute inset-0 text-[#0a0a0c] w-7 h-7 scale-90 opacity-0 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-500 pointer-events-none" />
                                     </div>
-                                    <div className="flex-1 space-y-3">
+                                    <div className="flex-1 space-y-4">
                                         <div>
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/80 mb-1.5 flex items-center gap-2">
-                                                <LockIcon className="w-3 h-3" /> Identity Protocol Authorization
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.35em] text-primary mb-2 flex items-center gap-2.5">
+                                                <LockIcon className="w-3.5 h-3.5 mb-0.5" /> Identity Protocol Authorization
                                             </h4>
-                                            <p className="text-[15px] font-medium text-white/90 leading-relaxed">
-                                                I, the legal guardian, <span className="text-white">consent</span> to the collection and encrypted processing of my child's identity and <span className="text-primary/90 font-bold">biometric data</span>.
+                                            <p className="text-[17px] font-medium text-white/90 leading-tight">
+                                                I, the legal guardian, <span className="text-white font-bold decoration-primary/30 underline-offset-4 decoration-2">consent</span> to the collection and encrypted processing of identity and <span className="text-primary font-black tracking-tight">biometric data</span>.
                                             </p>
                                         </div>
-                                        <p className="text-xs text-white/40 leading-relaxed max-w-xl">
-                                            This data is used strictly for <span className="text-white/60">Institutional Verification & Safety</span>. I understand I can revoke this consent or request data deletion at any time via the Parent Portal.
+                                        <p className="text-xs text-white/30 leading-relaxed max-w-xl font-medium tracking-wide">
+                                            This data is used strictly for <span className="text-white/60">Institutional Verification & Safety</span>. Encrypted under AES-256 protocols and stored within secure sovereign nodes.
                                         </p>
 
-                                        <div className="pt-2 flex flex-wrap gap-6 text-[10px] font-bold uppercase tracking-widest">
-                                            <button type="button" className="text-primary/60 hover:text-primary transition-colors flex items-center gap-2 group/btn">
-                                                <EyeIcon className="w-3.5 h-3.5" />
-                                                <span className="border-b border-white/5 group-hover/btn:border-primary/30 pb-0.5">Data Visibility</span>
+                                        <div className="pt-2 flex flex-wrap gap-8 text-[10px] font-black uppercase tracking-[0.2em]">
+                                            <button type="button" className="text-primary/40 hover:text-primary transition-all duration-300 flex items-center gap-2 group/btn">
+                                                <EyeIcon className="w-4 h-4" />
+                                                <span className="border-b border-transparent group-hover/btn:border-primary/40 pb-0.5">Data Visibility</span>
                                             </button>
-                                            <button type="button" className="text-primary/60 hover:text-primary transition-colors flex items-center gap-2 group/btn">
-                                                <ShieldCheckIcon className="w-3.5 h-3.5" />
-                                                <span className="border-b border-white/5 group-hover/btn:border-primary/30 pb-0.5">Retention Policy</span>
+                                            <button type="button" className="text-primary/40 hover:text-primary transition-all duration-300 flex items-center gap-2 group/btn">
+                                                <ShieldCheckIcon className="w-4 h-4" />
+                                                <span className="border-b border-transparent group-hover/btn:border-primary/40 pb-0.5">Retention Policy</span>
                                             </button>
                                         </div>
                                     </div>
@@ -423,36 +426,39 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                             </div>
 
                             {/* Biometric Section */}
-                            <div className="flex flex-col items-center justify-center gap-6 py-4 bg-white/[0.02] rounded-3xl border border-white/5 relative overflow-hidden transition-all duration-500">
+                            <div className="flex flex-col items-center justify-center gap-8 py-10 bg-white/[0.01] rounded-[2.5rem] border border-white/[0.03] relative overflow-hidden transition-all duration-500 group/bio hover:bg-white/[0.02]">
                                 {!isConsentActive && (
-                                    <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 animate-in fade-in duration-700 pointer-events-none">
-                                        <LockIcon className="w-8 h-8 text-white/30" />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Guardian Consent Required</p>
+                                    <div className="absolute inset-0 z-20 bg-[#0a0a0c]/80 backdrop-blur-[4px] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-700 pointer-events-none">
+                                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-2xl">
+                                            <LockIcon className="w-7 h-7 text-white/20" />
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Guardian Consent Required</p>
                                     </div>
                                 )}
 
-                                <div className={clsx("relative group/avatar transition-all duration-700", !isConsentActive && "blur-sm opacity-50")}>
-                                    <div className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-1000 animate-pulse"></div>
+                                <div className={clsx("relative group/avatar transition-all duration-1000", !isConsentActive && "blur-md opacity-40")}>
+                                    <div className="absolute -inset-8 bg-primary/20 rounded-full blur-3xl opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-1000 animate-pulse"></div>
+                                    <div className="absolute -inset-1 bg-gradient-to-br from-primary via-primary/50 to-transparent rounded-full opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-700"></div>
                                     <PremiumAvatar
                                         src={photoPreview}
                                         name={formData.applicant_name || '?'}
                                         size="lg"
-                                        className="w-28 h-28 md:w-32 md:h-32 rounded-full ring-4 ring-[#0a0a0c] shadow-2xl relative z-10 hover:scale-105 transition-transform duration-500"
+                                        className="w-32 h-32 md:w-40 md:h-40 rounded-full ring-8 ring-[#0a0a0c] shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)] relative z-10 hover:scale-[1.02] transition-transform duration-700"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => isConsentActive && fileInputRef.current?.click()}
                                         disabled={!isConsentActive}
-                                        className="absolute bottom-1 right-1 p-3.5 bg-primary text-white rounded-2xl shadow-[0_0_20px_rgba(var(--primary),0.4)] ring-4 ring-[#0a0a0c] hover:bg-primary/90 hover:scale-110 active:scale-90 transition-all z-20 disabled:hidden group/btn"
+                                        className="absolute bottom-2 right-2 p-4 bg-primary text-white rounded-2xl shadow-[0_0_30px_rgba(var(--primary),0.5)] ring-4 ring-[#0a0a0c] hover:bg-primary/90 hover:scale-110 active:scale-95 transition-all z-20 disabled:hidden group/upload-btn"
                                     >
-                                        <UploadIcon className="w-5 h-5 group-hover/btn:rotate-12 transition-transform" />
+                                        <UploadIcon className="w-6 h-6 group-hover/upload-btn:rotate-12 transition-transform" />
                                     </button>
                                 </div>
-                                <div className={clsx("text-center space-y-1 transition-opacity duration-500", !isConsentActive && "opacity-30")}>
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] flex items-center justify-center gap-2">
-                                        <ShieldCheckIcon className="w-3 h-3" /> Secure Biometric Identity
+                                <div className={clsx("text-center space-y-2 transition-opacity duration-700", !isConsentActive && "opacity-20")}>
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-[0.4em] flex items-center justify-center gap-2.5">
+                                        <ShieldCheckIcon className="w-4 h-4 mb-0.5" /> Secure Biometric Identity
                                     </p>
-                                    <p className="text-xs text-text-tertiary">Encrypted (AES-256) & Access Controlled. <br />This does not store images publicly.</p>
+                                    <p className="text-xs text-white/30 font-medium tracking-wide">Encrypted (AES-256) & Access Controlled. <br />Private ledger storage only.</p>
                                 </div>
                                 <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
                             </div>
@@ -567,21 +573,29 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                         </div>
 
                         {/* Footer - Fixed */}
-                        <div className="shrink-0 p-6 md:p-8 border-t border-white/5 bg-[#0c0e12] flex flex-col md:flex-row justify-between items-center gap-4">
-                            <div className="flex items-center gap-2 text-white/20 order-3 md:order-1 md:mr-auto">
-                                <LockIcon className="w-3 h-3" />
-                                <span className="text-[9px] font-medium tracking-wide">Encrypted at rest & in transit</span>
+                        <div className="shrink-0 p-8 md:p-10 border-t border-white/[0.03] bg-[#0c0e12]/80 backdrop-blur-md flex flex-col md:flex-row justify-between items-center gap-6 relative">
+                            <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+
+                            <div className="flex items-center gap-3 text-white/20 order-3 md:order-1 md:mr-auto group/secure">
+                                <LockIcon className="w-3.5 h-3.5 group-hover/secure:text-primary transition-colors duration-500" />
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">Encrypted at rest & in transit</span>
                             </div>
 
-                            <button type="button" onClick={onClose} className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 hover:text-white transition-colors order-2">
+                            <button type="button" onClick={onClose} className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 hover:text-white/60 transition-all duration-300 order-2">
                                 Discard
                             </button>
                             <button
                                 type="submit"
                                 disabled={loading || !formData.applicant_name || !formData.date_of_birth || !canSubmit}
-                                className="w-full md:w-auto px-10 py-4 bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale text-white rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-3 transition-all transform active:scale-95 order-1 md:order-3"
+                                className="w-full md:w-auto px-12 py-5 bg-primary hover:bg-primary/90 disabled:opacity-20 disabled:cursor-not-allowed disabled:grayscale text-white rounded-[1.2rem] shadow-[0_10px_40px_-5px_rgba(var(--primary),0.4)] hover:shadow-[0_15px_50px_-5px_rgba(var(--primary),0.6)] flex items-center justify-center gap-4 transition-all duration-500 transform active:scale-[0.98] group/submit order-1 md:order-3 overflow-hidden relative"
                             >
-                                {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-4 h-4" /> <span className="text-xs font-black uppercase tracking-[0.25em]">Initialize Enrollment</span></>}
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                {loading ? <Spinner size="sm" className="text-white" /> : (
+                                    <>
+                                        <CheckCircleIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-500" />
+                                        <span className="text-xs font-black uppercase tracking-[0.3em]">Initialize Enrollment</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </form>
