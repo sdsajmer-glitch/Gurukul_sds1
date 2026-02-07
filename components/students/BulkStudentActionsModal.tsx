@@ -27,27 +27,27 @@ interface BulkStudentActionsModalProps {
 const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ action, selectedIds, onClose, onSuccess }) => {
     // State Flow: config -> processing -> summary
     const [step, setStep] = useState<'config' | 'processing' | 'summary'>('config');
-    
+
     // Form State
     const [value, setValue] = useState('');
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [branches, setBranches] = useState<SchoolBranch[]>([]);
-    
+
     // Import State
     const [file, setFile] = useState<File | null>(null);
     const [importPreview, setImportPreview] = useState<any[]>([]);
-    
+
     // Message State
     const [subject, setSubject] = useState('');
     const [body, setBody] = useState('');
-    
+
     // Processing State
     const [progress, setProgress] = useState(0);
     const [processedCount, setProcessedCount] = useState(0);
     const [successCount, setSuccessCount] = useState(0);
     const [failCount, setFailCount] = useState(0);
     const [errors, setErrors] = useState<string[]>([]);
-    
+
     // Initialization
     useEffect(() => {
         if (action === 'assign_class') {
@@ -97,7 +97,7 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
             default: return null;
         }
     };
-    
+
     // --- Handlers ---
 
     const handleDownloadTemplate = () => {
@@ -110,12 +110,12 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
         link.click();
         document.body.removeChild(link);
     };
-    
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0];
             setFile(selectedFile);
-            
+
             // Basic CSV parse preview
             const reader = new FileReader();
             reader.onload = (evt) => {
@@ -136,12 +136,12 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
     const processItem = async (item: any): Promise<boolean> => {
         try {
             // Simulate network delay for smoother UI
-            await new Promise(resolve => setTimeout(resolve, 300)); 
+            await new Promise(resolve => setTimeout(resolve, 300));
 
             if (action === 'assign_class') {
                 const { error } = await supabase.from('student_profiles').update({ assigned_class_id: parseInt(value) }).eq('user_id', item);
                 if (error) throw error;
-            } 
+            }
             else if (action === 'status') {
                 const isActive = value === 'Active';
                 const { error } = await supabase.from('profiles').update({ is_active: isActive }).eq('id', item);
@@ -152,8 +152,8 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
                 if (error) throw error;
             }
             else if (action === 'transfer') {
-                 const { error } = await supabase.from('student_profiles').update({ branch_id: parseInt(value) }).eq('user_id', item);
-                 if (error) throw error;
+                const { error } = await supabase.from('student_profiles').update({ branch_id: parseInt(value) }).eq('user_id', item);
+                if (error) throw error;
             }
             else if (action === 'message' || action === 'reminder') {
                 // Mock sending message
@@ -161,11 +161,14 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
                 // const { error } = await supabase.rpc('send_message_to_user', { ... });
             }
             else if (action === 'import') {
-                 // Item is the parsed CSV row object
-                 // We use the existing quick add RPC or full registration flow
-                 // For robust import, we'd use a specific import RPC. Here we simulate success for prototype.
-                 if (!item.name || !item.email) throw new Error("Missing name or email");
-                 // In real app: await supabase.rpc('admin_quick_add_student', { ... });
+                const { data, error } = await supabase.rpc('admin_quick_add_student', {
+                    p_display_name: item.name,
+                    p_email: item.email,
+                    p_grade: item.grade || '1',
+                    p_parent_details: `Imported via Bulk Action - ${new Date().toLocaleDateString()}`
+                });
+                if (error) throw error;
+                if (data && !data.success) throw new Error(data.message);
             }
             return true;
         } catch (err: any) {
@@ -193,11 +196,11 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
             const success = await processItem(itemsToProcess[i]);
             if (success) setSuccessCount(prev => prev + 1);
             else setFailCount(prev => prev + 1);
-            
+
             setProcessedCount(prev => prev + 1);
             setProgress(Math.round(((i + 1) / total) * 100));
         }
-        
+
         // Ensure 100% animation finishes
         setTimeout(() => setStep('summary'), 500);
     };
@@ -219,24 +222,24 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
             <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                
+
                 {/* Header */}
                 <div className="p-6 border-b border-border bg-muted/10 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-primary/10 rounded-xl text-primary shadow-inner border border-primary/10">
-                             {getIcon()}
+                            {getIcon()}
                         </div>
                         <div>
                             <h3 className="font-bold text-lg leading-tight">{getTitle()}</h3>
                             {step === 'config' && <p className="text-xs text-muted-foreground mt-0.5">{action === 'import' ? 'Upload CSV file' : `Applying to ${selectedIds.length} students`}</p>}
                         </div>
                     </div>
-                    {step !== 'processing' && <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><XIcon className="w-5 h-5"/></button>}
+                    {step !== 'processing' && <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><XIcon className="w-5 h-5" /></button>}
                 </div>
-                
+
                 {/* Content */}
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
-                    
+
                     {/* CONFIG STEP */}
                     {step === 'config' && (
                         <div className="space-y-6">
@@ -249,7 +252,7 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
                                     </select>
                                 </div>
                             )}
-                            
+
                             {action === 'transfer' && (
                                 <div>
                                     <label className="input-label">Select Branch</label>
@@ -270,7 +273,7 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
                                     </select>
                                 </div>
                             )}
-                            
+
                             {(action === 'message' || action === 'reminder') && (
                                 <div className="space-y-4">
                                     <div>
@@ -298,10 +301,10 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
                                         <p className="font-bold text-foreground text-sm">{file ? file.name : 'Click to upload CSV'}</p>
                                         <p className="text-xs text-muted-foreground mt-1">{file ? `${(file.size / 1024).toFixed(1)} KB • Ready to process` : 'Drag and drop or click to browse'}</p>
                                     </div>
-                                    
+
                                     <div className="flex justify-between items-center">
                                         <button onClick={handleDownloadTemplate} className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                                            <FileSpreadsheetIcon className="w-3.5 h-3.5"/> Download Template
+                                            <FileSpreadsheetIcon className="w-3.5 h-3.5" /> Download Template
                                         </button>
                                         {importPreview.length > 0 && (
                                             <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-md">
@@ -378,9 +381,9 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
                     {step === 'config' && (
                         <>
                             <button onClick={onClose} className="px-5 py-2.5 rounded-xl text-sm font-bold text-muted-foreground hover:bg-muted transition-colors">Cancel</button>
-                            <button 
-                                onClick={handleStartProcessing} 
-                                disabled={(action !== 'delete' && action !== 'import' && !value && !subject) || (action === 'import' && !file) || (action === 'message' && (!subject || !body))} 
+                            <button
+                                onClick={handleStartProcessing}
+                                disabled={(action !== 'delete' && action !== 'import' && !value && !subject) || (action === 'import' && !file) || (action === 'message' && (!subject || !body))}
                                 className={`px-6 py-2.5 rounded-xl text-primary-foreground text-sm font-bold flex items-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${action === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'}`}
                             >
                                 Start {action === 'import' ? 'Import' : 'Process'}
@@ -388,15 +391,15 @@ const BulkStudentActionsModal: React.FC<BulkStudentActionsModalProps> = ({ actio
                         </>
                     )}
                     {step === 'processing' && (
-                         <button disabled className="px-6 py-2.5 bg-muted text-muted-foreground rounded-xl text-sm font-bold cursor-not-allowed flex items-center gap-2">
-                             <Spinner size="sm" /> Please Wait...
-                         </button>
+                        <button disabled className="px-6 py-2.5 bg-muted text-muted-foreground rounded-xl text-sm font-bold cursor-not-allowed flex items-center gap-2">
+                            <Spinner size="sm" /> Please Wait...
+                        </button>
                     )}
                     {step === 'summary' && (
                         <>
-                             {failCount > 0 && (
+                            {failCount > 0 && (
                                 <button onClick={handleDownloadLog} className="px-5 py-2.5 border border-border hover:bg-muted rounded-xl text-sm font-bold text-foreground transition-colors flex items-center gap-2">
-                                    <DownloadIcon className="w-4 h-4"/> Download Log
+                                    <DownloadIcon className="w-4 h-4" /> Download Log
                                 </button>
                             )}
                             <button onClick={() => { onSuccess(); onClose(); }} className="px-8 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-lg hover:bg-primary/90 transition-all">

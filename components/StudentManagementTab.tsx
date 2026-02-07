@@ -200,7 +200,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
         setLoading(true);
         setError(null);
         try {
-            let query = supabase.from('student_profiles').select(`*, profiles(email, display_name, phone, role, is_active, profile_completed, created_at, profile_photo_url), school_classes(name)`);
+            let query = supabase.from('student_profiles').select(`*, profiles(email, display_name, phone, role, is_active, profile_completed, created_at, profile_photo_url), school_classes(name), admissions(applicant_name)`);
             if (branchId !== null && branchId !== undefined) {
                 query = query.eq('branch_id', Number(branchId));
             }
@@ -211,7 +211,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
             const mappedStudents: StudentForAdmin[] = (data || []).map((s: any) => ({
                 id: s.user_id,
                 email: s.profiles?.email || '',
-                display_name: s.profiles?.display_name || s.applicant_name || 'Academic Identity',
+                display_name: s.profiles?.display_name || s.admissions?.applicant_name || s.applicant_name || 'Academic Identity',
                 phone: s.profiles?.phone,
                 role: s.profiles?.role || 'Student',
                 is_active: s.profiles?.is_active ?? s.is_active ?? true,
