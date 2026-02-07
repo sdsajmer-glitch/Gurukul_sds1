@@ -50,10 +50,10 @@ const useAnimatedCounter = (endValue: number, duration = 1500) => {
 };
 
 // --- Enhanced KPI Card ---
-const KPICard: React.FC<{ 
-    title: string; 
-    value: number; 
-    icon: React.ReactNode; 
+const KPICard: React.FC<{
+    title: string;
+    value: number;
+    icon: React.ReactNode;
     color: string;
     subtext?: string;
 }> = ({ title, value, icon, color, subtext }) => {
@@ -81,7 +81,7 @@ const StatusBadge: React.FC<{ status: CourseStatus }> = ({ status }) => {
         'Pending': { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-400', dot: 'bg-purple-500', border: 'border-purple-200 dark:border-purple-800', label: 'Pending Assignment' },
         'Inactive': { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-400', dot: 'bg-slate-400', border: 'border-slate-200 dark:border-slate-700', label: 'Inactive' },
     };
-    
+
     const style = config[status] || config['Inactive'];
 
     return (
@@ -124,7 +124,7 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ profile }) => {
                 teacher_name: c.teacher?.display_name,
                 modules_count: c.modules?.[0]?.count || 0,
                 enrolled_count: c.enrollments?.[0]?.count || 0,
-                subject_type: c.subject_type || c.category 
+                subject_type: c.subject_type || c.category
             }));
             setCourses(formattedData);
         }
@@ -137,9 +137,9 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ profile }) => {
     const processedCourses = useMemo(() => {
         let data = courses.filter(c => {
             const searchLower = searchText.toLowerCase();
-            const matchesSearch = !searchText || 
-                c.title.toLowerCase().includes(searchLower) || 
-                c.code.toLowerCase().includes(searchLower) || 
+            const matchesSearch = !searchText ||
+                c.title.toLowerCase().includes(searchLower) ||
+                c.code.toLowerCase().includes(searchLower) ||
                 (c.teacher_name || '').toLowerCase().includes(searchLower) ||
                 (c.department || '').toLowerCase().includes(searchLower);
 
@@ -191,13 +191,13 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ profile }) => {
                 </div>
                 {isFullAdmin && (
                     <div className="flex gap-3">
-                        <button 
+                        <button
                             onClick={() => { setBulkAction('import'); setBulkIds([]); }}
                             className="px-5 py-3 bg-card hover:bg-muted text-foreground font-bold rounded-xl border border-border/60 transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
                         >
                             <UploadIcon className="w-4 h-4" /> Bulk Upload
                         </button>
-                        <button 
+                        <button
                             onClick={() => setIsWizardOpen(true)}
                             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center gap-2 transform hover:-translate-y-0.5 active:scale-95"
                         >
@@ -206,24 +206,24 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ profile }) => {
                     </div>
                 )}
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KPICard title="Total Courses" value={stats.total} icon={<BookIcon className="w-6 h-6"/>} color="bg-blue-500" subtext="All subjects" />
-                <KPICard title="Active Courses" value={stats.active} icon={<CheckCircleIcon className="w-6 h-6"/>} color="bg-emerald-500" subtext="Live & running" />
-                <KPICard title="Total Enrollment" value={stats.students} icon={<UsersIcon className="w-6 h-6"/>} color="bg-purple-500" subtext="Across all subjects" />
-                <KPICard title="Drafts Pending" value={stats.draft} icon={<EditIcon className="w-6 h-6"/>} color="bg-orange-500" subtext="Courses under creation" />
+                <KPICard title="Total Courses" value={stats.total} icon={<BookIcon className="w-6 h-6" />} color="bg-blue-500" subtext="All subjects" />
+                <KPICard title="Active Courses" value={stats.active} icon={<CheckCircleIcon className="w-6 h-6" />} color="bg-emerald-500" subtext="Live & running" />
+                <KPICard title="Total Enrollment" value={stats.students} icon={<UsersIcon className="w-6 h-6" />} color="bg-purple-500" subtext="Across all subjects" />
+                <KPICard title="Drafts Pending" value={stats.draft} icon={<EditIcon className="w-6 h-6" />} color="bg-orange-500" subtext="Courses under creation" />
             </div>
 
             <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[600px]">
                 <div className="p-4 border-b border-border bg-muted/5 flex flex-col xl:flex-row gap-4 justify-between items-center sticky top-0 z-20 backdrop-blur-md">
                     <div className="relative w-full xl:w-96 group">
-                        <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors"/>
-                        <input 
-                            type="text" 
-                            placeholder="Search course name, code, teacher, or department..." 
-                            value={searchText} 
-                            onChange={e => setSearchText(e.target.value)} 
-                            className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm" 
+                        <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Search course name, code, teacher, or department..."
+                            value={searchText}
+                            onChange={e => setSearchText(e.target.value)}
+                            className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
                         />
                     </div>
                     <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide w-full xl:w-auto p-1">
@@ -237,14 +237,14 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ profile }) => {
                             </button>
                         ))}
                         <div className="h-6 w-px bg-border mx-1"></div>
-                        <button className="p-2.5 rounded-xl transition-colors border text-muted-foreground border-transparent hover:bg-muted/30" title="Filters"><FilterIcon className="w-4 h-4"/></button>
+                        <button className="p-2.5 rounded-xl transition-colors border text-muted-foreground border-transparent hover:bg-muted/30" title="Filters"><FilterIcon className="w-4 h-4" /></button>
                         <button onClick={fetchCourses} className="p-2.5 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-colors" title="Refresh List"><RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
                     </div>
                 </div>
 
                 <div className="flex-grow p-6 bg-muted/5">
                     {loading ? (
-                        <div className="flex h-64 items-center justify-center"><Spinner size="lg"/></div>
+                        <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
                     ) : processedCourses.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in zoom-in-95 duration-500">
                             <div className="w-24 h-24 bg-muted/30 rounded-full flex items-center justify-center mb-6 border-2 border-dashed border-border group">
@@ -260,30 +260,30 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ profile }) => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-                           {paginatedCourses.map(course => (
+                            {paginatedCourses.map(course => (
                                 <div key={course.id} onClick={() => setSelectedCourse(course)} className="group relative bg-card border rounded-2xl p-5 transition-all duration-300 flex flex-col h-full cursor-pointer border-border hover:border-primary/50 hover:shadow-lg hover:-translate-y-1">
                                     <div className="flex items-start gap-3 mb-4 pr-6">
-                                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm flex-shrink-0"><BookIcon className="w-5 h-5"/></div>
+                                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm flex-shrink-0"><BookIcon className="w-5 h-5" /></div>
                                         <div className="min-w-0">
                                             <h4 className="font-bold text-base text-foreground truncate group-hover:text-primary transition-colors">{course.title}</h4>
                                             <p className="text-xs font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded border border-border/50 w-fit mt-1">{course.code}</p>
                                         </div>
                                     </div>
                                     <div className="space-y-3 flex-grow border-t border-border/40 pt-4 mb-4">
-                                        <div className="flex items-center gap-2.5 text-sm text-muted-foreground"><TeacherIcon className="w-4 h-4"/> <span className="truncate font-medium text-foreground/80">{course.teacher_name || 'Unassigned'}</span></div>
+                                        <div className="flex items-center gap-2.5 text-sm text-muted-foreground"><TeacherIcon className="w-4 h-4" /> <span className="truncate font-medium text-foreground/80">{course.teacher_name || 'Unassigned'}</span></div>
                                         <div className="flex flex-wrap gap-2">
                                             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">Grade {course.grade_level}</span>
                                             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 text-xs font-medium text-purple-700 dark:text-purple-300 border border-purple-100 dark:border-purple-800">{course.department || 'General'}</span>
                                         </div>
                                     </div>
                                     <div className="pt-4 border-t border-border/50 flex items-end justify-between gap-4 mt-auto">
-                                         <div className="flex-grow">
-                                             <div className="flex justify-between text-[9px] font-bold uppercase text-muted-foreground mb-1.5"><span>Enrollment</span><span>{course.enrolled_count} Students</span></div>
-                                             <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden shadow-inner"><div className="h-full bg-primary/80 rounded-full" style={{ width: `${Math.min((course.enrolled_count || 0) * 2, 100)}%` }}></div></div>
-                                         </div>
-                                         <div className="flex items-center gap-2 flex-shrink-0">
+                                        <div className="flex-grow">
+                                            <div className="flex justify-between text-[9px] font-bold uppercase text-muted-foreground mb-1.5"><span>Enrollment</span><span>{course.enrolled_count} Students</span></div>
+                                            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden shadow-inner"><div className="h-full bg-primary/80 rounded-full" style={{ width: `${Math.min((course.enrolled_count || 0) * 2, 100)}%` }}></div></div>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
                                             <StatusBadge status={course.status} />
-                                         </div>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -295,9 +295,9 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ profile }) => {
                     <div className="p-4 border-t border-border bg-muted/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-medium text-muted-foreground">
                         <div className="flex items-center gap-2"><span>Rows per page:</span><select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="bg-background border border-input rounded px-2 py-1 focus:ring-1 focus:ring-primary"><option value={12}>12</option><option value={24}>24</option><option value={48}>48</option></select></div>
                         <div className="flex items-center gap-2">
-                            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-lg hover:bg-background disabled:opacity-50 border border-transparent hover:border-border"><ChevronLeftIcon className="w-4 h-4"/></button>
+                            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-lg hover:bg-background disabled:opacity-50 border border-transparent hover:border-border"><ChevronLeftIcon className="w-4 h-4" /></button>
                             <span className="mx-2 font-bold text-foreground">Page {currentPage} of {totalPages}</span>
-                            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg hover:bg-background disabled:opacity-50 border border-transparent hover:border-border"><ChevronRightIcon className="w-4 h-4"/></button>
+                            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg hover:bg-background disabled:opacity-50 border border-transparent hover:border-border"><ChevronRightIcon className="w-4 h-4" /></button>
                         </div>
                     </div>
                 )}
@@ -305,7 +305,7 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ profile }) => {
 
             {isWizardOpen && <CourseCreationWizard onClose={() => setIsWizardOpen(false)} onSuccess={fetchCourses} />}
             {selectedCourse && <CourseProfileView course={selectedCourse} onClose={() => setSelectedCourse(null)} profile={profile} />}
-            {bulkAction && <BulkCourseActionsModal action={bulkAction} selectedIds={bulkIds} onClose={() => setBulkAction(null)} onSuccess={() => { fetchCourses(); setBulkAction(null); }} />}
+            {bulkAction && <BulkCourseActionsModal action={bulkAction} selectedIds={bulkIds} onClose={() => setBulkAction(null)} onSuccess={() => { fetchCourses(); setBulkAction(null); }} branchId={profile?.branch_id} />}
         </div>
     );
 };

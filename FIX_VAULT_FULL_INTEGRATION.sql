@@ -4,7 +4,7 @@
 
 BEGIN;
 
--- 1. Schema Updates: Add enquiry_id support
+-- 1. Schema Updates: Add enquiry_id support & Unique Constraints
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'document_requirements' AND column_name = 'enquiry_id') THEN
@@ -20,14 +20,43 @@ BEGIN
 
     -- make admission_id nullable
     ALTER TABLE public.admission_documents ALTER COLUMN admission_id DROP NOT NULL;
+    
+    -- Add Constraints (Safety Check)
+    -- Remove duplicates if any to ensure constraints can be applied
+    DELETE FROM public.admission_documents a
+    USING public.admission_documents b
+    WHERE a.id < b.id
+      AND a.admission_id = b.admission_id
+      AND a.requirement_id = b.requirement_id
+      AND a.admission_id IS NOT NULL;
+      
+    DELETE FROM public.admission_documents a
+    USING public.admission_documents b
+    WHERE a.id < b.id
+      AND a.enquiry_id = b.enquiry_id
+      AND a.requirement_id = b.requirement_id
+      AND a.enquiry_id IS NOT NULL;
 END $$;
 
--- 2. Drop Helper Functions to allow changing return types/signatures
+-- 2. Add Unique Constraints Explicitly
+ALTER TABLE public.admission_documents
+DROP CONSTRAINT IF EXISTS admission_documents_admission_id_requirement_id_key;
+
+ALTER TABLE public.admission_documents
+ADD CONSTRAINT admission_documents_admission_id_requirement_id_key UNIQUE (admission_id, requirement_id);
+
+ALTER TABLE public.admission_documents
+DROP CONSTRAINT IF EXISTS admission_documents_enquiry_id_requirement_id_key;
+
+ALTER TABLE public.admission_documents
+ADD CONSTRAINT admission_documents_enquiry_id_requirement_id_key UNIQUE (enquiry_id, requirement_id);
+
+-- 3. Drop Helper Functions to allow changing return types/signatures
 DROP FUNCTION IF EXISTS public.parent_get_document_requirements(uuid);
 DROP FUNCTION IF EXISTS public.parent_complete_document_upload(bigint, uuid, text, text, bigint, text);
 DROP FUNCTION IF EXISTS public.parent_initialize_vault_slots_all();
 
--- 3. Function: Initialize Slots (Admissions AND Enquiries)
+-- 4. Function: Initialize Slots (Admissions AND Enquiries)
 CREATE OR REPLACE FUNCTION public.parent_initialize_vault_slots_all()
 RETURNS void
 LANGUAGE plpgsql
@@ -83,7 +112,7 @@ BEGIN
 END;
 $$;
 
--- 4. Function: Get Requirements (Unified)
+-- 5. Function: Get Requirements (Unified)
 CREATE OR REPLACE FUNCTION public.parent_get_document_requirements(p_user_id uuid)
 RETURNS TABLE (
     id bigint,
@@ -136,7 +165,7 @@ BEGIN
 END;
 $$;
 
--- 5. Function: Complete Upload (Unified)
+-- 6. Function: Complete Upload (Unified)
 CREATE OR REPLACE FUNCTION public.parent_complete_document_upload(
     p_requirement_id bigint,  
     p_admission_id uuid, -- This is effectively "Child ID" (Admission OR Enquiry)
@@ -181,23 +210,12 @@ BEGIN
         SET file_name = EXCLUDED.file_name, storage_path = EXCLUDED.storage_path, file_size = EXCLUDED.file_size, mime_type = EXCLUDED.mime_type, uploaded_at = now(), status = 'Submitted'
         RETURNING id INTO v_doc_id;
     ELSE
-        -- Helper: Manual Upsert for Enquiries
-        UPDATE public.admission_documents
-        SET 
-            file_name = p_file_name,
-            storage_path = p_storage_path,
-            file_size = p_file_size,
-            mime_type = p_mime_type,
-            uploaded_at = now(),
-            status = 'Submitted'
-        WHERE enquiry_id = p_admission_id AND requirement_id = p_requirement_id
+        -- USE ON CONFLICT FOR ENQUIRIES TOO
+        INSERT INTO public.admission_documents (enquiry_id, requirement_id, file_name, storage_path, file_size, mime_type, uploaded_at, status)
+        VALUES (p_admission_id, p_requirement_id, p_file_name, p_storage_path, p_file_size, p_mime_type, now(), 'Submitted')
+        ON CONFLICT (enquiry_id, requirement_id) DO UPDATE 
+        SET file_name = EXCLUDED.file_name, storage_path = EXCLUDED.storage_path, file_size = EXCLUDED.file_size, mime_type = EXCLUDED.mime_type, uploaded_at = now(), status = 'Submitted'
         RETURNING id INTO v_doc_id;
-
-        IF v_doc_id IS NULL THEN
-            INSERT INTO public.admission_documents (enquiry_id, requirement_id, file_name, storage_path, file_size, mime_type, uploaded_at, status)
-            VALUES (p_admission_id, p_requirement_id, p_file_name, p_storage_path, p_file_size, p_mime_type, now(), 'Submitted')
-            RETURNING id INTO v_doc_id;
-        END IF;
     END IF;
 
     -- Update Requirement Status
