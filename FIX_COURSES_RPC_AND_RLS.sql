@@ -114,3 +114,103 @@ $function$;
 
 -- 5. Grant permissions
 GRANT ALL ON public.courses TO authenticated;
+
+-- 6. RPC: create_course_with_modules (Atomic & Secure)
+CREATE OR REPLACE FUNCTION public.create_course_with_modules(
+    p_course_data jsonb,
+    p_modules_data jsonb,
+    p_branch_id bigint
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_course_id bigint;
+    v_module jsonb;
+    v_order int := 1;
+BEGIN
+    -- 1. Validate Branch Access (Robust Check)
+    IF NOT EXISTS (
+        SELECT 1 FROM public.school_branches branch
+        WHERE branch.id = p_branch_id
+        AND (
+            branch.school_user_id = auth.uid() OR
+            branch.branch_admin_id = auth.uid() OR
+            EXISTS (
+                SELECT 1 FROM public.user_role_assignments ura
+                WHERE ura.user_id = auth.uid() AND ura.branch_id = p_branch_id
+                AND ura.role_name IN ('School Administration', 'Branch Admin', 'Academic Coordinator', 'Principal')
+            )
+            OR EXISTS (
+                SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'Super Admin'
+            )
+        )
+    ) THEN
+        RAISE EXCEPTION 'Unauthorized: You do not have permission to create courses in this branch.';
+    END IF;
+
+    -- 2. Insert Course
+    INSERT INTO public.courses (
+        title,
+        code,
+        description,
+        credits,
+        category,
+        grade_level,
+        status,
+        teacher_id,
+        department,
+        subject_type,
+        branch_id,
+        created_at
+    ) VALUES (
+        p_course_data->>'title',
+        p_course_data->>'code',
+        p_course_data->>'description',
+        COALESCE((p_course_data->>'credits')::numeric, 3),
+        p_course_data->>'category',
+        p_course_data->>'grade_level',
+        p_course_data->>'status',
+        CASE WHEN (p_course_data->>'teacher_id') = '' OR (p_course_data->>'teacher_id') IS NULL THEN NULL 
+             ELSE (p_course_data->>'teacher_id')::uuid END,
+        p_course_data->>'department',
+        p_course_data->>'subject_type',
+        p_branch_id,
+        now()
+    )
+    RETURNING id INTO v_course_id;
+
+    -- 3. Insert Modules
+    IF p_modules_data IS NOT NULL AND jsonb_array_length(p_modules_data) > 0 THEN
+        FOR v_module IN SELECT * FROM jsonb_array_elements(p_modules_data)
+        LOOP
+            INSERT INTO public.course_modules (
+                course_id,
+                title,
+                duration_hours,
+                order_index,
+                status
+            ) VALUES (
+                v_course_id,
+                v_module->>'title',
+                COALESCE((v_module->>'hours')::numeric, 0),
+                v_order,
+                'Active'
+            );
+            v_order := v_order + 1;
+        END LOOP;
+    END IF;
+
+    -- 4. Log Action
+    INSERT INTO public.course_logs (course_id, user_id, action, details)
+    VALUES (
+        v_course_id,
+        auth.uid(),
+        'CREATED',
+        jsonb_build_object('title', p_course_data->>'title', 'modules_count', v_order - 1)
+    );
+
+    RETURN jsonb_build_object('id', v_course_id, 'success', true);
+END;
+$$;
