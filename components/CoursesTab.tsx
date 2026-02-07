@@ -303,7 +303,7 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ profile }) => {
                 )}
             </div>
 
-            {isWizardOpen && <CourseCreationWizard onClose={() => setIsWizardOpen(false)} onSuccess={fetchCourses} />}
+            {isWizardOpen && <CourseCreationWizard onClose={() => setIsWizardOpen(false)} onSuccess={fetchCourses} branchId={profile?.branch_id} />}
             {selectedCourse && <CourseProfileView course={selectedCourse} onClose={() => setSelectedCourse(null)} profile={profile} />}
             {bulkAction && <BulkCourseActionsModal action={bulkAction} selectedIds={bulkIds} onClose={() => setBulkAction(null)} onSuccess={() => { fetchCourses(); setBulkAction(null); }} branchId={profile?.branch_id} />}
         </div>
