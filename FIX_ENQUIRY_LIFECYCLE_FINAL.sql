@@ -64,7 +64,7 @@ BEGIN
         'Admission'::text as source_type
     FROM public.admissions a
     WHERE a.parent_id = auth.uid()
-       OR LOWER(a.parent_email) = (SELECT LOWER(email) FROM public.profiles WHERE id = auth.uid())
+       OR LOWER(a.parent_email) = (SELECT LOWER(p.email) FROM public.profiles p WHERE p.id = auth.uid())
 
     UNION ALL
 
@@ -88,7 +88,7 @@ BEGIN
         e.medical_info,
         'Enquiry'::text as source_type
     FROM public.enquiries e
-    WHERE (e.user_id = auth.uid() OR LOWER(e.parent_email) = (SELECT LOWER(email) FROM public.profiles WHERE id = auth.uid()))
+    WHERE (e.user_id = auth.uid() OR LOWER(e.parent_email) = (SELECT LOWER(p.email) FROM public.profiles p WHERE p.id = auth.uid()))
       AND (e.admission_id IS NULL OR e.conversion_state != 'CONVERTED')
       AND e.is_deleted = false;
 END;

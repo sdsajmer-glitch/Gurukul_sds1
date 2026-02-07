@@ -343,6 +343,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     // Derived States for UI
     const isConsentActive = consentState === 'consentGranted' || consentState === 'biometricCaptured';
     const canSubmit = consentState === 'biometricCaptured'; // Require biometric for this flow (or refine if optional)
+    const isIdentityLocked = false;
 
     return (
         <div className="fixed inset-0 bg-[#050608]/95 backdrop-blur-xl z-[150] flex items-center justify-center overflow-hidden animate-in fade-in duration-500">

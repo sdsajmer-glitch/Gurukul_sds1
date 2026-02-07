@@ -5,6 +5,11 @@
 
 DROP FUNCTION IF EXISTS public.get_my_children_profiles();
 
+-- Ensure address exists in enquiries if we are selecting it
+ALTER TABLE public.enquiries ADD COLUMN IF NOT EXISTS address text;
+-- Ensure address exists in admissions as well
+ALTER TABLE public.admissions ADD COLUMN IF NOT EXISTS address text;
+
 CREATE OR REPLACE FUNCTION public.get_my_children_profiles()
 RETURNS TABLE (
   id uuid,
@@ -43,7 +48,7 @@ BEGIN
         a.date_of_birth,
         a.gender,
         a.profile_photo_url,
-        a.branch_id,
+        a.branch_id, -- Already integer in admissions
         a.submitted_at,
         a.student_user_id,
         a.emergency_contact,
@@ -52,7 +57,7 @@ BEGIN
         'Admission'::text as source_type
     FROM public.admissions a
     WHERE a.parent_id = auth.uid()
-       OR LOWER(a.parent_email) = LOWER(COALESCE((SELECT email FROM public.profiles WHERE id = auth.uid()), (SELECT auth.jwt() ->> 'email'), ''))
+       OR LOWER(a.parent_email) = LOWER(COALESCE((SELECT p.email FROM public.profiles p WHERE p.id = auth.uid()), (SELECT auth.jwt() ->> 'email'), ''))
 
     UNION ALL
 
@@ -68,8 +73,8 @@ BEGIN
         e.date_of_birth,
         e.gender,
         e.profile_photo_url,
-        e.branch_id,
-        e.created_at as submitted_at,
+        e.branch_id::integer, -- Cast BIGINT to INTEGER to match function return type
+        e.received_at as submitted_at,
         NULL::uuid as student_user_id,
         e.emergency_contact,
         e.medical_info,
@@ -77,7 +82,7 @@ BEGIN
         'Enquiry'::text as source_type
     FROM public.enquiries e
     WHERE e.user_id = auth.uid()
-       OR LOWER(e.parent_email) = LOWER(COALESCE((SELECT email FROM public.profiles WHERE id = auth.uid()), (SELECT auth.jwt() ->> 'email'), ''))
+       OR LOWER(e.parent_email) = LOWER(COALESCE((SELECT p.email FROM public.profiles p WHERE p.id = auth.uid()), (SELECT auth.jwt() ->> 'email'), ''))
     
     ORDER BY submitted_at DESC;
 END;
