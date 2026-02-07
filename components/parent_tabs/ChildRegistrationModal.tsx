@@ -154,7 +154,8 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     const isEdit = !!child;
 
     // --- State Machine ---
-    const [consentState, dispatch] = useReducer(consentReducer, 'noConsent');
+    // Initialize with 'biometricCaptured' in Edit Mode to allow immediate updates
+    const [consentState, dispatch] = useReducer(consentReducer, isEdit ? 'biometricCaptured' : 'noConsent');
 
     const [formData, setFormData] = useState({
         applicant_name: child?.applicant_name || '',
