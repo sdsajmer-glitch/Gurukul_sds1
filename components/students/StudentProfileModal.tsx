@@ -561,31 +561,56 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 }
             }
 
-            // 2. Fetch Docs & Sync Missing Identity Data (Using admission link)
-            const { data: admission } = await supabase
+            // 2. Fetch Identity Documents & Sync Missing identity Context
+            // We use a multi-stage lookup to recover identity data from Admission or Enquiry records
+            const { data: admissionByUserId } = await supabase
                 .from('admissions')
                 .select('id, applicant_name, gender, date_of_birth, profile_photo_url, parent_phone, parent_name, grade, address')
                 .eq('student_user_id', student.id)
                 .maybeSingle();
 
-            if (admission) {
-                // Auto-sync missing fields into the local view state
+            let admissionLink = admissionByUserId;
+
+            // Fallback: If admission not found by user_id, try by admission_id if available
+            if (!admissionLink && student.admission_id) {
+                const { data: admissionById } = await supabase
+                    .from('admissions')
+                    .select('id, applicant_name, gender, date_of_birth, profile_photo_url, parent_phone, parent_name, grade, address')
+                    .eq('id', student.admission_id)
+                    .maybeSingle();
+                if (admissionById) admissionLink = admissionById;
+            }
+
+            // Secondary Fallback: Try fetching from enquiries if still missing key data
+            const { data: enquiryData } = await supabase
+                .from('enquiries')
+                .select('applicant_name, profile_photo_url, parent_phone, parent_name, grade')
+                .eq('user_id', student.id)
+                .maybeSingle();
+
+            if (admissionLink || enquiryData) {
+                // Auto-sync missing fields into the local view state using prioritize hierarchy: Prop > Admission > Enquiry
                 setSyncedStudent(prev => ({
                     ...prev,
-                    gender: prev.gender || admission.gender,
-                    date_of_birth: prev.date_of_birth || admission.date_of_birth,
-                    profile_photo_url: prev.profile_photo_url || admission.profile_photo_url,
-                    grade: prev.grade || admission.grade,
-                    display_name: prev.display_name === 'Academic Identity' ? (admission.applicant_name || prev.display_name) : prev.display_name,
-                    phone: prev.phone || admission.parent_phone,
-                    address: prev.address || admission.address,
+                    gender: prev.gender || admissionLink?.gender,
+                    date_of_birth: prev.date_of_birth || admissionLink?.date_of_birth,
+                    profile_photo_url: prev.profile_photo_url || admissionLink?.profile_photo_url || enquiryData?.profile_photo_url,
+                    grade: prev.grade || admissionLink?.grade || enquiryData?.grade,
+                    display_name: (prev.display_name === 'Academic Identity' || !prev.display_name)
+                        ? (admissionLink?.applicant_name || enquiryData?.applicant_name || prev.display_name)
+                        : prev.display_name,
+                    phone: prev.phone || admissionLink?.parent_phone || enquiryData?.parent_phone,
+                    address: prev.address || admissionLink?.address,
                 }));
 
-                const { data: docList } = await supabase
-                    .from('document_requirements')
-                    .select('*, admission_documents(*)')
-                    .eq('admission_id', admission.id);
-                setDocs(docList || []);
+                // Fetch documents associated with the discovered admission
+                if (admissionLink) {
+                    const { data: docList } = await supabase
+                        .from('document_requirements')
+                        .select('*, admission_documents(*)')
+                        .eq('admission_id', admissionLink.id);
+                    setDocs(docList || []);
+                }
             }
 
             // 3. Fetch Fees
@@ -899,7 +924,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             {/* Sub-Modals */}
             {isEditing && (
                 <EditStudentDetailsModal
-                    student={student}
+                    student={syncedStudent}
                     onClose={() => setIsEditing(false)}
                     onSave={() => { setIsEditing(false); fetchData(); onUpdate(); }}
                 />
@@ -915,7 +940,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             )}
             {showAssignClass && (
                 <AssignClassModal
-                    student={student}
+                    student={syncedStudent}
                     onClose={() => setShowAssignClass(false)}
                     onSuccess={() => { setShowAssignClass(false); fetchData(); onUpdate(); }}
                 />

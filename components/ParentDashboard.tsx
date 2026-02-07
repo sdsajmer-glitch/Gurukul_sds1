@@ -14,7 +14,7 @@ import { HomeIcon } from './icons/HomeIcon';
 import { StudentsIcon } from './icons/StudentsIcon';
 import { DocumentTextIcon } from './icons/DocumentTextIcon';
 import { CommunicationIcon } from './icons/CommunicationIcon';
-import { ReceiptIcon } from './icons/ReceiptIcon'; 
+import { ReceiptIcon } from './icons/ReceiptIcon';
 
 interface ParentDashboardProps {
     profile: UserProfile;
@@ -33,7 +33,7 @@ const navItems = [
 
 const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole, onProfileUpdate, onSignOut }) => {
     const [activeComponent, setActiveComponent] = useState('Overview');
-    
+
     // Fix: Updated focusedAdmissionId to string | null to match UUID standard.
     const [focusedAdmissionId, setFocusedAdmissionId] = useState<string | null>(null);
 
@@ -49,28 +49,28 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
         'Documents': <DocumentsTab profile={profile} focusOnAdmissionId={focusedAdmissionId} onClearFocus={() => setFocusedAdmissionId(null)} setActiveComponent={setActiveComponent} />,
         'Messages': <MessagesTab />,
         'Share Codes': <ShareCodesTab onNavigate={setActiveComponent} />,
-        'My Profile': <ProfileCreationPage 
-                            profile={profile} 
-                            role={profile.role!} 
-                            onComplete={onProfileUpdate}
-                            onBack={() => setActiveComponent('Overview')} 
-                            showBackButton={true} 
-                        />,
+        'My Profile': <ProfileCreationPage
+            profile={profile}
+            role={profile.role!}
+            onComplete={onProfileUpdate}
+            onBack={() => setActiveComponent('Overview')}
+            showBackButton={true}
+        />,
     };
 
     return (
         <div className="min-h-screen bg-[#08090a] text-foreground flex flex-col selection:bg-primary/20 selection:text-primary overflow-x-hidden">
-            <Header 
+            <Header
                 profile={profile}
                 onSelectRole={onSelectRole}
                 onSignOut={onSignOut}
                 onProfileClick={() => setActiveComponent('My Profile')}
             />
-            
+
             {/* Optimized Responsive Navigation Ribbon */}
-            <div className="sticky top-16 md:top-20 z-30 bg-[#08090a]/80 backdrop-blur-xl border-b border-white/5 pt-4 pb-2">
+            <div className="sticky top-16 md:top-20 z-30 bg-[#08090a]/90 backdrop-blur-2xl border-b border-white/5 py-6">
                 <div className="max-w-7xl mx-auto flex items-center justify-start md:justify-center overflow-x-auto no-scrollbar gap-2 px-4">
-                    <nav className="flex items-center gap-1 md:gap-3 bg-[#12141c]/60 p-1.5 rounded-full border border-white/10 shadow-2xl" aria-label="Tabs">
+                    <nav className="flex items-center gap-1 bg-[#111218] p-1.5 rounded-full border border-white/10 shadow-2xl" aria-label="Tabs">
                         {navItems.map(item => {
                             const isActive = activeComponent === item.id;
                             return (
@@ -78,15 +78,17 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
                                     key={item.id}
                                     onClick={() => setActiveComponent(item.id)}
                                     className={`
-                                        flex items-center gap-2 px-4 md:px-7 py-2.5 md:py-3 rounded-full font-black text-[10px] md:text-xs uppercase tracking-widest transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap relative group
-                                        ${isActive 
-                                            ? 'bg-primary text-white shadow-[0_8px_20px_-4px_rgba(var(--primary),0.4)] scale-[1.05] z-10' 
-                                            : 'text-white/40 hover:text-white hover:bg-white/5'
+                                        flex items-center gap-3 px-6 md:px-10 py-3 md:py-3.5 rounded-full font-black text-[10px] md:text-11px uppercase tracking-[0.3em] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap relative group
+                                        ${isActive
+                                            ? 'bg-[#7c3aed] text-white shadow-[0_10px_30px_rgba(124,58,237,0.3)] scale-[1.02] z-10'
+                                            : 'text-white/40 hover:text-white/70 hover:bg-white/5'
                                         }
                                     `}
                                 >
-                                    {item.icon}
-                                    <span className={isActive ? 'block' : 'hidden sm:block'}>{item.label}</span>
+                                    <div className={`transition-all duration-500 ${isActive ? 'scale-110' : 'opacity-60 group-hover:opacity-100'}`}>
+                                        {item.icon}
+                                    </div>
+                                    <span className={isActive ? 'block' : 'hidden md:block'}>{item.label}</span>
                                 </button>
                             );
                         })}
@@ -99,7 +101,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
                     {components[activeComponent] || <OverviewTab profile={profile} />}
                 </div>
             </main>
-            
+
             <footer className="py-10 border-t border-white/5 bg-black/20 text-center px-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/10">Institutional Matrix v9.5.1 Parent Node</p>
             </footer>

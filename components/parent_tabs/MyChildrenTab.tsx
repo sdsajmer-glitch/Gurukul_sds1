@@ -94,10 +94,10 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
                         <div className="w-1.5 h-1.5 rounded-full bg-primary/60"></div>
                         <span className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">Institutional Roster</span>
                     </div>
-                    <h2 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-[0.9]">
-                        Family <span className="opacity-30 font-normal">Nodes.</span>
+                    <h2 className="text-6xl md:text-8xl font-serif font-black text-white tracking-tighter uppercase leading-[0.8] mb-8">
+                        Family <span className="opacity-100 font-serif">Nodes.</span>
                     </h2>
-                    <p className="text-white/40 text-[15px] leading-relaxed mt-8 max-w-lg border-l border-white/5 pl-8 italic font-serif">
+                    <p className="text-white/40 text-[14px] leading-relaxed max-w-lg mt-10">
                         Centralized oversight for enrollment identities, academic records, and secure institutional access within a verified environment.
                     </p>
                 </div>
@@ -105,45 +105,45 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
                 <div className="flex items-center gap-4 w-full lg:w-auto shrink-0">
                     <button
                         onClick={() => { setEditingChild(null); setIsModalOpen(true); }}
-                        className="relative group overflow-hidden flex-grow lg:flex-grow-0 h-14 md:h-16 px-12 bg-primary text-white font-black text-[12px] uppercase tracking-[0.25em] rounded-[1.25rem] shadow-2xl shadow-primary/20 transition-all transform active:scale-[0.98] hover:scale-[1.02] flex items-center justify-center gap-4"
+                        className="relative group overflow-hidden flex-grow lg:flex-grow-0 h-16 md:h-18 px-14 bg-[#7c3aed] text-white font-black text-[12px] uppercase tracking-[0.4em] rounded-2xl shadow-[0_15px_45px_rgba(124,58,237,0.3)] hover:bg-[#6d28d9] transition-all transform active:scale-[0.95] flex items-center justify-center gap-4"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                        <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
+                        <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
                         <span>Provision Node</span>
                     </button>
                 </div>
             </div>
 
             {/* Filter Hub */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-8 bg-white/[0.01] p-2 rounded-[2.5rem] border border-white/5 mb-16 shadow-2xl">
-                <div className="flex bg-black/40 p-1.5 rounded-[2rem] border border-white/5 w-full md:w-auto overflow-x-auto no-scrollbar">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8 bg-black/40 p-4 rounded-[3rem] border border-white/5 mb-16 shadow-inner relative overflow-hidden group/filters">
+                <div className="flex bg-black/60 p-1.5 rounded-[2rem] border border-white/10 w-full md:w-auto overflow-x-auto no-scrollbar shadow-inner">
                     {(['ALL', 'APPROVED', 'PENDING', 'REJECTED'] as FilterType[]).map(f => (
                         <button
                             key={f}
                             onClick={() => setActiveFilter(f)}
                             className={clsx(
-                                "relative px-8 py-3 rounded-[1.5rem] text-[10px] font-black tracking-[0.2em] uppercase transition-all duration-500",
+                                "relative px-8 py-3.5 rounded-[1.5rem] text-[10px] font-black tracking-[0.3em] uppercase transition-all duration-500",
                                 activeFilter === f
-                                    ? "text-primary z-10"
+                                    ? "text-white z-10"
                                     : "text-white/20 hover:text-white/40"
                             )}
                         >
                             {activeFilter === f && (
-                                <div className="absolute inset-0 bg-primary/10 rounded-[1.5rem] ring-1 ring-primary/30 shadow-[0_0_20px_rgba(var(--primary),0.1)] -z-10 animate-in zoom-in-90 duration-500"></div>
+                                <div className="absolute inset-0 bg-white/10 rounded-[1.5rem] ring-1 ring-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)] -z-10 animate-in zoom-in-90 duration-500"></div>
                             )}
                             {f}
                         </button>
                     ))}
                 </div>
 
-                <div className="relative flex-grow w-full md:max-w-md group pr-4 focus-within:max-w-lg transition-all duration-500">
-                    <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/10 group-focus-within:text-primary transition-colors duration-300" />
+                <div className="relative flex-grow w-full md:max-w-md group pr-4 transition-all duration-500">
+                    <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-white transition-colors duration-300" />
                     <input
                         type="text"
                         placeholder="Search identities by name..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-14 w-full pl-14 pr-8 bg-black/20 border-b border-white/5 focus:border-primary/30 rounded-2xl text-[13px] font-medium text-white outline-none transition-all placeholder:text-white/5 focus:bg-white/[0.02] focus:ring-0"
+                        className="h-16 w-full pl-16 pr-8 bg-black/40 border border-white/5 focus:border-white/20 rounded-2xl text-[13px] font-medium text-white outline-none transition-all placeholder:text-white/10 focus:bg-black/60 focus:ring-0 shadow-inner"
                     />
                 </div>
             </div>

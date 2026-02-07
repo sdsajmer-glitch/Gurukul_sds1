@@ -16,9 +16,12 @@ import { TrashIcon } from './icons/TrashIcon';
 import { XIcon } from './icons/XIcon';
 import { UploadIcon } from './icons/UploadIcon';
 import { RefreshIcon } from './icons/RefreshIcon';
-import { UserPlusIcon } from './icons/UserPlusIcon';
 import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
+import { LockIcon } from './icons/LockIcon';
+import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
+import { UserIcon } from './icons/UserIcon';
+import { UserPlusIcon } from './icons/UserPlusIcon';
 import StudentProfileModal, { AssignClassModal } from './students/StudentProfileModal';
 import BulkStudentActionsModal, { BulkStudentActionType } from './students/BulkStudentActionsModal';
 import PremiumAvatar from './common/PremiumAvatar';
@@ -204,7 +207,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                 *, 
                 profiles(email, display_name, phone, role, is_active, profile_completed, created_at, profile_photo_url), 
                 school_classes(name), 
-                admissions(applicant_name, gender, date_of_birth, profile_photo_url, parent_phone)
+                admissions(applicant_name, gender, date_of_birth, profile_photo_url, parent_phone, parent_name, grade)
             `);
             if (branchId !== null && branchId !== undefined) {
                 query = query.eq('branch_id', Number(branchId));
@@ -213,27 +216,31 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
             const { data, error: dbError } = await query;
             if (dbError) throw dbError;
 
-            const mappedStudents: StudentForAdmin[] = (data || []).map((s: any) => ({
-                id: s.user_id,
-                email: s.profiles?.email || '',
-                display_name: s.profiles?.display_name || s.admissions?.applicant_name || s.applicant_name || 'Academic Identity',
-                phone: s.profiles?.phone || s.phone || s.admissions?.parent_phone,
-                role: s.profiles?.role || 'Student',
-                is_active: s.profiles?.is_active ?? s.is_active ?? true,
-                profile_completed: s.profiles?.profile_completed ?? true,
-                created_at: s.created_at || s.profiles?.created_at,
-                profile_photo_url: s.profiles?.profile_photo_url || s.profile_photo_url || s.admissions?.profile_photo_url,
-                gender: s.gender || s.admissions?.gender,
-                date_of_birth: s.date_of_birth || s.admissions?.date_of_birth,
-                address: s.address,
-                student_id_number: s.student_id_number,
-                grade: s.grade || s.admissions?.grade,
-                roll_number: s.roll_number,
-                parent_guardian_details: s.parent_guardian_details || s.admissions?.parent_name,
-                assigned_class_id: s.assigned_class_id,
-                assigned_class_name: s.school_classes?.name || null,
-                admission_id: s.admission_id
-            }));
+            const mappedStudents: StudentForAdmin[] = (data || []).map((s: any) => {
+                const admission = Array.isArray(s.admissions) ? s.admissions[0] : s.admissions;
+
+                return {
+                    id: s.user_id,
+                    email: s.profiles?.email || '',
+                    display_name: s.profiles?.display_name || admission?.applicant_name || s.applicant_name || 'Academic Identity',
+                    phone: s.profiles?.phone || s.phone || admission?.parent_phone,
+                    role: s.profiles?.role || 'Student',
+                    is_active: s.profiles?.is_active ?? s.is_active ?? true,
+                    profile_completed: s.profiles?.profile_completed ?? true,
+                    created_at: s.created_at || s.profiles?.created_at,
+                    profile_photo_url: s.profiles?.profile_photo_url || s.profile_photo_url || admission?.profile_photo_url,
+                    gender: s.gender || admission?.gender,
+                    date_of_birth: s.date_of_birth || admission?.date_of_birth,
+                    address: s.address,
+                    student_id_number: s.student_id_number,
+                    grade: s.grade || admission?.grade,
+                    roll_number: s.roll_number,
+                    parent_guardian_details: s.parent_guardian_details || admission?.parent_name,
+                    assigned_class_id: s.assigned_class_id,
+                    assigned_class_name: s.school_classes?.name || null,
+                    admission_id: s.admission_id
+                };
+            });
 
             setAllStudents(mappedStudents);
         } catch (e: any) {
@@ -297,7 +304,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                         <span className="text-[10px] font-black uppercase tracking-[0.5em] text-foreground">Governance Hub</span>
                     </div>
                     <h1 className="text-6xl md:text-8xl font-serif font-black text-foreground tracking-tighter uppercase leading-none">
-                        Student <span className="text-muted-foreground/20 italic">Directory.</span>
+                        Student <span className="text-white">Directory.</span>
                     </h1>
                 </div>
 
@@ -325,8 +332,8 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                 <KPICard
                     title="Total Hosted"
                     value={stats.total}
-                    icon={<StudentsIcon className="w-10 h-10" />}
-                    color="bg-accent-info"
+                    icon={<UserIcon className="w-10 h-10" />}
+                    color="bg-primary"
                     active={quickFilter === 'All'}
                     onClick={() => setQuickFilter('All')}
                     description="Institutional registry total"
@@ -354,7 +361,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                     title="Newly Registered"
                     value={stats.new}
                     icon={<GraduationCapIcon className="w-10 h-10" />}
-                    color="bg-primary"
+                    color="bg-[#a855f7]"
                     active={quickFilter === 'New'}
                     onClick={() => setQuickFilter('New')}
                     description="Authenticated last 24h"
@@ -363,6 +370,15 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
 
             {/* Main Content Area */}
             <div className="bg-card/40 backdrop-blur-3xl border border-border rounded-[3.5rem] shadow-3xl overflow-hidden flex flex-col min-h-[700px] relative">
+                {error && (
+                    <div className="mx-10 mt-10 p-5 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-4 text-red-500 animate-in slide-in-from-top-2">
+                        <AlertTriangleIcon className="w-6 h-6 shrink-0" />
+                        <div className="space-y-1">
+                            <p className="text-xs font-black uppercase tracking-widest">Registry Protocol Error</p>
+                            <p className="text-[11px] font-bold leading-relaxed">{error}</p>
+                        </div>
+                    </div>
+                )}
                 {/* Search & Filter Ribbon */}
                 <div className="p-10 border-b border-border flex flex-col xl:flex-row gap-8 justify-between items-center bg-card/40 backdrop-blur-2xl">
                     <div className="relative flex-grow w-full group">
@@ -372,7 +388,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                             placeholder="Search identities by name, node ID, or uplink..."
                             value={searchTerm}
                             onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                            className="w-full h-16 pl-16 pr-8 rounded-2xl border border-border bg-card/40 text-base font-medium text-foreground placeholder:text-muted-foreground/20 focus:bg-card/60 focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-500 shadow-inner"
+                            className="w-full h-16 pl-16 pr-8 rounded-2xl border border-white/5 bg-black/40 text-base font-medium text-foreground placeholder:text-muted-foreground/20 focus:bg-black/60 outline-none transition-all duration-500 shadow-inner"
                         />
                     </div>
 
@@ -477,16 +493,12 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                                                     <div>
                                                         <div className="flex items-center gap-3 mb-1.5">
                                                             <p className="font-serif font-black text-foreground text-xl tracking-tight uppercase group-hover:text-primary transition-colors duration-500 leading-none">{student.display_name}</p>
-                                                            {student.created_at && (new Date(student.created_at).getTime() > Date.now() - 86400000) && (
-                                                                <span className="px-2 py-1 rounded-[0.5rem] bg-accent-success/10 border border-accent-success/20 text-accent-success text-[7px] font-black uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(var(--accent-success-rgb),0.2)]">PROVISIONED_24H</span>
-                                                            )}
                                                         </div>
                                                         <div className="flex items-center gap-3">
-                                                            <p className="text-[10px] text-muted-foreground/60 font-mono tracking-widest uppercase bg-muted/40 px-2 py-1 rounded-lg border border-border/40">{student.student_id_number || 'NODE_UNASSIGNED'}</p>
+                                                            <p className="text-[10px] text-emerald-500/80 font-mono tracking-widest uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">{student.student_id_number || 'UNALLOCATED'}</p>
                                                             {student.grade && (
                                                                 <span className="text-[10px] text-muted-foreground/30 font-black uppercase tracking-[0.3em] flex items-center gap-2">
-                                                                    <div className="w-1 h-1 rounded-full bg-border" />
-                                                                    Grade {student.grade}
+                                                                    — Grade {student.grade}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -503,14 +515,11 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="group/link flex items-center gap-3 text-muted-foreground/20 hover:text-muted-foreground/60 transition-all duration-500">
-                                                        <div className="w-8 h-8 rounded-xl bg-muted/40 flex items-center justify-center border border-border">
-                                                            <AlertTriangleIcon className="w-4 h-4" />
+                                                    <div className="flex items-center gap-3 text-muted-foreground/30">
+                                                        <div className="bg-white/5 p-2 rounded-xl">
+                                                            <LockIcon className="w-4 h-4" />
                                                         </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Unlinked</span>
-                                                            <span className="text-[8px] font-bold italic opacity-0 group-hover/link:opacity-100 transition-opacity">Request Identity</span>
-                                                        </div>
+                                                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">Unlinked</span>
                                                     </div>
                                                 )}
                                             </td>
@@ -526,17 +535,17 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                                                 ) : (
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setAssigningStudent(student); }}
-                                                        className="px-6 py-3 bg-accent-warning/5 border border-accent-warning/20 text-accent-warning text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-accent-warning hover:text-black transition-all duration-500 flex items-center gap-3 group/btn shadow-xl shadow-accent-warning/5"
+                                                        className="px-6 py-2.5 bg-[#f59e0b]/10 border border-[#f59e0b]/20 text-[#f59e0b] text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[#f59e0b] hover:text-black transition-all duration-500 flex items-center gap-3 group/btn"
                                                     >
-                                                        <SparklesIcon className="w-3.5 h-3.5 group-hover/btn:rotate-45 transition-transform" />
+                                                        <SparklesIcon className="w-4 h-4" />
                                                         Assign Class
                                                     </button>
                                                 )}
                                             </td>
                                             <td className="p-8 text-center">
                                                 <div className="flex flex-col items-center gap-2">
-                                                    <span className={`inline-flex items-center gap-3 px-6 py-2.5 rounded-2xl text-[9px] font-black uppercase tracking-[0.4em] border backdrop-blur-md transition-all duration-700 ${student.is_active ? 'bg-accent-success/5 text-accent-success border-accent-success/20' : 'bg-destructive/5 text-destructive border-destructive/20'}`}>
-                                                        <div className={`w-1.5 h-1.5 rounded-full ${student.is_active ? 'bg-accent-success shadow-[0_0_12px_rgba(var(--accent-success-rgb),1)] scale-110 animate-pulse' : 'bg-destructive'}`} />
+                                                    <span className={`inline-flex items-center gap-3 px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.3em] border backdrop-blur-md transition-all duration-700 ${student.is_active ? 'bg-emerald-500/5 text-emerald-500 border-emerald-500/20' : 'bg-red-500/5 text-red-500 border-red-500/20'}`}>
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${student.is_active ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,1)]' : 'bg-red-500'}`} />
                                                         {student.is_active ? 'Active' : 'Suspended'}
                                                     </span>
                                                 </div>
@@ -564,7 +573,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                     <div className="flex items-center gap-6">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.6em] mb-1">Matrix Sequence</span>
-                            <span className="text-sm font-black text-foreground uppercase tracking-[0.3em]">Identity <span className="text-primary">{currentPage}</span> / {totalPages || 1}</span>
+                            <span className="text-sm font-black text-foreground uppercase tracking-[0.3em]">Identity {currentPage} / {totalPages || 1}</span>
                         </div>
                     </div>
 

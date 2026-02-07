@@ -33,7 +33,18 @@ const ChildProfileCard: React.FC<ChildProfileCardProps> = ({ child, onEdit, onMa
     const progress = getProgress();
     const isVerified = progress >= 90;
     const isEnrolled = child.status === 'Enrolled';
-    const isPending = child.status === 'Pending Review' || child.status === 'Registered';
+
+    const getStatusLabel = () => {
+        const s = child.status?.toUpperCase();
+        if (s === 'ENROLLED') return 'ENROLLED';
+        if (s === 'REGISTERED') return 'ENQUIRY_RECEIVED';
+        if (s === 'PENDING REVIEW') return 'UNDER_PROTOCOL_REVIEW';
+        if (s === 'APPROVED') return 'ADMISSION_APPROVED';
+        if (s === 'ENQUIRY') return 'ENQUIRY_CONTACTED';
+        return s || 'IDENTITY_PENDING';
+    };
+
+    const statusLabel = getStatusLabel();
 
     return (
         <div className={clsx(
@@ -65,76 +76,68 @@ const ChildProfileCard: React.FC<ChildProfileCardProps> = ({ child, onEdit, onMa
                     </div>
 
                     <div className="flex-1 min-w-0 pt-2">
-                        <div className="flex items-center gap-3 mb-2.5">
-                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Node Protocol</span>
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em]">Node Protocol</span>
                             <div className={clsx(
-                                "h-1.5 w-1.5 rounded-full animate-pulse",
-                                isVerified ? "bg-emerald-500" : "bg-primary/60"
+                                "h-1.5 w-1.5 rounded-full",
+                                isVerified ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-[#7c3aed] shadow-[0_0_8px_#7c3aed]"
                             )}></div>
                         </div>
 
-                        <h3 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-none truncate mb-3">
+                        <h3 className="text-3xl font-serif font-black text-white tracking-tight leading-none truncate mb-4 uppercase">
                             {child.applicant_name}
                         </h3>
 
-                        <div className="flex flex-wrap items-center gap-3">
-                            <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.15em] border-l border-white/10 pl-3">
+                        <div className="flex flex-col gap-2">
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">
                                 {child.class_name ? child.class_name : `Grade ${child.grade} Block`}
                             </span>
-                            <span className={clsx(
-                                "text-[9px] font-black px-2.5 py-1 rounded-full border uppercase tracking-widest",
-                                isEnrolled
-                                    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                                    : "text-primary/60 bg-primary/5 border-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.05)]"
-                            )}>
-                                {child.status}
-                            </span>
+                            <div className="flex">
+                                <span className={clsx(
+                                    "text-[8px] font-black px-3 py-1 rounded-lg border uppercase tracking-[0.2em]",
+                                    isEnrolled
+                                        ? "text-emerald-400 bg-emerald-500/5 border-emerald-500/20"
+                                        : "text-[#7c3aed] bg-[#7c3aed]/5 border-[#7c3aed]/20"
+                                )}>
+                                    {statusLabel}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Integrity & Compliance Section */}
-                <div className="bg-white/[0.02] p-6 rounded-[2rem] border border-white/5 relative overflow-hidden group/meta">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent opacity-0 group-hover/meta:opacity-100 transition-opacity"></div>
+                <div className="bg-black/60 p-7 rounded-[2.5rem] border border-white/5 relative overflow-hidden group/meta shadow-inner">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover/meta:opacity-100 transition-opacity"></div>
 
-                    <div className="flex justify-between items-end mb-5 relative z-10">
+                    <div className="flex justify-between items-end mb-6 relative z-10">
                         <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] leading-none">Integrity Index</p>
-                                <div className="group/info relative">
-                                    <ShieldCheckIcon className="w-3 h-3 text-white/10 hover:text-white/30 transition-colors" />
-                                </div>
+                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] leading-none">Integrity Index</p>
+                                <ShieldCheckIcon className="w-3.5 h-3.5 text-white/10" />
                             </div>
-                            <p className="text-[11px] text-white/40 font-medium italic">
+                            <p className="text-[11px] text-white/40 font-medium italic tracking-tight">
                                 {isEnrolled ? "Verified Institutional Asset" : "Node alignment in progress..."}
                             </p>
                         </div>
                         <div className="text-right">
                             <div className="flex items-baseline justify-end">
                                 <span className={clsx(
-                                    "text-3xl font-serif font-black tracking-tighter leading-none",
+                                    "text-4xl font-serif font-black tracking-tighter leading-none",
                                     isVerified ? "text-emerald-500" : "text-white/90"
                                 )}>
                                     {progress}
                                 </span>
-                                <span className="text-[12px] font-bold opacity-20 ml-1">%</span>
+                                <span className="text-[12px] font-black text-white/20 ml-1">%</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="relative h-2 w-full bg-white/[0.03] rounded-full overflow-hidden p-[1px] border border-white/5 z-10 shadow-inner">
+                    <div className="relative h-2 w-full bg-white/[0.03] rounded-full overflow-hidden p-[1px] border border-white/5 z-10">
                         <div
                             className={clsx(
-                                "h-full rounded-full transition-all duration-[2000ms] ease-[cubic-bezier(0.23,1,0.32,1)] shadow-lg",
-                                isVerified ? "bg-emerald-500" : "bg-primary"
-                            )}
-                            style={{ width: `${progress}%` }}
-                        ></div>
-                        {/* Glow effect on progress bar */}
-                        <div
-                            className={clsx(
-                                "absolute top-0 bottom-0 blur-md opacity-30 transition-all duration-1000",
-                                isVerified ? "bg-emerald-500" : "bg-primary"
+                                "h-full rounded-full transition-all duration-[2000ms] ease-[cubic-bezier(0.23,1,0.32,1)]",
+                                isVerified ? "bg-emerald-500 shadow-[0_0_15px_#10b981]" : "bg-[#7c3aed] shadow-[0_0_15px_#7c3aed]"
                             )}
                             style={{ width: `${progress}%` }}
                         ></div>
@@ -146,35 +149,34 @@ const ChildProfileCard: React.FC<ChildProfileCardProps> = ({ child, onEdit, onMa
             <div className="px-8 md:px-10 pb-10 flex items-center justify-between gap-4 relative z-10">
                 <button
                     onClick={onManageDocuments}
-                    className="flex-1 h-14 flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 transition-all group/btn active:scale-95 shadow-2xl"
+                    className="flex-1 h-16 flex flex-col items-center justify-center gap-1 rounded-2xl bg-black/40 hover:bg-black/60 border border-white/5 transition-all group/btn active:scale-95"
                 >
-                    <DocumentTextIcon className="w-4 h-4 text-white/20 group-hover/btn:text-primary transition-all duration-500 group-hover/btn:scale-110" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 group-hover/btn:text-white/80">Vault.</span>
+                    <DocumentTextIcon className="w-4 h-4 text-white/20 group-hover/btn:text-white transition-all duration-500" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 group-hover/btn:text-white">vault.</span>
                 </button>
 
                 <button
                     onClick={onNavigateDashboard}
                     disabled={!isEnrolled}
                     className={clsx(
-                        "flex-1 h-14 flex flex-col items-center justify-center gap-1 rounded-2xl border transition-all group/btn active:scale-95 shadow-2xl",
+                        "flex-1 h-16 flex flex-col items-center justify-center gap-1 rounded-2xl border transition-all group/btn active:scale-95",
                         isEnrolled
-                            ? "bg-white/[0.02] hover:bg-white/[0.05] border-white/5 cursor-pointer"
-                            : "bg-black/20 border-transparent cursor-not-allowed opacity-20 blur-[0.5px]"
+                            ? "bg-black/40 hover:bg-black/60 border-white/5 cursor-pointer"
+                            : "bg-black/20 border-transparent cursor-not-allowed opacity-20"
                     )}
                 >
                     <GraduationCapIcon className={clsx(
-                        "w-4 h-4 transition-all duration-500 group-hover/btn:scale-110",
-                        isEnrolled ? "text-white/20 group-hover/btn:text-primary" : "text-white/10"
+                        "w-4 h-4 transition-all duration-500",
+                        isEnrolled ? "text-white/20 group-hover/btn:text-white" : "text-white/5"
                     )} />
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 group-hover/btn:text-white/80">Portal.</span>
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 group-hover/btn:text-white">portal.</span>
                 </button>
 
                 <button
                     onClick={onEdit}
-                    className="w-14 h-14 flex items-center justify-center rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 transition-all group/btn active:scale-95 shadow-2xl"
-                    title="Configure Node"
+                    className="w-16 h-16 flex items-center justify-center rounded-2xl bg-black/40 hover:bg-black/60 border border-white/5 transition-all group/btn active:scale-95"
                 >
-                    <EditIcon className="w-4 h-4 text-white/10 group-hover/btn:text-white/80 transition-all duration-500 group-hover/btn:rotate-12" />
+                    <EditIcon className="w-4 h-4 text-white/10 group-hover/btn:text-white transition-all duration-500" />
                 </button>
             </div>
         </div>

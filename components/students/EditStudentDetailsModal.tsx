@@ -15,22 +15,21 @@ import { RefreshIcon } from '../icons/RefreshIcon';
 
 // Simple Switch Component
 const Switch: React.FC<{ checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean }> = ({ checked, onChange, disabled }) => (
-    <button 
+    <button
         type="button"
-        role="switch" 
+        role="switch"
         aria-checked={checked}
         onClick={() => !disabled && onChange(!checked)}
         className={`
-            relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
-            ${checked ? 'bg-primary' : 'bg-muted-foreground/30'}
-            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+            relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border border-white/10 transition-colors duration-500 ease-in-out focus:outline-none
+            ${checked ? 'bg-[#7c3aed] shadow-[0_0_15px_rgba(124,58,237,0.4)]' : 'bg-white/5'}
+            ${disabled ? 'opacity-20 cursor-not-allowed' : 'hover:border-white/20'}
         `}
     >
-        <span className="sr-only">Use parent info</span>
         <span
             aria-hidden="true"
             className={`
-                pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+                pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xl transition duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]
                 ${checked ? 'translate-x-5' : 'translate-x-0'}
             `}
         />
@@ -45,46 +44,46 @@ interface EditStudentDetailsModalProps {
 
 const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string, icon?: React.ReactNode, isSynced?: boolean, isTextArea?: boolean }> = ({ label, icon, isSynced, isTextArea, className, readOnly, ...props }) => {
     const inputClasses = `
-        peer block w-full rounded-xl border bg-background px-4 py-3.5 pl-11 text-sm text-foreground shadow-sm 
-        focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none placeholder-transparent transition-all
-        ${readOnly ? 'bg-muted/40 text-muted-foreground border-transparent cursor-default' : 'border-input hover:border-primary/50'} 
+        peer block w-full rounded-2xl border bg-black/40 px-5 py-4 pl-12 text-sm text-white shadow-inner
+        focus:border-white/20 focus:ring-4 focus:ring-white/5 focus:outline-none placeholder-transparent transition-all duration-500
+        ${readOnly ? 'opacity-40 cursor-default border-transparent' : 'border-white/5 hover:border-white/10'} 
         ${className}
     `;
 
     return (
         <div className="relative group w-full">
-            <div className={`absolute ${isTextArea ? 'top-4' : 'top-1/2 -translate-y-1/2'} left-4 text-muted-foreground/60 ${!readOnly && 'group-focus-within:text-primary'} transition-colors z-10 pointer-events-none`}>
+            <div className={`absolute ${isTextArea ? 'top-5' : 'top-1/2 -translate-y-1/2'} left-5 text-white/20 transition-colors z-10 pointer-events-none`}>
                 {icon}
             </div>
-            
+
             {isTextArea ? (
-                <textarea 
-                    {...(props as any)} 
+                <textarea
+                    {...(props as any)}
                     readOnly={readOnly}
-                    placeholder=" " 
-                    className={`${inputClasses} resize-none h-24 pt-3.5`} 
+                    placeholder=" "
+                    className={`${inputClasses} resize-none h-28 pt-5`}
                 />
             ) : (
-                <input 
-                    {...(props as any)} 
+                <input
+                    {...(props as any)}
                     readOnly={readOnly}
-                    placeholder=" " 
-                    className={inputClasses} 
+                    placeholder=" "
+                    className={inputClasses}
                 />
             )}
 
             <label className={`
-                absolute left-11 ${isTextArea ? 'top-3.5' : 'top-0 -translate-y-1/2'} bg-background px-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 transition-all 
-                peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case 
-                peer-focus:top-0 peer-focus:text-[10px] peer-focus:font-bold peer-focus:uppercase peer-focus:text-primary pointer-events-none
-                ${isTextArea ? 'peer-placeholder-shown:top-4' : ''}
+                absolute left-10 ${isTextArea ? 'top-5' : 'top-0 -translate-y-1/2'} bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 transition-all duration-500
+                peer-placeholder-shown:top-5 peer-placeholder-shown:text-[13px] peer-placeholder-shown:font-medium peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-white/40
+                peer-focus:top-0 peer-focus:text-[10px] peer-focus:font-black peer-focus:uppercase peer-focus:tracking-[0.2em] peer-focus:text-white/80 pointer-events-none
+                ${isTextArea ? 'peer-placeholder-shown:top-5' : ''}
             `}>
                 {label}
             </label>
 
             {isSynced && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none animate-in fade-in zoom-in duration-300">
-                    <span className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shadow-sm">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none animate-in fade-in zoom-in duration-700">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[8px] font-black bg-[#7c3aed]/10 text-[#a78bfa] border border-[#7c3aed]/20 uppercase tracking-widest shadow-2xl">
                         <LockIcon className="w-3 h-3" /> Synced
                     </span>
                 </div>
@@ -94,18 +93,47 @@ const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLT
 };
 
 const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ student, onClose, onSave }) => {
-    // Form State
+    // Robust Date Parsing
+    const parseDate = (d?: string) => {
+        if (!d) return '';
+        try {
+            const dateObj = new Date(d);
+            if (isNaN(dateObj.getTime())) return '';
+            return dateObj.toISOString().split('T')[0];
+        } catch (e) {
+            return '';
+        }
+    };
+
+    // Form State - Initialized with current student context
     const [formData, setFormData] = useState({
         display_name: student.display_name || '',
         student_id_number: student.student_id_number || '',
         grade: student.grade || '',
-        date_of_birth: student.date_of_birth ? new Date(student.date_of_birth).toISOString().split('T')[0] : '',
+        date_of_birth: parseDate(student.date_of_birth),
         gender: student.gender || '',
         phone: student.phone || '',
         address: student.address || '',
         parent_guardian_details: student.parent_guardian_details || '',
     });
-    
+
+    // Reactive Refresh: If student prop updates while modal is open, sync non-dirty fields
+    useEffect(() => {
+        if (student) {
+            setFormData(prev => ({
+                ...prev,
+                display_name: prev.display_name || student.display_name || '',
+                student_id_number: prev.student_id_number || student.student_id_number || '',
+                grade: prev.grade || student.grade || '',
+                date_of_birth: prev.date_of_birth || parseDate(student.date_of_birth),
+                gender: prev.gender || student.gender || '',
+                phone: prev.phone || student.phone || '',
+                address: prev.address || student.address || '',
+                parent_guardian_details: prev.parent_guardian_details || student.parent_guardian_details || '',
+            }));
+        }
+    }, [student]);
+
     // Sync Logic State
     const [syncWithParent, setSyncWithParent] = useState(true);
     const [parentData, setParentData] = useState<any>(null);
@@ -126,16 +154,14 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
             setIsFetchingParent(true);
             try {
                 const { data, error } = await supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id });
-                
+
                 if (error) {
-                    // Use formatError to safely display the error string instead of [object Object]
                     console.error("Error fetching parent:", formatError(error));
                 } else if (data && data.found) {
                     setParentData(data);
-                    // Default to sync if parent exists and data seems aligned, or if forced by previous state
                     if (isMounted.current) setSyncWithParent(true);
                 } else {
-                     if (isMounted.current) setSyncWithParent(false); // No parent found, disable sync
+                    if (isMounted.current) setSyncWithParent(false);
                 }
             } catch (e) {
                 console.error("Parent fetch exception:", formatError(e));
@@ -146,7 +172,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         fetchParent();
     }, [student.id]);
 
-    // Apply Sync Effect
+    // Apply Sync Effect - Carefully merge parent data without wiping valid local data
     useEffect(() => {
         if (syncWithParent && parentData) {
             // Construct Address
@@ -155,17 +181,18 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 parentData.city,
                 parentData.state,
                 parentData.country,
+                parentData.pin_code
             ].filter(Boolean);
             const fullAddress = addressParts.join(', ');
 
             // Construct Guardian Details
-            const guardianInfo = `${parentData.name} (${parentData.relationship || 'Guardian'})`;
+            const guardianInfo = parentData.name ? `${parentData.name} (${parentData.relationship || 'Guardian'})` : '';
 
             setFormData(prev => ({
                 ...prev,
-                phone: parentData.phone || '',
-                address: fullAddress,
-                parent_guardian_details: guardianInfo
+                phone: parentData.phone || prev.phone,
+                address: fullAddress || prev.address,
+                parent_guardian_details: guardianInfo || prev.parent_guardian_details
             }));
         }
     }, [syncWithParent, parentData]);
@@ -204,138 +231,142 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden animate-in zoom-in-95 ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
-                
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-500" onClick={onClose}>
+            <div className="bg-[#0c0e12] w-full max-w-2xl rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/5 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
+
                 {/* Header */}
-                <div className="p-6 border-b border-border bg-muted/20 flex justify-between items-center">
-                    <div>
-                        <h3 className="font-bold text-lg text-foreground">Edit Student Profile</h3>
-                        <p className="text-sm text-muted-foreground">Update information & synchronize with parent data.</p>
+                <div className="p-10 border-b border-white/5 bg-white/[0.02] flex justify-between items-center relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#7c3aed] blur-[80px] opacity-10 -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="relative z-10">
+                        <h3 className="font-bold text-2xl text-white tracking-tight">Edit Student Profile</h3>
+                        <p className="text-sm text-white/40 mt-1 uppercase tracking-wider font-medium">Update information & synchronize with parent data.</p>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                        <XIcon className="w-5 h-5"/>
+                    <button onClick={onClose} className="p-3 rounded-full hover:bg-white/10 text-white/20 hover:text-white transition-all duration-300">
+                        <XIcon className="w-5 h-5" />
                     </button>
                 </div>
-                
-                <form onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto max-h-[80vh] custom-scrollbar bg-background">
+
+                <form onSubmit={handleSubmit} className="p-10 space-y-12 overflow-y-auto max-h-[75vh] custom-scrollbar bg-transparent">
                     {error && (
-                        <div className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-medium border border-destructive/20 flex items-center gap-2 animate-pulse">
-                            <span className="text-lg">⚠️</span> {error}
+                        <div className="bg-red-500/10 text-red-500 p-5 rounded-2xl text-xs font-black uppercase tracking-widest border border-red-500/20 flex items-center gap-3 animate-in shake">
+                            <span className="text-lg">!</span> {error}
                         </div>
                     )}
-                    
+
                     {/* Identity Section */}
-                    <section className="space-y-5">
-                        <div className="flex items-center gap-3 border-b border-border pb-2">
-                            <div className="p-1.5 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg">
+                    <section className="space-y-8">
+                        <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+                            <div className="h-8 w-8 flex items-center justify-center bg-white/[0.03] text-white/40 rounded-xl border border-white/5">
                                 <UserIcon className="w-4 h-4" />
                             </div>
-                            <h4 className="text-xs font-extrabold uppercase text-muted-foreground tracking-widest">Identity & Academic</h4>
+                            <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Identity & Academic</h4>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4"/>} />
-                            <FloatingInput label="Student ID" name="student_id_number" value={formData.student_id_number} onChange={handleChange} icon={<div className="w-4 h-4 font-bold text-[10px] flex items-center justify-center border border-current rounded">ID</div>} />
-                            <FloatingInput label="Grade / Class" name="grade" value={formData.grade} onChange={handleChange} required icon={<div className="w-4 h-4 font-bold text-[10px] flex items-center justify-center">Gr</div>} />
-                            
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} />
+                            <FloatingInput label="Student ID" name="student_id_number" value={formData.student_id_number} onChange={handleChange} icon={<div className="w-4 h-4 font-black text-[9px] flex items-center justify-center border border-current rounded uppercase">ID</div>} />
+                            <FloatingInput label="Grade / Class" name="grade" value={formData.grade} onChange={handleChange} required icon={<div className="w-4 h-4 font-black text-[9px] flex items-center justify-center uppercase">Gr</div>} />
+
                             <div className="relative group">
-                                <select name="gender" value={formData.gender} onChange={handleChange} className="w-full h-[52px] rounded-xl border border-input bg-background px-4 pl-11 text-sm shadow-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none appearance-none cursor-pointer">
-                                    <option value="">Select Gender...</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
+                                <select name="gender" value={formData.gender} onChange={handleChange} className="w-full h-[58px] rounded-2xl border border-white/5 bg-black/40 px-5 pl-12 text-sm text-white shadow-inner focus:border-white/20 focus:ring-4 focus:ring-white/5 outline-none appearance-none cursor-pointer transition-all duration-500">
+                                    <option value="" className="bg-[#0c0e12]">Select Gender...</option>
+                                    <option value="Male" className="bg-[#0c0e12]">Male</option>
+                                    <option value="Female" className="bg-[#0c0e12]">Female</option>
+                                    <option value="Other" className="bg-[#0c0e12]">Other</option>
                                 </select>
-                                <div className="absolute top-1/2 -translate-y-1/2 left-4 text-muted-foreground/60 pointer-events-none"><UserIcon className="w-4 h-4"/></div>
-                                <label className="absolute left-11 top-0 -translate-y-1/2 bg-background px-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">Gender</label>
+                                <div className="absolute top-1/2 -translate-y-1/2 left-5 text-white/20 pointer-events-none transition-colors group-focus-within:text-white/40"><UserIcon className="w-4 h-4" /></div>
+                                <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Gender</label>
                             </div>
 
-                            <FloatingInput label="Date of Birth" type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} icon={<CalendarIcon className="w-4 h-4"/>} />
+                            <FloatingInput label="Date of Birth" type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} icon={<CalendarIcon className="w-4 h-4" />} />
                         </div>
                     </section>
 
                     {/* Contact & Guardian Section */}
-                    <section className="space-y-5">
-                        <div className="flex items-center justify-between border-b border-border pb-2">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1.5 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 rounded-lg">
+                    <section className="space-y-8 pb-4">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                            <div className="flex items-center gap-4">
+                                <div className="h-8 w-8 flex items-center justify-center bg-white/[0.03] text-white/40 rounded-xl border border-white/5">
                                     <UsersIcon className="w-4 h-4" />
                                 </div>
-                                <h4 className="text-xs font-extrabold uppercase text-muted-foreground tracking-widest">Contact & Guardian</h4>
+                                <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Contact & Guardian</h4>
                             </div>
-                            
+
                             {/* Sync Toggle */}
-                            <div className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-lg border border-border/50">
+                            <div className="flex items-center gap-4 bg-white/[0.02] p-2 pl-4 rounded-2xl border border-white/5 shadow-inner">
                                 {isFetchingParent && <Spinner size="sm" className="text-primary" />}
-                                <label className={`text-xs font-bold uppercase tracking-wider transition-colors ${syncWithParent ? 'text-primary' : 'text-muted-foreground'}`}>
-                                    {syncWithParent ? 'Auto-Sync Active' : 'Manual Entry'}
-                                </label>
-                                <Switch 
-                                    checked={syncWithParent} 
+                                <div className="flex flex-col items-end">
+                                    <label className={`text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-500 ease-in-out ${syncWithParent ? 'text-[#7c3aed]' : 'text-white/20'}`}>
+                                        {syncWithParent ? 'Auto-Sync Active' : 'Manual Entry'}
+                                    </label>
+                                </div>
+                                <Switch
+                                    checked={syncWithParent}
                                     onChange={(checked) => {
                                         setSyncWithParent(checked);
-                                        // Re-trigger sync logic in useEffect
-                                    }} 
+                                    }}
                                     disabled={isFetchingParent || !parentData?.found}
                                 />
                             </div>
                         </div>
-                        
+
                         {!parentData?.found && !isFetchingParent && (
-                             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 flex items-center gap-2 mb-2 font-medium">
-                                 <span className="text-lg">⚠️</span> No linked parent profile found. Please enter details manually.
-                             </div>
+                            <div className="p-5 bg-amber-500/5 border border-amber-500/10 rounded-[1.5rem] text-[10px] text-amber-500 flex items-center gap-4 font-black uppercase tracking-widest shadow-xl">
+                                <span className="text-xl">!</span> No linked parent profile found. Manual entry required for identity synchronization.
+                            </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <FloatingInput 
-                                label="Student Phone" 
-                                type="tel" 
-                                name="phone" 
-                                value={formData.phone} 
-                                onChange={handleChange} 
-                                icon={<PhoneIcon className="w-4 h-4"/>} 
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <FloatingInput
+                                label="Student Phone"
+                                type="tel"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                icon={<PhoneIcon className="w-4 h-4" />}
                                 readOnly={syncWithParent && parentData?.found}
                                 isSynced={syncWithParent && parentData?.found}
                             />
-                            <FloatingInput 
-                                label="Guardian Name / Relationship" 
-                                name="parent_guardian_details" 
-                                value={formData.parent_guardian_details} 
-                                onChange={handleChange} 
-                                icon={<UsersIcon className="w-4 h-4"/>} 
+                            <FloatingInput
+                                label="Guardian Name / Relationship"
+                                name="parent_guardian_details"
+                                value={formData.parent_guardian_details}
+                                onChange={handleChange}
+                                icon={<UsersIcon className="w-4 h-4" />}
                                 readOnly={syncWithParent && parentData?.found}
                                 isSynced={syncWithParent && parentData?.found}
                             />
                         </div>
-                        
-                        <FloatingInput 
+
+                        <FloatingInput
                             label="Residential Address"
-                            name="address" 
-                            value={formData.address} 
-                            onChange={handleChange as any} 
-                            icon={<LocationIcon className="w-4 h-4"/>}
+                            name="address"
+                            value={formData.address}
+                            onChange={handleChange as any}
+                            icon={<LocationIcon className="w-4 h-4" />}
                             isTextArea
                             readOnly={syncWithParent && parentData?.found}
                             isSynced={syncWithParent && parentData?.found}
                         />
                     </section>
 
-                    <div className="pt-6 flex justify-end gap-3 border-t border-border bg-background sticky bottom-0 z-10 pb-2">
-                        <button 
-                            type="button" 
-                            onClick={onClose} 
-                            className="px-6 py-2.5 font-bold text-muted-foreground hover:bg-muted rounded-xl text-sm transition-colors"
+                    {/* Action Bar */}
+                    <div className="pt-10 flex justify-end gap-5 border-t border-white/5 sticky bottom-0 z-20 pb-5 bg-transparent backdrop-blur-xl">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-8 py-4 font-black text-[10px] uppercase tracking-[0.3em] text-white/30 hover:text-white transition-all duration-300 active:scale-95"
                             disabled={loading}
                         >
                             Cancel
                         </button>
-                        <button 
-                            type="submit" 
-                            disabled={loading} 
-                            className="px-8 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-lg hover:bg-primary/90 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="relative group overflow-hidden px-12 py-4 bg-[#7c3aed] text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-[0_15px_45px_rgba(124,58,237,0.3)] hover:bg-[#6d28d9] transition-all transform active:scale-[0.95] flex items-center justify-center gap-3"
                         >
-                            {loading ? <Spinner size="sm" className="text-current"/> : <><CheckCircleIcon className="w-4 h-4"/> Save Changes</>}
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                            {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-4 h-4" /> Save Changes</>}
                         </button>
                     </div>
                 </form>
