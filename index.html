@@ -89,6 +89,21 @@
       --skel-glow: #312e81;
     }
 
+    .school {
+      --background: 83 36% 52%;
+      /* Closest to #8DB058 */
+      --foreground: 224 71.4% 4.1%;
+      --card: 0 0% 100%;
+      --card-foreground: 224 71.4% 4.1%;
+      --primary: 158 94% 30%;
+      /* A nice institutional green */
+      --primary-foreground: 0 0% 100%;
+      --border: 0 0% 92%;
+      --input: 0 0% 92%;
+      --skel-base: #e0eedc;
+      --skel-highlight: #f0f7ef;
+    }
+
     * {
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -171,11 +186,13 @@
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button {
       -webkit-appearance: none;
+      appearance: none;
       margin: 0;
     }
 
     input[type=number] {
       -moz-appearance: textfield;
+      appearance: none;
     }
 
     .custom-scrollbar {

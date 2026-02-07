@@ -16,6 +16,7 @@ import { SparklesIcon } from '../icons/SparklesIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { LockIcon } from '../icons/LockIcon';
 import { EyeIcon } from '../icons/EyeIcon';
+import { LocationIcon } from '../icons/LocationIcon';
 import CustomSelect from '../common/CustomSelect';
 import PremiumAvatar from '../common/PremiumAvatar';
 import clsx from 'clsx';
@@ -160,6 +161,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         gender: child?.gender || 'Male',
         medical_info: child?.medical_info || '',
         emergency_contact: child?.emergency_contact || '',
+        address: (child as any)?.address || '',
     });
 
     // Draggable State
@@ -277,6 +279,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                 gender: formData.gender,
                 medical_info: formData.medical_info,
                 emergency_contact: formData.emergency_contact,
+                address: formData.address,
                 profile_photo_url: finalPhotoPath,
                 parent_name: parentProfile?.name || '',
                 parent_email: parentProfile?.email || '',
@@ -489,6 +492,17 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                             options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Prefer Not to Say' }]}
                                             icon={<UserIcon className="w-4 h-4" />}
                                         />
+                                        <div className="md:col-span-2">
+                                            <PremiumFloatingInput
+                                                label="Residential Address"
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleChange}
+                                                icon={<LocationIcon className="w-4 h-4" />}
+                                                placeholder="e.g. 123 Sky Tower, Downtown"
+                                                helperText="Official residential registry for student records."
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
