@@ -355,88 +355,112 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                 </button>
             </div>
 
-            <div className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <PremiumFloatingInput
-                        label="Primary Mobile"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        required
-                        icon={<PhoneIcon className="w-4 h-4" />}
-                        disabled={isStrictReadOnly}
-                    />
+            <div className="space-y-12">
+                {/* Section 1: Primary Contact */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                        <h4 className="text-xs font-bold text-white/70 uppercase tracking-widest">Primary Contact</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <PremiumFloatingInput
+                            label="Primary Mobile"
+                            name="phone"
+                            type="tel"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            required
+                            icon={<PhoneIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
 
-                    <CustomSelect
-                        label="Country"
-                        value={formData.country || ''}
-                        onChange={handleSelectChange('country')}
-                        options={countries.map(c => ({ value: c, label: c }))}
-                        icon={<GlobeIcon className="w-4 h-4" />}
-                        placeholder="Select Region..."
-                        searchable
-                        isSynced={syncedFields.has('country')}
+                        <CustomSelect
+                            label="Country / Region"
+                            value={formData.country || ''}
+                            onChange={handleSelectChange('country')}
+                            options={countries.map(c => ({ value: c, label: c }))}
+                            icon={<GlobeIcon className="w-4 h-4" />}
+                            placeholder="Select Region..."
+                            searchable
+                            isSynced={syncedFields.has('country')}
+                            disabled={isStrictReadOnly}
+                        />
+                    </div>
+                </div>
+
+                {/* Section 2: Residential Address */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                        <h4 className="text-xs font-bold text-white/70 uppercase tracking-widest">Residential Address</h4>
+                    </div>
+                    <PremiumFloatingInput
+                        label="Full Street Address"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange as any}
+                        isTextArea
+                        isSynced={syncedFields.has('address')}
+                        icon={<LocationIcon className="w-4 h-4" />}
                         disabled={isStrictReadOnly}
+                        action={
+                            !isStrictReadOnly && (
+                                <button
+                                    type="button"
+                                    onClick={handleResolveAddress}
+                                    disabled={isResolving || !formData.address?.trim()}
+                                    className="px-3 py-1.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-lg transition-all disabled:opacity-0 disabled:pointer-events-none"
+                                    title="Auto-fill city, state, country"
+                                >
+                                    {isResolving ? <Spinner size="sm" /> : <><SparklesIcon className="w-3.5 h-3.5" /> <span>Auto-Detect</span></>}
+                                </button>
+                            )
+                        }
                     />
                 </div>
 
-                <PremiumFloatingInput
-                    label="Full Residential Address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange as any}
-                    isTextArea
-                    isSynced={syncedFields.has('address')}
-                    icon={<LocationIcon className="w-4 h-4" />}
-                    disabled={isStrictReadOnly}
-                    action={
-                        !isStrictReadOnly && (
-                            <button
-                                type="button"
-                                onClick={handleResolveAddress}
-                                disabled={isResolving || !formData.address?.trim()}
-                                className="p-2 text-primary bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-lg transition-all disabled:opacity-0 disabled:pointer-events-none"
-                                title="Auto-fill city, state, country"
-                            >
-                                {isResolving ? <Spinner size="sm" /> : <SparklesIcon className="w-5 h-5" />}
-                            </button>
-                        )
-                    }
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <CustomSelect
-                        label="State"
-                        value={formData.state || ''}
-                        onChange={handleSelectChange('state')}
-                        options={availableStates.map(s => ({ value: s, label: s }))}
-                        icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
-                        disabled={!formData.country || isStrictReadOnly}
-                        searchable
-                        isSynced={syncedFields.has('state')}
-                        placeholder={!formData.country ? "Select Country First" : "Select State"}
-                    />
-                    <CustomSelect
-                        label="City"
-                        value={formData.city || ''}
-                        onChange={handleSelectChange('city')}
-                        options={availableCities.map(c => ({ value: c, label: c }))}
-                        icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
-                        disabled={!formData.state || isStrictReadOnly}
-                        searchable
-                        isSynced={syncedFields.has('city')}
-                        placeholder={!formData.state ? "Select State First" : "Select City"}
-                    />
-                    <PremiumFloatingInput
-                        label="Pin Code"
-                        name="pin_code"
-                        value={formData.pin_code}
-                        onChange={handleChange}
-                        isSynced={syncedFields.has('pin_code')}
-                        icon={<LocationIcon className="w-4 h-4" />}
-                        disabled={isStrictReadOnly}
-                    />
+                {/* Section 3: Regional Mapping */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+                        <h4 className="text-xs font-bold text-white/70 uppercase tracking-widest">Location Mapping</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-20">
+                        <CustomSelect
+                            label="State / Province"
+                            value={formData.state || ''}
+                            onChange={handleSelectChange('state')}
+                            options={availableStates.map(s => ({ value: s, label: s }))}
+                            icon={loadingStates ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
+                            disabled={!formData.country || isStrictReadOnly}
+                            searchable
+                            isSynced={syncedFields.has('state')}
+                            placeholder={!formData.country ? "Select Country First" : "Select State"}
+                        />
+                        <CustomSelect
+                            label="City / District"
+                            value={formData.city || ''}
+                            onChange={handleSelectChange('city')}
+                            options={availableCities.map(c => ({ value: c, label: c }))}
+                            icon={loadingCities ? <Spinner size="sm" /> : <LocationIcon className="w-4 h-4" />}
+                            disabled={!formData.state || isStrictReadOnly}
+                            searchable
+                            isSynced={syncedFields.has('city')}
+                            placeholder={!formData.state ? "Select State First" : "Select City"}
+                        />
+                        <PremiumFloatingInput
+                            label="Postal Code"
+                            name="pin_code"
+                            value={formData.pin_code}
+                            onChange={handleChange}
+                            isSynced={syncedFields.has('pin_code')}
+                            icon={<LocationIcon className="w-4 h-4" />}
+                            disabled={isStrictReadOnly}
+                        />
+                    </div>
+                    <p className="text-[10px] text-white/20 font-medium uppercase tracking-widest text-center pt-2">
+                        * Used for institutional transport node assignment
+                    </p>
                 </div>
             </div>
         </div>
