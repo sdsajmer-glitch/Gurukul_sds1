@@ -13,7 +13,8 @@ import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { UsersIcon } from '../icons/UsersIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { ActivityIcon } from '../icons/ActivityIcon';
-import { SparklesIcon, RefreshCwIcon } from 'lucide-react';
+import { SparklesIcon } from '../icons/SparklesIcon';
+import { RefreshCwIcon } from '../icons/RefreshCwIcon';
 
 interface EditStudentDetailsModalProps {
     student: StudentForAdmin;

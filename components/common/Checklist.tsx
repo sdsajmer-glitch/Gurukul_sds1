@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Check, AlertTriangle, Info, Square, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
+import { CheckIcon as Check } from '../icons/CheckIcon';
+import { AlertTriangleIcon as AlertTriangle } from '../icons/AlertTriangleIcon';
+import { InfoIcon as Info } from '../icons/InfoIcon';
+import { SquareIcon as Square } from '../icons/SquareIcon';
+import { ChevronDownIcon as ChevronDown } from '../icons/ChevronDownIcon';
+import { ChevronRightIcon as ChevronRight } from '../icons/ChevronRightIcon';
+import { AlertCircleIcon as AlertCircle } from '../icons/AlertCircleIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ----------------------------------------------------------------------
