@@ -83,9 +83,9 @@ const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLT
 
             {isSynced && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none animate-in fade-in zoom-in duration-700">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[8px] font-black bg-[#7c3aed]/10 text-[#a78bfa] border border-[#7c3aed]/20 uppercase tracking-widest shadow-2xl">
-                        <LockIcon className="w-3 h-3" /> Synced
-                    </span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black bg-[#7c3aed]/10 text-[#a78bfa] border border-[#7c3aed]/20 uppercase tracking-widest shadow-[0_0_20px_rgba(124,58,237,0.1)] backdrop-blur-md">
+                        <LockIcon className="w-3.5 h-3.5" /> Synced
+                    </div>
                 </div>
             )}
         </div>
@@ -148,31 +148,75 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         return () => { isMounted.current = false; };
     }, []);
 
-    // Fetch Parent Data on Mount
-    useEffect(() => {
-        const fetchParent = async () => {
-            setIsFetchingParent(true);
-            try {
-                const { data, error } = await supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id });
+    // Fetch Parent Data with Robust Fallback
+    const fetchParent = async () => {
+        setIsFetchingParent(true);
+        try {
+            const { data, error: rpcError } = await supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id });
 
-                if (error) {
-                    console.error("Error fetching parent:", formatError(error));
-                } else if (data && data.found) {
-                    setParentData(data);
+            if (data && data.found) {
+                setParentData(data);
+                if (isMounted.current) setSyncWithParent(true);
+            } else {
+                // FALLBACK: RPC failed or didn't find a record. Manual lookup in Admissions/Enquiries.
+                console.log('RPC found no parent, initiating manual fallback lookup...');
+                const { data: admissionLink } = await supabase
+                    .from('admissions')
+                    .select('*')
+                    .or(`student_user_id.eq.${student.id}${student.admission_id ? `,id.eq.${student.admission_id}` : ''}`)
+                    .maybeSingle();
+
+                if (admissionLink && (admissionLink.parent_name || admissionLink.parent_phone)) {
+                    const fallbackData = {
+                        found: true,
+                        name: admissionLink.parent_name,
+                        email: admissionLink.parent_email,
+                        phone: admissionLink.parent_phone,
+                        relationship: 'Parent',
+                        address: admissionLink.address,
+                        city: admissionLink.city,
+                        state: admissionLink.state,
+                        country: admissionLink.country,
+                        pin_code: admissionLink.pin_code,
+                        parent_id: admissionLink.parent_id,
+                        is_unlinked: !admissionLink.parent_id
+                    };
+                    setParentData(fallbackData);
                     if (isMounted.current) setSyncWithParent(true);
                 } else {
-                    if (isMounted.current) setSyncWithParent(false);
+                    const { data: enquiryData } = await supabase
+                        .from('enquiries')
+                        .select('*')
+                        .eq('user_id', student.id)
+                        .maybeSingle();
+
+                    if (enquiryData && (enquiryData.parent_name || enquiryData.parent_phone)) {
+                        setParentData({
+                            found: true,
+                            name: enquiryData.parent_name,
+                            email: enquiryData.parent_email,
+                            phone: enquiryData.parent_phone,
+                            relationship: 'Parent',
+                            is_unlinked: true
+                        });
+                        if (isMounted.current) setSyncWithParent(true);
+                    } else {
+                        if (isMounted.current) setSyncWithParent(false);
+                    }
                 }
-            } catch (e) {
-                console.error("Parent fetch exception:", formatError(e));
-            } finally {
-                if (isMounted.current) setIsFetchingParent(false);
             }
-        };
+        } catch (e) {
+            console.error("Parent fetch exception:", formatError(e));
+        } finally {
+            if (isMounted.current) setIsFetchingParent(false);
+        }
+    };
+
+    useEffect(() => {
         fetchParent();
     }, [student.id]);
 
-    // Apply Sync Effect - Carefully merge parent data without wiping valid local data
+    // Apply Sync Effect - Carefully merge parent data
     useEffect(() => {
         if (syncWithParent && parentData) {
             // Construct Address
@@ -183,17 +227,23 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 parentData.country,
                 parentData.pin_code
             ].filter(Boolean);
-            const fullAddress = addressParts.join(', ');
+            const fullAddress = addressParts.join(', ').trim();
 
             // Construct Guardian Details
             const guardianInfo = parentData.name ? `${parentData.name} (${parentData.relationship || 'Guardian'})` : '';
 
-            setFormData(prev => ({
-                ...prev,
-                phone: parentData.phone || prev.phone,
-                address: fullAddress || prev.address,
-                parent_guardian_details: guardianInfo || prev.parent_guardian_details
-            }));
+            setFormData(prev => {
+                // Only update if there's actual data to sync, otherwise keep current
+                const updates: any = {};
+                if (parentData.phone) updates.phone = parentData.phone;
+                if (fullAddress) updates.address = fullAddress;
+                if (guardianInfo) updates.parent_guardian_details = guardianInfo;
+
+                if (Object.keys(updates).length > 0) {
+                    return { ...prev, ...updates };
+                }
+                return prev;
+            });
         }
     }, [syncWithParent, parentData]);
 
@@ -293,20 +343,34 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             </div>
 
                             {/* Sync Toggle */}
-                            <div className="flex items-center gap-4 bg-white/[0.02] p-2 pl-4 rounded-2xl border border-white/5 shadow-inner">
-                                {isFetchingParent && <Spinner size="sm" className="text-primary" />}
+                            <div className="flex items-center gap-5 bg-white/[0.02] p-2 pl-5 rounded-[1.5rem] border border-white/5 shadow-inner group/sync">
+                                {isFetchingParent && <Spinner size="sm" className="text-[#7c3aed]" />}
                                 <div className="flex flex-col items-end">
                                     <label className={`text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-500 ease-in-out ${syncWithParent ? 'text-[#7c3aed]' : 'text-white/20'}`}>
                                         {syncWithParent ? 'Auto-Sync Active' : 'Manual Entry'}
                                     </label>
                                 </div>
-                                <Switch
-                                    checked={syncWithParent}
-                                    onChange={(checked) => {
-                                        setSyncWithParent(checked);
-                                    }}
-                                    disabled={isFetchingParent || !parentData?.found}
-                                />
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        checked={syncWithParent}
+                                        onChange={(checked) => {
+                                            setSyncWithParent(checked);
+                                            if (checked) fetchParent(); // Re-validate on toggle ON
+                                        }}
+                                        disabled={isFetchingParent}
+                                    />
+                                    {syncWithParent && (
+                                        <button
+                                            type="button"
+                                            onClick={() => fetchParent()}
+                                            disabled={isFetchingParent}
+                                            className="p-2 rounded-xl bg-white/5 text-white/20 hover:text-white hover:bg-white/10 transition-all active:scale-90 flex items-center justify-center -mr-1"
+                                            title="Force Re-sync Identity"
+                                        >
+                                            <RefreshIcon className={`w-3.5 h-3.5 ${isFetchingParent ? 'animate-spin text-[#7c3aed]' : ''}`} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

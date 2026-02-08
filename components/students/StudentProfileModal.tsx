@@ -310,8 +310,8 @@ const GuardianCard: React.FC<{
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                         <div className={`w-1.5 h-1.5 rounded-full ${data ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-white/20'}`}></div>
-                        <p className={`text-[10px] font-black uppercase tracking-widest ${data ? 'text-emerald-400/80' : 'text-white/30'}`}>
-                            {data ? 'Identity Linked' : 'Registry Entry Pending'}
+                        <p className={`text-[10px] font-black uppercase tracking-widest ${data ? (data.is_unlinked ? 'text-amber-500' : 'text-emerald-400/80') : 'text-white/30'}`}>
+                            {data ? (data.is_unlinked ? 'Registry Unlinked (Draft)' : 'Identity Linked') : 'Registry Entry Pending'}
                         </p>
                     </div>
                 </div>
@@ -1196,23 +1196,27 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
                                                     {parentData && (
                                                         <button
-                                                            disabled={isSyncing}
                                                             onClick={async () => {
-                                                                setIsSyncing(true);
-                                                                // Logic to sync student address from parent address
-                                                                if (parentData.address) {
+                                                                if (parentData) {
+                                                                    // Construct parent details string for internal registry
+                                                                    const parentDetailsStr = parentData.name ? `${parentData.name} (${parentData.relationship || 'Guardian'})` : '';
+
                                                                     await supabase.rpc('update_student_details_admin', {
                                                                         p_student_id: student.id,
-                                                                        p_address: parentData.address
+                                                                        p_address: parentData.address,
+                                                                        p_phone: parentData.phone,
+                                                                        p_parent_details: parentDetailsStr
                                                                     });
-                                                                    fetchData();
+
+                                                                    // Trigger a local refresh
+                                                                    await fetchData();
+                                                                    console.log('Identity Protocol Synchronized');
                                                                 }
-                                                                setTimeout(() => setIsSyncing(false), 800);
                                                             }}
-                                                            className="flex items-center gap-2.5 px-6 py-3 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all duration-300"
+                                                            className="group flex items-center gap-3 px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/20 transition-all duration-300"
                                                         >
-                                                            {isSyncing ? <Spinner size="sm" className="text-white" /> : <RefreshIcon className="w-4 h-4" />}
-                                                            Sync Student Address
+                                                            <RefreshIcon className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Sync Identity Protocol</span>
                                                         </button>
                                                     )}
                                                 </div>

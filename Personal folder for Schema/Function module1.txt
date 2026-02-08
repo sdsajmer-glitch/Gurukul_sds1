@@ -2456,11 +2456,39 @@ CREATE OR REPLACE FUNCTION public.get_communications_history()
  SECURITY DEFINER
 AS $function$ BEGIN RETURN QUERY SELECT * FROM public.communications WHERE sender_id = auth.uid() ORDER BY sent_at DESC; END; $function$;
 
-CREATE OR REPLACE FUNCTION public.update_student_details_admin(p_student_id uuid, p_display_name text, p_phone text, p_dob date, p_gender text, p_address text, p_parent_details text, p_student_id_number text, p_grade text)
+CREATE OR REPLACE FUNCTION public.update_student_details_admin(
+    p_student_id uuid, 
+    p_display_name text DEFAULT NULL, 
+    p_phone text DEFAULT NULL, 
+    p_dob date DEFAULT NULL, 
+    p_gender text DEFAULT NULL, 
+    p_address text DEFAULT NULL, 
+    p_parent_details text DEFAULT NULL, 
+    p_student_id_number text DEFAULT NULL, 
+    p_grade text DEFAULT NULL
+)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
-AS $function$ BEGIN UPDATE public.profiles SET display_name = p_display_name, phone = p_phone WHERE id = p_student_id; UPDATE public.student_profiles SET date_of_birth = p_dob, gender = p_gender, address = p_address, parent_guardian_details = p_parent_details, student_id_number = p_student_id_number, grade = p_grade WHERE user_id = p_student_id; END; $function$;
+AS $function$ 
+BEGIN 
+    UPDATE public.profiles 
+    SET 
+        display_name = COALESCE(p_display_name, display_name), 
+        phone = COALESCE(p_phone, phone) 
+    WHERE id = p_student_id; 
+
+    UPDATE public.student_profiles 
+    SET 
+        date_of_birth = COALESCE(p_dob, date_of_birth), 
+        gender = COALESCE(p_gender, gender), 
+        address = COALESCE(p_address, address), 
+        parent_guardian_details = COALESCE(p_parent_details, parent_guardian_details), 
+        student_id_number = COALESCE(p_student_id_number, student_id_number), 
+        grade = COALESCE(p_grade, grade) 
+    WHERE user_id = p_student_id; 
+END; 
+$function$;
 
 DROP FUNCTION IF EXISTS public.get_my_messages;
 CREATE OR REPLACE FUNCTION public.get_my_messages()

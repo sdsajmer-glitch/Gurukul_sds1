@@ -1,10 +1,9 @@
--- ==============================================================================
--- FIX: Parent Data Sync V5 (Robust Data Recovery & Cross-Source Sync)
--- Description: Improves `get_linked_parent_for_student` to ensure name and contact
---              details are recovered from Admissions/Enquiries even if the 
---              linked parent profile is partially empty.
--- ==============================================================================
+-- ============================================================================
+-- MASTER SYNC PROTOCOL: Parent-Student Data Identity Synchronization
+-- ============================================================================
 
+-- 1. Enhanced get_linked_parent_for_student (Version 5.2 - Ultra-Robust Recovery)
+-- Handles prioritized recovery from profiles, admissions, and enquiries.
 CREATE OR REPLACE FUNCTION public.get_linked_parent_for_student(p_student_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -25,7 +24,6 @@ DECLARE
     v_admission_id BIGINT;
 BEGIN
     -- 1. PRE-FETCH DATA FROM ADMISSIONS (Most reliable source for names during onboarding)
-    -- Helper: Get admission_id from student_profiles if available
     SELECT admission_id INTO v_admission_id
     FROM public.student_profiles
     WHERE user_id = p_student_id;
@@ -81,7 +79,7 @@ BEGIN
         IF v_parent_id IS NOT NULL THEN 
             v_heal_success := true;
             -- Update admission if applicable
-            IF v_admission_record IS NOT NULL THEN
+            IF v_admission_record IS NOT NULL AND v_admission_record.parent_id IS NULL THEN
                  UPDATE public.admissions SET parent_id = v_parent_id WHERE id = v_admission_record.id;
             END IF;
             -- Check if link needs to be created in student_parents
@@ -101,20 +99,19 @@ BEGIN
         FROM public.profiles 
         WHERE id = v_parent_id;
         
-        -- Even if profile not found (rare), we return the link + raw details
         RETURN jsonb_build_object(
             'found', true,
             'source', v_source,
             'healed', v_heal_success,
-            'name', COALESCE(NULLIF(v_user_profile.display_name, ''), v_raw_name),
-            'email', COALESCE(NULLIF(v_user_profile.email, ''), v_raw_email),
-            'phone', COALESCE(NULLIF(v_user_profile.phone, ''), v_raw_phone),
-            'relationship', COALESCE(v_parent_profile.relationship_to_student, 'Parent'),
-            'address', COALESCE(v_parent_profile.address, v_admission_record.address),
-            'city', COALESCE(v_parent_profile.city, v_admission_record.city),
-            'state', COALESCE(v_parent_profile.state, v_admission_record.state),
-            'country', COALESCE(v_parent_profile.country, v_admission_record.country),
-            'pin_code', COALESCE(v_parent_profile.pin_code, v_admission_record.pin_code),
+            'name', COALESCE(NULLIF(v_user_profile.display_name, ''), NULLIF(v_raw_name, ''), 'Guardian Profile'),
+            'email', COALESCE(NULLIF(v_user_profile.email, ''), NULLIF(v_raw_email, '')),
+            'phone', COALESCE(NULLIF(v_user_profile.phone, ''), NULLIF(v_raw_phone, '')),
+            'relationship', COALESCE(NULLIF(v_parent_profile.relationship_to_student, ''), 'Parent'),
+            'address', COALESCE(NULLIF(v_parent_profile.address, ''), v_admission_record.address),
+            'city', COALESCE(NULLIF(v_parent_profile.city, ''), v_admission_record.city),
+            'state', COALESCE(NULLIF(v_parent_profile.state, ''), v_admission_record.state),
+            'country', COALESCE(NULLIF(v_parent_profile.country, ''), v_admission_record.country),
+            'pin_code', COALESCE(NULLIF(v_parent_profile.pin_code, ''), v_admission_record.pin_code),
             'parent_id', v_parent_id,
             'secondary_parent_name', v_parent_profile.secondary_parent_name,
             'secondary_parent_email', v_parent_profile.secondary_parent_email,
@@ -124,16 +121,20 @@ BEGIN
     END IF;
 
     -- 5. UNLINKED FALLBACK (Raw details only)
-    IF v_raw_name IS NOT NULL THEN
+    IF v_raw_name IS NOT NULL OR v_raw_phone IS NOT NULL THEN
         RETURN jsonb_build_object(
             'found', true,
             'source', v_source,
             'is_unlinked', true,
-            'name', v_raw_name,
+            'name', COALESCE(v_raw_name, 'Parent (Unlinked)'),
             'email', v_raw_email,
             'phone', v_raw_phone,
             'relationship', 'Parent',
             'address', v_admission_record.address,
+            'city', v_admission_record.city,
+            'state', v_admission_record.state,
+            'country', v_admission_record.country,
+            'pin_code', v_admission_record.pin_code,
             'parent_id', NULL
         );
     END IF;
@@ -146,7 +147,42 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $function$;
 
-GRANT EXECUTE ON FUNCTION public.get_linked_parent_for_student TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_linked_parent_for_student TO service_role;
+-- 2. Robust update_student_details_admin (Supports partial and full synchronization)
+CREATE OR REPLACE FUNCTION public.update_student_details_admin(
+    p_student_id uuid, 
+    p_display_name text DEFAULT NULL, 
+    p_phone text DEFAULT NULL, 
+    p_dob date DEFAULT NULL, 
+    p_gender text DEFAULT NULL, 
+    p_address text DEFAULT NULL, 
+    p_parent_details text DEFAULT NULL, 
+    p_student_id_number text DEFAULT NULL, 
+    p_grade text DEFAULT NULL
+)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$ 
+BEGIN 
+    -- Atomically update master profile if parameters provided
+    UPDATE public.profiles 
+    SET 
+        display_name = COALESCE(p_display_name, display_name), 
+        phone = COALESCE(p_phone, phone) 
+    WHERE id = p_student_id; 
 
+    -- Atomically update academic/residential registry
+    UPDATE public.student_profiles 
+    SET 
+        date_of_birth = COALESCE(p_dob, date_of_birth), 
+        gender = COALESCE(p_gender, gender), 
+        address = COALESCE(p_address, address), 
+        parent_guardian_details = COALESCE(p_parent_details, parent_guardian_details), 
+        student_id_number = COALESCE(p_student_id_number, student_id_number), 
+        grade = COALESCE(p_grade, grade) 
+    WHERE user_id = p_student_id; 
+END; 
+$function$;
 
+GRANT EXECUTE ON FUNCTION public.get_linked_parent_for_student TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.update_student_details_admin TO authenticated, service_role;
