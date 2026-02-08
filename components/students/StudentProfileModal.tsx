@@ -960,7 +960,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 grade: bestGrade,
                 // Class assignment logic (Step 3)
                 assigned_class_id: classData?.assigned_class_id || prev.assigned_class_id,
-                assigned_class_name: classData?.school_classes?.name || prev.assigned_class_name
+                assigned_class_name: (classData?.school_classes as any)?.name || prev.assigned_class_name
             }));
 
             // --- 3. Additional Data (Documents & Fees) ---
@@ -1418,22 +1418,54 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     </div>
                                                 </div>
                                             ) : (
-                                                /* Unassigned State */
                                                 <div className="relative z-10">
-                                                    <div className="p-8 bg-amber-500/5 border-2 border-dashed border-amber-500/20 rounded-2xl text-center">
-                                                        <div className="inline-flex p-4 bg-amber-500/10 rounded-2xl mb-4">
-                                                            <AlertTriangleIcon className="w-8 h-8 text-amber-500" />
+                                                    <div className="p-8 bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-[2rem] text-center relative overflow-hidden group/empty">
+                                                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] group-hover/empty:bg-amber-500/10 transition-all duration-1000"></div>
+
+                                                        <div className="relative z-10 flex flex-col items-center">
+                                                            <div className="inline-flex p-5 bg-amber-500/10 rounded-2xl mb-6 ring-1 ring-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.1)] group-hover/empty:scale-110 transition-transform duration-500">
+                                                                <div className="relative">
+                                                                    <SchoolIcon className="w-10 h-10 text-amber-500" />
+                                                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full border-2 border-[#1a1d28] flex items-center justify-center">
+                                                                        <span className="text-[10px] font-black text-[#1a1d28]">!</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <h4 className="text-2xl font-black text-white tracking-tight mb-3">Placement Required</h4>
+                                                            <p className="text-sm text-white/50 max-w-lg mx-auto mb-8 leading-relaxed">
+                                                                This student profile is active but lacks an academic anchor.
+                                                                Assigning a class section unlocks grade tracking, attendance monitoring, and curriculum management.
+                                                            </p>
+
+                                                            {/* Step Indicator */}
+                                                            <div className="flex items-center gap-4 mb-8 opacity-60">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-[10px] font-black border border-emerald-500/20"><CheckCircleIcon className="w-3 h-3" /></div>
+                                                                    <span className="text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">Profile</span>
+                                                                </div>
+                                                                <div className="w-8 h-px bg-white/10"></div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-[10px] font-black border border-emerald-500/20"><CheckCircleIcon className="w-3 h-3" /></div>
+                                                                    <span className="text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">Guardian</span>
+                                                                </div>
+                                                                <div className="w-8 h-px bg-white/10"></div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-6 h-6 rounded-full bg-amber-500 text-[#0c0e12] flex items-center justify-center text-[10px] font-black shadow-[0_0_10px_rgba(245,158,11,0.4)] animate-pulse">3</div>
+                                                                    <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Placement</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <button
+                                                                onClick={() => setShowAssignClass(true)}
+                                                                className="group/act relative px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-[#0c0e12] rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(245,158,11,0.2)] hover:shadow-[0_15px_40px_rgba(245,158,11,0.3)] transition-all transform hover:-translate-y-1 active:translate-y-0 overflow-hidden"
+                                                            >
+                                                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/act:translate-y-0 transition-transform duration-500"></div>
+                                                                <span className="relative z-10 flex items-center gap-3">
+                                                                    Initialize Enrollment <ChevronRightIcon className="w-4 h-4" />
+                                                                </span>
+                                                            </button>
                                                         </div>
-                                                        <h4 className="text-lg font-black text-amber-500 uppercase tracking-wide mb-2">Student Currently Unassigned</h4>
-                                                        <p className="text-sm text-white/50 max-w-md mx-auto mb-6">
-                                                            This student has not been enrolled in any class section yet. Click "Enroll in Class" above to assign them to an appropriate section.
-                                                        </p>
-                                                        <button
-                                                            onClick={() => setShowAssignClass(true)}
-                                                            className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
-                                                        >
-                                                            Begin Enrollment
-                                                        </button>
                                                     </div>
                                                 </div>
                                             )}
@@ -1451,40 +1483,62 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 </button>
                                             </div>
 
-                                            {/* Performance Cards */}
+                                            {/* Performance Cards - Enhanced */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                {/* Sample Subject Cards */}
                                                 {[
-                                                    { subject: 'Mathematics', grade: 'A', percentage: 92, color: 'blue' },
-                                                    { subject: 'Science', grade: 'A-', percentage: 88, color: 'green' },
-                                                    { subject: 'English', grade: 'B+', percentage: 85, color: 'purple' },
-                                                    { subject: 'Social Studies', grade: 'A', percentage: 90, color: 'amber' },
-                                                    { subject: 'Hindi', grade: 'B', percentage: 82, color: 'pink' },
-                                                    { subject: 'Computer Science', grade: 'A+', percentage: 95, color: 'cyan' },
+                                                    { subject: 'Mathematics', grade: 'A', percentage: 92, color: 'blue', teacher: 'Dr. R. Gupta', trend: 'up' },
+                                                    { subject: 'Science', grade: 'A-', percentage: 88, color: 'green', teacher: 'Mrs. S. Kaur', trend: 'up' },
+                                                    { subject: 'English', grade: 'B+', percentage: 85, color: 'purple', teacher: 'Mr. J. Smith', trend: 'flat' },
+                                                    { subject: 'Social Studies', grade: 'A', percentage: 90, color: 'amber', teacher: 'Ms. P. Sharma', trend: 'up' },
+                                                    { subject: 'Hindi', grade: 'B', percentage: 82, color: 'pink', teacher: 'Mrs. A. Verma', trend: 'down' },
+                                                    { subject: 'Computer Science', grade: 'A+', percentage: 95, color: 'cyan', teacher: 'Mr. T. Rogers', trend: 'up' },
                                                 ].map((subject, idx) => (
-                                                    <div key={idx} className="group/subject relative p-6 bg-[#0c0e12] border border-white/5 rounded-2xl hover:border-white/10 transition-all duration-500 overflow-hidden">
-                                                        <div className={`absolute top-0 right-0 w-24 h-24 bg-${subject.color}-500/5 rounded-full blur-[50px] group-hover/subject:bg-${subject.color}-500/10 transition-colors duration-500`}></div>
-                                                        <div className="relative z-10">
-                                                            <div className="flex items-start justify-between mb-4">
-                                                                <div>
-                                                                    <h4 className="text-sm font-black text-white mb-1">{subject.subject}</h4>
-                                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Current Term</p>
+                                                    <div key={idx} className="group/subject relative p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] hover:border-white/10 transition-all duration-500 overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:shadow-black/50">
+                                                        {/* Dynamic Gradient Background */}
+                                                        <div className={`absolute top-0 right-0 w-32 h-32 bg-${subject.color}-500/5 rounded-full blur-[60px] group-hover/subject:bg-${subject.color}-500/10 transition-colors duration-500`}></div>
+
+                                                        <div className="relative z-10 flex flex-col h-full justify-between">
+                                                            <div>
+                                                                <div className="flex items-start justify-between mb-6">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`p-2.5 rounded-xl bg-${subject.color}-500/10 text-${subject.color}-400 border border-${subject.color}-500/10`}>
+                                                                            <BookIcon className="w-5 h-5" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-black text-white tracking-tight">{subject.subject}</h4>
+                                                                            <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider">{subject.teacher}</p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className={`flex flex-col items-end`}>
+                                                                        <div className={`px-3 py-1 bg-${subject.color}-500/10 border border-${subject.color}-500/20 rounded-lg mb-1`}>
+                                                                            <span className={`text-sm font-black text-${subject.color}-400`}>{subject.grade}</span>
+                                                                        </div>
+                                                                        {subject.trend === 'up' && <span className="text-[9px] font-bold text-emerald-500 flex items-center gap-1">▲ Rising</span>}
+                                                                        {subject.trend === 'down' && <span className="text-[9px] font-bold text-rose-500 flex items-center gap-1">▼ Falling</span>}
+                                                                        {subject.trend === 'flat' && <span className="text-[9px] font-bold text-white/30 flex items-center gap-1">• Stable</span>}
+                                                                    </div>
                                                                 </div>
-                                                                <div className={`px-3 py-1.5 bg-${subject.color}-500/10 border border-${subject.color}-500/20 rounded-lg`}>
-                                                                    <span className={`text-sm font-black text-${subject.color}-400`}>{subject.grade}</span>
+
+                                                                <div className="space-y-3 mb-4">
+                                                                    <div className="flex items-center justify-between text-xs">
+                                                                        <span className="text-white/40 font-medium text-[10px] uppercase tracking-wider">Performance</span>
+                                                                        <span className="text-white font-black">{subject.percentage}%</span>
+                                                                    </div>
+                                                                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                                        <div
+                                                                            className={`h-full bg-gradient-to-r from-${subject.color}-600 to-${subject.color}-400 rounded-full transition-all duration-1000 group-hover/subject:shadow-[0_0_10px_rgba(255,255,255,0.3)]`}
+                                                                            style={{ width: `${subject.percentage}%` }}
+                                                                        ></div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="space-y-2">
-                                                                <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-white/40 font-medium">Progress</span>
-                                                                    <span className="text-white font-bold">{subject.percentage}%</span>
-                                                                </div>
-                                                                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                                                    <div
-                                                                        className={`h-full bg-gradient-to-r from-${subject.color}-500 to-${subject.color}-400 rounded-full transition-all duration-1000`}
-                                                                        style={{ width: `${subject.percentage}%` }}
-                                                                    ></div>
-                                                                </div>
+
+                                                            <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                                                                <span className="text-[10px] text-white/20 font-medium">Last assessed 2 days ago</span>
+                                                                <button className="p-2 rounded-full hover:bg-white/5 text-white/30 hover:text-white transition-colors">
+                                                                    <ChevronRightIcon className="w-4 h-4" />
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>
