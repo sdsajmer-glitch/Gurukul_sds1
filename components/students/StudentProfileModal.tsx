@@ -348,7 +348,7 @@ const GuardianCard: React.FC<{
                     <div className="flex items-center gap-2 mt-1">
                         <div className={`w-1.5 h-1.5 rounded-full ${data ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-white/20'}`}></div>
                         <p className={`text-[10px] font-black uppercase tracking-widest ${data ? (data.is_unlinked ? 'text-amber-500' : 'text-emerald-400/80') : 'text-white/30'}`}>
-                            {data ? (data.is_unlinked ? 'Registry Unlinked (Draft)' : 'Identity Linked') : 'Registry Entry Pending'}
+                            {data ? (data.is_unlinked ? 'Draft Profile' : 'Verified') : 'Not Linked'}
                         </p>
                     </div>
                 </div>
@@ -382,7 +382,7 @@ const GuardianCard: React.FC<{
                     </div>
 
                     <div className="group/item">
-                        <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Encrypted Contact Nodes</p>
+                        <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Contact Information</p>
                         <div className="space-y-3">
                             <div className="flex items-center gap-3.5 group/contact cursor-pointer">
                                 <div className="p-2 bg-white/5 rounded-xl text-white/30 group-hover/contact:bg-indigo-500/10 group-hover/contact:text-indigo-400 transition-all border border-white/5">
@@ -402,7 +402,7 @@ const GuardianCard: React.FC<{
                     {/* Enhanced Address View */}
                     {(data.address || data.city) && (
                         <div className="group/item pt-4 border-t border-white/5">
-                            <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Spatial Registry (Address)</p>
+                            <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Residential Address</p>
                             <div className="flex items-start gap-3.5">
                                 <div className="p-2 bg-white/5 rounded-xl text-white/30 border border-white/5 mt-0.5">
                                     <LocationIcon className="w-4 h-4" />
@@ -416,8 +416,8 @@ const GuardianCard: React.FC<{
                             </div>
                         </div>
                     )}
-                </div>
-            </div>
+                </div >
+            </div >
         ) : (
             /* Premium Empty State */
             <div className="flex-grow flex flex-col items-center justify-center text-center py-12 px-6 relative z-10">
@@ -427,11 +427,11 @@ const GuardianCard: React.FC<{
                         <UsersIcon className="w-12 h-12 text-white/20" />
                     </div>
                 </div>
-                <h5 className="text-base font-bold text-white/60 mb-2">Node Registry Unlinked</h5>
+                <h5 className="text-base font-bold text-white/60 mb-2">No Guardian Linked</h5>
                 <p className="text-[11px] text-white/30 leading-relaxed max-w-[220px] mb-8 font-medium">
                     {isPrimary
-                        ? 'System requires a primary guardian node to establish official registry and emergency protocols.'
-                        : 'Establish secondary guardian redundancy for enhanced safety and administrative coordination.'
+                        ? 'Link a primary guardian to enable emergency contacts and academic updates.'
+                        : 'Add a secondary guardian for backup contact and improved safety.'
                     }
                 </p>
                 <button
@@ -457,7 +457,7 @@ const GuardianCard: React.FC<{
         <div className="absolute bottom-4 right-8 opacity-0 group-hover:opacity-40 transition-opacity duration-500">
             <ChevronRightIcon className="w-4 h-4 text-white" />
         </div>
-    </div>
+    </div >
 );
 
 const GuardianEditModal: React.FC<{
@@ -1222,7 +1222,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 <div className="flex flex-col items-end gap-3 shrink-0">
                                                     <div className="flex items-center gap-2.5 px-4 py-2 bg-[#0c0e12] text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl border border-emerald-500/20 shadow-xl shadow-black/20">
                                                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,1)]"></span>
-                                                        {(parentData || guardianData) ? 'Records Synchronized' : 'Deployment Pending'}
+                                                        {(parentData || guardianData) ? 'Records Synchronized' : 'Setup Incomplete'}
                                                     </div>
 
                                                     {parentData && (
@@ -1277,9 +1277,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                         <AlertTriangleIcon className="w-6 h-6 text-amber-500" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-black text-amber-500 tracking-[0.05em] mb-2 uppercase">Guardian Protocol Failure</p>
+                                                        <p className="text-sm font-black text-amber-500 tracking-[0.05em] mb-2 uppercase">Action Required</p>
                                                         <p className="text-xs text-white/50 leading-relaxed font-medium max-w-2xl">
-                                                            Critical: At least one guardian contact is required for student enrollment. Guardian information is used for emergency notifications, academic updates, and official communications.
+                                                            Please link at least one guardian to ensure student safety and communication. Guardian information is used for emergency notifications and academic updates.
                                                             Initialize a primary link to resolve this warning.
                                                         </p>
                                                     </div>

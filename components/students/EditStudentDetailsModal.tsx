@@ -164,79 +164,119 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         return () => window.removeEventListener('keydown', handleEscape);
     }, [loading, isLinking, onClose]);
 
-    // Fetch Parent Data with Robust Fallback
+    // Fetch Student Contact Details - Enhanced Robust Implementation
     const fetchParent = async () => {
         if (!student?.id) {
-            console.warn('Cannot fetch parent: student ID is missing');
+            console.warn('Cannot fetch contact data: student ID is missing');
             return;
         }
         setIsFetchingParent(true);
         setError(null);
         try {
-            const { data, error: rpcError } = await supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id });
+            // Use the new unified RPC that properly fetches from all sources
+            const { data, error: rpcError } = await supabase.rpc('get_student_contact_details', { p_student_id: student.id });
+
+            if (rpcError) {
+                throw new Error(rpcError.message);
+            }
 
             if (data && data.found) {
                 setParentData(data);
                 if (isMounted.current) setSyncWithParent(true);
             } else {
-                // FALLBACK: RPC failed or didn't find a record. Manual lookup in Admissions/Enquiries.
-                console.log('RPC found no parent, initiating manual fallback lookup...');
-                const { data: admissionLink } = await supabase
-                    .from('admissions')
-                    .select('*')
-                    .or(`student_user_id.eq.${student.id}${student.admission_id ? `,id.eq.${student.admission_id}` : ''}`)
-                    .maybeSingle();
-
-                if (admissionLink && (admissionLink.parent_name || admissionLink.parent_phone)) {
-                    const fallbackData = {
-                        found: true,
-                        name: admissionLink.parent_name,
-                        email: admissionLink.parent_email,
-                        phone: admissionLink.parent_phone,
-                        relationship: 'Parent',
-                        address: admissionLink.address,
-                        city: admissionLink.city,
-                        state: admissionLink.state,
-                        country: admissionLink.country,
-                        pin_code: admissionLink.pin_code,
-                        parent_id: admissionLink.parent_id,
-                        is_unlinked: !admissionLink.parent_id
-                    };
-                    setParentData(fallbackData);
-                    if (isMounted.current) setSyncWithParent(true);
-                } else {
-                    const { data: enquiryData } = await supabase
-                        .from('enquiries')
-                        .select('*')
-                        .eq('user_id', student.id)
-                        .maybeSingle();
-
-                    if (enquiryData && (enquiryData.parent_name || enquiryData.parent_phone)) {
-                        setParentData({
-                            found: true,
-                            name: enquiryData.parent_name,
-                            email: enquiryData.parent_email,
-                            phone: enquiryData.parent_phone,
-                            relationship: 'Parent',
-                            is_unlinked: true
-                        });
-                        if (isMounted.current) setSyncWithParent(true);
-                    } else {
-                        if (isMounted.current) setSyncWithParent(false);
-                    }
-                }
+                // Ultimate fallback: direct queries
+                console.log('RPC found no contact data, initiating fallback queries...');
+                await performFallbackFetch();
             }
-        } catch (e) {
-            console.error("Parent fetch exception:", formatError(e));
-            if (isMounted.current) {
-                setError(`Failed to fetch parent data: ${formatError(e)}`);
-                // Auto-clear error after 5 seconds
-                setTimeout(() => {
-                    if (isMounted.current) setError(null);
-                }, 5000);
-            }
+        } catch (e: any) {
+            console.error("Contact fetch exception:", e);
+            // Try fallback on error
+            await performFallbackFetch();
         } finally {
             if (isMounted.current) setIsFetchingParent(false);
+        }
+    };
+
+    // Fallback fetch when RPC fails
+    const performFallbackFetch = async () => {
+        try {
+            const { data: admissionLink } = await supabase
+                .from('admissions')
+                .select('*')
+                .or(`student_user_id.eq.${student.id}${student.admission_id ? `,id.eq.${student.admission_id}` : ''}`)
+                .maybeSingle();
+
+            if (admissionLink) {
+                setParentData({
+                    found: true,
+                    student_phone: admissionLink.student_phone || admissionLink.phone,
+                    parent_name: admissionLink.parent_name,
+                    parent_phone: admissionLink.parent_phone,
+                    parent_email: admissionLink.parent_email,
+                    relationship: 'Parent',
+                    address: admissionLink.address,
+                    city: admissionLink.city,
+                    state: admissionLink.state,
+                    country: admissionLink.country,
+                    pin_code: admissionLink.pin_code,
+                    parent_id: admissionLink.parent_id,
+                    is_unlinked: !admissionLink.parent_id
+                });
+                if (isMounted.current) setSyncWithParent(true);
+                return;
+            }
+
+            // Try enquiry
+            const { data: enquiryData } = await supabase
+                .from('enquiries')
+                .select('*')
+                .eq('user_id', student.id)
+                .maybeSingle();
+
+            if (enquiryData) {
+                setParentData({
+                    found: true,
+                    student_phone: enquiryData.student_phone || enquiryData.phone,
+                    parent_name: enquiryData.parent_name,
+                    parent_phone: enquiryData.parent_phone,
+                    parent_email: enquiryData.parent_email,
+                    relationship: 'Parent',
+                    address: enquiryData.address,
+                    city: enquiryData.city,
+                    state: enquiryData.state,
+                    country: enquiryData.country,
+                    pin_code: enquiryData.pin_code,
+                    is_unlinked: true
+                });
+                if (isMounted.current) setSyncWithParent(true);
+                return;
+            }
+
+            // Try direct student profile
+            const { data: studentProfile } = await supabase
+                .from('student_profiles')
+                .select('*')
+                .eq('user_id', student.id)
+                .maybeSingle();
+
+            if (studentProfile) {
+                setParentData({
+                    found: true,
+                    student_phone: studentProfile.phone,
+                    parent_name: null,
+                    parent_phone: null,
+                    address: studentProfile.address,
+                    parent_guardian_details: studentProfile.parent_guardian_details,
+                    is_unlinked: true
+                });
+                if (isMounted.current) setSyncWithParent(true);
+                return;
+            }
+
+            if (isMounted.current) setSyncWithParent(false);
+        } catch (e) {
+            console.error("Fallback fetch error:", e);
+            if (isMounted.current) setSyncWithParent(false);
         }
     };
 
