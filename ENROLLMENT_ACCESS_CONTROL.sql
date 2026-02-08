@@ -10,7 +10,11 @@ BEGIN;
 ALTER TABLE public.student_profiles ADD COLUMN IF NOT EXISTS enrollment_status text DEFAULT 'Enrolled';
 ALTER TABLE public.student_profiles ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true;
 
--- 1. Update update_student_details_admin to support enrollment_status
+-- 1. Resolve Ambiguity (Drop old overloads if they exist)
+DROP FUNCTION IF EXISTS public.update_student_details_admin(uuid, text, text, date, text, text, text, text, text);
+DROP FUNCTION IF EXISTS public.update_student_details_admin(uuid, text, text, date, text, text, text, text, text, text);
+
+-- 2. Update update_student_details_admin to support enrollment_status
 CREATE OR REPLACE FUNCTION public.update_student_details_admin(
     p_student_id uuid, 
     p_display_name text DEFAULT NULL, 
