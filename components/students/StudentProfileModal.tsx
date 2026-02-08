@@ -68,39 +68,42 @@ const TabButton: React.FC<{
     <button
         onClick={() => onClick(id)}
         className={`
-            w-full flex items-center gap-3.5 px-5 py-3.5 rounded-xl 
-            transition-all duration-200 group relative overflow-hidden
+            w-full flex items-center gap-4 px-6 py-4 rounded-xl 
+            transition-all duration-300 group relative overflow-hidden
             ${active
-                ? 'bg-indigo-500/10 text-white shadow-lg shadow-indigo-500/5 border border-indigo-500/20'
-                : 'text-white/50 hover:text-white/80 hover:bg-white/5 border border-transparent'
+                ? 'bg-indigo-500/10 text-white shadow-[0_0_20px_-5px_rgba(99,102,241,0.3)] border border-indigo-500/30'
+                : 'text-white/40 hover:text-white/90 hover:bg-white/5 border border-transparent hover:border-white/5'
             }
         `}
         aria-current={active ? 'page' : undefined}
     >
-        {/* Active Indicator Bar */}
+        {/* Active Indicator & Glow */}
         {active && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-r-full shadow-[0_0_12px_rgba(99,102,241,0.5)]"></div>
+            <>
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-10 bg-indigo-500 rounded-r-lg shadow-[0_0_15px_rgba(99,102,241,0.8)]"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent pointer-events-none" />
+            </>
         )}
 
-        {/* Icon */}
+        {/* Icon Container */}
         <div className={`
-            relative z-10 transition-all duration-200
-            ${active ? 'text-indigo-400 scale-105' : 'text-white/40 group-hover:text-white/70 group-hover:scale-105'}
+            relative z-10 p-1 transition-all duration-300
+            ${active ? 'text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.5)] scale-110' : 'text-white/40 group-hover:text-white group-hover:scale-110'}
         `}>
             {icon}
         </div>
 
         {/* Label */}
         <span className={`
-            relative z-10 text-xs font-bold tracking-wide transition-all duration-200
-            ${active ? 'text-white' : 'text-white/60 group-hover:text-white/90'}
+            relative z-10 text-xs font-black tracking-[0.15em] uppercase transition-all duration-300
+            ${active ? 'text-white translate-x-1' : 'text-white/50 group-hover:text-white group-hover:translate-x-1'}
         `}>
             {label}
         </span>
 
-        {/* Subtle Background Glow on Hover */}
+        {/* Hover Shine Effect */}
         {!active && (
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
         )}
     </button>
 );
@@ -120,63 +123,97 @@ const handleCopy = (text: string, label: string) => {
 
 // Fix: Added missing InfoRow component for profile detail rendering.
 const InfoRow: React.FC<{ label: string; value: string | null | undefined; icon: React.ReactNode }> = ({ label, value, icon }) => (
-    <div className="flex items-center gap-5 py-5 border-b border-border/40 last:border-0 group transition-all hover:bg-muted/10 px-2 rounded-xl">
-        <div className="p-3 bg-muted/40 rounded-xl text-muted-foreground group-hover:text-primary group-hover:bg-primary/10 transition-all duration-500 group-hover:scale-110">
+    <div className="flex items-center gap-5 py-5 border-b border-white/5 last:border-0 group transition-all hover:bg-white/5 px-4 rounded-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-indigo-500/5 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500"></div>
+        <div className="p-3 bg-white/5 rounded-xl text-white/40 group-hover:text-indigo-400 group-hover:bg-indigo-500/10 transition-all duration-500 group-hover:scale-110 relative z-10 border border-white/5 group-hover:border-indigo-500/20">
             {icon}
         </div>
-        <div>
-            <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.2em] mb-1">{label}</p>
-            <p className="text-sm font-bold text-foreground/90 tracking-tight">{value || '—'}</p>
+        <div className="relative z-10">
+            <p className="text-[9px] font-black uppercase text-white/30 tracking-[0.2em] mb-1 group-hover:text-indigo-400/50 transition-colors">{label}</p>
+            <p className="text-sm font-bold text-white tracking-tight">{value || '—'}</p>
         </div>
     </div>
 );
 
 // Fix: Added missing DigitalIdCard component to visualize student identity node.
 const DigitalIdCard: React.FC<{ student: StudentForAdmin }> = ({ student }) => (
-    <div className="bg-gradient-to-br from-primary/10 via-indigo-500/5 to-transparent border border-primary/20 rounded-[2.5rem] p-10 relative overflow-hidden group shadow-2xl hover:shadow-primary/10 transition-all duration-700">
-        <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.06] group-hover:scale-110 transition-all duration-1000">
-            <SchoolIcon className="w-48 h-48" />
+    <div className="relative group overflow-hidden rounded-[2.5rem] bg-[#0c0e12] border border-white/10 transition-all duration-500 hover:shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)] hover:border-indigo-500/30">
+        {/* Holographic Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+
+        {/* Animated Grid / Scanlines */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
+        <div className="absolute top-0 right-0 w-full h-full bg-[linear-gradient(transparent_0%,rgba(99,102,241,0.05)_50%,transparent_100%)] bg-[length:100%_4px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+        {/* Floating Logo Watermark */}
+        <div className="absolute -top-10 -right-10 p-10 opacity-[0.05] group-hover:opacity-[0.1] group-hover:rotate-12 transition-all duration-1000">
+            <SchoolIcon className="w-64 h-64 text-indigo-100" />
         </div>
-        <div className="relative z-10 space-y-8">
-            <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Digital Identity Node</span>
-                <ShieldCheckIcon className="w-5 h-5 text-primary opacity-40" />
+
+        <div className="relative z-10 p-8 space-y-8">
+            <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_10px_#6366f1]"></span>
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">Digital Identity Node</span>
+                </span>
+                <ShieldCheckIcon className="w-5 h-5 text-indigo-500 opacity-60 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
             </div>
-            <div className="flex items-center gap-6">
-                <div className="relative">
-                    <PremiumAvatar src={student.profile_photo_url} name={student.display_name} size="md" className="rounded-2xl border-2 border-primary/40 p-1 shadow-2xl shadow-primary/20" />
-                    <div className="absolute -bottom-2 -right-2 bg-accent-success p-1 rounded-full border-4 border-[#08090a]">
-                        <CheckCircleIcon className="w-4 h-4 text-white" />
+
+            <div className="flex items-center gap-8">
+                <div className="relative shrink-0">
+                    <PremiumAvatar
+                        src={student.profile_photo_url}
+                        name={student.display_name}
+                        size="md"
+                        className="rounded-2xl border-2 border-indigo-500/30 p-1 shadow-2xl shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-shadow duration-500"
+                    />
+                    <div className="absolute -bottom-2 -right-2 bg-[#0c0e12] p-1.5 rounded-full border border-white/10">
+                        <CheckCircleIcon className="w-5 h-5 text-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)] rounded-full" />
                     </div>
                 </div>
-                <div>
-                    <h4 className="text-2xl font-serif font-black text-foreground uppercase tracking-tight">{student.display_name}</h4>
-                    <p className="text-xs text-muted-foreground/60 font-mono mt-1 uppercase tracking-[0.2em]">{student.student_id_number || 'NODE_PENDING'}</p>
+
+                <div className="space-y-2">
+                    <h4 className="text-3xl font-black text-white uppercase tracking-tight leading-none group-hover:text-indigo-100 transition-colors">
+                        {student.display_name}
+                    </h4>
+                    <div className="flex items-center gap-3">
+                        <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] font-mono text-white/50 tracking-wider">
+                            UID: {student.student_id_number || 'PENDING'}
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-mono text-indigo-300 tracking-wider">
+                            STUDENT
+                        </span>
+                    </div>
                 </div>
             </div>
-            <div className="pt-8 border-t border-border/40 flex justify-between items-center">
+
+            <div className="pt-6 grid grid-cols-2 gap-8">
                 <div className="space-y-1.5">
-                    <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.3em]">Temporal Block</p>
-                    <p className="text-sm font-bold text-foreground/70 uppercase">SESSION 2024-25</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em]">Temporal Block</p>
+                    <p className="text-sm font-bold text-white/80 uppercase font-mono">Session 2024-25</p>
                 </div>
-                <div className="text-right space-y-1.5">
-                    <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.3em]">Registry Node</p>
-                    <p className="text-sm font-bold text-foreground/70 uppercase tracking-tight">{student.assigned_class_name || 'UNASSIGNED'}</p>
+                <div className="space-y-1.5 text-right">
+                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em]">Registry Node</p>
+                    <p className="text-sm font-bold text-white/80 uppercase tracking-tight">{student.assigned_class_name || 'UNASSIGNED'}</p>
                 </div>
             </div>
         </div>
+
+        {/* Bottom Bar Gradient */}
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 opacity-50"></div>
     </div>
 );
 
 // Fix: Added missing CoreInfoCard component for key academic metrics.
 const CoreInfoCard: React.FC<{ label: string; value?: string | null; icon: React.ReactNode }> = ({ label, value, icon }) => (
-    <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center gap-5 group hover:border-primary/20 transition-all shadow-inner">
-        <div className="p-3 bg-primary/10 rounded-xl text-primary group-hover:scale-110 transition-transform">
+    <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] flex items-center gap-5 group hover:border-indigo-500/30 transition-all shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-1 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div className="p-3.5 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-inner border border-indigo-500/20 relative z-10">
             {icon}
         </div>
-        <div>
-            <p className="text-[10px] font-black uppercase text-white/20 tracking-widest mb-1">{label}</p>
-            <p className="text-lg font-bold text-white tracking-tight">{value || 'Standby'}</p>
+        <div className="relative z-10">
+            <p className="text-[10px] font-black uppercase text-white/30 tracking-[0.25em] mb-1 group-hover:text-indigo-400/50 transition-colors">{label}</p>
+            <p className="text-xl font-black text-white tracking-tight leading-none">{value || 'Standby'}</p>
         </div>
     </div>
 );
@@ -1011,7 +1048,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[150] flex items-center justify-center p-0 md:p-6 overflow-hidden">
             <div className="bg-[#08090a] w-full max-w-[1400px] h-full md:h-[92vh] md:rounded-[3rem] shadow-2xl border border-white/10 flex flex-col overflow-hidden relative ring-1 ring-white/5 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
 
-                <div className="px-8 py-6 border-b border-white/8 bg-[#0a0b0f]/95 flex justify-between items-center shrink-0 z-20 backdrop-blur-xl">
+                <div className="px-8 py-6 border-b border-white/5 bg-gradient-to-r from-[#0a0b0f] via-[#0f1115] to-[#0a0b0f] flex justify-between items-center shrink-0 z-20 backdrop-blur-xl relative">
+                    <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
                     <div className="flex items-center gap-6">
                         {/* Profile Photo */}
                         <div className="relative group/photo">
@@ -1069,13 +1107,14 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
                 <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
                     {/* Sidebar Nav */}
-                    <div className="w-full md:w-72 bg-[#0a0b0f]/50 border-r border-white/5 flex-shrink-0 flex flex-col backdrop-blur-sm">
+                    <div className="w-full md:w-72 bg-[#0a0b0f] border-r border-white/5 flex-shrink-0 flex flex-col relative z-10">
                         <div className="p-6 space-y-1.5 overflow-y-auto custom-scrollbar flex-grow">
                             {/* Core Registry Section */}
-                            <p className="px-4 text-[9px] font-bold text-white/25 uppercase tracking-[0.2em] mb-4 pb-2 border-b border-white/5">
-                                Core Registry
+                            <p className="px-6 text-[9px] font-black text-indigo-400/80 uppercase tracking-[0.2em] mb-4 pb-2 border-b border-indigo-500/10 flex items-center gap-2">
+                                <span className="w-1 h-3 bg-indigo-500 rounded-full"></span>
+                                Game Registry
                             </p>
-                            <div className="space-y-1">
+                            <div className="space-y-1.5 px-2">
                                 <TabButton id="overview" label="Overview" icon={<ActivityIcon className="w-5 h-5" />} active={activeTab === 'overview'} onClick={setActiveTab} />
                                 <TabButton id="parents" label="Guardians" icon={<UsersIcon className="w-5 h-5" />} active={activeTab === 'parents'} onClick={setActiveTab} />
                                 <TabButton id="academic" label="Academics" icon={<GraduationCapIcon className="w-5 h-5" />} active={activeTab === 'academic'} onClick={setActiveTab} />
@@ -1104,43 +1143,65 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                 {activeTab === 'overview' && (
                                     <div className="space-y-12 max-w-5xl animate-in fade-in slide-in-from-right-4 duration-700">
                                         {/* Quick Stats Grid */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-                                            <div className="p-8 rounded-[2.5rem] bg-card border border-border/40 flex flex-col justify-between h-44 group hover:border-primary/20 transition-all duration-500 shadow-xl shadow-black/5 hover:-translate-y-1 ring-1 ring-inset ring-border/5">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="p-3.5 bg-primary/10 rounded-2xl text-primary group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-inner border border-primary/20"><SchoolIcon className="w-6 h-6" /></div>
-                                                    <span className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.3em]">Placement</span>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                            {/* Placement Card */}
+                                            <div className="p-8 rounded-[2rem] bg-[#0c0e12] border border-white/5 flex flex-col justify-between h-48 group hover:border-indigo-500/30 transition-all duration-500 shadow-xl shadow-black/20 hover:shadow-indigo-500/10 hover:-translate-y-1 relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-[50px] group-hover:bg-indigo-500/10 transition-colors"></div>
+                                                <div className="flex justify-between items-start relative z-10">
+                                                    <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border border-indigo-500/20">
+                                                        <SchoolIcon className="w-6 h-6" />
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] group-hover:text-indigo-400/50 transition-colors">Placement</span>
                                                 </div>
-                                                <div>
-                                                    <p className="text-2xl font-black text-foreground uppercase tracking-tight leading-none mb-2">{syncedStudent.assigned_class_name || 'Unassigned'}</p>
-                                                    <p className="text-[10px] text-muted-foreground/40 font-black uppercase tracking-[0.2em]">Current Class</p>
-                                                </div>
-                                            </div>
-                                            <div className="p-8 rounded-[2.5rem] bg-card border border-border/40 flex flex-col justify-between h-44 group hover:border-accent-success/20 transition-all duration-500 shadow-xl shadow-black/5 hover:-translate-y-1 ring-1 ring-inset ring-border/5">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="p-3.5 bg-accent-success/10 rounded-2xl text-accent-success group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-inner border border-accent-success/20"><CheckCircleIcon className="w-6 h-6" /></div>
-                                                    <span className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.3em]">Attendance</span>
-                                                </div>
-                                                <div>
-                                                    <p className="text-2xl font-black text-foreground tracking-tight leading-none mb-2">94% <span className="text-sm font-black text-muted-foreground/30 uppercase tracking-widest ml-1">Avg</span></p>
-                                                    <p className="text-[10px] text-muted-foreground/40 font-black uppercase tracking-[0.2em]">Participation</p>
+                                                <div className="relative z-10">
+                                                    <p className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-2 group-hover:text-indigo-100 transition-colors">
+                                                        {syncedStudent.assigned_class_name || 'Unassigned'}
+                                                    </p>
+                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em]">Current Class</p>
                                                 </div>
                                             </div>
-                                            <div className="p-8 rounded-[2.5rem] bg-card border border-border/40 flex flex-col justify-between h-44 group hover:border-accent-premium/20 transition-all duration-500 shadow-xl shadow-black/5 hover:-translate-y-1 ring-1 ring-inset ring-border/5">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="p-3.5 bg-accent-premium/10 rounded-2xl text-accent-premium group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-inner border border-accent-premium/20"><DollarSignIcon className="w-6 h-6" /></div>
-                                                    <span className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.3em]">Balance</span>
+
+                                            {/* Attendance Card */}
+                                            <div className="p-8 rounded-[2rem] bg-[#0c0e12] border border-white/5 flex flex-col justify-between h-48 group hover:border-emerald-500/30 transition-all duration-500 shadow-xl shadow-black/20 hover:shadow-emerald-500/10 hover:-translate-y-1 relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-[50px] group-hover:bg-emerald-500/10 transition-colors"></div>
+                                                <div className="flex justify-between items-start relative z-10">
+                                                    <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border border-emerald-500/20">
+                                                        <CheckCircleIcon className="w-6 h-6" />
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] group-hover:text-emerald-400/50 transition-colors">Attendance</span>
                                                 </div>
-                                                <div>
-                                                    <p className={`text-2xl font-black tracking-tight leading-none mb-2 ${feesSummary?.outstanding_balance > 0 ? 'text-accent-error' : 'text-accent-success'}`}>{formatCurrency(feesSummary?.outstanding_balance || 0)}</p>
-                                                    <p className="text-[10px] text-muted-foreground/40 font-black uppercase tracking-[0.2em]">Outstanding Dues</p>
+                                                <div className="relative z-10">
+                                                    <p className="text-2xl font-black text-white tracking-tight leading-none mb-2 group-hover:text-emerald-100 transition-colors">
+                                                        94% <span className="text-sm font-black text-emerald-500/50 uppercase tracking-widest ml-1">Avg</span>
+                                                    </p>
+                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em]">Participation</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Balance Card */}
+                                            <div className="p-8 rounded-[2rem] bg-[#0c0e12] border border-white/5 flex flex-col justify-between h-48 group hover:border-amber-500/30 transition-all duration-500 shadow-xl shadow-black/20 hover:shadow-amber-500/10 hover:-translate-y-1 relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-[50px] group-hover:bg-amber-500/10 transition-colors"></div>
+                                                <div className="flex justify-between items-start relative z-10">
+                                                    <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border border-amber-500/20">
+                                                        <DollarSignIcon className="w-6 h-6" />
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] group-hover:text-amber-500/50 transition-colors">Balance</span>
+                                                </div>
+                                                <div className="relative z-10">
+                                                    <p className={`text-2xl font-black tracking-tight leading-none mb-2 ${feesSummary?.outstanding_balance > 0 ? 'text-amber-500' : 'text-emerald-400'}`}>
+                                                        {formatCurrency(feesSummary?.outstanding_balance || 0)}
+                                                    </p>
+                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em]">Outstanding Dues</p>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                                             <div className="space-y-8">
-                                                <div className="border-b border-border/40 pb-4">
-                                                    <h3 className="text-[11px] font-black text-muted-foreground/30 uppercase tracking-[0.4em]">Personal Details</h3>
+                                                <div className="pb-4">
+                                                    <h3 className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center gap-4">
+                                                        Personal Details <div className="h-px bg-white/5 flex-grow"></div>
+                                                    </h3>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <InfoRow label="Legal Name" value={syncedStudent.display_name} icon={<UserIcon className="w-5 h-5" />} />
@@ -1150,8 +1211,10 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 </div>
                                             </div>
                                             <div className="space-y-8">
-                                                <div className="border-b border-border/40 pb-4">
-                                                    <h3 className="text-[11px] font-black text-muted-foreground/30 uppercase tracking-[0.4em]">Contact Information</h3>
+                                                <div className="pb-4">
+                                                    <h3 className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center gap-4">
+                                                        Contact Information <div className="h-px bg-white/5 flex-grow"></div>
+                                                    </h3>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <InfoRow label="Primary Email" value={syncedStudent.email} icon={<MailIcon className="w-5 h-5" />} />
