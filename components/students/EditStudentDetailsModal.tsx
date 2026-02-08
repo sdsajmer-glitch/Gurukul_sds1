@@ -21,18 +21,19 @@ interface EditStudentDetailsModalProps {
     onSave: () => void;
 }
 
-const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string, icon?: React.ReactNode, isTextArea?: boolean }> = ({ label, icon, isTextArea, className, readOnly, ...props }) => {
+const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string, icon?: React.ReactNode, isTextArea?: boolean, isLoading?: boolean, source?: string }> = ({ label, icon, isTextArea, className, readOnly, isLoading, source, ...props }) => {
     const inputClasses = `
         peer block w-full rounded-2xl border bg-black/40 px-5 py-4 pl-12 text-sm text-white shadow-inner
         focus:border-white/20 focus:ring-4 focus:ring-white/5 focus:outline-none placeholder-transparent transition-all duration-500
         ${readOnly ? 'opacity-40 cursor-default border-transparent' : 'border-white/5 hover:border-white/10'} 
+        ${isLoading ? 'animate-pulse border-[#7c3aed]/20' : ''}
         ${className}
     `;
 
     return (
         <div className="relative group w-full">
             <div className={`absolute ${isTextArea ? 'top-5' : 'top-1/2 -translate-y-1/2'} left-5 text-white/20 transition-colors z-10 pointer-events-none`}>
-                {icon}
+                {isLoading ? <Spinner size="sm" className="text-[#a78bfa]" /> : icon}
             </div>
 
             {isTextArea ? (
@@ -60,6 +61,13 @@ const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLT
                 {label}
             </label>
 
+            {source && !isLoading && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center pointer-events-none animate-in fade-in slide-in-from-right-4 duration-700">
+                    <span className="px-2 py-1 rounded bg-[#7c3aed]/10 border border-[#7c3aed]/20 text-[7px] font-black text-[#a78bfa] uppercase tracking-tighter">
+                        Registry: {source}
+                    </span>
+                </div>
+            )}
         </div>
     );
 };
@@ -108,6 +116,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
     const [parentData, setParentData] = useState<any>(null);
     const [isFetchingParent, setIsFetchingParent] = useState(false);
+    const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
 
     // UI State
     const [loading, setLoading] = useState(false);
@@ -259,19 +268,35 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
             // Construct Guardian Details
             const guardianInfo = parentData.parent_name
-                ? `${parentData.parent_name} (${parentData.relationship || parentData.parent_relationship || 'Guardian'})`
+                ? `${parentData.parent_name} (${parentData.parent_relationship || parentData.relationship || 'Guardian'})`
                 : (parentData.name ? `${parentData.name} (${parentData.relationship || 'Guardian'})` : '');
 
             // determine phone: prioritize student_phone > parent_phone > phone
             const bestPhone = parentData.student_phone || parentData.parent_phone || parentData.phone || '';
 
-            setFormData(prev => ({
-                ...prev,
-                // Only auto-fill if the fields are currently empty to avoid overwriting manual changes
-                phone: prev.phone || bestPhone,
-                address: prev.address || fullAddress,
-                parent_guardian_details: prev.parent_guardian_details || guardianInfo
-            }));
+            setFormData(prev => {
+                const newFields = new Set(autoFilledFields);
+                const updates: any = {};
+
+                if (!prev.phone && bestPhone) {
+                    updates.phone = bestPhone;
+                    newFields.add('phone');
+                }
+                if (!prev.address && fullAddress) {
+                    updates.address = fullAddress;
+                    newFields.add('address');
+                }
+                if (!prev.parent_guardian_details && guardianInfo) {
+                    updates.parent_guardian_details = guardianInfo;
+                    newFields.add('parent_guardian_details');
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    setAutoFilledFields(newFields);
+                    return { ...prev, ...updates };
+                }
+                return prev;
+            });
         }
     }, [parentData]);
 
@@ -388,6 +413,8 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 value={formData.phone}
                                 onChange={handleChange}
                                 icon={<PhoneIcon className="w-4 h-4" />}
+                                isLoading={isFetchingParent && !formData.phone}
+                                source={autoFilledFields.has('phone') ? (parentData?.found ? 'Admission' : 'Fallback') : undefined}
                             />
                             <FloatingInput
                                 label="Guardian Name / Relationship"
@@ -395,6 +422,8 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 value={formData.parent_guardian_details}
                                 onChange={handleChange}
                                 icon={<UsersIcon className="w-4 h-4" />}
+                                isLoading={isFetchingParent && !formData.parent_guardian_details}
+                                source={autoFilledFields.has('parent_guardian_details') ? (parentData?.found ? 'Admission' : 'Fallback') : undefined}
                             />
                         </div>
 
@@ -405,6 +434,8 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             onChange={handleChange as any}
                             icon={<LocationIcon className="w-4 h-4" />}
                             isTextArea
+                            isLoading={isFetchingParent && !formData.address}
+                            source={autoFilledFields.has('address') ? (parentData?.found ? 'Admission' : 'Fallback') : undefined}
                         />
                     </section>
 
