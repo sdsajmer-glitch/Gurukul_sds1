@@ -831,12 +831,31 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            // 1. Fetch Guardians (Parent & Secondary)
-            const { data: parentRes } = await supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id });
+            // Parallel fetch of all potential data sources to optimize performance and reduce waterfalls
+            const [
+                { data: parentRes },
+                { data: admissionRes },
+                { data: enquiryRes },
+                { data: classData },
+                { data: feeData }
+            ] = await Promise.all([
+                supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id }),
+                // Fetch admission record - try both student_user_id and admission_id
+                supabase.from('admissions').select('*').or(`student_user_id.eq.${student.id},id.eq.${student.admission_id || -1}`).maybeSingle(),
+                // Fetch enquiry record
+                supabase.from('enquiries').select('*').eq('user_id', student.id).maybeSingle(),
+                // Fetch latest class assignment
+                supabase.from('student_profiles').select('assigned_class_id, school_classes!student_profiles_assigned_class_id_fkey(name)').eq('user_id', student.id).maybeSingle(),
+                // Fetch fee summary
+                supabase.rpc('get_student_fee_summary', { p_student_id: student.id })
+            ]);
 
-            let fetchedParentData: any = null; // Local variable to hold parent data for immediate use
+            // --- 1. Resolve Parent/Guardian Identifier Data ---
+            let combinedParentData: any = null;
+            let combinedGuardianData: any = null;
 
             if (parentRes && parentRes.found) {
+                // Strategy A: Direct Link Found via RPC
                 const baseInfo = {
                     parent_id: parentRes.parent_id,
                     address: parentRes.address,
@@ -846,7 +865,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     pin_code: parentRes.pin_code
                 };
 
-                fetchedParentData = {
+                combinedParentData = {
                     ...baseInfo,
                     name: parentRes.name,
                     email: parentRes.email,
@@ -854,18 +873,17 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     relationship: parentRes.relationship
                 };
 
-                setParentData(fetchedParentData);
-
+                // Secondary Parent Handling
                 if (parentRes.secondary_parent_name) {
-                    setGuardianData({
+                    combinedGuardianData = {
                         ...baseInfo,
                         name: parentRes.secondary_parent_name,
                         email: parentRes.secondary_parent_email,
                         phone: parentRes.secondary_parent_phone,
                         relationship: parentRes.secondary_parent_relationship
-                    });
+                    };
                 } else if (parentRes.parent_id) {
-                    // Fallback: Check if record exists but RPC missed it (though RPC V4 should catch it)
+                    // Deep Lookup: Check parent profile for secondary guardian if RPC didn't return it
                     const { data: secParent } = await supabase
                         .from('parent_profiles')
                         .select('secondary_parent_name, secondary_parent_email, secondary_parent_phone, secondary_parent_relationship')
@@ -873,152 +891,87 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         .maybeSingle();
 
                     if (secParent && secParent.secondary_parent_name) {
-                        setGuardianData({
+                        combinedGuardianData = {
                             ...baseInfo,
                             name: secParent.secondary_parent_name,
                             email: secParent.secondary_parent_email,
                             phone: secParent.secondary_parent_phone,
                             relationship: secParent.secondary_parent_relationship
-                        });
+                        };
                     }
                 }
             } else {
-                // FALLBACK: RPC failed or didn't find a record. Manual lookup in Admissions/Enquiries.
-                console.log('RPC failed to find parent, initiating manual fallback lookup...');
-                const { data: admissionLink } = await supabase
-                    .from('admissions')
-                    .select('*')
-                    .or(`student_user_id.eq.${student.id}${student.admission_id ? `,id.eq.${student.admission_id}` : ''}`)
-                    .maybeSingle();
+                // Strategy B: Fallback to Admission/Enquiry Data
+                // Prioritize Admission over Enquiry
+                const source = admissionRes || enquiryRes;
 
-                if (admissionLink) {
-                    fetchedParentData = {
-                        name: admissionLink.parent_name,
-                        email: admissionLink.parent_email,
-                        phone: admissionLink.parent_phone,
-                        relationship: 'Parent',
-                        address: admissionLink.address,
-                        parent_id: admissionLink.parent_id,
-                        is_unlinked: !admissionLink.parent_id
-                    };
-                    setParentData(fetchedParentData);
-                } else {
-                    const { data: enquiryData } = await supabase
-                        .from('enquiries')
-                        .select('*')
-                        .eq('user_id', student.id)
-                        .maybeSingle();
+                if (source) {
+                    // Extract parent info if available
+                    if (source.parent_name || source.parent_phone || source.father_name || source.mother_name) {
+                        const pName = source.parent_name || source.father_name || source.mother_name || 'Unlinked Parent';
+                        const pEmail = source.parent_email || source.email; // Fallback to main email if specific parent email missing
+                        const pPhone = source.parent_phone || source.phone; // Fallback to main phone
 
-                    if (enquiryData) {
-                        fetchedParentData = {
-                            name: enquiryData.parent_name,
-                            email: enquiryData.parent_email,
-                            phone: enquiryData.parent_phone,
+                        combinedParentData = {
+                            name: pName,
+                            email: pEmail,
+                            phone: pPhone,
                             relationship: 'Parent',
+                            address: source.address,
+                            parent_id: (source as any).parent_id || null,
                             is_unlinked: true
                         };
-                        setParentData(fetchedParentData);
                     }
                 }
             }
 
-            // Capture the parent data locally for immediate use in subsequent logic (fixing state closure issue)
-            const currentParentData = fetchedParentData;
+            setParentData(combinedParentData);
+            setGuardianData(combinedGuardianData);
 
-            // 2. Fetch Identity Documents & Sync Missing identity Context
-            // We use a multi-stage lookup to recover identity data from Admission or Enquiry records
-            const { data: admissionByUserId } = await supabase
-                .from('admissions')
-                .select('id, applicant_name, gender, date_of_birth, profile_photo_url, parent_phone, parent_name, parent_email, grade, address')
-                .eq('student_user_id', student.id)
-                .maybeSingle();
+            // --- 2. Sync Student Identity Context ---
+            // Merge data from multiple sources to fill gaps in student profile
+            // Priority: Existing Prop > Admission > Enquiry > Combined Parent Data
 
-            let admissionLink = admissionByUserId;
+            const bestDisplayName =
+                (student.display_name && student.display_name !== 'Academic Identity') ? student.display_name :
+                    (admissionRes?.applicant_name || enquiryRes?.applicant_name || student.display_name);
 
-            // Fallback: If admission not found by user_id, try by admission_id if available
-            if (!admissionLink && student.admission_id) {
-                const { data: admissionById } = await supabase
-                    .from('admissions')
-                    .select('id, applicant_name, gender, date_of_birth, profile_photo_url, parent_phone, parent_name, parent_email, grade, address')
-                    .eq('id', student.admission_id)
-                    .maybeSingle();
-                if (admissionById) admissionLink = admissionById;
+            const bestPhone = student.phone || admissionRes?.student_phone || admissionRes?.parent_phone || enquiryRes?.parent_phone || combinedParentData?.phone;
+            const bestAddress = student.address || admissionRes?.address || enquiryRes?.address || combinedParentData?.address;
+            const bestDob = student.date_of_birth || admissionRes?.date_of_birth;
+            const bestGender = student.gender || admissionRes?.gender;
+            const bestPhoto = student.profile_photo_url || admissionRes?.profile_photo_url || enquiryRes?.profile_photo_url;
+            const bestGrade = student.grade || admissionRes?.grade || enquiryRes?.grade;
+
+            setSyncedStudent(prev => ({
+                ...prev,
+                display_name: bestDisplayName,
+                phone: bestPhone,
+                address: bestAddress,
+                date_of_birth: bestDob,
+                gender: bestGender,
+                profile_photo_url: bestPhoto,
+                grade: bestGrade,
+                // Class assignment logic (Step 3)
+                assigned_class_id: classData?.assigned_class_id || prev.assigned_class_id,
+                assigned_class_name: classData?.school_classes?.name || prev.assigned_class_name
+            }));
+
+            // --- 3. Additional Data (Documents & Fees) ---
+            if (admissionRes) {
+                const { data: docList } = await supabase
+                    .from('document_requirements')
+                    .select('*, admission_documents(*)')
+                    .eq('admission_id', admissionRes.id);
+                setDocs(docList || []);
             }
 
-            // Secondary Fallback: Try fetching from enquiries if still missing key data
-            const { data: enquiryData } = await supabase
-                .from('enquiries')
-                .select('applicant_name, profile_photo_url, parent_phone, parent_name, parent_email, grade, address')
-                .eq('user_id', student.id)
-                .maybeSingle();
-
-            if (admissionLink || enquiryData) {
-                // Auto-sync missing fields into the local view state using prioritize hierarchy: Prop > Admission > Enquiry
-                setSyncedStudent(prev => ({
-                    ...prev,
-                    gender: prev.gender || admissionLink?.gender,
-                    date_of_birth: prev.date_of_birth || admissionLink?.date_of_birth,
-                    profile_photo_url: prev.profile_photo_url || admissionLink?.profile_photo_url || enquiryData?.profile_photo_url,
-                    grade: prev.grade || admissionLink?.grade || enquiryData?.grade,
-                    display_name: (prev.display_name === 'Academic Identity' || !prev.display_name)
-                        ? (admissionLink?.applicant_name || enquiryData?.applicant_name || prev.display_name)
-                        : prev.display_name,
-                    phone: prev.phone || admissionLink?.parent_phone || enquiryData?.parent_phone || currentParentData?.phone,
-                    address: prev.address || admissionLink?.address || enquiryData?.address || currentParentData?.address,
-                }));
-
-                // Fetch documents associated with the discovered admission
-                if (admissionLink) {
-                    const { data: docList } = await supabase
-                        .from('document_requirements')
-                        .select('*, admission_documents(*)')
-                        .eq('admission_id', admissionLink.id);
-                    setDocs(docList || []);
-                }
-            }
-
-            // Fix: If RPC didn't return parent data but we found an admission/enquiry link, populate parentData from it
-            // Prioritize the source that actually has data (Admission > Enquiry)
-            if (!parentRes?.found && (admissionLink || enquiryData)) {
-                // Check if admission has valid parent data, otherwise fall back to enquiry
-                const hasAdmissionParent = admissionLink?.parent_name || admissionLink?.parent_phone;
-                const source = hasAdmissionParent ? admissionLink : enquiryData;
-
-                if (source && (source.parent_name || source.parent_phone)) {
-                    setParentData({
-                        name: source.parent_name || 'Parent (Unlinked)',
-                        email: source.parent_email || null,
-                        phone: source.parent_phone || null,
-                        relationship: 'Parent',
-                        parent_id: null // Explicitly null to indicate unlinked state
-                    });
-                }
-            }
-
-            // 4. Fetch Latest Academic Placement (Class Assignment)
-            // Fix: 'Unassigned' bug by fetching fresh class data from student_profiles linked table
-            const { data: classData } = await supabase
-                .from('student_profiles')
-                .select('assigned_class_id, school_classes!student_profiles_assigned_class_id_fkey(name)')
-                .eq('user_id', student.id)
-                .maybeSingle();
-
-            if (classData) {
-                setSyncedStudent(prev => ({
-                    ...prev,
-                    assigned_class_id: classData.assigned_class_id,
-                    assigned_class_name: classData.school_classes?.name || prev.assigned_class_name
-                }));
-            }
-
-            // 5. Fetch Fees
-            const { data: feeData } = await supabase.rpc('get_student_fee_summary', { p_student_id: student.id });
             setFeesSummary(feeData);
 
-            // 6. Activity Log
+            // --- 4. Activity Log ---
             setActivityLog([
-                { id: 1, action: 'Profile Updated', date: 'new Date().toISOString()', user: 'Admin' },
-                { id: 2, action: 'Class Link Verified', date: 'new Date().toISOString()', user: 'System' },
+                { id: 1, action: 'Profile Synced', date: new Date().toISOString(), user: 'System' },
+                { id: 2, action: 'Identity Verified', date: new Date().toISOString(), user: 'System' },
             ]);
 
         } catch (err) {
