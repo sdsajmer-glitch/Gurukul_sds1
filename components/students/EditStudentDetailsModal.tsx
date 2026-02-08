@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, formatError } from '../../services/supabase';
-import { StudentForAdmin } from '../../types';
+import { StudentForAdmin, BuiltInRoles } from '../../types';
 import Spinner from '../common/Spinner';
 import { XIcon } from '../icons/XIcon';
 import { UserIcon } from '../icons/UserIcon';
@@ -11,7 +11,15 @@ import { CalendarIcon } from '../icons/CalendarIcon';
 import { LocationIcon } from '../icons/LocationIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { UsersIcon } from '../icons/UsersIcon';
-import { SparklesIcon } from 'lucide-react'; // If lucide is available, else I'll stick to icons I have
+import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+import { ActivityIcon } from '../icons/ActivityIcon';
+import { SparklesIcon } from 'lucide-react';
+
+interface EditStudentDetailsModalProps {
+    student: StudentForAdmin;
+    onClose: () => void;
+    onSave: () => void;
+}
 
 // --- Floating Input Component (Premium Node) ---
 
@@ -114,6 +122,24 @@ const FloatingInput: React.FC<FloatingInputProps> = ({
 };
 
 const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ student, onClose, onSave }) => {
+    // 1. Context & User Resolution
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [isCheckingRole, setIsCheckingRole] = useState(true);
+
+    useEffect(() => {
+        const resolveUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+                setUserRole(data?.role || null);
+            }
+            setIsCheckingRole(false);
+        };
+        resolveUser();
+    }, []);
+
+    const isSchoolAdmin = userRole === BuiltInRoles.SCHOOL_ADMINISTRATION || userRole === 'School Administration';
+
     // Robust Date Parsing
     const parseDate = (d?: string) => {
         if (!d) return '';
@@ -136,6 +162,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         phone: student.phone || '',
         address: student.address || '',
         parent_guardian_details: student.parent_guardian_details || '',
+        enrollment_status: student.enrollment_status || 'Active',
     });
 
     // Reactive Refresh
@@ -143,14 +170,15 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         if (student) {
             setFormData(prev => ({
                 ...prev,
-                display_name: prev.display_name || student.display_name || '',
-                student_id_number: prev.student_id_number || student.student_id_number || '',
-                grade: prev.grade || student.grade || '',
-                date_of_birth: prev.date_of_birth || parseDate(student.date_of_birth),
-                gender: prev.gender || student.gender || '',
-                phone: prev.phone || student.phone || '',
-                address: prev.address || student.address || '',
-                parent_guardian_details: prev.parent_guardian_details || student.parent_guardian_details || '',
+                display_name: student.display_name || prev.display_name,
+                student_id_number: student.student_id_number || prev.student_id_number,
+                grade: student.grade || prev.grade,
+                date_of_birth: parseDate(student.date_of_birth) || prev.date_of_birth,
+                gender: student.gender || prev.gender,
+                phone: student.phone || prev.phone,
+                address: student.address || prev.address,
+                parent_guardian_details: student.parent_guardian_details || prev.parent_guardian_details,
+                enrollment_status: student.enrollment_status || prev.enrollment_status,
             }));
         }
     }, [student]);
@@ -338,7 +366,11 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         setError(null);
 
         try {
-            const { error: rpcError } = await supabase.rpc('update_student_details_admin', {
+            // Only update restricted fields if NOT a school admin
+            const updatePayload = isSchoolAdmin ? {
+                p_student_id: student.id,
+                p_enrollment_status: formData.enrollment_status
+            } : {
                 p_student_id: student.id,
                 p_display_name: formData.display_name,
                 p_phone: formData.phone,
@@ -347,8 +379,11 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 p_address: formData.address,
                 p_parent_details: formData.parent_guardian_details,
                 p_student_id_number: formData.student_id_number,
-                p_grade: formData.grade
-            });
+                p_grade: formData.grade,
+                p_enrollment_status: formData.enrollment_status
+            };
+
+            const { error: rpcError } = await supabase.rpc('update_student_details_admin', updatePayload);
 
             if (rpcError) throw rpcError;
 
@@ -360,6 +395,14 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
             if (isMounted.current) setLoading(false);
         }
     };
+
+    if (isCheckingRole) {
+        return (
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-[100]">
+                <Spinner size="lg" className="text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div
@@ -402,6 +445,22 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-12 space-y-16 overflow-y-auto max-h-[70vh] custom-scrollbar bg-transparent">
+                    {/* Restriction Notice */}
+                    {isSchoolAdmin && (
+                        <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-2xl p-6 flex items-start gap-4">
+                            <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                                <ShieldCheckIcon className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Restricted Access Protocol</p>
+                                <p className="text-[11px] text-white/40 leading-relaxed font-medium">
+                                    Your institutional role permits viewing the full profile.
+                                    However, modifications are restricted to <b>Enrollment Status</b> to ensure data integrity across the Parent Vault.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {error && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
@@ -420,23 +479,51 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 <UserIcon className="w-5 h-5" />
                             </div>
                             <div className="flex-grow">
-                                <h4 className="text-[11px] font-black uppercase text-white/50 tracking-[0.5em] mb-1">Identity & Academic</h4>
+                                <div className="flex items-center justify-between mb-1">
+                                    <h4 className="text-[11px] font-black uppercase text-white/50 tracking-[0.5em]">Identity & Lifecycle</h4>
+                                    {isSchoolAdmin && <span className="text-[9px] font-black text-amber-500/50 uppercase tracking-widest">Read Only</span>}
+                                </div>
                                 <div className="h-px bg-white/5 w-full"></div>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                            <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} />
-                            <FloatingInput label="Student ID" name="student_id_number" value={formData.student_id_number} onChange={handleChange} icon={<div className="font-black text-[9px] border border-current rounded-sm px-1">SID</div>} />
+                            {/* Enrollment Status - ALWAYS EDITABLE */}
+                            <div className="relative group/status md:col-span-2">
+                                <div className="absolute -inset-0.5 bg-gradient-to-r from-[#7c3aed]/20 to-transparent rounded-2xl blur opacity-0 group-hover/status:opacity-100 transition-opacity"></div>
+                                <select
+                                    name="enrollment_status"
+                                    value={formData.enrollment_status}
+                                    onChange={handleChange}
+                                    className="peer w-full h-[64px] rounded-2xl border border-white/10 bg-black/60 px-5 pl-12 text-sm text-white shadow-xl focus:outline-none focus:border-[#7c3aed]/50 focus:ring-4 focus:ring-[#7c3aed]/10 transition-all duration-500 appearance-none cursor-pointer relative z-10"
+                                >
+                                    <option value="Enrolled" className="bg-[#0c0e12]">Enrolled (Initial Node)</option>
+                                    <option value="Active" className="bg-[#0c0e12]">Active (Standard)</option>
+                                    <option value="Inactive" className="bg-[#0c0e12]">Inactive / Suspended</option>
+                                    <option value="Withdrawn" className="bg-[#0c0e12]">Withdrawn / Left</option>
+                                    <option value="Alumni" className="bg-[#0c0e12]">Alumni</option>
+                                </select>
+                                <div className="absolute top-1/2 -translate-y-1/2 left-5 text-[#a78bfa] pointer-events-none z-20"><ActivityIcon className="w-4 h-4" /></div>
+                                <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.25em] text-[#a78bfa] z-20">Student ID Status</label>
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[#a78bfa] z-20">
+                                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
+                            </div>
 
-                            <FloatingInput label="Grade / Class" name="grade" value={formData.grade} onChange={handleChange} required icon={<div className="font-black text-[9px]">G / C</div>} />
+                            <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} readOnly={isSchoolAdmin} />
+                            <FloatingInput label="Student ID" name="student_id_number" value={formData.student_id_number} onChange={handleChange} icon={<div className="font-black text-[9px] border border-current rounded-sm px-1">SID</div>} readOnly={isSchoolAdmin} />
+
+                            <FloatingInput label="Grade / Class" name="grade" value={formData.grade} onChange={handleChange} required icon={<div className="font-black text-[9px]">G / C</div>} readOnly={isSchoolAdmin} />
 
                             <div className="relative group/select">
                                 <select
                                     name="gender"
                                     value={formData.gender}
                                     onChange={handleChange}
-                                    className="peer w-full h-[58px] rounded-2xl border border-white/5 bg-black/40 px-5 pl-12 text-sm text-white shadow-inner focus:outline-none focus:border-[#7c3aed]/30 focus:ring-4 focus:ring-[#7c3aed]/5 transition-all duration-500 appearance-none cursor-pointer relative z-10"
+                                    disabled={isSchoolAdmin}
+                                    className={`peer w-full h-[58px] rounded-2xl border border-white/5 bg-black/40 px-5 pl-12 text-sm text-white shadow-inner focus:outline-none focus:border-[#7c3aed]/30 focus:ring-4 focus:ring-[#7c3aed]/5 transition-all duration-500 appearance-none relative z-10 ${isSchoolAdmin ? 'cursor-default opacity-40' : 'cursor-pointer'}`}
                                 >
                                     <option value="" className="bg-[#0c0e12]">Select Gender...</option>
                                     <option value="Male" className="bg-[#0c0e12]">Male</option>
@@ -445,14 +532,16 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 </select>
                                 <div className="absolute top-1/2 -translate-y-1/2 left-5 text-white/20 pointer-events-none transition-colors group-focus-within/select:text-[#7c3aed] z-20"><UserIcon className="w-4 h-4" /></div>
                                 <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.25em] text-white/40 transition-all duration-500 peer-focus:text-[#a78bfa] z-20">Gender</label>
-                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover/select:text-white/40 transition-colors z-20">
-                                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
+                                {!isSchoolAdmin && (
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover/select:text-white/40 transition-colors z-20">
+                                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                )}
                             </div>
 
-                            <FloatingInput label="Date of Birth" type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} icon={<CalendarIcon className="w-4 h-4" />} />
+                            <FloatingInput label="Date of Birth" type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} icon={<CalendarIcon className="w-4 h-4" />} readOnly={isSchoolAdmin} />
                         </div>
                     </section>
 
@@ -463,7 +552,10 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 <UsersIcon className="w-5 h-5" />
                             </div>
                             <div className="flex-grow">
-                                <h4 className="text-[11px] font-black uppercase text-white/50 tracking-[0.5em] mb-1">Contact & Guardian</h4>
+                                <div className="flex items-center justify-between mb-1">
+                                    <h4 className="text-[11px] font-black uppercase text-white/50 tracking-[0.5em]">Contact & Guardian</h4>
+                                    {isSchoolAdmin && <span className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest">Protected Records</span>}
+                                </div>
                                 <div className="h-px bg-white/5 w-full"></div>
                             </div>
                         </div>
@@ -479,6 +571,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 isLoading={isFetchingParent && !formData.phone}
                                 isAutoFilled={autoFilledFields.has('phone')}
                                 source={autoFilledFields.has('phone') ? (parentData?.found ? 'Admission' : 'Registry') : undefined}
+                                readOnly={isSchoolAdmin}
                             />
                             <FloatingInput
                                 label="Guardian Identity"
@@ -489,6 +582,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 isLoading={isFetchingParent && !formData.parent_guardian_details}
                                 isAutoFilled={autoFilledFields.has('parent_guardian_details')}
                                 source={autoFilledFields.has('parent_guardian_details') ? (parentData?.found ? 'Parent Vault' : 'Registry') : undefined}
+                                readOnly={isSchoolAdmin}
                             />
                         </div>
 
@@ -502,6 +596,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             isLoading={isFetchingParent && !formData.address}
                             isAutoFilled={autoFilledFields.has('address')}
                             source={autoFilledFields.has('address') ? (parentData?.found ? 'Institutional' : 'Registry') : undefined}
+                            readOnly={isSchoolAdmin}
                         />
                     </section>
                 </form>
@@ -537,7 +632,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                         ) : (
                             <>
                                 <CheckCircleIcon className="w-5 h-5 group-hover:scale-125 transition-transform duration-500" />
-                                <span>Save Changes</span>
+                                <span>{isSchoolAdmin ? 'Update Status' : 'Save Changes'}</span>
                             </>
                         )}
                     </motion.button>

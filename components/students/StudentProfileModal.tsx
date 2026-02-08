@@ -308,7 +308,8 @@ const GuardianCard: React.FC<{
     data: any;
     isPrimary?: boolean;
     onEdit: () => void;
-}> = ({ title, data, isPrimary, onEdit }) => (
+    readOnly?: boolean;
+}> = ({ title, data, isPrimary, onEdit, readOnly }) => (
     <div className={`
         relative overflow-hidden group flex flex-col h-full
         rounded-[2.5rem] p-8 
@@ -353,7 +354,7 @@ const GuardianCard: React.FC<{
                     </div>
                 </div>
             </div>
-            {data && (
+            {data && !readOnly && (
                 <button
                     onClick={onEdit}
                     className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white/40 hover:text-white transition-all duration-300 hover:scale-110 active:scale-90 ring-1 ring-white/10 shadow-lg"
@@ -446,22 +447,24 @@ const GuardianCard: React.FC<{
                         : 'Add a secondary guardian for backup contact and improved safety.'
                     }
                 </p>
-                <button
-                    onClick={onEdit}
-                    className={`
-                        px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em]
-                        transition-all duration-500 hover:scale-105 active:scale-95
-                        flex items-center gap-3 group/btn relative overflow-hidden
-                        ${isPrimary
-                            ? 'bg-indigo-600 text-white shadow-[0_15px_40px_-10px_rgba(79,70,229,0.5)]'
-                            : 'bg-white/10 text-white/80 border border-white/10 hover:bg-white/20'
-                        }
-                    `}
-                >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
-                    <PlusIcon className="w-4 h-4" />
-                    Initialize Link
-                </button>
+                {!readOnly && (
+                    <button
+                        onClick={onEdit}
+                        className={`
+                            px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em]
+                            transition-all duration-500 hover:scale-105 active:scale-95
+                            flex items-center gap-3 group/btn relative overflow-hidden
+                            ${isPrimary
+                                ? 'bg-indigo-600 text-white shadow-[0_15px_40px_-10px_rgba(79,70,229,0.5)]'
+                                : 'bg-white/10 text-white/80 border border-white/10 hover:bg-white/20'
+                            }
+                        `}
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+                        <PlusIcon className="w-4 h-4" />
+                        Initialize Link
+                    </button>
+                )}
             </div>
         )}
 
@@ -840,6 +843,21 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
     const [showPayment, setShowPayment] = useState(false);
     const [docViewerUrl, setDocViewerUrl] = useState<string | null>(null);
 
+    // --- Role Context ---
+    const [userRole, setUserRole] = useState<string | null>(null);
+    useEffect(() => {
+        const resolveUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+                setUserRole(data?.role || null);
+            }
+        };
+        resolveUser();
+    }, []);
+
+    const isSchoolAdmin = userRole === 'School Administration' || userRole === 'School Administrator';
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -1064,9 +1082,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
                                 {/* Status Badge */}
                                 <div className="flex items-center gap-2">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${syncedStudent.is_active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-red-400'} animate-pulse`}></div>
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${syncedStudent.is_active ? 'text-emerald-400/90' : 'text-red-400/90'}`}>
-                                        {syncedStudent.is_active ? 'Active' : 'Inactive'}
+                                    <div className={`w-1.5 h-1.5 rounded-full ${syncedStudent.enrollment_status === 'Active' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : (syncedStudent.enrollment_status === 'Inactive' || syncedStudent.enrollment_status === 'Withdrawn' ? 'bg-red-400' : 'bg-amber-400')} animate-pulse`}></div>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${syncedStudent.enrollment_status === 'Active' ? 'text-emerald-400/90' : (syncedStudent.enrollment_status === 'Inactive' || syncedStudent.enrollment_status === 'Withdrawn' ? 'text-red-400/90' : 'text-amber-400/90')}`}>
+                                        {syncedStudent.enrollment_status || (syncedStudent.is_active ? 'Active' : 'Inactive')}
                                     </span>
                                 </div>
                             </div>
@@ -1080,7 +1098,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                             className="hidden md:flex items-center gap-2.5 px-6 py-3 bg-white text-black hover:bg-white/90 font-bold text-xs rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 uppercase tracking-wide"
                         >
                             <EditIcon className="w-4 h-4" />
-                            Edit Profile
+                            {isSchoolAdmin ? 'Record Maintenance' : 'Edit Profile'}
                         </button>
                         <button
                             onClick={onClose}
@@ -1244,7 +1262,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                         {(parentData || guardianData) ? 'Records Synchronized' : 'Setup Incomplete'}
                                                     </div>
 
-                                                    {parentData && (
+                                                    {parentData && !isSchoolAdmin && (
                                                         <button
                                                             onClick={async () => {
                                                                 if (parentData) {
@@ -1280,11 +1298,13 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 data={parentData}
                                                 isPrimary
                                                 onEdit={() => setShowGuardianEdit('primary')}
+                                                readOnly={isSchoolAdmin}
                                             />
                                             <GuardianCard
                                                 title="Secondary Guardian"
                                                 data={guardianData}
                                                 onEdit={() => setShowGuardianEdit('secondary')}
+                                                readOnly={isSchoolAdmin}
                                             />
                                         </div>
 
