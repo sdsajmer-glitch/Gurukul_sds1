@@ -780,15 +780,44 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 }
             }
 
-            // 3. Fetch Fees
+            // Fix: If RPC didn't return parent data but we found an admission/enquiry link, populate parentData from it
+            if (!parentRes?.found && (admissionLink || enquiryData)) {
+                const source = admissionLink || enquiryData;
+                if (source.parent_name || source.parent_phone) {
+                    setParentData({
+                        name: source.parent_name || 'Parent (Unlinked)',
+                        email: source.parent_email || null,
+                        phone: source.parent_phone || null,
+                        relationship: 'Parent',
+                        parent_id: null // Explicitly null to indicate unlinked state
+                    });
+                }
+            }
+
+            // 4. Fetch Latest Academic Placement (Class Assignment)
+            // Fix: 'Unassigned' bug by fetching fresh class data from student_profiles linked table
+            const { data: classData } = await supabase
+                .from('student_profiles')
+                .select('assigned_class_id, school_classes!student_profiles_assigned_class_id_fkey(name)')
+                .eq('user_id', student.id)
+                .maybeSingle();
+
+            if (classData) {
+                setSyncedStudent(prev => ({
+                    ...prev,
+                    assigned_class_id: classData.assigned_class_id,
+                    assigned_class_name: classData.school_classes?.name || prev.assigned_class_name
+                }));
+            }
+
+            // 5. Fetch Fees
             const { data: feeData } = await supabase.rpc('get_student_fee_summary', { p_student_id: student.id });
             setFeesSummary(feeData);
 
-            // 4. Activity Log
+            // 6. Activity Log
             setActivityLog([
-                { id: 1, action: 'Profile Updated', date: '2025-01-15T10:00:00Z', user: 'Admin' },
-                { id: 2, action: 'Class Assigned', date: '2025-01-14T09:30:00Z', user: 'Principal' },
-                { id: 3, action: 'Document Verified', date: '2025-01-10T14:20:00Z', user: 'Admin' },
+                { id: 1, action: 'Profile Updated', date: 'new Date().toISOString()', user: 'Admin' },
+                { id: 2, action: 'Class Link Verified', date: 'new Date().toISOString()', user: 'System' },
             ]);
 
         } catch (err) {
