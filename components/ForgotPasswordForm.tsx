@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import Spinner from './common/Spinner';
 import { MailIcon } from './icons/MailIcon';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ForgotPasswordFormProps {
     onBack: () => void;
@@ -17,20 +17,20 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) {
-            setError('Please enter your email address.');
+            setError('Verification Target Required: Please specify identity uplink.');
             return;
         }
         setLoading(true);
         setError(null);
 
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: window.location.origin,
         });
 
         setLoading(false);
 
-        if (error) {
-            setError(error.message);
+        if (resetError) {
+            setError(resetError.message);
         } else {
             setSuccess(true);
         }
@@ -38,79 +38,106 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
 
     if (success) {
         return (
-            <div className="bg-card/60 dark:bg-card/50 backdrop-blur-xl p-8 sm:p-12 rounded-3xl border border-border/50 text-center animate-in fade-in zoom-in-95 duration-500 w-full max-w-md">
-                <div className="w-24 h-24 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-primary/5 shadow-[0_0_30px_rgba(var(--primary),0.1)]">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-[#0C0D12]/40 backdrop-blur-[40px] p-10 sm:p-14 rounded-[3.5rem] border border-white/5 text-center shadow-3xl relative overflow-hidden ring-1 ring-white/10"
+            >
+                <div className="w-20 h-20 bg-primary/10 text-primary rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner border border-primary/20">
                     <MailIcon className="w-10 h-10" />
                 </div>
-                <h3 className="text-3xl font-serif font-extrabold text-foreground mb-3 tracking-tight">Check Your Email</h3>
-                <p className="text-muted-foreground mb-8 max-w-sm mx-auto leading-relaxed">
-                    We've sent a password reset link to <strong className="text-foreground">{email}</strong>.
+                <h3 className="text-3xl font-serif font-black text-white mb-4 tracking-tighter uppercase leading-none">Cipher Dispatched.</h3>
+                <p className="text-white/50 mb-10 text-sm leading-relaxed font-serif italic max-w-[280px] mx-auto">
+                    A recovery cipher has been transmitted to <strong className="text-white">{email}</strong>.
                 </p>
                 <button
                     onClick={onBack}
-                    className="w-full h-[52px] flex items-center justify-center py-3.5 px-6 rounded-xl shadow-lg shadow-primary/25 text-sm font-bold text-white bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5"
+                    className="w-full h-14 flex items-center justify-center py-3.5 px-8 rounded-2xl text-[10px] font-black text-white bg-primary hover:bg-primary/90 transition-all transform active:scale-95 uppercase tracking-[0.4em] shadow-xl shadow-primary/20"
                 >
-                    Back to Sign In
+                    Return to Terminal
                 </button>
-            </div>
+            </motion.div>
         );
     }
 
     return (
-         <div className="bg-card/60 dark:bg-card/50 backdrop-blur-xl p-8 sm:p-12 rounded-3xl border border-border/50 space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
-            <div className="text-center mb-2">
-                <h2 className="text-3xl font-serif font-extrabold text-foreground tracking-tight">Forgot Password?</h2>
-                <p className="text-sm text-muted-foreground mt-2">
-                    No worries, we'll send you reset instructions.
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-[#0C0D12]/40 backdrop-blur-[40px] p-8 sm:p-12 md:p-14 rounded-[3.5rem] border border-white/5 space-y-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] relative overflow-hidden ring-1 ring-white/10 font-sans group"
+        >
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent animate-scanner-move pointer-events-none opacity-20"></div>
+
+            <div className="text-center space-y-4 relative z-10">
+                <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/5 mb-2 backdrop-blur-md">
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Identity Recovery</span>
+                </div>
+                <h2 className="text-[2.75rem] sm:text-5xl font-serif font-black text-white tracking-[-0.02em] leading-none uppercase">
+                    Recovery<span className="text-primary italic">.</span>
+                </h2>
+                <p className="text-text-tertiary text-sm font-medium tracking-tight leading-relaxed max-w-[280px] mx-auto italic font-serif opacity-80">
+                    Initiate a <span className="text-white/60">credential bypass protocol</span> for your node.
                 </p>
             </div>
-            
-            <form onSubmit={handleReset} className="space-y-6">
-                {error && (
-                    <div className="bg-destructive/10 border border-destructive/20 text-destructive text-sm p-3 rounded-lg flex items-start gap-2">
-                        <span>•</span> {error}
-                    </div>
-                )}
 
-                <div className="space-y-2 group">
-                    <label htmlFor="email" className="block text-[11px] font-bold text-muted-foreground uppercase tracking-widest ml-1 transition-colors group-focus-within:text-primary">Email</label>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
-                            <MailIcon className="h-5 w-5" />
-                        </div>
-                        <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="block w-full h-[52px] pl-12 pr-4 bg-muted/30 border border-border/60 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-background transition-all duration-200"
-                            placeholder="name@example.com"
-                            required
-                        />
+            <form onSubmit={handleReset} className="space-y-8 relative z-10">
+                <AnimatePresence mode="wait">
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-[0.1em] p-4 rounded-xl flex items-center gap-3 shadow-lg"
+                        >
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse shrink-0"></div>
+                            <span className="flex-1 leading-relaxed">{error}</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <div className="group relative">
+                    <div className="absolute top-1/2 -translate-y-1/2 left-6 flex items-center pointer-events-none text-white/20 group-focus-within:text-white transition-all duration-500 z-10">
+                        <MailIcon className="h-5.5 w-5.5" />
                     </div>
+                    <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="peer block w-full h-[72px] pl-16 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-[3px] focus:ring-primary/20 focus:border-primary/40 focus:bg-white/[0.06] transition-all duration-500 font-sans tracking-wide shadow-inner"
+                        placeholder="Communication Uplink"
+                        id="reset_email"
+                    />
+                    <label
+                        htmlFor="reset_email"
+                        className="absolute left-16 top-1/2 -translate-y-1/2 text-sm font-medium text-white/25 uppercase tracking-[0.1em] peer-placeholder-shown:text-white/20 peer-focus:-top-2 peer-focus:left-6 peer-focus:text-[10px] peer-focus:text-primary peer-focus:font-black peer-focus:tracking-[0.2em] peer-focus:bg-[#12131A] peer-focus:px-2 peer-focus:rounded-md peer-focus:translate-y-0 transition-all duration-500 pointer-events-none"
+                    >
+                        Verified Email
+                    </label>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-4">
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-[52px] flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/25 text-sm font-bold text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full h-[72px] flex items-center justify-center rounded-2xl shadow-[0_20px_40px_-10px_rgba(139,92,246,0.3)] text-xs font-black text-white bg-primary hover:bg-[#9D5BF0] focus:outline-none focus:ring-[6px] focus:ring-primary/10 transition-all transform hover:-translate-y-1 active:scale-[0.97] disabled:opacity-50 uppercase tracking-[0.4em] relative overflow-hidden group"
                     >
-                        {loading ? <Spinner size="sm" className="text-primary-foreground" /> : 'Send Reset Link'}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
+                        {loading ? <Spinner size="md" className="text-white" /> : 'Transmit Recovery Cipher'}
                     </button>
                 </div>
             </form>
-            
-            <div className="text-center">
-                 <button
+
+            <div className="text-center relative z-10 border-t border-white/[0.03] pt-10">
+                <button
                     type="button"
                     onClick={onBack}
-                    className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors focus:outline-none group flex items-center gap-2 mx-auto"
+                    className="text-[10px] font-black text-white/25 hover:text-white transition-all tracking-[0.25em] uppercase hover:tracking-[0.35em]"
                 >
-                    <span aria-hidden="true" className="transition-transform group-hover:-translate-x-1">&larr;</span> Back to Sign In
+                    Return to Console
                 </button>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

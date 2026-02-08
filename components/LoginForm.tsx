@@ -43,19 +43,27 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onForgotPasswor
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#0c0d12]/60 backdrop-blur-2xl p-8 sm:p-12 md:p-16 rounded-[2.5rem] border border-white/5 space-y-12 shadow-2xl relative overflow-hidden ring-1 ring-white/5 font-sans w-full max-w-[500px] mx-auto"
+            className="bg-[#0C0D12]/40 backdrop-blur-[40px] p-8 sm:p-12 md:p-14 rounded-[3.5rem] border border-white/5 space-y-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] relative overflow-hidden ring-1 ring-white/10 font-sans w-full max-w-[500px] mx-auto group"
         >
-            {/* Animated Scanning Line */}
-            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent animate-scanner-move pointer-events-none opacity-30"></div>
+            {/* Animated Scanning Line (Subtle) */}
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent animate-scanner-move pointer-events-none opacity-20"></div>
 
-            <div className="text-center space-y-6 relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/5 mb-2 backdrop-blur-md">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">Secure Gateway</span>
+            {/* Background Ambient Glow */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-[80px] pointer-events-none group-hover:bg-primary/10 transition-colors duration-1000"></div>
+
+            <div className="text-center space-y-8 relative z-10">
+                <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/5 mb-2 backdrop-blur-md">
+                    <div className="relative">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
+                    </div>
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Institutional Gateway</span>
                 </div>
-                <h2 className="text-4xl sm:text-5xl md:text-5xl font-serif font-black text-white tracking-tight leading-none">INITIALIZE.</h2>
-                <p className="text-white/40 text-xs sm:text-sm font-medium tracking-wide leading-relaxed max-w-xs mx-auto">
-                    Access the core institutional cluster through your verified credentials node.
+                <h2 className="text-[2.75rem] sm:text-5xl font-serif font-black text-white tracking-[-0.02em] leading-none uppercase">
+                    Initialize<span className="text-primary italic">.</span>
+                </h2>
+                <p className="text-text-tertiary text-sm font-medium tracking-tight leading-relaxed max-w-[280px] mx-auto italic font-serif opacity-80">
+                    Access the administrative cluster via your <span className="text-white/60">verified credential node</span>.
                 </p>
             </div>
 
@@ -74,80 +82,109 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onForgotPasswor
                     )}
                 </AnimatePresence>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {/* Email Input */}
                     <div className="group relative">
-                        <div className="absolute top-1/2 -translate-y-1/2 left-5 flex items-center pointer-events-none text-white/20 group-focus-within:text-primary transition-all duration-300 z-10">
-                            <MailIcon className="h-5 w-5" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-6 flex items-center pointer-events-none text-white/20 group-focus-within:text-white transition-all duration-500 z-10">
+                            <MailIcon className="h-5.5 w-5.5" />
                         </div>
                         <input
                             type="email"
                             required
+                            name="email"
+                            autoComplete="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="peer block w-full h-16 sm:h-[72px] pl-14 pr-6 bg-white/5 border border-white/10 rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 font-sans tracking-wide shadow-sm"
-                            placeholder="Email Address"
+                            className="peer block w-full h-[72px] pl-16 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-[3px] focus:ring-primary/20 focus:border-primary/40 focus:bg-white/[0.06] transition-all duration-500 font-sans tracking-wide shadow-inner"
+                            placeholder="Institutional Identity"
                             id="email_input"
                         />
                         <label
                             htmlFor="email_input"
-                            className="absolute left-14 -top-2.5 bg-[#0e0f14] px-2 text-[10px] font-bold text-white/40 uppercase tracking-widest peer-placeholder-shown:text-base peer-placeholder-shown:text-white/20 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:-top-2.5 peer-focus:text-[10px] peer-focus:text-primary peer-focus:translate-y-0 transition-all duration-300 pointer-events-none rounded-md"
+                            className="absolute left-16 top-1/2 -translate-y-1/2 text-sm font-medium text-white/25 uppercase tracking-[0.1em] peer-placeholder-shown:text-white/20 peer-focus:-top-2 peer-focus:left-6 peer-focus:text-[10px] peer-focus:text-primary peer-focus:font-black peer-focus:tracking-[0.2em] peer-focus:bg-[#12131A] peer-focus:px-2 peer-focus:rounded-md peer-focus:translate-y-0 transition-all duration-500 pointer-events-none"
                         >
-                            Identity Identifier
+                            Email Address
                         </label>
+                        {/* Terminology clarification helper */}
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-0 peer-focus:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+                            <span className="text-[9px] font-black text-primary/40 uppercase tracking-widest">Identity Node</span>
+                        </div>
                     </div>
 
                     {/* Password Input */}
                     <div className="group relative">
-                        <div className="absolute top-1/2 -translate-y-1/2 left-5 flex items-center pointer-events-none text-white/20 group-focus-within:text-primary transition-all duration-300 z-10">
-                            <LockIcon className="h-5 w-5" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-6 flex items-center pointer-events-none text-white/20 group-focus-within:text-white transition-all duration-500 z-10">
+                            <LockIcon className="h-5.5 w-5.5" />
                         </div>
                         <input
                             type={showPassword ? "text" : "password"}
                             required
+                            name="password"
+                            autoComplete="current-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="peer block w-full h-16 sm:h-[72px] pl-14 pr-14 bg-white/5 border border-white/10 rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 font-sans tracking-wider shadow-sm"
-                            placeholder="Password"
+                            className="peer block w-full h-[72px] pl-16 pr-16 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-[3px] focus:ring-primary/20 focus:border-primary/40 focus:bg-white/[0.06] transition-all duration-500 font-sans tracking-widest shadow-inner"
+                            placeholder="Access Cipher"
                             id="password_input"
                         />
                         <label
                             htmlFor="password_input"
-                            className="absolute left-14 -top-2.5 bg-[#0e0f14] px-2 text-[10px] font-bold text-white/40 uppercase tracking-widest peer-placeholder-shown:text-base peer-placeholder-shown:text-white/20 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-focus:-top-2.5 peer-focus:text-[10px] peer-focus:text-primary peer-focus:translate-y-0 transition-all duration-300 pointer-events-none rounded-md"
+                            className="absolute left-16 top-1/2 -translate-y-1/2 text-sm font-medium text-white/25 uppercase tracking-[0.1em] peer-placeholder-shown:text-white/20 peer-focus:-top-2 peer-focus:left-6 peer-focus:text-[10px] peer-focus:text-primary peer-focus:font-black peer-focus:tracking-[0.2em] peer-focus:bg-[#12131A] peer-focus:px-2 peer-focus:rounded-md peer-focus:translate-y-0 transition-all duration-500 pointer-events-none"
                         >
-                            Access Cipher
+                            Access Key
                         </label>
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute top-1/2 -translate-y-1/2 right-5 flex items-center text-white/20 hover:text-white transition-colors p-1"
+                            className="absolute top-1/2 -translate-y-1/2 right-6 flex items-center text-white/20 hover:text-white transition-all p-1.5 hover:bg-white/5 rounded-lg active:scale-90"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
                         >
                             {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                         </button>
                     </div>
 
-                    <div className="flex justify-end">
-                        <button type="button" onClick={onForgotPassword} className="text-[11px] font-medium text-white/30 hover:text-primary transition-colors tracking-wide">
-                            Lost your access key?
+                    <div className="flex justify-end pr-2">
+                        <button
+                            type="button"
+                            onClick={onForgotPassword}
+                            className="text-[10px] font-black text-white/30 hover:text-primary transition-all tracking-[0.15em] uppercase"
+                        >
+                            Lost Access Key?
                         </button>
                     </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-4 space-y-6">
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-16 sm:h-[72px] flex items-center justify-center rounded-2xl shadow-lg shadow-primary/20 text-xs font-black text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/20 transition-all transform hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-50 uppercase tracking-[0.2em] relative overflow-hidden group"
+                        className="w-full h-[72px] flex items-center justify-center rounded-2xl shadow-[0_20px_40px_-10px_rgba(139,92,246,0.3)] text-xs font-black text-white bg-primary hover:bg-[#9D5BF0] focus:outline-none focus:ring-[6px] focus:ring-primary/10 transition-all transform hover:-translate-y-1 active:scale-[0.97] disabled:opacity-50 uppercase tracking-[0.4em] relative overflow-hidden group"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                        {loading ? <Spinner size="md" className="text-white" /> : <span className="flex items-center gap-2">Confirm Identity Node</span>}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
+                        {loading ? (
+                            <Spinner size="md" className="text-white" />
+                        ) : (
+                            <span className="flex items-center gap-4">
+                                <LockIcon className="h-4 w-4 opacity-40" />
+                                Confirm Identity Node
+                            </span>
+                        )}
                     </button>
+
+                    <div className="flex items-center justify-center gap-3 opacity-30 group-hover:opacity-50 transition-opacity duration-700">
+                        <div className="h-px w-8 bg-white/20"></div>
+                        <span className="text-[8px] font-black uppercase tracking-[0.5em] whitespace-nowrap">AES-256 Encrypted & Audited</span>
+                        <div className="h-px w-8 bg-white/20"></div>
+                    </div>
                 </div>
             </form>
 
-            <div className="text-center relative z-10 border-t border-white/5 pt-8">
-                <button onClick={onSwitchToSignup} className="text-xs font-medium text-white/40 hover:text-white transition-colors tracking-widest uppercase opacity-70 hover:opacity-100">
-                    Provision Access
+            <div className="text-center relative z-10 border-t border-white/[0.03] pt-10">
+                <button
+                    onClick={onSwitchToSignup}
+                    className="text-[10px] font-black text-white/25 hover:text-white transition-all tracking-[0.25em] uppercase hover:tracking-[0.35em]"
+                >
+                    Provision New Access
                 </button>
             </div>
         </motion.div>

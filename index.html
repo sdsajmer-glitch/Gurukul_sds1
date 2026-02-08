@@ -15,18 +15,21 @@
   <style>
     :root {
       /* ===== Backgrounds ===== */
-      --color-bg-primary: #0B0D10;
-      --color-bg-secondary: #11141A;
-      --color-bg-card: #151922;
+      --color-bg-primary: #050508;
+      --color-bg-secondary: #0A0B10;
+      --color-bg-card: #0D0E14;
+      --color-bg-obsidian: #050510;
 
       /* ===== Borders ===== */
-      --color-border-subtle: rgba(255, 255, 255, 0.08);
+      --color-border-subtle: rgba(255, 255, 255, 0.05);
+      --color-border-glass: rgba(255, 255, 255, 0.1);
 
       /* ===== Text ===== */
-      --color-text-primary: #F4F6FA;
-      --color-text-secondary: #B3B8C4;
-      --color-text-tertiary: #7B8190;
-      --color-text-disabled: #5A5F6E;
+      --color-text-primary: #FFFFFF;
+      --color-text-secondary: #E2E8F0;
+      --color-text-tertiary: #94A3B8;
+      --color-text-muted: #64748B;
+      --color-text-disabled: #475569;
 
       /* ===== Accent ===== */
       --color-accent-primary: #8B5CF6;
@@ -111,7 +114,8 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #08090a;
+      background-color: var(--color-bg-primary);
+      color: var(--color-text-primary);
       overflow-x: hidden;
       width: 100%;
       position: relative;
@@ -230,11 +234,13 @@
               primary: 'var(--color-bg-primary)',
               secondary: 'var(--color-bg-secondary)',
               card: 'var(--color-bg-card)',
+              obsidian: 'var(--color-bg-obsidian)',
             },
             text: {
               primary: 'var(--color-text-primary)',
               secondary: 'var(--color-text-secondary)',
               tertiary: 'var(--color-text-tertiary)',
+              muted: 'var(--color-text-muted)',
               disabled: 'var(--color-text-disabled)',
             },
             accent: {
@@ -244,6 +250,7 @@
               success: 'var(--color-accent-success)',
               warning: 'var(--color-accent-warning)',
               error: 'var(--color-accent-error)',
+              orchid: '#9D5BF0', // Specialized purple for primary actions
             },
             state: {
               hover: 'var(--color-state-hover)',
@@ -254,6 +261,7 @@
             'bg-primary': 'var(--color-bg-primary)',
             'bg-secondary': 'var(--color-bg-secondary)',
             'bg-card': 'var(--color-bg-card)',
+            'bg-obsidian': 'var(--color-bg-obsidian)',
             'accent-info': 'var(--color-accent-info)',
             'accent-success': 'var(--color-accent-success)',
             'accent-warning': 'var(--color-accent-warning)',
