@@ -45,6 +45,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const [mounted, setMounted] = useState(false);
+    const [dropdownId] = useState(() => `select-portal-${Math.random().toString(36).substr(2, 9)}`);
 
     useEffect(() => {
         setMounted(true);
@@ -62,7 +63,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         const handleClickOutside = (event: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
                 // Check if the click was inside the portal
-                const portalElement = document.getElementById(`dropdown-portal-${label?.replace(/\s/g, '')}`);
+                const portalElement = document.getElementById(dropdownId);
                 if (portalElement && portalElement.contains(event.target as Node)) {
                     return;
                 }
@@ -150,7 +151,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         <AnimatePresence>
             {isOpen && (
                 <div
-                    id={`dropdown-portal-${label?.replace(/\s/g, '')}`}
+                    id={dropdownId}
                     className="fixed inset-0 z-[99999] pointer-events-none"
                 >
                     <div

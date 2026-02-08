@@ -461,52 +461,58 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full blur-[80px] pointer-events-none group-hover:bg-primary/[0.05] transition-colors duration-700" />
 
                     <div className="p-10 flex flex-col items-center relative z-10">
-                        <div className="w-28 h-28 rounded-full bg-[#111] border-4 border-[#1a1a1a] flex items-center justify-center text-3xl font-bold text-white shadow-2xl mb-6 relative group/avatar overflow-hidden">
-                            <span className="relative z-10 group-hover/avatar:scale-110 transition-transform duration-500">{(formData.display_name || 'U').charAt(0).toUpperCase()}</span>
-                            <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-500" />
+                        <div className="relative group/avatar">
+                            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-0 group-hover/avatar:scale-110 transition-transform duration-700" />
+                            <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-[#1a1c22] to-[#0a0a0b] border-2 border-white/10 flex items-center justify-center text-4xl font-black text-white shadow-2xl mb-6 relative overflow-hidden ring-1 ring-white/5">
+                                <span className="relative z-10 group-hover/avatar:scale-110 transition-transform duration-500 italic">{(formData.display_name || 'U').charAt(0).toUpperCase()}</span>
+                                <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-700" />
+                                <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-primary/20 rounded-full blur-xl" />
+                            </div>
                         </div>
 
-                        <div className="text-center space-y-2">
-                            <h2 className="text-3xl font-bold text-white tracking-tight">
+                        <div className="text-center space-y-3">
+                            <h2 className="text-3xl font-black text-white tracking-tight uppercase italic">
                                 {formData.display_name || 'New Identity'}
                             </h2>
                             <div className="flex items-center justify-center gap-2">
-                                <div className="px-3 py-1 bg-white/5 rounded-full border border-white/5 flex items-center gap-2">
-                                    <ShieldCheckIcon className="w-3 h-3 text-primary" />
-                                    <span className="text-[10px] font-bold text-white/60 uppercase tracking-[0.2em]">{role}</span>
+                                <div className="px-4 py-1.5 bg-primary/10 rounded-full border border-primary/20 flex items-center gap-2.5 backdrop-blur-md">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                    <span className="text-[9px] font-black text-primary uppercase tracking-[0.25em]">{role} Node</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="px-2 pb-2 bg-black/20">
-                        <div className="flex p-1 bg-white/[0.03] border border-white/5 rounded-[1.8rem] relative">
+                    <div className="px-4 pb-4 bg-black/40">
+                        <div className="flex p-1.5 bg-white/[0.02] border border-white/5 rounded-[2.2rem] relative">
                             {/* Animated Background Indicator */}
                             <div
-                                className="absolute top-1 bottom-1 bg-[#1a1a1a] rounded-[1.5rem] border border-white/5 shadow-lg transition-all duration-500 ease-out"
+                                className="absolute top-1.5 bottom-1.5 bg-gradient-to-br from-[#222] to-[#111] rounded-[1.8rem] border border-white/10 shadow-2xl transition-all duration-500 ease-out"
                                 style={{
-                                    left: activeTab === 'details' ? '4px' : '50%',
-                                    width: 'calc(50% - 4px)',
+                                    left: activeTab === 'details' ? '6px' : '50%',
+                                    width: 'calc(50% - 6px)',
                                     opacity: 1
                                 }}
-                            />
+                            >
+                                <div className="absolute inset-0 bg-primary/5 rounded-[1.8rem] blur-sm" />
+                            </div>
 
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('details')}
-                                className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest relative z-10 transition-all duration-300 flex items-center justify-center gap-2
-                                    ${activeTab === 'details' ? 'text-white' : 'text-white/30 hover:text-white/60'}`}
+                                className={`flex-1 py-5 text-[10px] font-black uppercase tracking-[0.2em] relative z-10 transition-all duration-500 flex items-center justify-center gap-3
+                                    ${activeTab === 'details' ? 'text-white' : 'text-white/20 hover:text-white/40'}`}
                             >
-                                <UserIcon className={`w-3.5 h-3.5 ${activeTab === 'details' ? 'text-primary' : 'opacity-0'}`} />
+                                <UserIcon className={`w-4 h-4 transition-all duration-500 ${activeTab === 'details' ? 'text-primary scale-110' : 'opacity-40 grayscale'}`} />
                                 Core Registry
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setActiveTab('contact')}
-                                className={`flex-1 py-4 text-[11px] font-bold uppercase tracking-widest relative z-10 transition-all duration-300 flex items-center justify-center gap-2
-                                    ${activeTab === 'contact' ? 'text-white' : 'text-white/30 hover:text-white/60'}`}
+                                className={`flex-1 py-5 text-[10px] font-black uppercase tracking-[0.2em] relative z-10 transition-all duration-500 flex items-center justify-center gap-3
+                                    ${activeTab === 'contact' ? 'text-white' : 'text-white/20 hover:text-white/40'}`}
                             >
-                                <PhoneIcon className={`w-3.5 h-3.5 ${activeTab === 'contact' ? 'text-primary' : 'opacity-0'}`} />
+                                <PhoneIcon className={`w-4 h-4 transition-all duration-500 ${activeTab === 'contact' ? 'text-primary scale-110' : 'opacity-40 grayscale'}`} />
                                 Contact & Node
                             </button>
                         </div>
@@ -516,9 +522,11 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
             {
                 error && (
-                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-5 rounded-2xl flex items-center gap-4 animate-in shake">
-                        <XIcon className="w-5 h-5 shrink-0" />
-                        <span className="text-xs font-semibold uppercase tracking-wider">{error}</span>
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-6 rounded-[2rem] flex items-center gap-5 animate-in shake duration-500 shadow-2xl backdrop-blur-md">
+                        <div className="p-3 bg-red-500/10 rounded-xl">
+                            <XIcon className="w-5 h-5 shrink-0" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">{error}</span>
                     </div>
                 )
             }
@@ -526,35 +534,47 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
             {/* Premium Success Overlay */}
             {
                 success && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-500">
-                        <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
-                        <div className="relative bg-[#0a0a0b] border border-white/10 w-full max-w-md rounded-[3rem] p-12 text-center shadow-3xl overflow-hidden animate-in zoom-in-95 duration-500">
-                            {/* Background Sparkle */}
-                            <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/20 rounded-full blur-[80px]" />
-                            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-[80px]" />
+                    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-3xl animate-in fade-in duration-700">
+                        <div className="relative bg-[#0a0a0b] border border-white/10 w-full max-w-lg rounded-[4rem] p-16 text-center shadow-[0_50px_100px_-20px_rgba(0,0,0,1)] overflow-hidden animate-in zoom-in-95 duration-700">
+                            {/* High-Fidelity Background FX */}
+                            <div className="absolute -top-32 -left-32 w-80 h-80 bg-primary/20 rounded-full blur-[100px] animate-pulse" />
+                            <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-emerald-500/20 rounded-full blur-[100px] animate-pulse" />
 
-                            <div className="relative z-10 space-y-8">
-                                <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]">
-                                    <CheckCircleIcon className="w-12 h-12 text-emerald-500 animate-in zoom-in-50 duration-700" />
+                            <div className="relative z-10 space-y-12">
+                                <div className="relative inline-block">
+                                    <div className="absolute inset-0 bg-emerald-500/30 blur-3xl rounded-full scale-150 animate-pulse" />
+                                    <div className="relative w-32 h-32 bg-emerald-500/10 rounded-[3rem] flex items-center justify-center mx-auto border-2 border-emerald-500/30 shadow-[0_0_60px_rgba(16,185,129,0.2)]">
+                                        <CheckCircleIcon className="w-16 h-16 text-emerald-500 animate-in zoom-in-50 duration-1000" />
+                                    </div>
                                 </div>
 
-                                <div className="space-y-3">
-                                    <h3 className="text-3xl font-serif font-black text-white tracking-tight uppercase italic transition-all">
+                                <div className="space-y-4">
+                                    <h3 className="text-4xl font-black text-white tracking-tight uppercase italic">
                                         Identity <span className="text-emerald-500">Secured</span>
                                     </h3>
-                                    <p className="text-sm font-medium text-white/40 leading-relaxed uppercase tracking-widest px-4">
+                                    <p className="text-[11px] font-black text-white/40 leading-relaxed uppercase tracking-[0.3em] px-8">
                                         {success}
                                     </p>
                                 </div>
 
-                                <div className="pt-8 border-t border-white/5 flex flex-col items-center gap-4">
-                                    <div className="flex items-center gap-3 py-2 px-5 bg-white/5 rounded-full border border-white/10">
+                                <div className="pt-10 border-t border-white/5 flex flex-col items-center gap-6">
+                                    <div className="flex items-center gap-4 py-3 px-8 bg-white/[0.03] rounded-2xl border border-white/10 shadow-inner">
                                         <Spinner size="sm" className="text-primary" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">
-                                            Accessing Command Center...
+                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50">
+                                            Handshaking Command Center...
                                         </span>
                                     </div>
-                                    <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em]">Institutional Node Handshake: 100%</p>
+                                    <div className="space-y-2 w-full max-w-[200px]">
+                                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: "100%" }}
+                                                transition={{ duration: 2.5, ease: "easeInOut" }}
+                                                className="h-full bg-gradient-to-r from-primary to-emerald-500"
+                                            />
+                                        </div>
+                                        <p className="text-[8px] font-black text-white/10 uppercase tracking-[0.4em]">Protocol Sync Complete</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -701,25 +721,33 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-8 mt-12 px-2 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-10 mt-16 px-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
                     {showBackButton ? (
-                        <button type="button" onClick={onBack} className="group text-[11px] font-bold text-white/30 hover:text-white transition-all uppercase tracking-widest flex items-center gap-2.5">
-                            <ChevronLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-1" /> Return to Selection
+                        <button type="button" onClick={onBack} className="group text-[10px] font-black text-white/20 hover:text-white/60 transition-all uppercase tracking-[0.3em] flex items-center gap-4">
+                            <ChevronLeftIcon className="w-5 h-5 transition-transform group-hover:-translate-x-2" />
+                            <span>Selection Return</span>
                         </button>
                     ) : <div />}
 
-                    {/* Replaced the original button with the new structure */}
-                    {/* Restored Submit Button */}
                     <button
                         type="submit"
                         disabled={saving || !isDirty || isStrictReadOnly || !isFormValid}
-                        className={`px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 transform active:scale-95 shadow-2xl relative group overflow-hidden ${saving || !isDirty || isStrictReadOnly || !isFormValid ? 'bg-white/5 text-white/10 cursor-not-allowed grayscale' : 'bg-primary text-white shadow-primary/20 hover:bg-primary/90'}`}
+                        className={`px-16 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.4em] transition-all duration-500 flex items-center justify-center gap-4 transform active:scale-95 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] relative group overflow-hidden italic
+                            ${saving || !isDirty || isStrictReadOnly || !isFormValid
+                                ? 'bg-white/5 text-white/10 cursor-not-allowed grayscale border border-white/5'
+                                : 'bg-primary text-white border border-primary/20 hover:shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02]'}`}
                     >
-                        <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-[-20deg]" />
-                        {saving ? <Spinner size="sm" /> : (
-                            <div className="flex items-center justify-center gap-3">
-                                <ShieldCheckIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                <span>{isStrictReadOnly ? 'Access Restricted' : `Update ${role} Protocol`}</span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 skew-x-[-30deg]" />
+
+                        {saving ? (
+                            <div className="flex items-center gap-3">
+                                <Spinner size="sm" />
+                                <span className="animate-pulse">Provisioning...</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center gap-4">
+                                <ShieldCheckIcon className="w-5 h-5 group-hover:rotate-12 transition-transform duration-500" />
+                                <span>{isStrictReadOnly ? 'Node Restricted' : `Update ${role} Protocol`}</span>
                             </div>
                         )}
                     </button>
