@@ -13,6 +13,9 @@ import { UsersIcon } from '../icons/UsersIcon';
 import { LockIcon } from '../icons/LockIcon';
 import { RefreshIcon } from '../icons/RefreshIcon';
 
+import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
+import { PlusIcon } from '../icons/PlusIcon';
+
 // Simple Switch Component
 const Switch: React.FC<{ checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean }> = ({ checked, onChange, disabled }) => (
     <button
@@ -150,9 +153,25 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         return () => { isMounted.current = false; };
     }, []);
 
+    // Handle Escape key to close modal
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !loading && !isLinking) {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, [loading, isLinking, onClose]);
+
     // Fetch Parent Data with Robust Fallback
     const fetchParent = async () => {
+        if (!student?.id) {
+            console.warn('Cannot fetch parent: student ID is missing');
+            return;
+        }
         setIsFetchingParent(true);
+        setError(null);
         try {
             const { data, error: rpcError } = await supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id });
 
@@ -209,6 +228,13 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
             }
         } catch (e) {
             console.error("Parent fetch exception:", formatError(e));
+            if (isMounted.current) {
+                setError(`Failed to fetch parent data: ${formatError(e)}`);
+                // Auto-clear error after 5 seconds
+                setTimeout(() => {
+                    if (isMounted.current) setError(null);
+                }, 5000);
+            }
         } finally {
             if (isMounted.current) setIsFetchingParent(false);
         }
@@ -319,6 +345,17 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validation
+        if (!formData.display_name?.trim()) {
+            setError('Student name is required');
+            return;
+        }
+        if (!formData.grade?.trim()) {
+            setError('Grade/Class is required');
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -472,7 +509,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                             disabled={isLinking || !manualParentEmail}
                                             className="px-8 h-12 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-30"
                                         >
-                                            {isLinking ? <Spinner size="sm" className="text-amber-500" /> : <><PlusCircleIcon className="w-4 h-4" /> Resolve Identity</>}
+                                            {isLinking ? <Spinner size="sm" className="text-amber-500" /> : <><PlusIcon className="w-4 h-4" /> Resolve Identity</>}
                                         </button>
                                     </div>
                                 </div>

@@ -6,7 +6,7 @@ import DashboardOverview from './components/admin/DashboardOverview';
 import AdmissionsTab from './AdmissionsTab';
 import EnquiryTab from './EnquiryTab';
 import AttendanceTab from './components/AttendanceTab';
-import FinanceTab from './FinanceTab';
+import FinanceTab from './components/FinanceTab';
 import CommunicationTab from './components/CommunicationTab';
 import { UserManagementTab } from './components/UserManagementTab';
 import { ProfileCreationPage } from './components/ProfileCreationPage';
