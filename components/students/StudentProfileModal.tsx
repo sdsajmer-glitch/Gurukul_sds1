@@ -1050,7 +1050,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
         window.open(url, '_blank');
     };
 
-    const hasClass = !!(student.assigned_class_id && student.assigned_class_name);
+    const hasClass = !!(syncedStudent.assigned_class_id && syncedStudent.assigned_class_name);
 
     return (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[150] flex items-center justify-center p-0 md:p-6 overflow-hidden">
@@ -1489,7 +1489,17 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 <AssignClassModal
                     student={syncedStudent}
                     onClose={() => setShowAssignClass(false)}
-                    onSuccess={() => { setShowAssignClass(false); fetchData(); onUpdate(); }}
+                    onSuccess={(updatedData) => {
+                        // Immediately update the UI state for instant feedback
+                        setSyncedStudent(prev => ({
+                            ...prev,
+                            assigned_class_id: updatedData.class_id,
+                            assigned_class_name: updatedData.class_name
+                        }));
+                        setShowAssignClass(false);
+                        fetchData();
+                        onUpdate();
+                    }}
                 />
             )}
             {showPayment && (
