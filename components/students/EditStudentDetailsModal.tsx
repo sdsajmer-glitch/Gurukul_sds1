@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, formatError } from '../../services/supabase';
 import { StudentForAdmin } from '../../types';
 import Spinner from '../common/Spinner';
@@ -10,29 +11,54 @@ import { CalendarIcon } from '../icons/CalendarIcon';
 import { LocationIcon } from '../icons/LocationIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { UsersIcon } from '../icons/UsersIcon';
+import { SparklesIcon } from 'lucide-react'; // If lucide is available, else I'll stick to icons I have
 
+// --- Floating Input Component (Premium Node) ---
 
-
-// Floating Input Component
-
-interface EditStudentDetailsModalProps {
-    student: StudentForAdmin;
-    onClose: () => void;
-    onSave: () => void;
+interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> {
+    label: string;
+    icon?: React.ReactNode;
+    isTextArea?: boolean;
+    isLoading?: boolean;
+    source?: string;
+    isAutoFilled?: boolean;
 }
 
-const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string, icon?: React.ReactNode, isTextArea?: boolean, isLoading?: boolean, source?: string }> = ({ label, icon, isTextArea, className, readOnly, isLoading, source, ...props }) => {
+const FloatingInput: React.FC<FloatingInputProps> = ({
+    label, icon, isTextArea, className, readOnly, isLoading, source, isAutoFilled, ...props
+}) => {
+    const [isFocused, setIsFocused] = useState(false);
+
     const inputClasses = `
         peer block w-full rounded-2xl border bg-black/40 px-5 py-4 pl-12 text-sm text-white shadow-inner
-        focus:border-white/20 focus:ring-4 focus:ring-white/5 focus:outline-none placeholder-transparent transition-all duration-500
+        focus:outline-none placeholder-transparent transition-all duration-500
         ${readOnly ? 'opacity-40 cursor-default border-transparent' : 'border-white/5 hover:border-white/10'} 
         ${isLoading ? 'animate-pulse border-[#7c3aed]/20' : ''}
+        ${isFocused ? 'border-[#7c3aed]/30 ring-4 ring-[#7c3aed]/5' : ''}
+        ${isAutoFilled ? 'bg-[#7c3aed]/5 border-[#7c3aed]/10' : ''}
         ${className}
     `;
 
     return (
-        <div className="relative group w-full">
-            <div className={`absolute ${isTextArea ? 'top-5' : 'top-1/2 -translate-y-1/2'} left-5 text-white/20 transition-colors z-10 pointer-events-none`}>
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative group w-full"
+        >
+            {/* Holographic Focus Border */}
+            <AnimatePresence>
+                {isFocused && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        className="absolute -inset-[1px] bg-gradient-to-r from-[#7c3aed]/30 via-transparent to-[#7c3aed]/30 rounded-[17px] blur-[2px] pointer-events-none z-0"
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Icon Node */}
+            <div className={`absolute ${isTextArea ? 'top-5' : 'top-1/2 -translate-y-1/2'} left-5 transition-colors z-10 pointer-events-none ${isFocused ? 'text-[#7c3aed]' : 'text-white/20'}`}>
                 {isLoading ? <Spinner size="sm" className="text-[#a78bfa]" /> : icon}
             </div>
 
@@ -41,34 +67,49 @@ const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLT
                     {...(props as any)}
                     readOnly={readOnly}
                     placeholder=" "
-                    className={`${inputClasses} resize-none h-28 pt-5`}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    className={`${inputClasses} resize-none h-28 pt-5 relative z-10`}
                 />
             ) : (
                 <input
                     {...(props as any)}
                     readOnly={readOnly}
                     placeholder=" "
-                    className={inputClasses}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    className={`${inputClasses} relative z-10`}
                 />
             )}
 
+            {/* Premium Label */}
             <label className={`
-                absolute left-10 ${isTextArea ? 'top-5' : 'top-0 -translate-y-1/2'} bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 transition-all duration-500
-                peer-placeholder-shown:top-5 peer-placeholder-shown:text-[13px] peer-placeholder-shown:font-medium peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-white/40
-                peer-focus:top-0 peer-focus:text-[10px] peer-focus:font-black peer-focus:uppercase peer-focus:tracking-[0.2em] peer-focus:text-white/80 pointer-events-none
+                absolute left-10 ${isTextArea ? 'top-5' : 'top-0 -translate-y-1/2'} bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.25em] transition-all duration-500 z-20
+                peer-placeholder-shown:top-5 peer-placeholder-shown:text-[13px] peer-placeholder-shown:font-medium peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal
+                peer-focus:top-0 peer-focus:text-[10px] peer-focus:font-black peer-focus:uppercase peer-focus:tracking-[0.25em] 
+                ${isFocused ? 'text-[#a78bfa]' : 'text-white/40'}
+                peer-placeholder-shown:text-white/40
+                pointer-events-none
                 ${isTextArea ? 'peer-placeholder-shown:top-5' : ''}
             `}>
                 {label}
             </label>
 
-            {source && !isLoading && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center pointer-events-none animate-in fade-in slide-in-from-right-4 duration-700">
-                    <span className="px-2 py-1 rounded bg-[#7c3aed]/10 border border-[#7c3aed]/20 text-[7px] font-black text-[#a78bfa] uppercase tracking-tighter">
-                        Registry: {source}
-                    </span>
-                </div>
-            )}
-        </div>
+            {/* Registry Badge */}
+            <AnimatePresence>
+                {source && !isLoading && (
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center pointer-events-none z-20"
+                    >
+                        <span className="px-3 py-1 rounded-full bg-[#7c3aed]/10 border border-[#7c3aed]/20 text-[7px] font-black text-[#a78bfa] uppercase tracking-tighter backdrop-blur-md">
+                            Registry: {source}
+                        </span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 
@@ -85,7 +126,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         }
     };
 
-    // Form State - Initialized with current student context
+    // Form State
     const [formData, setFormData] = useState({
         display_name: student.display_name || '',
         student_id_number: student.student_id_number || '',
@@ -97,7 +138,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         parent_guardian_details: student.parent_guardian_details || '',
     });
 
-    // Reactive Refresh: If student prop updates while modal is open, sync non-dirty fields
+    // Reactive Refresh
     useEffect(() => {
         if (student) {
             setFormData(prev => ({
@@ -127,7 +168,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         return () => { isMounted.current = false; };
     }, []);
 
-    // Handle Escape key to close modal
+    // Handle Escape key
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && !loading) {
@@ -138,39 +179,27 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         return () => window.removeEventListener('keydown', handleEscape);
     }, [loading, onClose]);
 
-    // Fetch Student Contact Details - Enhanced Robust Implementation
     const fetchParent = async () => {
-        if (!student?.id) {
-            console.warn('Cannot fetch contact data: student ID is missing');
-            return;
-        }
+        if (!student?.id) return;
         setIsFetchingParent(true);
         setError(null);
         try {
-            // Use the new unified RPC that properly fetches from all sources
             const { data, error: rpcError } = await supabase.rpc('get_student_contact_details', { p_student_id: student.id });
-
-            if (rpcError) {
-                throw new Error(rpcError.message);
-            }
+            if (rpcError) throw new Error(rpcError.message);
 
             if (data && data.found) {
                 setParentData(data);
             } else {
-                // Ultimate fallback: direct queries
-                console.log('RPC found no contact data, initiating fallback queries...');
                 await performFallbackFetch();
             }
         } catch (e: any) {
             console.error("Contact fetch exception:", e);
-            // Try fallback on error
             await performFallbackFetch();
         } finally {
             if (isMounted.current) setIsFetchingParent(false);
         }
     };
 
-    // Fallback fetch when RPC fails
     const performFallbackFetch = async () => {
         try {
             const { data: admissionLink } = await supabase
@@ -198,7 +227,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 return;
             }
 
-            // Try enquiry
             const { data: enquiryData } = await supabase
                 .from('enquiries')
                 .select('*')
@@ -223,7 +251,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 return;
             }
 
-            // Try direct student profile
             const { data: studentProfile } = await supabase
                 .from('student_profiles')
                 .select('*')
@@ -234,16 +261,12 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 setParentData({
                     found: true,
                     student_phone: studentProfile.phone,
-                    parent_name: null,
-                    parent_phone: null,
                     address: studentProfile.address,
                     parent_guardian_details: studentProfile.parent_guardian_details,
                     is_unlinked: true
                 });
                 return;
             }
-
-            // Fetch complete
         } catch (e) {
             console.error("Fallback fetch error:", e);
         }
@@ -253,10 +276,8 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         fetchParent();
     }, [student.id]);
 
-    // Auto-fill effect: Merge parent data with student form if fields are currently empty
     useEffect(() => {
         if (parentData) {
-            // Construct Address
             const addressParts = [
                 parentData.address,
                 parentData.city,
@@ -266,12 +287,10 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
             ].filter(Boolean);
             const fullAddress = addressParts.join(', ').trim();
 
-            // Construct Guardian Details
             const guardianInfo = parentData.parent_name
                 ? `${parentData.parent_name} (${parentData.parent_relationship || parentData.relationship || 'Guardian'})`
                 : (parentData.name ? `${parentData.name} (${parentData.relationship || 'Guardian'})` : '');
 
-            // determine phone: prioritize student_phone > parent_phone > phone
             const bestPhone = parentData.student_phone || parentData.parent_phone || parentData.phone || '';
 
             setFormData(prev => {
@@ -306,8 +325,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Validation
         if (!formData.display_name?.trim()) {
             setError('Student name is required');
             return;
@@ -345,51 +362,94 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
     };
 
     return (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-500" onClick={onClose}>
-            <div className="bg-[#0c0e12] w-full max-w-2xl rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/5 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500 ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
+        <div
+            className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-[100] p-4 font-sans"
+            onClick={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+        >
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-[#0c0e12] w-full max-w-2xl rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/10 flex flex-col overflow-hidden ring-1 ring-white/5 relative"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Visual Accent Decoration */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-[1px] bg-gradient-to-r from-transparent via-[#7c3aed]/50 to-transparent"></div>
 
                 {/* Header */}
-                <div className="p-10 border-b border-white/5 bg-white/[0.02] flex justify-between items-center relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#7c3aed] blur-[80px] opacity-10 -translate-y-1/2 translate-x-1/2"></div>
+                <div className="p-12 border-b border-white/5 bg-white/[0.01] flex justify-between items-center relative overflow-hidden shrink-0">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#7c3aed]/5 blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
                     <div className="relative z-10">
-                        <h3 className="font-bold text-2xl text-white tracking-tight">Edit Student Profile</h3>
-                        <p className="text-sm text-white/40 mt-1 uppercase tracking-wider font-medium">Update information & synchronize with parent data.</p>
+                        <motion.h3
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="font-black text-3xl text-white tracking-tight flex items-center gap-3"
+                        >
+                            Edit Student Profile
+                        </motion.h3>
+                        <p className="text-[11px] text-white/40 mt-1.5 uppercase font-bold tracking-[0.3em]">
+                            Registry Update <span className="mx-2 text-white/10">|</span> Sync Identity Node
+                        </p>
                     </div>
-                    <button onClick={onClose} className="p-3 rounded-full hover:bg-white/10 text-white/20 hover:text-white transition-all duration-300">
-                        <XIcon className="w-5 h-5" />
+                    <button
+                        onClick={onClose}
+                        className="p-3.5 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all duration-300 border border-transparent hover:border-white/5 group"
+                    >
+                        <XIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-10 space-y-12 overflow-y-auto max-h-[75vh] custom-scrollbar bg-transparent">
+                <form onSubmit={handleSubmit} className="p-12 space-y-16 overflow-y-auto max-h-[70vh] custom-scrollbar bg-transparent">
                     {error && (
-                        <div className="bg-red-500/10 text-red-500 p-5 rounded-2xl text-xs font-black uppercase tracking-widest border border-red-500/20 flex items-center gap-3 animate-in shake">
-                            <span className="text-lg">!</span> {error}
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="bg-red-500/10 text-red-400 p-6 rounded-3xl text-xs font-black uppercase tracking-widest border border-red-500/20 flex items-center gap-4"
+                        >
+                            <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-sm font-black">!</div>
+                            {error}
+                        </motion.div>
                     )}
 
                     {/* Identity Section */}
-                    <section className="space-y-8">
-                        <div className="flex items-center gap-4 border-b border-white/5 pb-4">
-                            <div className="h-8 w-8 flex items-center justify-center bg-white/[0.03] text-white/40 rounded-xl border border-white/5">
-                                <UserIcon className="w-4 h-4" />
+                    <section className="space-y-10">
+                        <div className="flex items-center gap-5">
+                            <div className="h-10 w-10 flex items-center justify-center bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20">
+                                <UserIcon className="w-5 h-5" />
                             </div>
-                            <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Identity & Academic</h4>
+                            <div className="flex-grow">
+                                <h4 className="text-[11px] font-black uppercase text-white/50 tracking-[0.5em] mb-1">Identity & Academic</h4>
+                                <div className="h-px bg-white/5 w-full"></div>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} />
-                            <FloatingInput label="Student ID" name="student_id_number" value={formData.student_id_number} onChange={handleChange} icon={<div className="w-4 h-4 font-black text-[9px] flex items-center justify-center border border-current rounded uppercase">ID</div>} />
-                            <FloatingInput label="Grade / Class" name="grade" value={formData.grade} onChange={handleChange} required icon={<div className="w-4 h-4 font-black text-[9px] flex items-center justify-center uppercase">Gr</div>} />
+                            <FloatingInput label="Student ID" name="student_id_number" value={formData.student_id_number} onChange={handleChange} icon={<div className="font-black text-[9px] border border-current rounded-sm px-1">SID</div>} />
 
-                            <div className="relative group">
-                                <select name="gender" value={formData.gender} onChange={handleChange} className="w-full h-[58px] rounded-2xl border border-white/5 bg-black/40 px-5 pl-12 text-sm text-white shadow-inner focus:border-white/20 focus:ring-4 focus:ring-white/5 outline-none appearance-none cursor-pointer transition-all duration-500">
+                            <FloatingInput label="Grade / Class" name="grade" value={formData.grade} onChange={handleChange} required icon={<div className="font-black text-[9px]">G / C</div>} />
+
+                            <div className="relative group/select">
+                                <select
+                                    name="gender"
+                                    value={formData.gender}
+                                    onChange={handleChange}
+                                    className="peer w-full h-[58px] rounded-2xl border border-white/5 bg-black/40 px-5 pl-12 text-sm text-white shadow-inner focus:outline-none focus:border-[#7c3aed]/30 focus:ring-4 focus:ring-[#7c3aed]/5 transition-all duration-500 appearance-none cursor-pointer relative z-10"
+                                >
                                     <option value="" className="bg-[#0c0e12]">Select Gender...</option>
                                     <option value="Male" className="bg-[#0c0e12]">Male</option>
                                     <option value="Female" className="bg-[#0c0e12]">Female</option>
                                     <option value="Other" className="bg-[#0c0e12]">Other</option>
                                 </select>
-                                <div className="absolute top-1/2 -translate-y-1/2 left-5 text-white/20 pointer-events-none transition-colors group-focus-within:text-white/40"><UserIcon className="w-4 h-4" /></div>
-                                <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Gender</label>
+                                <div className="absolute top-1/2 -translate-y-1/2 left-5 text-white/20 pointer-events-none transition-colors group-focus-within/select:text-[#7c3aed] z-20"><UserIcon className="w-4 h-4" /></div>
+                                <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.25em] text-white/40 transition-all duration-500 peer-focus:text-[#a78bfa] z-20">Gender</label>
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover/select:text-white/40 transition-colors z-20">
+                                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
                             </div>
 
                             <FloatingInput label="Date of Birth" type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} icon={<CalendarIcon className="w-4 h-4" />} />
@@ -397,15 +457,18 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                     </section>
 
                     {/* Contact & Guardian Section */}
-                    <section className="space-y-8 pb-4">
-                        <div className="flex items-center gap-4 border-b border-white/5 pb-4">
-                            <div className="h-8 w-8 flex items-center justify-center bg-white/[0.03] text-white/40 rounded-xl border border-white/5">
-                                <UsersIcon className="w-4 h-4" />
+                    <section className="space-y-10">
+                        <div className="flex items-center gap-5">
+                            <div className="h-10 w-10 flex items-center justify-center bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20">
+                                <UsersIcon className="w-5 h-5" />
                             </div>
-                            <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Contact & Guardian</h4>
+                            <div className="flex-grow">
+                                <h4 className="text-[11px] font-black uppercase text-white/50 tracking-[0.5em] mb-1">Contact & Guardian</h4>
+                                <div className="h-px bg-white/5 w-full"></div>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             <FloatingInput
                                 label="Student Phone"
                                 type="tel"
@@ -414,16 +477,18 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 onChange={handleChange}
                                 icon={<PhoneIcon className="w-4 h-4" />}
                                 isLoading={isFetchingParent && !formData.phone}
-                                source={autoFilledFields.has('phone') ? (parentData?.found ? 'Admission' : 'Fallback') : undefined}
+                                isAutoFilled={autoFilledFields.has('phone')}
+                                source={autoFilledFields.has('phone') ? (parentData?.found ? 'Admission' : 'Registry') : undefined}
                             />
                             <FloatingInput
-                                label="Guardian Name / Relationship"
+                                label="Guardian Identity"
                                 name="parent_guardian_details"
                                 value={formData.parent_guardian_details}
                                 onChange={handleChange}
                                 icon={<UsersIcon className="w-4 h-4" />}
                                 isLoading={isFetchingParent && !formData.parent_guardian_details}
-                                source={autoFilledFields.has('parent_guardian_details') ? (parentData?.found ? 'Admission' : 'Fallback') : undefined}
+                                isAutoFilled={autoFilledFields.has('parent_guardian_details')}
+                                source={autoFilledFields.has('parent_guardian_details') ? (parentData?.found ? 'Parent Vault' : 'Registry') : undefined}
                             />
                         </div>
 
@@ -435,31 +500,49 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             icon={<LocationIcon className="w-4 h-4" />}
                             isTextArea
                             isLoading={isFetchingParent && !formData.address}
-                            source={autoFilledFields.has('address') ? (parentData?.found ? 'Admission' : 'Fallback') : undefined}
+                            isAutoFilled={autoFilledFields.has('address')}
+                            source={autoFilledFields.has('address') ? (parentData?.found ? 'Institutional' : 'Registry') : undefined}
                         />
                     </section>
-
-                    {/* Action Bar */}
-                    <div className="pt-10 flex justify-end gap-5 border-t border-white/5 sticky bottom-0 z-20 pb-5 bg-transparent backdrop-blur-xl">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-8 py-4 font-black text-[10px] uppercase tracking-[0.3em] text-white/30 hover:text-white transition-all duration-300 active:scale-95"
-                            disabled={loading}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="relative group overflow-hidden px-12 py-4 bg-[#7c3aed] text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-[0_15px_45px_rgba(124,58,237,0.3)] hover:bg-[#6d28d9] transition-all transform active:scale-[0.95] flex items-center justify-center gap-3"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                            {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-4 h-4" /> Save Changes</>}
-                        </button>
-                    </div>
                 </form>
-            </div>
+
+                {/* Action Bar */}
+                <div className="p-10 flex justify-end items-center gap-8 border-t border-white/5 bg-white/[0.01] shrink-0">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-8 py-4 font-black text-[11px] uppercase tracking-[0.4em] text-white/30 hover:text-white transition-all duration-300 active:scale-95 border border-transparent hover:border-white/5 rounded-2xl"
+                        disabled={loading}
+                    >
+                        Cancel
+                    </button>
+
+                    <motion.button
+                        type="submit"
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="relative group px-16 py-5 bg-[#7c3aed] text-white font-black text-[12px] uppercase tracking-[0.4em] rounded-[1.5rem] shadow-[0_20px_50px_rgba(124,58,237,0.4)] hover:shadow-[0_25px_60px_rgba(124,58,237,0.6)] transition-all flex items-center justify-center gap-4 overflow-hidden"
+                    >
+                        {/* Shimmer Effect */}
+                        <motion.div
+                            animate={{ x: ["100%", "-100%"] }}
+                            transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
+                        />
+
+                        {loading ? (
+                            <Spinner size="sm" className="text-white" />
+                        ) : (
+                            <>
+                                <CheckCircleIcon className="w-5 h-5 group-hover:scale-125 transition-transform duration-500" />
+                                <span>Save Changes</span>
+                            </>
+                        )}
+                    </motion.button>
+                </div>
+            </motion.div>
         </div>
     );
 };
