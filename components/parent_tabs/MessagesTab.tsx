@@ -140,11 +140,33 @@ export default function MessagesTab() {
                         {activeTab === 'broadcasts' ? (
                             selectedBroadcast ? (
                                 <BroadcastView broadcast={selectedBroadcast} key={selectedBroadcast.id} />
-                            ) : <Standby title="Broadcast Stream" />
+                            ) : (
+                                <EmptyState
+                                    title="Broadcast Stream"
+                                    subtitle="Institutional communication gateway initialized."
+                                    description="This channel serves as the verified bridge for one-to-many official announcements. Once an authority transmits a broadcast, it will appear here in chronological order with full cryptographic auditing."
+                                    icon={<MegaphoneIcon className="w-12 h-12" />}
+                                    primaryCTA={{
+                                        label: "Initialize Broadcast",
+                                        onClick: () => { /* Handle create logic or show info */ }
+                                    }}
+                                    secondaryCTA={{
+                                        label: "Communication Protocol",
+                                        onClick: () => { /* Handle info */ }
+                                    }}
+                                />
+                            )
                         ) : (
                             selectedEnquiry ? (
                                 <EnquiryHandshake enquiry={selectedEnquiry} key={selectedEnquiry.id} refresh={() => fetchData(true)} />
-                            ) : <Standby title="Enquiry Channel" />
+                            ) : (
+                                <EmptyState
+                                    title="Enquiry Channel"
+                                    subtitle="Private communication node awaiting selection."
+                                    description="Active handshakes and direct enquiries with institutional authorities are managed here. Select a verified node from the ledger to resume secure communication."
+                                    icon={<ShieldCheckIcon className="w-12 h-12" />}
+                                />
+                            )
                         )}
                     </AnimatePresence>
                 </main>
@@ -390,12 +412,74 @@ function MetaRow({ label, value }: { label: string; value: string }) {
     );
 }
 
-function Standby({ title }: { title: string }) {
+function EmptyState({ title, subtitle, description, icon, primaryCTA, secondaryCTA }: any) {
     return (
-        <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-10 grayscale select-none">
-            <ZapIcon className="w-16 h-16 mb-8 animate-pulse text-indigo-500" />
-            <h3 className="text-3xl font-serif font-black text-white uppercase tracking-[0.4em] mb-4">{title}</h3>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] max-w-xs leading-relaxed italic">Awaiting node selection for institutional handshake</p>
-        </div>
+        <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            className="h-full w-full flex items-center justify-center p-12"
+        >
+            <div className="max-w-xl w-full flex flex-col items-center text-center">
+                {/* Visual Anchor */}
+                <div className="relative group mb-12">
+                    <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                    <div className="relative w-32 h-32 flex items-center justify-center rounded-[2.5rem] bg-gradient-to-br from-white/[0.05] to-transparent border border-white/[0.08] shadow-2xl overflow-hidden backdrop-blur-md">
+                        <div className="absolute inset-0 bg-indigo-500/5 animate-pulse" />
+                        <div className="relative text-indigo-400 drop-shadow-[0_0_15px_rgba(129,140,248,0.5)]">
+                            {icon || <ZapIcon className="w-12 h-12" />}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Typography Header */}
+                <div className="space-y-4 mb-10">
+                    <div className="flex items-center justify-center gap-3 opacity-30 mb-2">
+                        <div className="h-px w-8 bg-white" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.6em] text-white">System Standby</span>
+                        <div className="h-px w-8 bg-white" />
+                    </div>
+                    <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter leading-none">
+                        {title}
+                    </h3>
+                    <p className="text-indigo-400/80 text-[11px] font-black uppercase tracking-[0.2em] italic">
+                        {subtitle}
+                    </p>
+                </div>
+
+                {/* Supporting Copy */}
+                <div className="relative px-8 py-6 rounded-3xl bg-white/[0.02] border border-white/[0.05] mb-12">
+                    <p className="text-sm font-medium text-white/40 leading-relaxed italic">
+                        "{description}"
+                    </p>
+                </div>
+
+                {/* Action Layer */}
+                <div className="flex items-center gap-6">
+                    {primaryCTA && (
+                        <button
+                            onClick={primaryCTA.onClick}
+                            className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-[0_20px_40px_rgba(79,70,229,0.2)] border border-indigo-400/20"
+                        >
+                            {primaryCTA.label}
+                        </button>
+                    )}
+                    {secondaryCTA && (
+                        <button
+                            onClick={secondaryCTA.onClick}
+                            className="px-8 py-5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border border-white/5"
+                        >
+                            {secondaryCTA.label}
+                        </button>
+                    )}
+                </div>
+
+                {/* Trust Footer */}
+                <div className="mt-20 flex items-center gap-4 opacity-5 grayscale">
+                    <ShieldCheckIcon className="w-5 h-5" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.8em]">End-to-End Encryption Verified</span>
+                </div>
+            </div>
+        </motion.div>
     );
 }
