@@ -53,26 +53,27 @@ BEGIN
     v_result := jsonb_build_object(
         'found', true,
         
-        -- Student Phone: Auth Profile > Registry > Parent Profile (Shared)
+        -- Student Phone: Auth Profile > Admission > Enquiry > Registry
         'student_phone', COALESCE(
-            NULLIF(v_student_auth.phone, ''),
-            NULLIF(v_admission.student_phone, ''), -- If exists
-            NULLIF(v_enquiry.student_phone, ''),   -- If exists
-            NULLIF(v_admission.phone, ''),         -- Fallback to general contact
-            NULLIF(v_enquiry.phone, '')
+            NULLIF(NULLIF(v_student_auth.phone, ''), '0'),
+            NULLIF(NULLIF(v_admission.student_phone, ''), '0'),
+            NULLIF(NULLIF(v_enquiry.student_phone, ''), '0'),
+            NULLIF(NULLIF(v_admission.phone, ''), '0'),
+            NULLIF(NULLIF(v_enquiry.phone, ''), '0'),
+            NULLIF(NULLIF(v_student_details.phone, ''), '0') -- Fallback to registry if all else fails
         ),
         
         -- Parent Info: Linked Profile > Admission > Enquiry
         'parent_name', COALESCE(
-            NULLIF(v_parent_auth.auth_name, ''),
-            NULLIF(v_admission.parent_name, ''),
-            NULLIF(v_enquiry.parent_name, ''),
-            'Guardian'
+            NULLIF(NULLIF(v_parent_auth.auth_name, ''), '0'),
+            NULLIF(NULLIF(v_admission.parent_name, ''), '0'),
+            NULLIF(NULLIF(v_enquiry.parent_name, ''), '0'),
+            NULLIF(NULLIF(v_student_details.parent_guardian_details, ''), '0')
         ),
         'parent_phone', COALESCE(
-            NULLIF(v_parent_auth.auth_phone, ''),
-            NULLIF(v_admission.parent_phone, ''),
-            NULLIF(v_enquiry.parent_phone, '')
+            NULLIF(NULLIF(v_parent_auth.auth_phone, ''), '0'),
+            NULLIF(NULLIF(v_admission.parent_phone, ''), '0'),
+            NULLIF(NULLIF(v_enquiry.parent_phone, ''), '0')
         ),
         'parent_email', COALESCE(
             NULLIF(v_parent_auth.auth_email, ''),
@@ -82,34 +83,35 @@ BEGIN
 
         -- Address: Student Profile > Parent Profile > Admission > Enquiry
         'address', COALESCE(
-            NULLIF(v_student_details.address, ''),
-            NULLIF(v_parent_auth.address, ''),
-            NULLIF(v_admission.address, ''),
-            NULLIF(v_enquiry.address, '')
+            NULLIF(NULLIF(v_student_details.address, ''), '0'),
+            NULLIF(NULLIF(v_parent_auth.address, ''), '0'),
+            NULLIF(NULLIF(v_admission.address, ''), '0'),
+            NULLIF(NULLIF(v_enquiry.address, ''), '0')
         ),
         'city', COALESCE(
-            NULLIF(v_parent_auth.city, ''),
-            NULLIF(v_admission.city, ''),
-            NULLIF(v_enquiry.city, '')
+            NULLIF(NULLIF(v_parent_auth.city, ''), '0'),
+            NULLIF(NULLIF(v_admission.city, ''), '0'),
+            NULLIF(NULLIF(v_enquiry.city, ''), '0')
         ),
         'state', COALESCE(
-            NULLIF(v_parent_auth.state, ''),
-            NULLIF(v_admission.state, ''),
-            NULLIF(v_enquiry.state, '')
+            NULLIF(NULLIF(v_parent_auth.state, ''), '0'),
+            NULLIF(NULLIF(v_admission.state, ''), '0'),
+            NULLIF(NULLIF(v_enquiry.state, ''), '0')
         ),
         'country', COALESCE(
-            NULLIF(v_parent_auth.country, ''),
-            NULLIF(v_admission.country, ''),
-            NULLIF(v_enquiry.country, '')
+            NULLIF(NULLIF(v_parent_auth.country, ''), '0'),
+            NULLIF(NULLIF(v_admission.country, ''), '0'),
+            NULLIF(NULLIF(v_enquiry.country, ''), '0')
         ),
         'pin_code', COALESCE(
-            NULLIF(v_parent_auth.pin_code, ''),
-            NULLIF(v_admission.pin_code, ''),
-            NULLIF(v_enquiry.pin_code, '')
+            NULLIF(NULLIF(v_parent_auth.pin_code, ''), '0'),
+            NULLIF(NULLIF(v_admission.pin_code, ''), '0'),
+            NULLIF(NULLIF(v_enquiry.pin_code, ''), '0')
         ),
         
         'parent_id', v_parent_auth.user_id,
-        'has_linked_parent', (v_parent_auth.user_id IS NOT NULL)
+        'has_linked_parent', (v_parent_auth.user_id IS NOT NULL),
+        'source', v_source
     );
 
     RETURN v_result;

@@ -13,7 +13,7 @@ import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { UsersIcon } from '../icons/UsersIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { ActivityIcon } from '../icons/ActivityIcon';
-import { SparklesIcon } from 'lucide-react';
+import { SparklesIcon, RefreshCwIcon } from 'lucide-react';
 
 interface EditStudentDetailsModalProps {
     student: StudentForAdmin;
@@ -152,16 +152,18 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         }
     };
 
+    const sanitizeVal = (v: any) => (v === '0' || v === 0) ? '' : (v || '');
+
     // Form State
     const [formData, setFormData] = useState({
-        display_name: student.display_name || '',
-        student_id_number: student.student_id_number || '',
-        grade: student.grade || '',
+        display_name: sanitizeVal(student.display_name),
+        student_id_number: sanitizeVal(student.student_id_number),
+        grade: sanitizeVal(student.grade),
         date_of_birth: parseDate(student.date_of_birth),
-        gender: student.gender || '',
-        phone: student.phone || '',
-        address: student.address || '',
-        parent_guardian_details: student.parent_guardian_details || '',
+        gender: sanitizeVal(student.gender),
+        phone: sanitizeVal(student.phone),
+        address: sanitizeVal(student.address),
+        parent_guardian_details: sanitizeVal(student.parent_guardian_details),
         enrollment_status: student.enrollment_status || 'Active',
     });
 
@@ -170,18 +172,22 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         if (student) {
             setFormData(prev => ({
                 ...prev,
-                display_name: student.display_name || prev.display_name,
-                student_id_number: student.student_id_number || prev.student_id_number,
-                grade: student.grade || prev.grade,
+                display_name: sanitizeVal(student.display_name) || prev.display_name,
+                student_id_number: sanitizeVal(student.student_id_number) || prev.student_id_number,
+                grade: sanitizeVal(student.grade) || prev.grade,
                 date_of_birth: parseDate(student.date_of_birth) || prev.date_of_birth,
-                gender: student.gender || prev.gender,
-                phone: student.phone || prev.phone,
-                address: student.address || prev.address,
-                parent_guardian_details: student.parent_guardian_details || prev.parent_guardian_details,
+                gender: sanitizeVal(student.gender) || prev.gender,
+                phone: sanitizeVal(student.phone) || prev.phone,
+                address: sanitizeVal(student.address) || prev.address,
+                parent_guardian_details: sanitizeVal(student.parent_guardian_details) || prev.parent_guardian_details,
                 enrollment_status: student.enrollment_status || prev.enrollment_status,
             }));
         }
     }, [student]);
+    // Riverside Registry Sync: Force re-fetch on mount explicitly
+    useEffect(() => {
+        fetchParent();
+    }, [student.id]);
 
     const [parentData, setParentData] = useState<any>(null);
     const [isFetchingParent, setIsFetchingParent] = useState(false);
@@ -300,9 +306,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         }
     };
 
-    useEffect(() => {
-        fetchParent();
-    }, [student.id]);
 
     useEffect(() => {
         if (parentData) {
@@ -338,7 +341,8 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                     updates.address = fullAddress;
                     newFields.add('address');
                 }
-                if ((!prev.parent_guardian_details || prev.parent_guardian_details === '0') && guardianInfo) {
+                // More aggressive update for guardian details
+                if ((!prev.parent_guardian_details || prev.parent_guardian_details === '0' || prev.parent_guardian_details.length < 5) && guardianInfo) {
                     updates.parent_guardian_details = guardianInfo;
                     newFields.add('parent_guardian_details');
                 }
@@ -437,9 +441,28 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                         >
                             Edit Student Profile
                         </motion.h3>
-                        <p className="text-[11px] text-white/40 mt-1.5 uppercase font-bold tracking-[0.3em]">
-                            Registry Update <span className="mx-2 text-white/10">|</span> Sync Identity Node
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                            <p className="text-[11px] text-white/40 uppercase font-bold tracking-[0.3em]">
+                                Registry Update
+                            </p>
+                            <span className="text-white/10 mx-1">|</span>
+                            {isSchoolAdmin ? (
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        fetchParent();
+                                    }}
+                                    className="flex items-center gap-2 text-[11px] text-indigo-400 hover:text-indigo-300 uppercase font-black tracking-[0.3em] transition-all group/sync active:scale-95"
+                                >
+                                    <RefreshCwIcon className={`w-3 h-3 ${isFetchingParent ? 'animate-spin' : 'group-sync:rotate-180'} transition-transform duration-700`} />
+                                    Sync Identity Node
+                                </button>
+                            ) : (
+                                <p className="text-[11px] text-white/40 uppercase font-bold tracking-[0.3em]">
+                                    Sync Identity Node
+                                </p>
+                            )}
+                        </div>
                     </div>
                     <button
                         onClick={onClose}
