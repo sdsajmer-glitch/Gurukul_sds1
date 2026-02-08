@@ -122,16 +122,33 @@ const handleCopy = (text: string, label: string) => {
 };
 
 // Fix: Added missing InfoRow component for profile detail rendering.
-const InfoRow: React.FC<{ label: string; value: string | null | undefined; icon: React.ReactNode }> = ({ label, value, icon }) => (
-    <div className="flex items-center gap-5 py-5 border-b border-white/5 last:border-0 group transition-all hover:bg-white/5 px-4 rounded-2xl relative overflow-hidden">
+const InfoRow: React.FC<{ label: string; value: string | null | undefined; icon: React.ReactNode; onEdit?: () => void }> = ({ label, value, icon, onEdit }) => (
+    <div
+        className={`flex items-center gap-5 py-5 border-b border-white/5 last:border-0 group transition-all rounded-2xl relative overflow-hidden px-4 ${onEdit ? 'cursor-pointer hover:bg-white/5' : ''}`}
+        onClick={onEdit}
+    >
         <div className="absolute inset-0 bg-indigo-500/5 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500"></div>
         <div className="p-3 bg-white/5 rounded-xl text-white/40 group-hover:text-indigo-400 group-hover:bg-indigo-500/10 transition-all duration-500 group-hover:scale-110 relative z-10 border border-white/5 group-hover:border-indigo-500/20">
             {icon}
         </div>
-        <div className="relative z-10">
+        <div className="relative z-10 flex-grow">
             <p className="text-[9px] font-black uppercase text-white/30 tracking-[0.2em] mb-1 group-hover:text-indigo-400/50 transition-colors">{label}</p>
-            <p className="text-sm font-bold text-white tracking-tight">{value || '—'}</p>
+            <div className="flex items-center gap-3">
+                <p className={`text-sm font-bold tracking-tight ${!value || value === '—' ? 'text-white/20' : 'text-white'}`}>
+                    {value || '—'}
+                </p>
+                {onEdit && (!value || value === '—') && (
+                    <span className="text-[9px] font-black text-indigo-400/40 uppercase tracking-widest bg-indigo-500/5 px-2 py-0.5 rounded border border-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Fix Protocol
+                    </span>
+                )}
+            </div>
         </div>
+        {onEdit && (
+            <div className="relative z-10 opacity-0 group-hover:opacity-40 transition-opacity">
+                <ChevronRightIcon className="w-4 h-4 text-white" />
+            </div>
+        )}
     </div>
 );
 
@@ -995,13 +1012,19 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                             (admissionRes?.applicant_name || enquiryRes?.applicant_name || student.display_name)
             ) || student.display_name;
 
-            const bestPhone = sanitize(profileData?.profiles?.phone) || sanitize(profileData?.phone) || sanitize(student.phone) ||
-                sanitize(admissionRes?.student_phone) || sanitize(admissionRes?.parent_phone) ||
-                sanitize(enquiryRes?.parent_phone) || sanitize(combinedParentData?.phone);
+            const bestPhone = sanitize(profileData?.phone) ||
+                sanitize(profileData?.profiles?.phone) ||
+                sanitize(admissionRes?.student_phone) ||
+                sanitize(student.phone) ||
+                sanitize(combinedParentData?.phone) ||
+                sanitize(admissionRes?.parent_phone) ||
+                sanitize(enquiryRes?.parent_phone);
 
-            const bestAddress = sanitize(profileData?.address) || sanitize(student.address) ||
-                sanitize(admissionRes?.address) || sanitize(enquiryRes?.address) ||
-                sanitize(combinedParentData?.address);
+            const bestAddress = sanitize(profileData?.address) ||
+                sanitize(admissionRes?.address) ||
+                sanitize(enquiryRes?.address) ||
+                sanitize(combinedParentData?.address) ||
+                sanitize(student.address);
 
             const bestDob = sanitize(profileData?.date_of_birth) || sanitize(student.date_of_birth) || sanitize(admissionRes?.date_of_birth);
             const bestGender = sanitize(profileData?.gender) || sanitize(student.gender) || sanitize(admissionRes?.gender);
@@ -1230,10 +1253,10 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     </h3>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <InfoRow label="Legal Name" value={syncedStudent.display_name} icon={<UserIcon className="w-5 h-5" />} />
-                                                    <InfoRow label="Gender" value={syncedStudent.gender} icon={<UserIcon className="w-5 h-5" />} />
-                                                    <InfoRow label="Date of Birth" value={syncedStudent.date_of_birth ? new Date(syncedStudent.date_of_birth).toLocaleDateString() : null} icon={<CalendarIcon className="w-5 h-5" />} />
-                                                    <InfoRow label="Address" value={syncedStudent.address} icon={<LocationIcon className="w-5 h-5" />} />
+                                                    <InfoRow label="Legal Name" value={syncedStudent.display_name} icon={<UserIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Gender" value={syncedStudent.gender} icon={<UserIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Date of Birth" value={syncedStudent.date_of_birth ? new Date(syncedStudent.date_of_birth).toLocaleDateString() : null} icon={<CalendarIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Address" value={syncedStudent.address} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                 </div>
                                             </div>
                                             <div className="space-y-8">
@@ -1243,9 +1266,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     </h3>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <InfoRow label="Primary Email" value={syncedStudent.email} icon={<MailIcon className="w-5 h-5" />} />
-                                                    <InfoRow label="Student Phone" value={syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} />
-                                                    <InfoRow label="Parent Contact" value={parentData?.phone || parentData?.parent_phone || syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} />
+                                                    <InfoRow label="Primary Email" value={syncedStudent.email} icon={<MailIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Student Phone" value={syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Parent Contact" value={parentData?.phone || parentData?.parent_phone || syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                 </div>
                                                 <div className="mt-12">
                                                     <DigitalIdCard student={syncedStudent} />
