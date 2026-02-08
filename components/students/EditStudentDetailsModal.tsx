@@ -361,13 +361,15 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
             ].filter(Boolean);
             const fullAddress = addressParts.join(', ').trim();
 
-            // Construct Guardian Details
-            const guardianInfo = parentData.name ? `${parentData.name} (${parentData.relationship || 'Guardian'})` : '';
+            // Construct Guardian Details - use parent_name from RPC
+            const guardianInfo = parentData.parent_name ? `${parentData.parent_name} (${parentData.parent_relationship || 'Guardian'})` : '';
 
             setFormData(prev => {
                 // Only update if there's actual data to sync, otherwise keep current
                 const updates: any = {};
-                if (parentData.phone) updates.phone = parentData.phone;
+                // Use student_phone from RPC, fallback to parent_phone
+                if (parentData.student_phone) updates.phone = parentData.student_phone;
+                else if (parentData.parent_phone) updates.phone = parentData.parent_phone;
                 if (fullAddress) updates.address = fullAddress;
                 if (guardianInfo) updates.parent_guardian_details = guardianInfo;
 
