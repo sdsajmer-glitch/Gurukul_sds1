@@ -4,7 +4,7 @@
 -- 1. Fixes get_my_children_profiles to strictly exclude converted enquiries.
 -- 2. Resolves any lingering ambiguity in column references.
 -- ==============================================================================
-
+DROP FUNCTION IF EXISTS public.get_my_children_profiles();
 BEGIN;
 
 -- 1. Redefine get_my_children_profiles with STRICT filtering
