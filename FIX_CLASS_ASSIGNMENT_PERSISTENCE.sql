@@ -43,6 +43,43 @@ BEGIN
         updated_at = NOW()
     WHERE user_id = p_student_id;
 
+    -- 4. Guardian Auto-Linkage (Enhancement)
+    -- This ensures that finalizing enrollment also connects the guardian node
+    DECLARE
+        v_admission_id UUID;
+        v_parent_id UUID;
+        v_parent_email TEXT;
+        v_parent_name TEXT;
+        v_parent_phone TEXT;
+    BEGIN
+        SELECT admission_id INTO v_admission_id FROM student_profiles WHERE user_id = p_student_id;
+        
+        IF v_admission_id IS NOT NULL THEN
+            SELECT parent_id, parent_email, parent_name, parent_phone 
+            INTO v_parent_id, v_parent_email, v_parent_name, v_parent_phone
+            FROM admissions WHERE id = v_admission_id;
+
+            -- Try to recover parent_id by email if missing
+            IF v_parent_id IS NULL AND v_parent_email IS NOT NULL THEN
+                SELECT id INTO v_parent_id FROM profiles WHERE email = v_parent_email LIMIT 1;
+            END IF;
+
+            -- Create the link if parent_id is found
+            IF v_parent_id IS NOT NULL THEN
+                INSERT INTO student_parents (student_id, parent_id, is_primary)
+                VALUES (p_student_id, v_parent_id, true)
+                ON CONFLICT (student_id, parent_id) DO UPDATE SET is_primary = EXCLUDED.is_primary;
+            END IF;
+
+            -- Sync text-based details for immediate fallback view
+            IF v_parent_name IS NOT NULL THEN
+                UPDATE student_profiles 
+                SET parent_guardian_details = COALESCE(v_parent_name || ' (' || COALESCE(v_parent_phone, 'No Phone') || ')', parent_guardian_details)
+                WHERE user_id = p_student_id;
+            END IF;
+        END IF;
+    END;
+
     -- 4. Log the action (Optional, good for audit)
     -- INSERT INTO audit_logs ...
 

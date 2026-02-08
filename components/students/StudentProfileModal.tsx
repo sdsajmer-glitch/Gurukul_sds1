@@ -364,6 +364,18 @@ const GuardianCard: React.FC<{
             )}
         </div>
 
+        {/* Registry Source Badge */}
+        {data && data.is_unlinked && (
+            <div className="absolute top-8 right-24 animate-in fade-in slide-in-from-right-4 duration-700 z-20">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 shadow-lg shadow-amber-500/5">
+                    <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
+                    <span className="text-[7px] font-black text-amber-500 uppercase tracking-widest whitespace-nowrap">
+                        Registry: Admission
+                    </span>
+                </div>
+            </div>
+        )}
+
         {/* Content Section */}
         {data ? (
             <div className="space-y-8 relative z-10 flex-grow">
@@ -876,7 +888,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     name: parentRes.name,
                     email: parentRes.email,
                     phone: parentRes.phone,
-                    relationship: parentRes.relationship
+                    relationship: parentRes.relationship,
+                    is_unlinked: !!parentRes.is_unlinked,
+                    source: parentRes.source
                 };
 
                 // Secondary Parent Handling
@@ -886,7 +900,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         name: parentRes.secondary_parent_name,
                         email: parentRes.secondary_parent_email,
                         phone: parentRes.secondary_parent_phone,
-                        relationship: parentRes.secondary_parent_relationship
+                        relationship: parentRes.secondary_parent_relationship,
+                        is_unlinked: !!parentRes.is_unlinked
                     };
                 } else if (parentRes.parent_id) {
                     // Deep Lookup: Check parent profile for secondary guardian if RPC didn't return it
