@@ -836,7 +836,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 { data: parentRes },
                 { data: admissionRes },
                 { data: enquiryRes },
-                { data: classData },
+                { data: profileData }, // Renamed from classData to profileData to reflect full fetch
                 { data: feeData }
             ] = await Promise.all([
                 supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id }),
@@ -850,8 +850,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     .select('*')
                     .or(`user_id.eq.${student.id},email.eq.${student.email || 'no_email'},parent_email.eq.${student.email || 'no_email'}`)
                     .maybeSingle(),
-                // Fetch latest class assignment
-                supabase.from('student_profiles').select('assigned_class_id, school_classes!student_profiles_assigned_class_id_fkey(name)').eq('user_id', student.id).maybeSingle(),
+                // Fetch FRESH Profile Data (Critical for persistence check) - Includes Class Assignment
+                supabase.from('student_profiles').select('*, school_classes!student_profiles_assigned_class_id_fkey(name)').eq('user_id', student.id).maybeSingle(),
                 // Fetch fee summary
                 supabase.rpc('get_student_fee_summary', { p_student_id: student.id })
             ]);
@@ -936,18 +936,19 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
             // --- 2. Sync Student Identity Context ---
             // Merge data from multiple sources to fill gaps in student profile
-            // Priority: Existing Prop > Admission > Enquiry > Combined Parent Data
+            // Priority: Fresh DB Profile > Existing Prop > Admission > Enquiry > Combined Parent Data
 
             const bestDisplayName =
-                (student.display_name && student.display_name !== 'Academic Identity') ? student.display_name :
-                    (admissionRes?.applicant_name || enquiryRes?.applicant_name || student.display_name);
+                (profileData?.display_name && profileData?.display_name !== 'Academic Identity') ? profileData.display_name :
+                    (student.display_name && student.display_name !== 'Academic Identity') ? student.display_name :
+                        (admissionRes?.applicant_name || enquiryRes?.applicant_name || student.display_name);
 
-            const bestPhone = student.phone || admissionRes?.student_phone || admissionRes?.parent_phone || enquiryRes?.parent_phone || combinedParentData?.phone;
-            const bestAddress = student.address || admissionRes?.address || enquiryRes?.address || combinedParentData?.address;
-            const bestDob = student.date_of_birth || admissionRes?.date_of_birth;
-            const bestGender = student.gender || admissionRes?.gender;
-            const bestPhoto = student.profile_photo_url || admissionRes?.profile_photo_url || enquiryRes?.profile_photo_url;
-            const bestGrade = student.grade || admissionRes?.grade || enquiryRes?.grade;
+            const bestPhone = profileData?.phone || student.phone || admissionRes?.student_phone || admissionRes?.parent_phone || enquiryRes?.parent_phone || combinedParentData?.phone;
+            const bestAddress = profileData?.address || student.address || admissionRes?.address || enquiryRes?.address || combinedParentData?.address;
+            const bestDob = profileData?.date_of_birth || student.date_of_birth || admissionRes?.date_of_birth;
+            const bestGender = profileData?.gender || student.gender || admissionRes?.gender;
+            const bestPhoto = profileData?.profile_photo_url || student.profile_photo_url || admissionRes?.profile_photo_url || enquiryRes?.profile_photo_url;
+            const bestGrade = profileData?.grade || student.grade || admissionRes?.grade || enquiryRes?.grade;
 
             setSyncedStudent(prev => ({
                 ...prev,
@@ -958,9 +959,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 gender: bestGender,
                 profile_photo_url: bestPhoto,
                 grade: bestGrade,
-                // Class assignment logic (Step 3)
-                assigned_class_id: classData?.assigned_class_id || prev.assigned_class_id,
-                assigned_class_name: (classData?.school_classes as any)?.name || prev.assigned_class_name
+                // Class assignment logic (Step 3) - Uses profileData
+                assigned_class_id: profileData?.assigned_class_id || prev.assigned_class_id,
+                assigned_class_name: (profileData?.school_classes as any)?.name || prev.assigned_class_name
             }));
 
             // --- 3. Additional Data (Documents & Fees) ---
