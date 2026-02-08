@@ -19,6 +19,7 @@ import { PlusIcon } from '../icons/PlusIcon';
 import { RefreshCwIcon } from '../icons/RefreshCwIcon';
 import StudentProfileModal from '../students/StudentProfileModal';
 import { StudentForAdmin } from '../../types';
+import clsx from 'clsx';
 
 interface AdmissionDetailsModalProps {
     admission: AdmissionApplication;
