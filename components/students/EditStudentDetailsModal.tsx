@@ -182,7 +182,31 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
             if (data && data.found) {
                 setParentData(data);
-                if (isMounted.current) setSyncWithParent(true);
+
+                // INTELLIGENT SYNC INIT:
+                // Only default to Auto-Sync if the current student data matches the parent data 
+                // OR if the student data is empty. 
+                // If the user previously manually entered a different value, we should respect it (Sync = False).
+
+                const parentPhone = data.student_phone || data.parent_phone || '';
+                const currentPhone = student.phone || '';
+
+                // If student has a phone number that DIFFERS from the parent record, assume Manual Entry preference.
+                let shouldSync = true;
+
+                // If the student has a phone number, but the parent record is empty OR different, 
+                // we assume the user manually entered this data previously.
+                // We should NOT overwrite it with an empty string or old data.
+                if (currentPhone && (!parentPhone || currentPhone !== parentPhone)) {
+                    shouldSync = false;
+                }
+
+                // Also check address - if student has address but parent doesn't, keep manual
+                if (student.address && (!data.address && !data.city)) {
+                    shouldSync = false;
+                }
+
+                if (isMounted.current) setSyncWithParent(shouldSync);
             } else {
                 // Ultimate fallback: direct queries
                 console.log('RPC found no contact data, initiating fallback queries...');
@@ -315,8 +339,10 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 const resolvedData = {
                     found: true,
                     name: profile.display_name,
-                    email: profile.email,
-                    phone: profile.phone,
+                    student_phone: parentProfile?.student_phone || profile.phone, // Use profile phone as fallback
+                    parent_name: profile.display_name,
+                    parent_phone: profile.phone,
+                    parent_email: profile.email,
                     relationship: parentProfile?.relationship_to_student || 'Parent',
                     address: parentProfile?.address,
                     city: parentProfile?.city,
@@ -348,7 +374,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         }
     };
 
-    // Apply Sync Effect - Carefully merge parent data
+    // Apply Sync Effect - Carefully merge parent data with STRICT overrides
     useEffect(() => {
         if (syncWithParent && parentData) {
             // Construct Address
@@ -361,23 +387,22 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
             ].filter(Boolean);
             const fullAddress = addressParts.join(', ').trim();
 
-            // Construct Guardian Details - use parent_name from RPC
-            const guardianInfo = parentData.parent_name ? `${parentData.parent_name} (${parentData.parent_relationship || 'Guardian'})` : '';
+            // Construct Guardian Details
+            const guardianInfo = parentData.parent_name
+                ? `${parentData.parent_name} (${parentData.relationship || parentData.parent_relationship || 'Guardian'})`
+                : (parentData.name ? `${parentData.name} (${parentData.relationship || 'Guardian'})` : '');
 
-            setFormData(prev => {
-                // Only update if there's actual data to sync, otherwise keep current
-                const updates: any = {};
-                // Use student_phone from RPC, fallback to parent_phone
-                if (parentData.student_phone) updates.phone = parentData.student_phone;
-                else if (parentData.parent_phone) updates.phone = parentData.parent_phone;
-                if (fullAddress) updates.address = fullAddress;
-                if (guardianInfo) updates.parent_guardian_details = guardianInfo;
+            // determine phone: prioritize student_phone > parent_phone > phone
+            const bestPhone = parentData.student_phone || parentData.parent_phone || parentData.phone || '';
 
-                if (Object.keys(updates).length > 0) {
-                    return { ...prev, ...updates };
-                }
-                return prev;
-            });
+            setFormData(prev => ({
+                ...prev,
+                // STRICT SYNC: When enabled, these fields MUST mirror the parent data source.
+                // If source is empty, field becomes empty.
+                phone: bestPhone,
+                address: fullAddress,
+                parent_guardian_details: guardianInfo
+            }));
         }
     }, [syncWithParent, parentData]);
 
