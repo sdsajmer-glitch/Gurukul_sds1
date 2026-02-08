@@ -138,6 +138,8 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
     const [syncWithParent, setSyncWithParent] = useState(true);
     const [parentData, setParentData] = useState<any>(null);
     const [isFetchingParent, setIsFetchingParent] = useState(false);
+    const [manualParentEmail, setManualParentEmail] = useState('');
+    const [isLinking, setIsLinking] = useState(false);
 
     // UI State
     const [loading, setLoading] = useState(false);
@@ -215,6 +217,70 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
     useEffect(() => {
         fetchParent();
     }, [student.id]);
+
+    // Manual Parent Lookup by Email
+    const handleManualLinkByEmail = async () => {
+        if (!manualParentEmail || !manualParentEmail.includes('@')) {
+            setError('Please enter a valid parent email address.');
+            return;
+        }
+
+        setIsLinking(true);
+        setError(null);
+        try {
+            // Search for parent profile by email
+            const { data: profile, error: profileErr } = await supabase
+                .from('profiles')
+                .select('id, display_name, email, phone')
+                .ilike('email', manualParentEmail.trim())
+                .or(`role.eq.Parent,role.eq."Parent/Guardian"`)
+                .maybeSingle();
+
+            if (profileErr) throw profileErr;
+
+            if (profile) {
+                // We found a parent! Now fetch their full parent record
+                const { data: parentProfile } = await supabase
+                    .from('parent_profiles')
+                    .select('*')
+                    .eq('user_id', profile.id)
+                    .maybeSingle();
+
+                const resolvedData = {
+                    found: true,
+                    name: profile.display_name,
+                    email: profile.email,
+                    phone: profile.phone,
+                    relationship: parentProfile?.relationship_to_student || 'Parent',
+                    address: parentProfile?.address,
+                    city: parentProfile?.city,
+                    state: parentProfile?.state,
+                    country: parentProfile?.country,
+                    pin_code: parentProfile?.pin_code,
+                    parent_id: profile.id
+                };
+
+                setParentData(resolvedData);
+                setSyncWithParent(true);
+
+                // Opt-in: Automatically create the link in student_parents table to persist this lookup
+                await supabase.from('student_parents').insert({
+                    student_id: student.id,
+                    parent_id: profile.id,
+                    is_primary: true
+                }).select();
+
+                console.log('Manual link established successfully');
+            } else {
+                setError('No parent profile found with that email. Please ensure the parent has registered.');
+            }
+        } catch (e) {
+            console.error("Manual link error:", e);
+            setError("Failed to link parent identity.");
+        } finally {
+            setIsLinking(false);
+        }
+    };
 
     // Apply Sync Effect - Carefully merge parent data
     useEffect(() => {
@@ -375,8 +441,41 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                         </div>
 
                         {!parentData?.found && !isFetchingParent && (
-                            <div className="p-5 bg-amber-500/5 border border-amber-500/10 rounded-[1.5rem] text-[10px] text-amber-500 flex items-center gap-4 font-black uppercase tracking-widest shadow-xl">
-                                <span className="text-xl">!</span> No linked parent profile found. Manual entry required for identity synchronization.
+                            <div className="space-y-6">
+                                <div className="p-6 bg-amber-500/5 border border-amber-500/15 rounded-[2rem] text-amber-500 flex flex-col gap-6 font-medium shadow-2xl relative overflow-hidden group/warning">
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 group-hover/warning:scale-150 transition-transform duration-1000"></div>
+                                    <div className="flex items-start gap-4">
+                                        <div className="p-2.5 bg-amber-500/10 rounded-xl">
+                                            <AlertTriangleIcon className="w-5 h-5" />
+                                        </div>
+                                        <div className="flex-grow">
+                                            <h5 className="text-[11px] font-black uppercase tracking-[0.2em] mb-1">Identity Sync Failure</h5>
+                                            <p className="text-[10px] text-white/40 leading-relaxed uppercase tracking-widest font-bold">
+                                                No linked parent profile found. Manual entry required for identity synchronization unless explicitly linked.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col md:flex-row gap-4 pt-2 border-t border-white/5 mt-2">
+                                        <div className="flex-grow relative">
+                                            <input
+                                                type="email"
+                                                placeholder="SEARCH PARENT EMAIL..."
+                                                value={manualParentEmail}
+                                                onChange={(e) => setManualParentEmail(e.target.value)}
+                                                className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-5 text-[10px] font-bold tracking-widest outline-none focus:border-amber-500/50 focus:bg-white/[0.08] transition-all placeholder:text-white/20"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleManualLinkByEmail}
+                                            disabled={isLinking || !manualParentEmail}
+                                            className="px-8 h-12 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-30"
+                                        >
+                                            {isLinking ? <Spinner size="sm" className="text-amber-500" /> : <><PlusCircleIcon className="w-4 h-4" /> Resolve Identity</>}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
