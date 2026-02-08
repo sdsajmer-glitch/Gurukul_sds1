@@ -862,8 +862,11 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     .select('*')
                     .or(`user_id.eq.${student.id},email.eq.${student.email || 'no_email'},parent_email.eq.${student.email || 'no_email'}`)
                     .maybeSingle(),
-                // Fetch FRESH Profile Data (Critical for persistence check) - Includes Class Assignment
-                supabase.from('student_profiles').select('*, school_classes!student_profiles_assigned_class_id_fkey(name)').eq('user_id', student.id).maybeSingle(),
+                // Fetch FRESH Profile Data (Critical for persistence check) - Includes Class Assignment and Student Contact
+                supabase.from('student_profiles')
+                    .select('*, profiles!inner(phone, email, display_name), school_classes!student_profiles_assigned_class_id_fkey(name)')
+                    .eq('user_id', student.id)
+                    .maybeSingle(),
                 // Fetch fee summary
                 supabase.rpc('get_student_fee_summary', { p_student_id: student.id })
             ]);
@@ -954,15 +957,16 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             // Priority: Fresh DB Profile > Existing Prop > Admission > Enquiry > Combined Parent Data
 
             const bestDisplayName =
-                (profileData?.display_name && profileData?.display_name !== 'Academic Identity') ? profileData.display_name :
-                    (student.display_name && student.display_name !== 'Academic Identity') ? student.display_name :
-                        (admissionRes?.applicant_name || enquiryRes?.applicant_name || student.display_name);
+                (profileData?.profiles?.display_name && profileData?.profiles?.display_name !== 'Academic Identity') ? profileData.profiles.display_name :
+                    (profileData?.display_name && profileData?.display_name !== 'Academic Identity') ? profileData.display_name :
+                        (student.display_name && student.display_name !== 'Academic Identity') ? student.display_name :
+                            (admissionRes?.applicant_name || enquiryRes?.applicant_name || student.display_name);
 
-            const bestPhone = profileData?.phone || student.phone || admissionRes?.student_phone || admissionRes?.parent_phone || enquiryRes?.parent_phone || combinedParentData?.phone;
-            const bestAddress = profileData?.address || student.address || admissionRes?.address || enquiryRes?.address || combinedParentData?.address;
+            const bestPhone = profileData?.profiles?.phone || profileData?.phone || student.phone || admissionRes?.student_phone || admissionRes?.parent_phone || enquiryRes?.parent_phone || combinedParentData?.phone;
+            const bestAddress = profileData?.address || student.address || admissionRes?.address || enquiryRes?.address || combinedParentData?.address || parentData?.address;
             const bestDob = profileData?.date_of_birth || student.date_of_birth || admissionRes?.date_of_birth;
             const bestGender = profileData?.gender || student.gender || admissionRes?.gender;
-            const bestPhoto = profileData?.profile_photo_url || student.profile_photo_url || admissionRes?.profile_photo_url || enquiryRes?.profile_photo_url;
+            const bestPhoto = profileData?.profiles?.profile_photo_url || profileData?.profile_photo_url || student.profile_photo_url || admissionRes?.profile_photo_url || enquiryRes?.profile_photo_url;
             const bestGrade = profileData?.grade || student.grade || admissionRes?.grade || enquiryRes?.grade;
 
             setSyncedStudent(prev => ({
@@ -1202,7 +1206,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 <div className="space-y-2">
                                                     <InfoRow label="Primary Email" value={syncedStudent.email} icon={<MailIcon className="w-5 h-5" />} />
                                                     <InfoRow label="Student Phone" value={syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} />
-                                                    <InfoRow label="Parent Contact" value={parentData?.phone || syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} />
+                                                    <InfoRow label="Parent Contact" value={parentData?.phone || parentData?.parent_phone || syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} />
                                                 </div>
                                                 <div className="mt-12">
                                                     <DigitalIdCard student={syncedStudent} />
