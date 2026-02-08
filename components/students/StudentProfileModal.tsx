@@ -964,6 +964,21 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                             is_unlinked: true
                         };
                     }
+                } else if (profileData && profileData.parent_guardian_details && profileData.parent_guardian_details !== '0') {
+                    // Strategy C: Fallback to Identity Registry (Student Profile)
+                    // Matches "Name (Relationship)" or "Name (Phone)"
+                    const raw = profileData.parent_guardian_details;
+                    const namePart = raw.split(' (')[0];
+                    const phoneMatch = raw.match(/\(([^)]+)\)/);
+
+                    combinedParentData = {
+                        name: namePart,
+                        phone: phoneMatch ? phoneMatch[1] : '',
+                        relationship: (phoneMatch && isNaN(parseInt(phoneMatch[1]))) ? phoneMatch[1] : 'Parent',
+                        address: profileData.address,
+                        is_unlinked: true,
+                        source: 'Registry'
+                    };
                 }
             }
 
