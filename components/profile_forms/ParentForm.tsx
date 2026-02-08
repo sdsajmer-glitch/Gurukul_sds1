@@ -233,7 +233,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10 bg-white/[0.01] p-8 rounded-[2rem] border border-white/[0.03] backdrop-blur-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10 bg-white/[0.01] p-10 rounded-[2.5rem] border border-white/[0.03] backdrop-blur-sm shadow-inner group/registry hover:border-white/[0.08] transition-all duration-500">
                         <PremiumFloatingInput
                             label="Full Legal Name"
                             name="display_name"
@@ -252,6 +252,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             icon={<UsersIcon className="w-4 h-4" />}
                             disabled={isStrictReadOnly}
                             placeholder="Select Relation..."
+                            preferPlacement="top"
                         />
 
                         <CustomSelect
@@ -261,6 +262,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }, { value: 'Other', label: 'Diverse' }, { value: 'Prefer not to say', label: 'Prefer not to say' }]}
                             icon={<UserIcon className="w-4 h-4" />}
                             disabled={isStrictReadOnly}
+                            preferPlacement="top"
                         />
 
                         <CustomSelect
@@ -270,6 +272,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             options={[{ value: '1', label: 'Single Child' }, { value: '2', label: '2 Children' }, { value: '3', label: '3 Children' }, { value: '4', label: '4+ Children' }]}
                             icon={<UsersIcon className="w-4 h-4" />}
                             disabled={isStrictReadOnly}
+                            preferPlacement="top"
                         />
                     </div>
                 </div>
@@ -289,7 +292,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10 px-8 py-10 bg-black/20 rounded-[2rem] border border-white/5 opacity-80 hover:opacity-100 transition-all duration-500 group/aux">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10 px-10 py-12 bg-black/40 rounded-[2.5rem] border border-white/5 opacity-80 hover:opacity-100 transition-all duration-500 group/aux hover:border-white/[0.08]">
                         <PremiumFloatingInput
                             label="Legal Name"
                             name="secondary_parent_name"
@@ -308,6 +311,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             icon={<UsersIcon className="w-4 h-4" />}
                             disabled={isStrictReadOnly}
                             placeholder="Not Selected"
+                            preferPlacement="top"
                         />
 
                         <PremiumFloatingInput
@@ -328,6 +332,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             icon={<UserIcon className="w-4 h-4" />}
                             disabled={isStrictReadOnly}
                             placeholder="Not Selected"
+                            preferPlacement="top"
                         />
                     </div>
                 </div>
@@ -337,21 +342,21 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
 
     return (
         <div className="animate-in fade-in slide-in-from-right-4 duration-700 space-y-12">
-            <div className="flex items-center justify-between gap-6 p-8 rounded-[2rem] bg-gradient-to-br from-[#1a1c22] to-[#0a0a0b] border border-white/5 relative overflow-hidden group hover:border-[#333] transition-all duration-500 shadow-2xl">
+            <div className="flex items-center justify-between gap-6 p-10 rounded-[2.5rem] bg-gradient-to-br from-[#1a1c22] to-[#0a0a0b] border border-white/5 relative overflow-hidden group hover:border-[#333] transition-all duration-500 shadow-2xl">
                 <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
-                <div className="flex items-center gap-5 relative z-10">
+                <div className="flex items-center gap-6 relative z-10">
                     <div className="relative">
                         <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full opacity-50" />
-                        <div className="relative p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-2xl ring-1 ring-white/5">
-                            <HomeIcon className="w-6 h-6" />
+                        <div className="relative p-5 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-2xl ring-1 ring-white/5">
+                            <HomeIcon className="w-7 h-7" />
                         </div>
                     </div>
                     <div>
-                        <h3 className="text-base font-black text-white tracking-[0.2em] uppercase italic">
+                        <h3 className="text-lg font-black text-white tracking-[0.2em] uppercase italic">
                             Residency <span className="text-indigo-400">&</span> Contact
                         </h3>
-                        <p className="text-[10px] text-white/30 font-bold tracking-[0.15em] uppercase mt-1">{syncStatus || 'Institutional Telemetry & Mapping'}</p>
+                        <p className="text-[10px] text-white/30 font-bold tracking-[0.15em] uppercase mt-1.5">{syncStatus || 'Institutional Telemetry & Mapping'}</p>
                     </div>
                 </div>
 
@@ -359,25 +364,25 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                     type="button"
                     onClick={handleAutoLocate}
                     disabled={isLocating || isStrictReadOnly}
-                    className={`h-[48px] px-8 rounded-xl font-black text-[10px] uppercase tracking-[0.25em] transition-all duration-500 border backdrop-blur-md relative z-10
+                    className={`h-[56px] px-10 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all duration-500 border backdrop-blur-md relative z-10 italic
                         ${isLocating
                             ? 'bg-primary/20 text-primary border-primary/40 animate-pulse'
                             : isStrictReadOnly
                                 ? 'bg-white/5 text-white/10 border-white/5 cursor-not-allowed hidden'
-                                : 'bg-white/5 text-white/60 border-white/10 hover:border-primary/40 hover:text-white hover:bg-white/10 active:scale-[0.98] shadow-2xl hover:shadow-primary/10'
+                                : 'bg-primary/5 text-primary border-primary/20 hover:border-primary/50 hover:bg-primary/10 active:scale-[0.98] shadow-[0_0_40px_rgba(var(--primary),0.05)]'
                         }
                     `}
                 >
-                    {isLocating ? <Spinner size="sm" className="text-primary" /> : <><LocateFixedIcon className="w-4 h-4 inline mr-2 transform group-hover:rotate-90 transition-transform duration-700" /> Sync Node</>}
+                    {isLocating ? <Spinner size="sm" className="text-primary" /> : <><LocateFixedIcon className="w-5 h-5 inline mr-3 transform group-hover:rotate-90 transition-transform duration-700" /> Sync Node</>}
                 </button>
             </div>
 
             <div className="space-y-16">
                 {/* Section 1: Primary Contact */}
-                <div className="space-y-8 glass-panel p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/[0.03]">
-                    <div className="flex items-center gap-4 pb-4 border-b border-white/[0.05]">
-                        <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.8)]" />
-                        <h4 className="text-[11px] font-black text-white/60 uppercase tracking-[0.25em]">Uplink Parameters</h4>
+                <div className="space-y-10 glass-panel p-10 rounded-[3rem] bg-white/[0.01] border border-white/[0.03] group/contact hover:border-white/5 transition-colors">
+                    <div className="flex items-center gap-5 pb-6 border-b border-white/[0.05]">
+                        <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,1)]" />
+                        <h4 className="text-[11px] font-black text-white/60 uppercase tracking-[0.3em] italic">Uplink Parameters</h4>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <PremiumFloatingInput
@@ -401,15 +406,16 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             searchable
                             isSynced={syncedFields.has('country')}
                             disabled={isStrictReadOnly}
+                            preferPlacement="top"
                         />
                     </div>
                 </div>
 
                 {/* Section 2: Residential Address */}
-                <div className="space-y-8 glass-panel p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/[0.03]">
-                    <div className="flex items-center gap-4 pb-4 border-b border-white/[0.05]">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
-                        <h4 className="text-[11px] font-black text-white/60 uppercase tracking-[0.25em]">Physical Registry</h4>
+                <div className="space-y-10 glass-panel p-10 rounded-[3rem] bg-white/[0.01] border border-white/[0.03] group/address hover:border-white/5 transition-colors">
+                    <div className="flex items-center gap-5 pb-6 border-b border-white/[0.05]">
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)]" />
+                        <h4 className="text-[11px] font-black text-white/60 uppercase tracking-[0.3em] italic">Physical Registry</h4>
                     </div>
                     <PremiumFloatingInput
                         label="Full Institutional Address"
@@ -426,10 +432,10 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                                     type="button"
                                     onClick={handleResolveAddress}
                                     disabled={isResolving || !formData.address?.trim()}
-                                    className="px-4 py-2 flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em] text-primary bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-xl transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none shadow-lg hover:shadow-primary/5 active:scale-95"
+                                    className="px-5 py-2.5 flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.25em] text-primary bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-xl transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none shadow-2xl hover:shadow-primary/10 active:scale-95 italic"
                                     title="Auto-fill city, state, country"
                                 >
-                                    {isResolving ? <Spinner size="sm" /> : <><SparklesIcon className="w-4 h-4" /> <span>Provision Data</span></>}
+                                    {isResolving ? <Spinner size="sm" /> : <><SparklesIcon className="w-4 h-4" /> <span>Provision Node</span></>}
                                 </button>
                             )
                         }
@@ -437,10 +443,10 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                 </div>
 
                 {/* Section 3: Regional Mapping */}
-                <div className="space-y-8 glass-panel p-8 rounded-[2.5rem] bg-white/[0.01] border border-white/[0.03]">
-                    <div className="flex items-center gap-4 pb-4 border-b border-white/[0.05]">
-                        <div className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.8)]" />
-                        <h4 className="text-[11px] font-black text-white/60 uppercase tracking-[0.25em]">Mapping Protocol</h4>
+                <div className="space-y-10 glass-panel p-10 rounded-[3rem] bg-white/[0.01] border border-white/[0.03] group/mapping hover:border-white/5 transition-colors">
+                    <div className="flex items-center gap-5 pb-6 border-b border-white/[0.05]">
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,1)]" />
+                        <h4 className="text-[11px] font-black text-white/60 uppercase tracking-[0.3em] italic">Mapping Protocol</h4>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative z-20">
                         <CustomSelect
@@ -452,7 +458,8 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             disabled={!formData.country || isStrictReadOnly}
                             searchable
                             isSynced={syncedFields.has('state')}
-                            placeholder={!formData.country ? "Select Country First" : "Select State"}
+                            placeholder={!formData.country ? "Not Enabled" : "State Node"}
+                            preferPlacement="top"
                         />
                         <CustomSelect
                             label="City / District"
@@ -463,7 +470,8 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             disabled={!formData.state || isStrictReadOnly}
                             searchable
                             isSynced={syncedFields.has('city')}
-                            placeholder={!formData.state ? "Select State First" : "Select City"}
+                            placeholder={!formData.state ? "Not Enabled" : "City Node"}
+                            preferPlacement="top"
                         />
                         <PremiumFloatingInput
                             label="Postal Code"
@@ -475,12 +483,12 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                             disabled={isStrictReadOnly}
                         />
                     </div>
-                    <div className="flex items-center justify-center gap-3 pt-6">
-                        <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
-                        <p className="text-[9px] text-white/20 font-black uppercase tracking-[0.3em] text-center px-4">
-                            * Institutional transport node correlation protocol
+                    <div className="flex items-center justify-center gap-4 pt-8">
+                        <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+                        <p className="text-[9px] text-white/20 font-black uppercase tracking-[0.4em] text-center px-4 italic">
+                            * Institutional transport node correlation protocol v2.5
                         </p>
-                        <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
+                        <div className="h-px flex-grow bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
                     </div>
                 </div>
             </div>

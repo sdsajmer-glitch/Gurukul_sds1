@@ -24,6 +24,7 @@ interface CustomSelectProps {
     searchable?: boolean;
     isSynced?: boolean;
     emptyState?: React.ReactNode;
+    preferPlacement?: 'top' | 'bottom';
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -37,7 +38,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     className,
     searchable = false,
     isSynced = false,
-    emptyState
+    emptyState,
+    preferPlacement
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -98,7 +100,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('scroll', handleScroll, true);
         };
-    }, [isOpen, label]);
+    }, [isOpen, label, dropdownId]);
 
     useEffect(() => {
         if (isOpen && searchable && searchInputRef.current) {
@@ -123,11 +125,15 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             let topPosition = 0;
             let placement: 'top' | 'bottom' = 'bottom';
 
-            if (spaceBelow < requiredSpace && spaceAbove > spaceBelow) {
+            if (preferPlacement) {
+                placement = preferPlacement;
+            } else if (spaceBelow < requiredSpace && spaceAbove > spaceBelow) {
                 placement = 'top';
-                topPosition = rect.top + window.scrollY - 8; // Slight overlap or padding
+            }
+
+            if (placement === 'top') {
+                topPosition = rect.top + window.scrollY - 8;
             } else {
-                placement = 'bottom';
                 topPosition = rect.bottom + window.scrollY + 8;
             }
 
@@ -164,33 +170,45 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                         }}
                     >
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.98, y: dropdownStyles.placement === 'bottom' ? -10 : 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.98, y: dropdownStyles.placement === 'bottom' ? -10 : 10 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            initial={{
+                                opacity: 0,
+                                scale: 0.95,
+                                y: dropdownStyles.placement === 'bottom' ? -20 : 20
+                            }}
+                            animate={{
+                                opacity: 1,
+                                scale: 1,
+                                y: 0
+                            }}
+                            exit={{
+                                opacity: 0,
+                                scale: 0.95,
+                                y: dropdownStyles.placement === 'bottom' ? -10 : 10
+                            }}
+                            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                             style={{
                                 transformOrigin: dropdownStyles.placement === 'bottom' ? 'top center' : 'bottom center',
                                 translateY: dropdownStyles.placement === 'top' ? '-100%' : '0'
                             }}
-                            className="bg-[#0f1116] rounded-2xl shadow-[0_20px_60px_-10px_rgba(0,0,0,0.9)] border border-white/10 overflow-hidden backdrop-blur-3xl ring-1 ring-white/10"
+                            className="bg-[#0f1116] rounded-3xl shadow-[0_30px_70px_-10px_rgba(0,0,0,0.95)] border border-white/10 overflow-hidden backdrop-blur-3xl ring-1 ring-white/10"
                         >
                             {searchable && (
-                                <div className="p-4 border-b border-white/[0.05] bg-white/[0.01]">
+                                <div className="p-5 border-b border-white/[0.05] bg-white/[0.01]">
                                     <div className="relative group/search">
-                                        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within/search:text-primary transition-colors" />
+                                        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within/search:text-primary transition-colors duration-300" />
                                         <input
                                             ref={searchInputRef}
                                             type="text"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            placeholder="Filter records..."
-                                            className="w-full pl-11 pr-4 py-3 text-xs rounded-xl bg-black/60 border border-white/5 focus:border-primary/50 outline-none text-white placeholder:text-white/10 font-bold uppercase tracking-widest"
+                                            placeholder="Find Identity..."
+                                            className="w-full pl-11 pr-4 py-4 text-xs rounded-2xl bg-black/40 border border-white/5 focus:border-primary/40 focus:bg-black/60 outline-none text-white placeholder:text-white/20 font-black uppercase tracking-[0.2em] transition-all duration-300"
                                         />
                                     </div>
                                 </div>
                             )}
 
-                            <div className="max-h-60 overflow-auto p-2 custom-scrollbar custom-select-list">
+                            <div className="max-h-64 overflow-auto p-3 custom-scrollbar custom-select-list">
                                 {filteredOptions.length > 0 ? (
                                     filteredOptions.map((option) => (
                                         <button
@@ -201,27 +219,30 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                                                 handleSelect(option.value);
                                             }}
                                             className={`
-                                                w-full flex items-center gap-3 px-5 py-4 text-xs font-bold uppercase tracking-widest rounded-xl transition-all duration-200 group select-none cursor-pointer mb-1 last:mb-0 border border-transparent
+                                                w-full flex items-center gap-4 px-6 py-4 text-[10px] font-black uppercase tracking-[0.25em] rounded-[1.2rem] transition-all duration-300 group select-none cursor-pointer mb-1.5 last:mb-0 border border-transparent italic
                                                 ${value === option.value
-                                                    ? 'bg-primary/20 text-primary border-primary/20 shadow-lg'
-                                                    : 'text-white/40 hover:bg-white/[0.05] hover:text-white hover:border-white/5'
+                                                    ? 'bg-primary/20 text-primary border-primary/20 shadow-xl'
+                                                    : 'text-white/30 hover:bg-white/[0.05] hover:text-white hover:border-white/5 active:scale-95'
                                                 }
                                             `}
                                         >
                                             <span className="flex-grow text-left truncate">{option.label}</span>
                                             {value === option.value && (
-                                                <CheckCircleIcon className="w-4 h-4 text-primary animate-in zoom-in-50" />
+                                                <div className="relative">
+                                                    <div className="absolute inset-0 bg-primary blur-md rounded-full opacity-50" />
+                                                    <CheckCircleIcon className="w-4 h-4 text-primary animate-in zoom-in-50 relative z-10" />
+                                                </div>
                                             )}
                                         </button>
                                     ))
                                 ) : (
                                     emptyState || (
-                                        <div className="px-6 py-12 text-center space-y-3">
-                                            <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto border border-white/5">
-                                                <SearchIcon className="w-6 h-6 text-white/10" />
+                                        <div className="px-6 py-16 text-center space-y-4">
+                                            <div className="w-16 h-16 bg-white/[0.03] rounded-3xl flex items-center justify-center mx-auto border border-white/5 shadow-inner">
+                                                <SearchIcon className="w-8 h-8 text-white/10" />
                                             </div>
-                                            <p className="text-[10px] text-white/20 text-center italic select-none font-black uppercase tracking-[0.2em]">
-                                                No Matching Registry Found
+                                            <p className="text-[10px] text-white/20 text-center italic select-none font-black uppercase tracking-[0.3em] leading-relaxed">
+                                                Registry Node <br /> <span className="text-white/10">Not Resolved</span>
                                             </p>
                                         </div>
                                     )
@@ -237,46 +258,46 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     return (
         <div className={`relative group w-full mb-1 ${className || ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`} ref={containerRef}>
             {label && (
-                <label className={`block mb-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${isOpen ? 'text-primary' : isSynced ? 'text-primary' : 'text-white/40 group-hover:text-white/70'}`}>
+                <label className={`block mb-3 text-[10px] font-black uppercase tracking-[0.25em] transition-all duration-500 italic ${isOpen ? 'text-primary' : isSynced ? 'text-primary' : 'text-white/30 group-hover:text-white/60 group-hover:translate-x-1'}`}>
                     {label}
                 </label>
             )}
 
-            <div className="relative h-[52px]">
+            <div className="relative h-[64px]">
                 <button
                     type="button"
                     onClick={handleToggle}
                     disabled={disabled}
                     className={`
-                        peer w-full h-full text-left rounded-xl transition-all duration-300 ease-in-out outline-none select-none
-                        flex items-center px-5 border
-                        ${icon ? 'pl-12' : 'pl-5'}
+                        peer w-full h-full text-left rounded-2xl transition-all duration-500 ease-in-out outline-none select-none
+                        flex items-center px-6 border shadow-inner
+                        ${icon ? 'pl-14' : 'pl-6'}
                         ${isOpen
-                            ? 'bg-[#13151a] border-primary/50 ring-4 ring-primary/10 shadow-xl'
-                            : 'bg-[#0f1116] border-white/5 hover:border-white/10'
+                            ? 'bg-[#13151a] border-primary/40 ring-[12px] ring-primary/5 shadow-2xl'
+                            : 'bg-[#0f1116] border-white/5 hover:border-white/10 hover:bg-white/[0.02]'
                         }
                         ${isSynced && !isOpen ? 'border-primary/30 bg-primary/5' : ''}
                     `}
                 >
                     <span className="flex items-center h-full min-w-0 flex-grow">
                         {selectedOption ? (
-                            <span className={`font-medium text-sm transition-colors ${isOpen ? 'text-white' : isSynced ? 'text-primary' : 'text-white'}`}>
+                            <span className={`font-bold text-[15px] tracking-tight transition-colors duration-500 ${isOpen ? 'text-white' : isSynced ? 'text-primary' : 'text-white'}`}>
                                 {selectedOption.label}
                             </span>
                         ) : (
-                            <span className="text-white/20 font-medium text-sm truncate italic italic-none">{placeholder}</span>
+                            <span className="text-white/20 font-bold text-[15px] truncate italic">{placeholder}</span>
                         )}
                     </span>
                 </button>
 
                 {icon && (
-                    <div className={`absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-300 ${isOpen ? 'text-primary' : isSynced ? 'text-primary' : 'text-white/20 group-hover:text-white/40'}`}>
+                    <div className={`absolute left-5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-all duration-500 ${isOpen ? 'text-primary scale-110' : isSynced ? 'text-primary' : 'text-white/20 group-hover:text-white/40 group-hover:scale-110'}`}>
                         {icon}
                     </div>
                 )}
 
-                <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                    <ChevronDownIcon className={`h-4 w-4 transition-transform duration-500 ${isOpen ? 'rotate-180 text-primary opacity-100' : 'text-white/20 group-hover:text-white/40'}`} />
+                <span className="absolute inset-y-0 right-5 flex items-center pointer-events-none">
+                    <ChevronDownIcon className={`h-5 w-5 transition-all duration-700 ${isOpen ? 'rotate-180 text-primary opacity-100' : 'text-white/10 group-hover:text-white/30'}`} />
                 </span>
             </div>
 
