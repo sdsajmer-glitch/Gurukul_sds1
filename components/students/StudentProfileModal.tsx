@@ -274,49 +274,52 @@ const GuardianCard: React.FC<{
 }> = ({ title, data, isPrimary, onEdit }) => (
     <div className={`
         relative overflow-hidden group flex flex-col h-full
-        rounded-[2rem] p-8 
-        transition-all duration-300 ease-out
+        rounded-[2.5rem] p-8 
+        transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]
         ${isPrimary
-            ? 'bg-gradient-to-br from-[#1a1d28] to-[#13151b] border-2 border-indigo-500/20 shadow-xl shadow-indigo-500/5'
-            : 'bg-[#13151b] border border-white/8 shadow-lg'
+            ? 'bg-gradient-to-br from-[#1a1d28] to-[#13151b] border-2 border-indigo-500/20 shadow-2xl shadow-indigo-500/10'
+            : 'bg-[#13151b] border border-white/10 shadow-xl'
         }
-        hover:shadow-2xl hover:shadow-black/20
-        ${isPrimary ? 'hover:border-indigo-500/30' : 'hover:border-white/15'}
+        hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]
+        ${isPrimary ? 'hover:border-indigo-500/40 hover:-translate-y-1' : 'hover:border-white/20 hover:-translate-y-1'}
     `}>
-        {/* Subtle Background Gradient */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${isPrimary ? 'from-indigo-500/[0.03]' : 'from-white/[0.015]'} to-transparent pointer-events-none`}></div>
+        {/* Subtle Background Glow */}
+        <div className={`absolute -top-24 -right-24 w-64 h-64 blur-[100px] pointer-events-none transition-opacity duration-700 opacity-0 group-hover:opacity-20 ${isPrimary ? 'bg-indigo-500' : 'bg-white'}`}></div>
 
         {/* Header Section */}
-        <div className="flex justify-between items-start mb-7 z-10 relative">
-            <div className="flex items-center gap-3.5">
+        <div className="flex justify-between items-start mb-8 z-10 relative">
+            <div className="flex items-center gap-4">
                 <div className={`
-                    p-3.5 rounded-2xl transition-all duration-300
+                    p-4 rounded-[1.25rem] transition-all duration-500
                     ${isPrimary
-                        ? 'bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/20'
-                        : 'bg-white/5 text-white/40 ring-1 ring-white/5'
+                        ? 'bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/20 group-hover:bg-indigo-500/20'
+                        : 'bg-white/5 text-white/40 ring-1 ring-white/10 group-hover:bg-white/10'
                     }
-                    group-hover:scale-105
+                    group-hover:scale-110 group-hover:rotate-3
                 `}>
                     <UsersIcon className="w-6 h-6" />
                 </div>
                 <div>
-                    <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-white text-base tracking-tight">{title}</h4>
+                    <div className="flex items-center gap-2.5">
+                        <h4 className="font-bold text-white text-lg tracking-tight">{title}</h4>
                         {isPrimary && (
-                            <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[9px] font-black uppercase tracking-wider rounded-md border border-indigo-500/20">
+                            <span className="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[9px] font-black uppercase tracking-[0.2em] rounded-lg border border-indigo-500/20">
                                 Primary
                             </span>
                         )}
                     </div>
-                    <p className={`text-[10px] font-bold tracking-wide mt-0.5 ${data ? 'text-emerald-400/70' : 'text-white/25'}`}>
-                        {data ? '● Verified' : '○ Not Linked'}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <div className={`w-1.5 h-1.5 rounded-full ${data ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-white/20'}`}></div>
+                        <p className={`text-[10px] font-black uppercase tracking-widest ${data ? 'text-emerald-400/80' : 'text-white/30'}`}>
+                            {data ? 'Identity Linked' : 'Registry Entry Pending'}
+                        </p>
+                    </div>
                 </div>
             </div>
             {data && (
                 <button
                     onClick={onEdit}
-                    className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 hover:text-white transition-all duration-200 hover:scale-105 active:scale-95 ring-1 ring-white/5"
+                    className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white/40 hover:text-white transition-all duration-300 hover:scale-110 active:scale-90 ring-1 ring-white/10 shadow-lg"
                     aria-label={`Edit ${title}`}
                 >
                     <EditIcon className="w-4 h-4" />
@@ -326,76 +329,97 @@ const GuardianCard: React.FC<{
 
         {/* Content Section */}
         {data ? (
-            <div className="space-y-6 relative z-10 flex-grow">
+            <div className="space-y-8 relative z-10 flex-grow">
                 {/* Full Name */}
-                <div>
-                    <p className="text-[9px] font-black uppercase text-white/25 tracking-[0.15em] mb-2">Full Name</p>
-                    <p className="text-base font-semibold text-white leading-relaxed">{data.name}</p>
+                <div className="group/item">
+                    <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-2 group-hover/item:text-indigo-400/50 transition-colors">Legal Identity</p>
+                    <p className="text-lg font-bold text-white leading-tight tracking-tight">{data.name}</p>
                 </div>
 
-                {/* Relationship & Contact Grid */}
-                <div className="grid grid-cols-1 gap-5">
-                    <div>
-                        <p className="text-[9px] font-black uppercase text-white/25 tracking-[0.15em] mb-2">Relationship</p>
-                        <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 bg-white/5 text-white/70 text-xs font-medium rounded-lg border border-white/5">
-                                {data.relationship || 'Parent/Guardian'}
-                            </span>
+                <div className="grid grid-cols-1 gap-6">
+                    <div className="group/item">
+                        <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-2 group-hover/item:text-indigo-400/50 transition-colors">Relationship Status</p>
+                        <div className="inline-flex items-center px-3 py-1.5 bg-white/5 text-white/80 text-[11px] font-bold rounded-[0.75rem] border border-white/10 group-hover:border-white/20 transition-all">
+                            {data.relationship || 'Guardian'}
                         </div>
                     </div>
 
-                    <div>
-                        <p className="text-[9px] font-black uppercase text-white/25 tracking-[0.15em] mb-2.5">Contact Information</p>
-                        <div className="space-y-2.5">
-                            <div className="flex items-center gap-2.5 group/contact">
-                                <div className="p-1.5 bg-white/5 rounded-lg group-hover/contact:bg-white/10 transition-colors">
-                                    <MailIcon className="w-3.5 h-3.5 text-white/40" />
+                    <div className="group/item">
+                        <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Encrypted Contact Nodes</p>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3.5 group/contact cursor-pointer">
+                                <div className="p-2 bg-white/5 rounded-xl text-white/30 group-hover/contact:bg-indigo-500/10 group-hover/contact:text-indigo-400 transition-all border border-white/5">
+                                    <MailIcon className="w-4 h-4" />
                                 </div>
-                                <p className="text-sm text-white/70 font-medium">{data.email || 'Not provided'}</p>
+                                <p className="text-sm text-white/60 font-medium group-hover/contact:text-white transition-colors">{data.email || 'NO_EMAIL_PROTO'}</p>
                             </div>
-                            <div className="flex items-center gap-2.5 group/contact">
-                                <div className="p-1.5 bg-white/5 rounded-lg group-hover/contact:bg-white/10 transition-colors">
-                                    <PhoneIcon className="w-3.5 h-3.5 text-white/40" />
+                            <div className="flex items-center gap-3.5 group/contact cursor-pointer">
+                                <div className="p-2 bg-white/5 rounded-xl text-white/30 group-hover/contact:bg-indigo-500/10 group-hover/contact:text-indigo-400 transition-all border border-white/5">
+                                    <PhoneIcon className="w-4 h-4" />
                                 </div>
-                                <p className="text-sm text-white/70 font-medium">{data.phone || 'Not provided'}</p>
+                                <p className="text-sm text-white/60 font-medium group-hover/contact:text-white transition-colors">{data.phone || 'NO_COMMS_LINK'}</p>
                             </div>
                         </div>
                     </div>
+
+                    {/* Enhanced Address View */}
+                    {(data.address || data.city) && (
+                        <div className="group/item pt-4 border-t border-white/5">
+                            <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Spatial Registry (Address)</p>
+                            <div className="flex items-start gap-3.5">
+                                <div className="p-2 bg-white/5 rounded-xl text-white/30 border border-white/5 mt-0.5">
+                                    <LocationIcon className="w-4 h-4" />
+                                </div>
+                                <p className="text-xs text-white/50 leading-relaxed font-medium">
+                                    {data.address}
+                                    {data.city && `, ${data.city}`}
+                                    {data.state && `, ${data.state}`}
+                                    {data.pin_code && ` - ${data.pin_code}`}
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         ) : (
-            /* Enhanced Empty State */
-            <div className="flex-grow flex flex-col items-center justify-center text-center py-10 px-4 relative z-10">
-                <div className="p-4 bg-white/5 rounded-2xl mb-4 ring-1 ring-white/5">
-                    <UserIcon className="w-12 h-12 text-white/20" />
+            /* Premium Empty State */
+            <div className="flex-grow flex flex-col items-center justify-center text-center py-12 px-6 relative z-10">
+                <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-white/10 rounded-full blur-2xl opacity-20 animate-pulse"></div>
+                    <div className="relative p-6 bg-white/5 rounded-[2rem] border border-white/10 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                        <UsersIcon className="w-12 h-12 text-white/20" />
+                    </div>
                 </div>
-                <p className="text-sm font-semibold text-white/60 mb-1.5">No guardian linked yet</p>
-                <p className="text-xs text-white/35 leading-relaxed mb-6 max-w-[200px]">
+                <h5 className="text-base font-bold text-white/60 mb-2">Node Registry Unlinked</h5>
+                <p className="text-[11px] text-white/30 leading-relaxed max-w-[220px] mb-8 font-medium">
                     {isPrimary
-                        ? 'Link a primary guardian to establish the main point of contact'
-                        : 'Add a secondary guardian for additional emergency contacts'
+                        ? 'System requires a primary guardian node to establish official registry and emergency protocols.'
+                        : 'Establish secondary guardian redundancy for enhanced safety and administrative coordination.'
                     }
                 </p>
                 <button
                     onClick={onEdit}
                     className={`
-                        px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider
-                        transition-all duration-200 hover:scale-105 active:scale-95
-                        flex items-center gap-2
+                        px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em]
+                        transition-all duration-500 hover:scale-105 active:scale-95
+                        flex items-center gap-3 group/btn relative overflow-hidden
                         ${isPrimary
-                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20'
-                            : 'bg-white/10 hover:bg-white/15 text-white/80 border border-white/10'
+                            ? 'bg-indigo-600 text-white shadow-[0_15px_40px_-10px_rgba(79,70,229,0.5)]'
+                            : 'bg-white/10 text-white/80 border border-white/10 hover:bg-white/20'
                         }
                     `}
                 >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
                     <PlusIcon className="w-4 h-4" />
-                    Link Guardian
+                    Initialize Link
                 </button>
             </div>
         )}
 
-        {/* Subtle Inner Border for Depth */}
-        <div className="absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/5 pointer-events-none"></div>
+        {/* Interaction Indicator */}
+        <div className="absolute bottom-4 right-8 opacity-0 group-hover:opacity-40 transition-opacity duration-500">
+            <ChevronRightIcon className="w-4 h-4 text-white" />
+        </div>
     </div>
 );
 
@@ -410,7 +434,11 @@ const GuardianEditModal: React.FC<{
         name: initialData?.name || '',
         email: initialData?.email || '',
         phone: initialData?.phone || '',
-        relationship: initialData?.relationship || ''
+        relationship: initialData?.relationship || '',
+        address: initialData?.address || '',
+        city: initialData?.city || '',
+        state: initialData?.state || '',
+        pin_code: initialData?.pin_code || ''
     });
     const [loading, setLoading] = useState(false);
 
@@ -419,6 +447,7 @@ const GuardianEditModal: React.FC<{
         setLoading(true);
         try {
             if (type === 'primary' && parentId) {
+                // Update Profile
                 const { error: pError } = await supabase.from('profiles').update({
                     display_name: formData.name,
                     email: formData.email,
@@ -426,17 +455,27 @@ const GuardianEditModal: React.FC<{
                 }).eq('id', parentId);
                 if (pError) throw pError;
 
+                // Update Parent Profile (including shared address)
                 const { error: ppError } = await supabase.from('parent_profiles').update({
-                    relationship_to_student: formData.relationship
+                    relationship_to_student: formData.relationship,
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    pin_code: formData.pin_code
                 }).eq('user_id', parentId);
                 if (ppError) throw ppError;
 
             } else if (type === 'secondary' && parentId) {
+                // Update Secondary Fields (plus shared address if modified)
                 const { error } = await supabase.from('parent_profiles').update({
                     secondary_parent_name: formData.name,
                     secondary_parent_email: formData.email,
                     secondary_parent_phone: formData.phone,
-                    secondary_parent_relationship: formData.relationship
+                    secondary_parent_relationship: formData.relationship,
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    pin_code: formData.pin_code
                 }).eq('user_id', parentId);
                 if (error) throw error;
             }
@@ -451,98 +490,159 @@ const GuardianEditModal: React.FC<{
     return (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
             <div
-                className="bg-[#0f1115] w-full max-w-lg rounded-[2rem] shadow-2xl border border-white/10 p-10 relative overflow-hidden group"
+                className="bg-[#0f1115] w-full max-w-2xl rounded-[3rem] shadow-2xl border border-white/10 p-12 relative overflow-hidden group"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Decorative Background Element */}
                 <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none transition-opacity duration-500 group-hover:opacity-[0.05]">
-                    <UsersIcon className="w-48 h-48" />
+                    <UsersIcon className="w-56 h-56" />
                 </div>
-                <div className="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
                 {/* Header */}
-                <div className="flex justify-between items-start mb-10 relative z-10">
+                <div className="flex justify-between items-start mb-12 relative z-10">
                     <div>
-                        <h3 className="font-bold text-2xl text-white tracking-tight mb-1">
-                            Edit {type === 'primary' ? 'Primary' : 'Secondary'} Guardian
-                        </h3>
-                        <p className="text-white/40 text-xs font-medium tracking-wide">
-                            Update contact details and relationship info
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                                <EditIcon className="w-5 h-5" />
+                            </div>
+                            <h3 className="font-black text-2xl text-white tracking-tight uppercase">
+                                {type === 'primary' ? 'Primary' : 'Secondary'} Guardian Registry
+                            </h3>
+                        </div>
+                        <p className="text-white/30 text-[10px] font-black uppercase tracking-[0.2em] ml-1">
+                            Update spatial registry and contact protocols
                         </p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-200 hover:rotate-90"
+                        className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300 hover:rotate-90 border border-white/5"
                     >
                         <XIcon className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
-                    <div className="space-y-2 group/field">
-                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-indigo-400 transition-colors">
-                            Full Name
-                        </label>
-                        <input
-                            className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-[#16181d] text-sm text-white placeholder-white/20 focus:border-indigo-500/50 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium"
-                            value={formData.name}
-                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="e.g. Dr. Rajesh Kumar"
-                        />
-                    </div>
-
-                    <div className="space-y-2 group/field">
-                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-indigo-400 transition-colors">
-                            Relationship
-                        </label>
-                        <input
-                            className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-[#16181d] text-sm text-white placeholder-white/20 focus:border-indigo-500/50 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium"
-                            value={formData.relationship}
-                            onChange={e => setFormData({ ...formData, relationship: e.target.value })}
-                            placeholder="e.g. Father"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <form onSubmit={handleSubmit} className="space-y-8 relative z-10 max-h-[60vh] overflow-y-auto custom-scrollbar pr-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2 group/field">
-                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-indigo-400 transition-colors">
-                                Email
+                            <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-2 group-focus-within/field:text-indigo-400 transition-colors">
+                                Legal Full Name
                             </label>
                             <input
-                                className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-[#16181d] text-sm text-white placeholder-white/20 focus:border-indigo-500/50 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium"
+                                className="w-full px-6 py-5 rounded-[1.5rem] border border-white/5 bg-[#16181d] text-sm text-white placeholder-white/10 focus:border-indigo-500/30 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all duration-300 font-bold shadow-inner"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="e.g. Dr. Rajesh Kumar"
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2 group/field">
+                            <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-2 group-focus-within/field:text-indigo-400 transition-colors">
+                                Relationship Node
+                            </label>
+                            <input
+                                className="w-full px-6 py-5 rounded-[1.5rem] border border-white/5 bg-[#16181d] text-sm text-white placeholder-white/10 focus:border-indigo-500/30 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all duration-300 font-bold shadow-inner"
+                                value={formData.relationship}
+                                onChange={e => setFormData({ ...formData, relationship: e.target.value })}
+                                placeholder="e.g. Father"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2 group/field">
+                            <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-2 group-focus-within/field:text-indigo-400 transition-colors">
+                                Communication Email
+                            </label>
+                            <input
+                                className="w-full px-6 py-5 rounded-[1.5rem] border border-white/5 bg-[#16181d] text-sm text-white placeholder-white/10 focus:border-indigo-500/30 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all duration-300 font-bold shadow-inner"
                                 value={formData.email}
                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 placeholder="name@example.com"
+                                type="email"
                             />
                         </div>
                         <div className="space-y-2 group/field">
-                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1 group-focus-within/field:text-indigo-400 transition-colors">
-                                Phone
+                            <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-2 group-focus-within/field:text-indigo-400 transition-colors">
+                                Mobile Contact link
                             </label>
                             <input
-                                className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-[#16181d] text-sm text-white placeholder-white/20 focus:border-indigo-500/50 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all duration-300 font-medium"
+                                className="w-full px-6 py-5 rounded-[1.5rem] border border-white/5 bg-[#16181d] text-sm text-white placeholder-white/10 focus:border-indigo-500/30 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all duration-300 font-bold shadow-inner"
                                 value={formData.phone}
                                 onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                 placeholder="+91 98765 43210"
+                                required
                             />
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-3 mt-10 pt-6 border-t border-white/5">
+                    {/* Shared Address Section */}
+                    <div className="space-y-6 pt-6 border-t border-white/5">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Spatial Identity (Shared Address)</h4>
+                        </div>
+
+                        <div className="space-y-2 group/field">
+                            <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-2 group-focus-within/field:text-indigo-400 transition-colors">
+                                Residential Address
+                            </label>
+                            <textarea
+                                className="w-full px-6 py-5 rounded-[1.5rem] border border-white/5 bg-[#16181d] text-sm text-white placeholder-white/10 focus:border-indigo-500/30 focus:bg-[#1a1d24] focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all duration-300 font-bold shadow-inner h-28 resize-none"
+                                value={formData.address}
+                                onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                placeholder="House no, Street Name..."
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                            <div className="space-y-2 group/field">
+                                <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-2 group-focus-within/field:text-indigo-400 transition-colors">City</label>
+                                <input
+                                    className="w-full px-5 py-4 rounded-2xl border border-white/5 bg-[#16181d] text-xs text-white placeholder-white/10 focus:border-indigo-500/30 focus:bg-[#1a1d24] outline-none transition-all font-bold shadow-inner"
+                                    value={formData.city}
+                                    onChange={e => setFormData({ ...formData, city: e.target.value })}
+                                    placeholder="City"
+                                />
+                            </div>
+                            <div className="space-y-2 group/field">
+                                <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-2 group-focus-within/field:text-indigo-400 transition-colors">State</label>
+                                <input
+                                    className="w-full px-5 py-4 rounded-2xl border border-white/5 bg-[#16181d] text-xs text-white placeholder-white/10 focus:border-indigo-500/30 focus:bg-[#1a1d24] outline-none transition-all font-bold shadow-inner"
+                                    value={formData.state}
+                                    onChange={e => setFormData({ ...formData, state: e.target.value })}
+                                    placeholder="State"
+                                />
+                            </div>
+                            <div className="space-y-2 group/field">
+                                <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-2 group-focus-within/field:text-indigo-400 transition-colors">PIN Code</label>
+                                <input
+                                    className="w-full px-5 py-4 rounded-2xl border border-white/5 bg-[#16181d] text-xs text-white placeholder-white/10 focus:border-indigo-500/30 focus:bg-[#1a1d24] outline-none transition-all font-bold shadow-inner"
+                                    value={formData.pin_code}
+                                    onChange={e => setFormData({ ...formData, pin_code: e.target.value })}
+                                    placeholder="Pincode"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-5 mt-12 pt-8 border-t border-white/5 sticky bottom-0 bg-[#0f1115] pb-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-3.5 text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all uppercase tracking-widest"
+                            className="px-8 py-4 text-[10px] font-black text-white/30 hover:text-white hover:bg-white/5 rounded-2xl transition-all uppercase tracking-[0.3em]"
                         >
-                            Cancel
+                            Abrot
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 flex items-center gap-2 transition-all uppercase tracking-widest hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-12 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.5rem] text-[11px] font-black shadow-2xl shadow-indigo-600/20 hover:shadow-indigo-600/40 flex items-center gap-3 transition-all uppercase tracking-[0.3em] hover:-translate-y-1 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
                         >
-                            {loading ? <Spinner size="sm" className="text-white" /> : 'Save Changes'}
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                            {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-4 h-4" /> Finalize Registry</>}
                         </button>
                     </div>
                 </form>
@@ -686,6 +786,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
     // --- Modal States ---
     const [showGuardianEdit, setShowGuardianEdit] = useState<'primary' | 'secondary' | null>(null);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [showAssignClass, setShowAssignClass] = useState(false);
     const [showPayment, setShowPayment] = useState(false);
     const [docViewerUrl, setDocViewerUrl] = useState<string | null>(null);
@@ -693,32 +794,46 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            let parentAddress = null;
-
             // 1. Fetch Guardians (Parent & Secondary)
             const { data: parentRes } = await supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id });
+
             if (parentRes && parentRes.found) {
+                const baseInfo = {
+                    parent_id: parentRes.parent_id,
+                    address: parentRes.address,
+                    city: parentRes.city,
+                    state: parentRes.state,
+                    country: parentRes.country,
+                    pin_code: parentRes.pin_code
+                };
+
                 setParentData({
+                    ...baseInfo,
                     name: parentRes.name,
                     email: parentRes.email,
                     phone: parentRes.phone,
-                    relationship: parentRes.relationship,
-                    parent_id: parentRes.parent_id
+                    relationship: parentRes.relationship
                 });
 
-                if (parentRes.parent_id) {
-                    // Fetch Parent Address for Sync Fallback
-                    const { data: pProfile } = await supabase.from('profiles').select('address').eq('id', parentRes.parent_id).maybeSingle();
-                    if (pProfile) parentAddress = pProfile.address;
-
+                if (parentRes.secondary_parent_name) {
+                    setGuardianData({
+                        ...baseInfo,
+                        name: parentRes.secondary_parent_name,
+                        email: parentRes.secondary_parent_email,
+                        phone: parentRes.secondary_parent_phone,
+                        relationship: parentRes.secondary_parent_relationship
+                    });
+                } else if (parentRes.parent_id) {
+                    // Fallback: Check if record exists but RPC missed it (though RPC V4 should catch it)
                     const { data: secParent } = await supabase
                         .from('parent_profiles')
                         .select('secondary_parent_name, secondary_parent_email, secondary_parent_phone, secondary_parent_relationship')
                         .eq('user_id', parentRes.parent_id)
-                        .single();
+                        .maybeSingle();
 
                     if (secParent && secParent.secondary_parent_name) {
                         setGuardianData({
+                            ...baseInfo,
                             name: secParent.secondary_parent_name,
                             email: secParent.secondary_parent_email,
                             phone: secParent.secondary_parent_phone,
@@ -726,13 +841,50 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         });
                     }
                 }
+            } else {
+                // FALLBACK: RPC failed or didn't find a record. Manual lookup in Admissions/Enquiries.
+                console.log('RPC failed to find parent, initiating manual fallback lookup...');
+                const { data: admissionLink } = await supabase
+                    .from('admissions')
+                    .select('*')
+                    .or(`student_user_id.eq.${student.id}${student.admission_id ? `,id.eq.${student.admission_id}` : ''}`)
+                    .maybeSingle();
+
+                if (admissionLink) {
+                    setParentData({
+                        name: admissionLink.parent_name,
+                        email: admissionLink.parent_email,
+                        phone: admissionLink.parent_phone,
+                        relationship: 'Parent',
+                        address: admissionLink.address,
+                        parent_id: admissionLink.parent_id,
+                        is_unlinked: !admissionLink.parent_id
+                    });
+                } else {
+                    const { data: enquiryData } = await supabase
+                        .from('enquiries')
+                        .select('*')
+                        .eq('user_id', student.id)
+                        .maybeSingle();
+
+                    if (enquiryData) {
+                        setParentData({
+                            name: enquiryData.parent_name,
+                            email: enquiryData.parent_email,
+                            phone: enquiryData.parent_phone,
+                            relationship: 'Parent',
+                            is_unlinked: true
+                        });
+                    }
+                }
             }
 
+            // 2. Fetch Identity Documents & Sync Missing identity Context
             // 2. Fetch Identity Documents & Sync Missing identity Context
             // We use a multi-stage lookup to recover identity data from Admission or Enquiry records
             const { data: admissionByUserId } = await supabase
                 .from('admissions')
-                .select('id, applicant_name, gender, date_of_birth, profile_photo_url, parent_phone, parent_name, grade, address')
+                .select('id, applicant_name, gender, date_of_birth, profile_photo_url, parent_phone, parent_name, parent_email, grade, address')
                 .eq('student_user_id', student.id)
                 .maybeSingle();
 
@@ -742,7 +894,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             if (!admissionLink && student.admission_id) {
                 const { data: admissionById } = await supabase
                     .from('admissions')
-                    .select('id, applicant_name, gender, date_of_birth, profile_photo_url, parent_phone, parent_name, grade, address')
+                    .select('id, applicant_name, gender, date_of_birth, profile_photo_url, parent_phone, parent_name, parent_email, grade, address')
                     .eq('id', student.admission_id)
                     .maybeSingle();
                 if (admissionById) admissionLink = admissionById;
@@ -751,7 +903,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             // Secondary Fallback: Try fetching from enquiries if still missing key data
             const { data: enquiryData } = await supabase
                 .from('enquiries')
-                .select('applicant_name, profile_photo_url, parent_phone, parent_name, grade, address')
+                .select('applicant_name, profile_photo_url, parent_phone, parent_name, parent_email, grade, address')
                 .eq('user_id', student.id)
                 .maybeSingle();
 
@@ -767,7 +919,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         ? (admissionLink?.applicant_name || enquiryData?.applicant_name || prev.display_name)
                         : prev.display_name,
                     phone: prev.phone || admissionLink?.parent_phone || enquiryData?.parent_phone,
-                    address: prev.address || admissionLink?.address || enquiryData?.address || parentAddress,
+                    address: prev.address || admissionLink?.address || enquiryData?.address || parentData?.address,
                 }));
 
                 // Fetch documents associated with the discovered admission
@@ -781,9 +933,13 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             }
 
             // Fix: If RPC didn't return parent data but we found an admission/enquiry link, populate parentData from it
+            // Prioritize the source that actually has data (Admission > Enquiry)
             if (!parentRes?.found && (admissionLink || enquiryData)) {
-                const source = admissionLink || enquiryData;
-                if (source.parent_name || source.parent_phone) {
+                // Check if admission has valid parent data, otherwise fall back to enquiry
+                const hasAdmissionParent = admissionLink?.parent_name || admissionLink?.parent_phone;
+                const source = hasAdmissionParent ? admissionLink : enquiryData;
+
+                if (source && (source.parent_name || source.parent_phone)) {
                     setParentData({
                         name: source.parent_name || 'Parent (Unlinked)',
                         email: source.parent_email || null,
@@ -1012,25 +1168,59 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
 
                                 {activeTab === 'parents' && (
-                                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 max-w-6xl">
+                                    <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-700 max-w-6xl">
                                         {/* Section Header */}
-                                        <div className="pb-6 border-b border-white/5">
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <h2 className="text-2xl font-bold text-white tracking-tight mb-2">Guardian Management</h2>
-                                                    <p className="text-sm text-white/50 leading-relaxed max-w-2xl">
-                                                        Manage primary and secondary guardian contacts for emergency communication and academic coordination.
+                                        <div className="relative p-10 bg-gradient-to-br from-[#1a1d28]/60 to-transparent border border-white/5 rounded-[3rem] overflow-hidden group">
+                                            <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.05] group-hover:scale-110 transition-all duration-1000">
+                                                <UsersIcon className="w-56 h-56" />
+                                            </div>
+
+                                            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                                                <div className="max-w-xl">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                                                            <ShieldCheckIcon className="w-5 h-5" />
+                                                        </div>
+                                                        <h2 className="text-3xl font-black text-white tracking-tight">Guardian Management</h2>
+                                                    </div>
+                                                    <p className="text-sm text-white/40 leading-relaxed font-medium">
+                                                        Centralized control for student guardianship protocols. Manage primary contacts, backup emergency links, and synchronize household identification data.
                                                     </p>
                                                 </div>
-                                                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/20">
-                                                    <CheckCircleIcon className="w-3.5 h-3.5" />
-                                                    {(parentData || guardianData) ? 'Verified Records' : 'Pending Setup'}
+
+                                                <div className="flex flex-col items-end gap-3 shrink-0">
+                                                    <div className="flex items-center gap-2.5 px-4 py-2 bg-[#0c0e12] text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl border border-emerald-500/20 shadow-xl shadow-black/20">
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,1)]"></span>
+                                                        {(parentData || guardianData) ? 'Records Synchronized' : 'Deployment Pending'}
+                                                    </div>
+
+                                                    {parentData && (
+                                                        <button
+                                                            disabled={isSyncing}
+                                                            onClick={async () => {
+                                                                setIsSyncing(true);
+                                                                // Logic to sync student address from parent address
+                                                                if (parentData.address) {
+                                                                    await supabase.rpc('update_student_details_admin', {
+                                                                        p_student_id: student.id,
+                                                                        p_address: parentData.address
+                                                                    });
+                                                                    fetchData();
+                                                                }
+                                                                setTimeout(() => setIsSyncing(false), 800);
+                                                            }}
+                                                            className="flex items-center gap-2.5 px-6 py-3 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all duration-300"
+                                                        >
+                                                            {isSyncing ? <Spinner size="sm" className="text-white" /> : <RefreshIcon className="w-4 h-4" />}
+                                                            Sync Student Address
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Guardian Cards Grid */}
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                             <GuardianCard
                                                 title="Primary Guardian"
                                                 data={parentData}
@@ -1044,20 +1234,39 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                             />
                                         </div>
 
-                                        {/* Informational Footer */}
-                                        {(!parentData || !guardianData) && (
-                                            <div className="mt-6 p-5 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex items-start gap-4">
-                                                <div className="p-2 bg-amber-500/10 rounded-lg">
-                                                    <InfoIcon className="w-5 h-5 text-amber-500" />
+                                        {/* Informational/Warning Footer */}
+                                        <div className="relative mt-8 p-8 bg-[#0c0e12] border border-white/5 rounded-[2.5rem] overflow-hidden group">
+                                            {(!parentData && !guardianData) ? (
+                                                <div className="relative z-10 flex items-start gap-6 animate-pulse">
+                                                    <div className="p-4 bg-amber-500/20 rounded-2xl ring-1 ring-amber-500/40">
+                                                        <AlertTriangleIcon className="w-6 h-6 text-amber-500" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-black text-amber-500 tracking-[0.05em] mb-2 uppercase">Guardian Protocol Failure</p>
+                                                        <p className="text-xs text-white/50 leading-relaxed font-medium max-w-2xl">
+                                                            Critical: At least one guardian contact is required for student enrollment. Guardian information is used for emergency notifications, academic updates, and official communications.
+                                                            Initialize a primary link to resolve this warning.
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1">
-                                                    <p className="text-sm font-semibold text-amber-500/90 mb-1">Guardian Information Required</p>
-                                                    <p className="text-xs text-amber-500/60 leading-relaxed">
-                                                        At least one guardian contact is required for student enrollment. Guardian information is used for emergency notifications, academic updates, and official communications.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <>
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/[0.03] to-transparent pointer-events-none"></div>
+                                                    <div className="relative z-10 flex items-start gap-6">
+                                                        <div className="p-4 bg-emerald-500/10 rounded-2xl ring-1 ring-emerald-500/20">
+                                                            <ShieldCheckIcon className="w-6 h-6 text-emerald-500" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-black text-white tracking-[0.05em] mb-2 uppercase">Integrity Verification</p>
+                                                            <p className="text-xs text-white/30 leading-relaxed font-medium max-w-2xl">
+                                                                Guardian data is leveraged for emergency broadcasting, financial settlement, and academic reporting.
+                                                                Accuracy in residential indexing ensures seamless coordination between campus and household units.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
 
@@ -1196,7 +1405,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 <GuardianEditModal
                     type={showGuardianEdit}
                     initialData={showGuardianEdit === 'primary' ? parentData : guardianData}
-                    parentId={showGuardianEdit === 'primary' ? parentData?.parent_id : undefined}
+                    parentId={parentData?.parent_id}
                     onClose={() => setShowGuardianEdit(null)}
                     onSave={() => { setShowGuardianEdit(null); fetchData(); onUpdate(); }}
                 />

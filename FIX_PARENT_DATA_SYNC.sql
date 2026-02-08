@@ -1,7 +1,7 @@
 -- ==============================================================================
--- FIX: Parent Data Sync V3 (Enhanced with admission_id lookup)
--- Description: Improves `get_linked_parent_for_student` to check `student_parents`
---              table first, then Admissions (via user_id OR admission_id), then Enquiries.
+-- FIX: Parent Data Sync V4 (Enhanced with Secondary Parent Support)
+-- Description: Improves `get_linked_parent_for_student` to return both primary 
+--              and secondary guardian fields for sync.
 -- ==============================================================================
 
 CREATE OR REPLACE FUNCTION public.get_linked_parent_for_student(p_student_id uuid)
@@ -39,7 +39,6 @@ BEGIN
         WHERE user_id = p_student_id;
 
         -- 1. Try to find Admission Record (Secondary Source)
-        -- Check by student_user_id OR by admission_id linkage
         SELECT * INTO v_admission_record
         FROM public.admissions
         WHERE student_user_id = p_student_id
@@ -83,7 +82,6 @@ BEGIN
 
             IF v_parent_id IS NOT NULL THEN 
                 v_heal_success := true;
-                -- Optional: Auto-link to admission if applicable
                 IF v_source = 'admission' THEN
                      UPDATE public.admissions SET parent_id = v_parent_id WHERE id = v_admission_record.id;
                 END IF;
@@ -115,7 +113,12 @@ BEGIN
                 'state', v_parent_profile.state,
                 'country', v_parent_profile.country,
                 'pin_code', v_parent_profile.pin_code,
-                'parent_id', v_parent_id
+                'parent_id', v_parent_id,
+                -- Secondary Parent Fields
+                'secondary_parent_name', v_parent_profile.secondary_parent_name,
+                'secondary_parent_email', v_parent_profile.secondary_parent_email,
+                'secondary_parent_phone', v_parent_profile.secondary_parent_phone,
+                'secondary_parent_relationship', v_parent_profile.secondary_parent_relationship
             );
         END IF;
     END IF;
@@ -140,3 +143,4 @@ $function$;
 
 GRANT EXECUTE ON FUNCTION public.get_linked_parent_for_student TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_linked_parent_for_student TO service_role;
+
