@@ -834,6 +834,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             // 1. Fetch Guardians (Parent & Secondary)
             const { data: parentRes } = await supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id });
 
+            let fetchedParentData: any = null; // Local variable to hold parent data for immediate use
+
             if (parentRes && parentRes.found) {
                 const baseInfo = {
                     parent_id: parentRes.parent_id,
@@ -844,13 +846,15 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     pin_code: parentRes.pin_code
                 };
 
-                setParentData({
+                fetchedParentData = {
                     ...baseInfo,
                     name: parentRes.name,
                     email: parentRes.email,
                     phone: parentRes.phone,
                     relationship: parentRes.relationship
-                });
+                };
+
+                setParentData(fetchedParentData);
 
                 if (parentRes.secondary_parent_name) {
                     setGuardianData({
@@ -888,7 +892,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     .maybeSingle();
 
                 if (admissionLink) {
-                    setParentData({
+                    fetchedParentData = {
                         name: admissionLink.parent_name,
                         email: admissionLink.parent_email,
                         phone: admissionLink.parent_phone,
@@ -896,7 +900,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         address: admissionLink.address,
                         parent_id: admissionLink.parent_id,
                         is_unlinked: !admissionLink.parent_id
-                    });
+                    };
+                    setParentData(fetchedParentData);
                 } else {
                     const { data: enquiryData } = await supabase
                         .from('enquiries')
@@ -905,18 +910,21 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         .maybeSingle();
 
                     if (enquiryData) {
-                        setParentData({
+                        fetchedParentData = {
                             name: enquiryData.parent_name,
                             email: enquiryData.parent_email,
                             phone: enquiryData.parent_phone,
                             relationship: 'Parent',
                             is_unlinked: true
-                        });
+                        };
+                        setParentData(fetchedParentData);
                     }
                 }
             }
 
-            // 2. Fetch Identity Documents & Sync Missing identity Context
+            // Capture the parent data locally for immediate use in subsequent logic (fixing state closure issue)
+            const currentParentData = fetchedParentData;
+
             // 2. Fetch Identity Documents & Sync Missing identity Context
             // We use a multi-stage lookup to recover identity data from Admission or Enquiry records
             const { data: admissionByUserId } = await supabase
@@ -955,8 +963,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     display_name: (prev.display_name === 'Academic Identity' || !prev.display_name)
                         ? (admissionLink?.applicant_name || enquiryData?.applicant_name || prev.display_name)
                         : prev.display_name,
-                    phone: prev.phone || admissionLink?.parent_phone || enquiryData?.parent_phone,
-                    address: prev.address || admissionLink?.address || enquiryData?.address || parentData?.address,
+                    phone: prev.phone || admissionLink?.parent_phone || enquiryData?.parent_phone || currentParentData?.phone,
+                    address: prev.address || admissionLink?.address || enquiryData?.address || currentParentData?.address,
                 }));
 
                 // Fetch documents associated with the discovered admission
