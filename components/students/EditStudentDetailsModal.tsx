@@ -143,7 +143,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
     // Robust Date Parsing
     const parseDate = (d?: string) => {
-        if (!d) return '';
+        if (!d || d === '0') return '';
         try {
             const dateObj = new Date(d);
             if (isNaN(dateObj.getTime())) return '';
@@ -153,7 +153,11 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         }
     };
 
-    const sanitizeVal = (v: any) => (v === '0' || v === 0) ? '' : (v || '');
+    const sanitizeVal = (v: any) => {
+        if (v === '0' || v === 0 || !v) return '';
+        const s = String(v).trim();
+        return (s === '0' || s.toLowerCase() === 'undefined' || s.toLowerCase() === 'null') ? '' : s;
+    };
 
     // Form State
     const [formData, setFormData] = useState({
@@ -455,7 +459,12 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                     }}
                                     className="flex items-center gap-2 text-[11px] text-indigo-400 hover:text-indigo-300 uppercase font-black tracking-[0.3em] transition-all group/sync active:scale-95"
                                 >
-                                    <RefreshCwIcon className={`w-3 h-3 ${isFetchingParent ? 'animate-spin' : 'group-sync:rotate-180'} transition-transform duration-700`} />
+                                    <div className="relative">
+                                        <RefreshCwIcon className={`w-3 h-3 ${isFetchingParent ? 'animate-spin' : 'group-sync:rotate-180'} transition-transform duration-700`} />
+                                        {!isFetchingParent && (
+                                            <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(99,102,241,1)]"></span>
+                                        )}
+                                    </div>
                                     Sync Identity Node
                                 </button>
                             ) : (
@@ -541,10 +550,10 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 </div>
                             </div>
 
-                            <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} readOnly={isSchoolAdmin} />
-                            <FloatingInput label="Student ID" name="student_id_number" value={formData.student_id_number} onChange={handleChange} icon={<div className="font-black text-[9px] border border-current rounded-sm px-1">SID</div>} readOnly={isSchoolAdmin} />
+                            <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} readOnly={isSchoolAdmin} placeholder={isSchoolAdmin ? "Protocol Missing" : "Legal Name"} />
+                            <FloatingInput label="Student ID" name="student_id_number" value={formData.student_id_number} onChange={handleChange} icon={<div className="font-black text-[9px] border border-current rounded-sm px-1">SID</div>} readOnly={isSchoolAdmin} placeholder={isSchoolAdmin ? "Unassigned" : "SID-XXXX-XXXX"} />
 
-                            <FloatingInput label="Grade / Class" name="grade" value={formData.grade} onChange={handleChange} required icon={<div className="font-black text-[9px]">G / C</div>} readOnly={isSchoolAdmin} />
+                            <FloatingInput label="Grade / Class" name="grade" value={formData.grade} onChange={handleChange} required icon={<div className="font-black text-[9px]">G / C</div>} readOnly={isSchoolAdmin} placeholder={isSchoolAdmin ? "Not Placed" : "e.g. 10"} />
 
                             <div className="relative group/select">
                                 <select
@@ -601,6 +610,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 isAutoFilled={autoFilledFields.has('phone')}
                                 source={autoFilledFields.has('phone') ? (parentData?.found ? 'Admission' : 'Registry') : undefined}
                                 readOnly={isSchoolAdmin}
+                                placeholder={isSchoolAdmin ? "Link Missing" : "Student Contact"}
                             />
                             <FloatingInput
                                 label="Guardian Identity"
@@ -612,6 +622,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 isAutoFilled={autoFilledFields.has('parent_guardian_details')}
                                 source={autoFilledFields.has('parent_guardian_details') ? (parentData?.found ? 'Parent Vault' : 'Registry') : undefined}
                                 readOnly={isSchoolAdmin}
+                                placeholder={isSchoolAdmin ? "Initializing Link..." : "Primary Guardian Name"}
                             />
                         </div>
 
@@ -626,6 +637,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             isAutoFilled={autoFilledFields.has('address')}
                             source={autoFilledFields.has('address') ? (parentData?.found ? 'Institutional' : 'Registry') : undefined}
                             readOnly={isSchoolAdmin}
+                            placeholder={isSchoolAdmin ? "Residential Index Missing" : "Full Address Details"}
                         />
                     </section>
                 </form>
