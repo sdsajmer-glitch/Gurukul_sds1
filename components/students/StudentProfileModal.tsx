@@ -971,19 +971,25 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             setGuardianData(combinedGuardianData);
 
             // --- 2. Sync Student Identity Context ---
-            // Merge data from multiple sources to fill gaps in student profile
-            // Priority: Fresh DB Profile > Existing Prop > Admission > Enquiry > Combined Parent Data
+            const sanitize = (val: any) => (val === '0' || val === 0) ? null : val;
 
-            const bestDisplayName =
+            const bestDisplayName = sanitize(
                 (profileData?.profiles?.display_name && profileData?.profiles?.display_name !== 'Academic Identity') ? profileData.profiles.display_name :
                     (profileData?.display_name && profileData?.display_name !== 'Academic Identity') ? profileData.display_name :
                         (student.display_name && student.display_name !== 'Academic Identity') ? student.display_name :
-                            (admissionRes?.applicant_name || enquiryRes?.applicant_name || student.display_name);
+                            (admissionRes?.applicant_name || enquiryRes?.applicant_name || student.display_name)
+            ) || student.display_name;
 
-            const bestPhone = profileData?.profiles?.phone || profileData?.phone || student.phone || admissionRes?.student_phone || admissionRes?.parent_phone || enquiryRes?.parent_phone || combinedParentData?.phone;
-            const bestAddress = profileData?.address || student.address || admissionRes?.address || enquiryRes?.address || combinedParentData?.address || parentData?.address;
-            const bestDob = profileData?.date_of_birth || student.date_of_birth || admissionRes?.date_of_birth;
-            const bestGender = profileData?.gender || student.gender || admissionRes?.gender;
+            const bestPhone = sanitize(profileData?.profiles?.phone) || sanitize(profileData?.phone) || sanitize(student.phone) ||
+                sanitize(admissionRes?.student_phone) || sanitize(admissionRes?.parent_phone) ||
+                sanitize(enquiryRes?.parent_phone) || sanitize(combinedParentData?.phone);
+
+            const bestAddress = sanitize(profileData?.address) || sanitize(student.address) ||
+                sanitize(admissionRes?.address) || sanitize(enquiryRes?.address) ||
+                sanitize(combinedParentData?.address);
+
+            const bestDob = sanitize(profileData?.date_of_birth) || sanitize(student.date_of_birth) || sanitize(admissionRes?.date_of_birth);
+            const bestGender = sanitize(profileData?.gender) || sanitize(student.gender) || sanitize(admissionRes?.gender);
             const bestPhoto = profileData?.profiles?.profile_photo_url || profileData?.profile_photo_url || student.profile_photo_url || admissionRes?.profile_photo_url || enquiryRes?.profile_photo_url;
             const bestGrade = profileData?.grade || student.grade || admissionRes?.grade || enquiryRes?.grade;
 

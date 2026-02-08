@@ -315,25 +315,30 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
             ].filter(Boolean);
             const fullAddress = addressParts.join(', ').trim();
 
-            const guardianInfo = parentData.parent_name
-                ? `${parentData.parent_name} (${parentData.parent_relationship || parentData.relationship || 'Guardian'})`
-                : (parentData.name ? `${parentData.name} (${parentData.relationship || 'Guardian'})` : '');
+            // Sanitize Guardian Info to avoid '0' or numeric placeholders
+            const pName = parentData.parent_name || parentData.name;
+            const sanitizedName = (pName && pName !== '0' && pName !== 0) ? pName : '';
+
+            const guardianInfo = sanitizedName
+                ? `${sanitizedName} (${parentData.parent_relationship || parentData.relationship || 'Guardian'})`
+                : '';
 
             const bestPhone = parentData.student_phone || parentData.parent_phone || parentData.phone || '';
+            const normalizedPhone = (bestPhone && bestPhone !== '0') ? bestPhone : '';
 
             setFormData(prev => {
                 const newFields = new Set(autoFilledFields);
                 const updates: any = {};
 
-                if (!prev.phone && bestPhone) {
-                    updates.phone = bestPhone;
+                if ((!prev.phone || prev.phone === '0') && normalizedPhone) {
+                    updates.phone = normalizedPhone;
                     newFields.add('phone');
                 }
                 if (!prev.address && fullAddress) {
                     updates.address = fullAddress;
                     newFields.add('address');
                 }
-                if (!prev.parent_guardian_details && guardianInfo) {
+                if ((!prev.parent_guardian_details || prev.parent_guardian_details === '0') && guardianInfo) {
                     updates.parent_guardian_details = guardianInfo;
                     newFields.add('parent_guardian_details');
                 }
@@ -481,7 +486,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             <div className="flex-grow">
                                 <div className="flex items-center justify-between mb-1">
                                     <h4 className="text-[11px] font-black uppercase text-white/50 tracking-[0.5em]">Identity & Lifecycle</h4>
-                                    {isSchoolAdmin && <span className="text-[9px] font-black text-amber-500/50 uppercase tracking-widest">Read Only</span>}
+                                    {isSchoolAdmin && <span className="text-[9px] font-black text-amber-500/50 uppercase tracking-widest">Institution Registry</span>}
                                 </div>
                                 <div className="h-px bg-white/5 w-full"></div>
                             </div>
@@ -554,7 +559,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             <div className="flex-grow">
                                 <div className="flex items-center justify-between mb-1">
                                     <h4 className="text-[11px] font-black uppercase text-white/50 tracking-[0.5em]">Contact & Guardian</h4>
-                                    {isSchoolAdmin && <span className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest">Protected Records</span>}
+                                    {isSchoolAdmin && <span className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest">Institutional Registry</span>}
                                 </div>
                                 <div className="h-px bg-white/5 w-full"></div>
                             </div>
