@@ -57,7 +57,7 @@ BEGIN
 
     -- Integrity Check: Prevent enrollment for non-approved applicants
     -- Expanded to allow Verified and Pending Review if the admin triggers it manually from the modal
-    IF v_status NOT IN ('Approved', 'Enrolled', 'Verified', 'Pending Review') THEN
+    IF v_status NOT IN ('Approved', 'Enrolled', 'Verified', 'Pending Review', 'Registered') THEN
         RETURN jsonb_build_object('success', false, 'message', 'LIFECYCLE_ERROR: Only Approved or Verified applicants can be enrolled. Current status: ' || v_status);
     END IF;
 
@@ -103,6 +103,11 @@ BEGIN
     WHERE id = v_user_id;
 
     -- 1b. Role Assignment (Legacy support for RLS)
+    -- Ensure the 'Student' role exists in the master registry to satisfy FK
+    INSERT INTO public.user_roles (name, display_name, is_system_role)
+    VALUES ('Student', 'Student', true)
+    ON CONFLICT (name) DO NOTHING;
+
     INSERT INTO public.user_role_assignments (user_id, role_name, branch_id)
     VALUES (v_user_id, 'Student', v_branch_id)
     ON CONFLICT DO NOTHING;

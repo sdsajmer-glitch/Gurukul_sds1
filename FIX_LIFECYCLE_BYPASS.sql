@@ -1,23 +1,8 @@
 -- ============================================================================
--- FIX: Enrollment Guardian Auto-Link (Version 1.1)
--- Issue: Guardians are not auto-linked when a student is enrolled.
--- Error: ON CONFLICT failed because of missing unique constraint.
--- Solution: Added unique constraint to student_parents and enhanced enrollment function.
+-- FIX: Admission Lifecycle Bypass for 'Registered' Status
+-- Allows students in 'Registered' state to be enrolled if all docs are verified.
 -- ============================================================================
 
--- 1. Ensure unique constraint exists for ON CONFLICT support
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint 
-        WHERE conname = 'student_parents_student_id_parent_id_key'
-    ) THEN
-        ALTER TABLE public.student_parents 
-        ADD CONSTRAINT student_parents_student_id_parent_id_key UNIQUE (student_id, parent_id);
-    END IF;
-END $$;
-
--- 2. Enhanced Enrollment Protocol
 CREATE OR REPLACE FUNCTION public.admin_finalize_enrollment(p_admission_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -48,6 +33,7 @@ BEGIN
     FROM public.admissions WHERE id = p_admission_id;
 
     -- Integrity Check: Prevent enrollment for non-approved applicants
+    -- Added 'Registered' to allowed list to support frictionless conversion from the new Admission Modal
     IF v_status NOT IN ('Approved', 'Enrolled', 'Verified', 'Pending Review', 'Registered') THEN
         RETURN jsonb_build_object('success', false, 'message', 'LIFECYCLE_ERROR: Only Approved or Verified applicants can be enrolled. Current status: ' || v_status);
     END IF;
@@ -91,7 +77,7 @@ BEGIN
         is_active = true 
     WHERE id = v_user_id;
 
-    -- 1b. Role Assignment
+    -- 1b. Role Assignment (Legacy support for RLS)
     -- Ensure the 'Student' role exists in the master registry to satisfy FK
     INSERT INTO public.user_roles (name, display_name, is_system_role)
     VALUES ('Student', 'Student', true)
@@ -131,13 +117,12 @@ BEGIN
         academic_year = EXCLUDED.academic_year,
         is_active = true;
 
-    -- [STEP 2b] Guardian Linkage: Auto-connect primary guardian
+    -- [STEP 2b] Guardian Linkage
     IF v_parent_id IS NULL AND v_parent_email IS NOT NULL THEN
         SELECT id INTO v_parent_id FROM public.profiles WHERE email = v_parent_email LIMIT 1;
     END IF;
 
     IF v_parent_id IS NOT NULL THEN
-        -- Link Parent
         INSERT INTO public.student_parents (student_id, parent_id, is_primary)
         VALUES (v_user_id, v_parent_id, true)
         ON CONFLICT (student_id, parent_id) DO UPDATE SET is_primary = EXCLUDED.is_primary;
@@ -163,15 +148,14 @@ BEGIN
         'sid', v_sid, 
         'user_id', v_user_id, 
         'admission_id', p_admission_id,
-        'applicant_name', v_applicant_name,
-        'linked_parent_id', v_parent_id
+        'applicant_name', v_applicant_name
     ));
 
     RETURN jsonb_build_object(
         'success', true, 
         'student_id', v_user_id, 
         'student_id_number', v_sid,
-        'message', 'Enrollment Successful. Master created with Guardian linkage.'
+        'message', 'Enrollment Protocol Finalized: Registered -> Enrolled.'
     );
 
 EXCEPTION WHEN OTHERS THEN
@@ -180,34 +164,3 @@ EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'message', 'Registry Sync Failure: ' || SQLERRM);
 END;
 $$;
-
--- 3. Retroactive Fix Script
-DO $$
-DECLARE
-    r RECORD;
-    v_pid UUID;
-    v_count INT := 0;
-BEGIN
-    FOR r IN 
-        SELECT s.user_id, a.parent_id, a.parent_email
-        FROM public.student_profiles s
-        JOIN public.admissions a ON s.admission_id = a.id
-        LEFT JOIN public.student_parents sp ON s.user_id = sp.student_id
-        WHERE sp.student_id IS NULL
-    LOOP
-        v_pid := r.parent_id;
-        IF v_pid IS NULL AND r.parent_email IS NOT NULL THEN
-            SELECT id INTO v_pid FROM public.profiles WHERE email = r.parent_email LIMIT 1;
-        END IF;
-
-        IF v_pid IS NOT NULL THEN
-            INSERT INTO public.student_parents (student_id, parent_id, is_primary)
-            VALUES (r.user_id, v_pid, true)
-            ON CONFLICT (student_id, parent_id) DO NOTHING;
-            v_count := v_count + 1;
-        END IF;
-    END LOOP;
-    RAISE NOTICE 'Retroactive Repair: Linked % students.', v_count;
-END $$;
-
-SELECT 'FIX_ENROLLMENT_GUARDIAN_LINK_V1.1: Applied successfully' as status;

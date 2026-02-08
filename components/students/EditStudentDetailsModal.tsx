@@ -10,34 +10,10 @@ import { CalendarIcon } from '../icons/CalendarIcon';
 import { LocationIcon } from '../icons/LocationIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { UsersIcon } from '../icons/UsersIcon';
-import { LockIcon } from '../icons/LockIcon';
-import { RefreshIcon } from '../icons/RefreshIcon';
 
-import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
-import { PlusIcon } from '../icons/PlusIcon';
 
-// Simple Switch Component
-const Switch: React.FC<{ checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean }> = ({ checked, onChange, disabled }) => (
-    <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => !disabled && onChange(!checked)}
-        className={`
-            relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border border-white/10 transition-colors duration-500 ease-in-out focus:outline-none
-            ${checked ? 'bg-[#7c3aed] shadow-[0_0_15px_rgba(124,58,237,0.4)]' : 'bg-white/5'}
-            ${disabled ? 'opacity-20 cursor-not-allowed' : 'hover:border-white/20'}
-        `}
-    >
-        <span
-            aria-hidden="true"
-            className={`
-                pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xl transition duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]
-                ${checked ? 'translate-x-5' : 'translate-x-0'}
-            `}
-        />
-    </button>
-);
+
+// Floating Input Component
 
 interface EditStudentDetailsModalProps {
     student: StudentForAdmin;
@@ -45,7 +21,7 @@ interface EditStudentDetailsModalProps {
     onSave: () => void;
 }
 
-const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string, icon?: React.ReactNode, isSynced?: boolean, isTextArea?: boolean }> = ({ label, icon, isSynced, isTextArea, className, readOnly, ...props }) => {
+const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> & { label: string, icon?: React.ReactNode, isTextArea?: boolean }> = ({ label, icon, isTextArea, className, readOnly, ...props }) => {
     const inputClasses = `
         peer block w-full rounded-2xl border bg-black/40 px-5 py-4 pl-12 text-sm text-white shadow-inner
         focus:border-white/20 focus:ring-4 focus:ring-white/5 focus:outline-none placeholder-transparent transition-all duration-500
@@ -84,13 +60,6 @@ const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement | HTMLT
                 {label}
             </label>
 
-            {isSynced && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none animate-in fade-in zoom-in duration-700">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black bg-[#7c3aed]/10 text-[#a78bfa] border border-[#7c3aed]/20 uppercase tracking-widest shadow-[0_0_20px_rgba(124,58,237,0.1)] backdrop-blur-md">
-                        <LockIcon className="w-3.5 h-3.5" /> Synced
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
@@ -137,12 +106,8 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         }
     }, [student]);
 
-    // Sync Logic State
-    const [syncWithParent, setSyncWithParent] = useState(true);
     const [parentData, setParentData] = useState<any>(null);
     const [isFetchingParent, setIsFetchingParent] = useState(false);
-    const [manualParentEmail, setManualParentEmail] = useState('');
-    const [isLinking, setIsLinking] = useState(false);
 
     // UI State
     const [loading, setLoading] = useState(false);
@@ -156,13 +121,13 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
     // Handle Escape key to close modal
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && !loading && !isLinking) {
+            if (e.key === 'Escape' && !loading) {
                 onClose();
             }
         };
         window.addEventListener('keydown', handleEscape);
         return () => window.removeEventListener('keydown', handleEscape);
-    }, [loading, isLinking, onClose]);
+    }, [loading, onClose]);
 
     // Fetch Student Contact Details - Enhanced Robust Implementation
     const fetchParent = async () => {
@@ -182,31 +147,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
             if (data && data.found) {
                 setParentData(data);
-
-                // INTELLIGENT SYNC INIT:
-                // Only default to Auto-Sync if the current student data matches the parent data 
-                // OR if the student data is empty. 
-                // If the user previously manually entered a different value, we should respect it (Sync = False).
-
-                const parentPhone = data.student_phone || data.parent_phone || '';
-                const currentPhone = student.phone || '';
-
-                // If student has a phone number that DIFFERS from the parent record, assume Manual Entry preference.
-                let shouldSync = true;
-
-                // If the student has a phone number, but the parent record is empty OR different, 
-                // we assume the user manually entered this data previously.
-                // We should NOT overwrite it with an empty string or old data.
-                if (currentPhone && (!parentPhone || currentPhone !== parentPhone)) {
-                    shouldSync = false;
-                }
-
-                // Also check address - if student has address but parent doesn't, keep manual
-                if (student.address && (!data.address && !data.city)) {
-                    shouldSync = false;
-                }
-
-                if (isMounted.current) setSyncWithParent(shouldSync);
             } else {
                 // Ultimate fallback: direct queries
                 console.log('RPC found no contact data, initiating fallback queries...');
@@ -246,7 +186,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                     parent_id: admissionLink.parent_id,
                     is_unlinked: !admissionLink.parent_id
                 });
-                if (isMounted.current) setSyncWithParent(true);
                 return;
             }
 
@@ -272,7 +211,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                     pin_code: enquiryData.pin_code,
                     is_unlinked: true
                 });
-                if (isMounted.current) setSyncWithParent(true);
                 return;
             }
 
@@ -293,14 +231,12 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                     parent_guardian_details: studentProfile.parent_guardian_details,
                     is_unlinked: true
                 });
-                if (isMounted.current) setSyncWithParent(true);
                 return;
             }
 
-            if (isMounted.current) setSyncWithParent(false);
+            // Fetch complete
         } catch (e) {
             console.error("Fallback fetch error:", e);
-            if (isMounted.current) setSyncWithParent(false);
         }
     };
 
@@ -308,75 +244,9 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         fetchParent();
     }, [student.id]);
 
-    // Manual Parent Lookup by Email
-    const handleManualLinkByEmail = async () => {
-        if (!manualParentEmail || !manualParentEmail.includes('@')) {
-            setError('Please enter a valid parent email address.');
-            return;
-        }
-
-        setIsLinking(true);
-        setError(null);
-        try {
-            // Search for parent profile by email
-            const { data: profile, error: profileErr } = await supabase
-                .from('profiles')
-                .select('id, display_name, email, phone')
-                .ilike('email', manualParentEmail.trim())
-                .or(`role.eq.Parent,role.eq."Parent/Guardian"`)
-                .maybeSingle();
-
-            if (profileErr) throw profileErr;
-
-            if (profile) {
-                // We found a parent! Now fetch their full parent record
-                const { data: parentProfile } = await supabase
-                    .from('parent_profiles')
-                    .select('*')
-                    .eq('user_id', profile.id)
-                    .maybeSingle();
-
-                const resolvedData = {
-                    found: true,
-                    name: profile.display_name,
-                    student_phone: parentProfile?.student_phone || profile.phone, // Use profile phone as fallback
-                    parent_name: profile.display_name,
-                    parent_phone: profile.phone,
-                    parent_email: profile.email,
-                    relationship: parentProfile?.relationship_to_student || 'Parent',
-                    address: parentProfile?.address,
-                    city: parentProfile?.city,
-                    state: parentProfile?.state,
-                    country: parentProfile?.country,
-                    pin_code: parentProfile?.pin_code,
-                    parent_id: profile.id
-                };
-
-                setParentData(resolvedData);
-                setSyncWithParent(true);
-
-                // Opt-in: Automatically create the link in student_parents table to persist this lookup
-                await supabase.from('student_parents').insert({
-                    student_id: student.id,
-                    parent_id: profile.id,
-                    is_primary: true
-                }).select();
-
-                console.log('Manual link established successfully');
-            } else {
-                setError('No parent profile found with that email. Please ensure the parent has registered.');
-            }
-        } catch (e) {
-            console.error("Manual link error:", e);
-            setError("Failed to link parent identity.");
-        } finally {
-            setIsLinking(false);
-        }
-    };
-
-    // Apply Sync Effect - Carefully merge parent data with STRICT overrides
+    // Auto-fill effect: Merge parent data with student form if fields are currently empty
     useEffect(() => {
-        if (syncWithParent && parentData) {
+        if (parentData) {
             // Construct Address
             const addressParts = [
                 parentData.address,
@@ -397,14 +267,13 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
             setFormData(prev => ({
                 ...prev,
-                // STRICT SYNC: When enabled, these fields MUST mirror the parent data source.
-                // If source is empty, field becomes empty.
-                phone: bestPhone,
-                address: fullAddress,
-                parent_guardian_details: guardianInfo
+                // Only auto-fill if the fields are currently empty to avoid overwriting manual changes
+                phone: prev.phone || bestPhone,
+                address: prev.address || fullAddress,
+                parent_guardian_details: prev.parent_guardian_details || guardianInfo
             }));
         }
-    }, [syncWithParent, parentData]);
+    }, [parentData]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -504,84 +373,12 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
                     {/* Contact & Guardian Section */}
                     <section className="space-y-8 pb-4">
-                        <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                            <div className="flex items-center gap-4">
-                                <div className="h-8 w-8 flex items-center justify-center bg-white/[0.03] text-white/40 rounded-xl border border-white/5">
-                                    <UsersIcon className="w-4 h-4" />
-                                </div>
-                                <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Contact & Guardian</h4>
+                        <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+                            <div className="h-8 w-8 flex items-center justify-center bg-white/[0.03] text-white/40 rounded-xl border border-white/5">
+                                <UsersIcon className="w-4 h-4" />
                             </div>
-
-                            {/* Sync Toggle */}
-                            <div className="flex items-center gap-5 bg-white/[0.02] p-2 pl-5 rounded-[1.5rem] border border-white/5 shadow-inner group/sync">
-                                {isFetchingParent && <Spinner size="sm" className="text-[#7c3aed]" />}
-                                <div className="flex flex-col items-end">
-                                    <label className={`text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-500 ease-in-out ${syncWithParent ? 'text-[#7c3aed]' : 'text-white/20'}`}>
-                                        {syncWithParent ? 'Auto-Sync Active' : 'Manual Entry'}
-                                    </label>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Switch
-                                        checked={syncWithParent}
-                                        onChange={(checked) => {
-                                            setSyncWithParent(checked);
-                                            if (checked) fetchParent(); // Re-validate on toggle ON
-                                        }}
-                                        disabled={isFetchingParent}
-                                    />
-                                    {syncWithParent && (
-                                        <button
-                                            type="button"
-                                            onClick={() => fetchParent()}
-                                            disabled={isFetchingParent}
-                                            className="p-2 rounded-xl bg-white/5 text-white/20 hover:text-white hover:bg-white/10 transition-all active:scale-90 flex items-center justify-center -mr-1"
-                                            title="Force Re-sync Identity"
-                                        >
-                                            <RefreshIcon className={`w-3.5 h-3.5 ${isFetchingParent ? 'animate-spin text-[#7c3aed]' : ''}`} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
+                            <h4 className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Contact & Guardian</h4>
                         </div>
-
-                        {!parentData?.found && !isFetchingParent && (
-                            <div className="space-y-6">
-                                <div className="p-6 bg-amber-500/5 border border-amber-500/15 rounded-[2rem] text-amber-500 flex flex-col gap-6 font-medium shadow-2xl relative overflow-hidden group/warning">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 group-hover/warning:scale-150 transition-transform duration-1000"></div>
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-2.5 bg-amber-500/10 rounded-xl">
-                                            <AlertTriangleIcon className="w-5 h-5" />
-                                        </div>
-                                        <div className="flex-grow">
-                                            <h5 className="text-[11px] font-black uppercase tracking-[0.2em] mb-1">Identity Sync Failure</h5>
-                                            <p className="text-[10px] text-white/40 leading-relaxed uppercase tracking-widest font-bold">
-                                                No linked parent profile found. Manual entry required for identity synchronization unless explicitly linked.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col md:flex-row gap-4 pt-2 border-t border-white/5 mt-2">
-                                        <div className="flex-grow relative">
-                                            <input
-                                                type="email"
-                                                placeholder="SEARCH PARENT EMAIL..."
-                                                value={manualParentEmail}
-                                                onChange={(e) => setManualParentEmail(e.target.value)}
-                                                className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-5 text-[10px] font-bold tracking-widest outline-none focus:border-amber-500/50 focus:bg-white/[0.08] transition-all placeholder:text-white/20"
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={handleManualLinkByEmail}
-                                            disabled={isLinking || !manualParentEmail}
-                                            className="px-8 h-12 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-30"
-                                        >
-                                            {isLinking ? <Spinner size="sm" className="text-amber-500" /> : <><PlusIcon className="w-4 h-4" /> Resolve Identity</>}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <FloatingInput
@@ -591,8 +388,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 value={formData.phone}
                                 onChange={handleChange}
                                 icon={<PhoneIcon className="w-4 h-4" />}
-                                readOnly={syncWithParent && parentData?.found}
-                                isSynced={syncWithParent && parentData?.found}
                             />
                             <FloatingInput
                                 label="Guardian Name / Relationship"
@@ -600,8 +395,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 value={formData.parent_guardian_details}
                                 onChange={handleChange}
                                 icon={<UsersIcon className="w-4 h-4" />}
-                                readOnly={syncWithParent && parentData?.found}
-                                isSynced={syncWithParent && parentData?.found}
                             />
                         </div>
 
@@ -612,8 +405,6 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             onChange={handleChange as any}
                             icon={<LocationIcon className="w-4 h-4" />}
                             isTextArea
-                            readOnly={syncWithParent && parentData?.found}
-                            isSynced={syncWithParent && parentData?.found}
                         />
                     </section>
 
