@@ -840,10 +840,16 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 { data: feeData }
             ] = await Promise.all([
                 supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id }),
-                // Fetch admission record - try both student_user_id and admission_id
-                supabase.from('admissions').select('*').or(`student_user_id.eq.${student.id},id.eq.${student.admission_id || -1}`).maybeSingle(),
-                // Fetch enquiry record
-                supabase.from('enquiries').select('*').eq('user_id', student.id).maybeSingle(),
+                // Fetch admission record - try student_user_id, admission_id, OR EMAIL (Critical for unlinked imports)
+                supabase.from('admissions')
+                    .select('*')
+                    .or(`student_user_id.eq.${student.id},id.eq.${student.admission_id || -1},email.eq.${student.email || 'no_email'},applicant_email.eq.${student.email || 'no_email'}`)
+                    .maybeSingle(),
+                // Fetch enquiry record - try user_id OR email
+                supabase.from('enquiries')
+                    .select('*')
+                    .or(`user_id.eq.${student.id},email.eq.${student.email || 'no_email'},parent_email.eq.${student.email || 'no_email'}`)
+                    .maybeSingle(),
                 // Fetch latest class assignment
                 supabase.from('student_profiles').select('assigned_class_id, school_classes!student_profiles_assigned_class_id_fkey(name)').eq('user_id', student.id).maybeSingle(),
                 // Fetch fee summary
