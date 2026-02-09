@@ -594,7 +594,7 @@ function IdentityMeta({ icon, label, value, subValue, color }: any) {
                     {subValue && <span className="text-[7px] font-black text-indigo-500/40 uppercase tracking-widest">{subValue}</span>}
                 </div>
                 <p className={clsx(
-                    "font-bold text-lg tracking-tight truncate uppercase leading-tight transition-colors",
+                    "font-bold text-lg tracking-tight uppercase leading-tight transition-colors break-all whitespace-normal",
                     isEmpty ? "text-white/10 italic" : "text-white group-hover/item:text-indigo-400"
                 )}>
                     {value}
