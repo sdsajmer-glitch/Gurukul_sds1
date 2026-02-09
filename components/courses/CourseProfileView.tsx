@@ -32,12 +32,12 @@ const SectionHeader: React.FC<{ title: string; action?: React.ReactNode }> = ({ 
 );
 
 const CurriculumTab: React.FC<{ course: Course; canEdit: boolean }> = ({ course, canEdit }) => {
-    const [units, setUnits] = useState([ { id: 1, title: 'Unit 1: Foundations', duration: '2 Weeks' } ]);
+    const [units, setUnits] = useState([{ id: 1, title: 'Unit 1: Foundations', duration: '2 Weeks' }]);
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-             <SectionHeader title="Curriculum Structure" action={ canEdit && (<button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-xl"><PlusIcon className="w-3.5 h-3.5"/> Add Unit</button>) } />
-             <div className="relative border-l-2 border-border/50 ml-4 space-y-8 py-2">
-                {units.map((unit, idx) => ( <div key={unit.id} className="relative pl-8 group"><div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-card border-2 border-primary z-10"></div><div className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-all"><h4 className="font-bold text-foreground text-sm">{unit.title}</h4><div className="text-[10px] font-bold uppercase px-2 py-0.5 rounded border bg-muted text-muted-foreground border-border mt-1.5 w-fit">{unit.duration}</div></div></div> ))}
+            <SectionHeader title="Curriculum Structure" action={canEdit && (<button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-xl"><PlusIcon className="w-3.5 h-3.5" /> Add Unit</button>)} />
+            <div className="relative border-l-2 border-border/50 ml-4 space-y-8 py-2">
+                {units.map((unit, idx) => (<div key={unit.id} className="relative pl-8 group"><div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-card border-2 border-primary z-10"></div><div className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-all"><h4 className="font-bold text-foreground text-sm">{unit.title}</h4><div className="text-[10px] font-bold uppercase px-2 py-0.5 rounded border bg-muted text-muted-foreground border-border mt-1.5 w-fit">{unit.duration}</div></div></div>))}
             </div>
         </div>
     );
@@ -47,23 +47,61 @@ export const CourseProfileView: React.FC<CourseProfileViewProps> = ({ course, on
     const [activeTab, setActiveTab] = useState<Tab>('overview');
     const role = profile?.role;
     const isFullAdmin = role === BuiltInRoles.SCHOOL_ADMINISTRATION || role === BuiltInRoles.BRANCH_ADMIN;
-    
+
     const tabs = [
-        { id: 'overview', label: 'Overview', icon: <ChartBarIcon className="w-4 h-4"/> },
-        { id: 'curriculum', label: 'Curriculum', icon: <LayersIcon className="w-4 h-4"/> },
-        { id: 'analytics', label: 'Analytics', icon: <ChartBarIcon className="w-4 h-4"/> },
-        { id: 'teachers', label: 'Faculty', icon: <TeacherIcon className="w-4 h-4"/> },
-        { id: 'students', label: 'Students', icon: <UsersIcon className="w-4 h-4"/> },
+        { id: 'overview', label: 'Overview', icon: <ChartBarIcon className="w-4 h-4" /> },
+        { id: 'curriculum', label: 'Curriculum', icon: <LayersIcon className="w-4 h-4" /> },
+        { id: 'analytics', label: 'Analytics', icon: <ChartBarIcon className="w-4 h-4" /> },
+        { id: 'teachers', label: 'Faculty', icon: <TeacherIcon className="w-4 h-4" /> },
+        { id: 'students', label: 'Students', icon: <UsersIcon className="w-4 h-4" /> },
     ];
 
     const renderTabContent = () => {
         switch (activeTab) {
             case 'overview':
-                return <div className="text-muted-foreground">Overview content here.</div>
+                return (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div>
+                            <SectionHeader title="Course Description" />
+                            <p className="text-foreground/80 leading-relaxed text-lg bg-card/50 p-6 rounded-2xl border border-border/40 italic">
+                                {course.description || "No description provided for this academic node."}
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                            <div className="bg-card border border-border p-6 rounded-2xl">
+                                <p className="text-[10px] font-black uppercase text-muted-foreground mb-2">Category</p>
+                                <p className="text-xl font-bold text-foreground">{course.category || 'Core'}</p>
+                            </div>
+                            <div className="bg-card border border-border p-6 rounded-2xl">
+                                <p className="text-[10px] font-black uppercase text-muted-foreground mb-2">Credits</p>
+                                <p className="text-xl font-bold text-foreground">{course.credits || '3.0'}</p>
+                            </div>
+                            <div className="bg-card border border-border p-6 rounded-2xl">
+                                <p className="text-[10px] font-black uppercase text-muted-foreground mb-2">Department</p>
+                                <p className="text-xl font-bold text-foreground">{course.department || 'General'}</p>
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl flex items-center gap-4">
+                            <div className="p-3 bg-primary/20 rounded-xl text-primary"><TeacherIcon className="w-6 h-6" /></div>
+                            <div>
+                                <p className="text-xs font-bold text-primary uppercase">Primary Instructor</p>
+                                <p className="text-lg font-bold text-foreground">{course.teacher_name || 'Assignment Pending'}</p>
+                            </div>
+                        </div>
+                    </div>
+                );
             case 'curriculum':
                 return <CurriculumTab course={course} canEdit={isFullAdmin} />;
             default:
-                return <div className="text-muted-foreground italic text-center p-8 bg-muted/20 rounded-xl">This section is under development.</div>;
+                return (
+                    <div className="flex flex-col items-center justify-center py-20 bg-muted/20 border-2 border-dashed border-border rounded-[2rem] text-center">
+                        <ActivityIcon className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                        <h3 className="text-xl font-bold text-foreground">Advanced Node Under Development</h3>
+                        <p className="text-muted-foreground mt-2 max-w-xs">The {activeTab} analytics engine is currently being synchronized with the global institutional ledger.</p>
+                    </div>
+                );
         }
     };
 
@@ -79,8 +117,8 @@ export const CourseProfileView: React.FC<CourseProfileViewProps> = ({ course, on
                         </div>
                     </div>
                     <div className="flex gap-3">
-                         {isFullAdmin && <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-xl"><EditIcon className="w-3.5 h-3.5"/> Edit Course</button>}
-                         <button onClick={onClose} className="p-2.5 hover:bg-muted rounded-full text-muted-foreground"><XIcon className="w-6 h-6"/></button>
+                        {isFullAdmin && <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-xl"><EditIcon className="w-3.5 h-3.5" /> Edit Course</button>}
+                        <button onClick={onClose} className="p-2.5 hover:bg-muted rounded-full text-muted-foreground"><XIcon className="w-6 h-6" /></button>
                     </div>
                 </div>
                 <div className="flex flex-col md:flex-row flex-grow overflow-hidden">

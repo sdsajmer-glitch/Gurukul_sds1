@@ -38,30 +38,59 @@ DECLARE
     errors jsonb[] := ARRAY[]::jsonb[];
     v_class_name text;
     v_subject_code text;
+    v_my_branches bigint[];
 BEGIN 
+    -- Pre-fetch branch IDs for efficiency
+    -- Fix: public.get_my_branch_ids() returns SETOF bigint, not a table with 'id' column
+    v_my_branches := ARRAY(SELECT public.get_my_branch_ids());
+
+    IF v_my_branches IS NULL OR array_length(v_my_branches, 1) IS NULL THEN
+        -- Fallback: If no branches found, empty array to avoid null ANY() checks failing later
+        v_my_branches := ARRAY[]::bigint[];
+    END IF;
+
     FOR rec IN SELECT * FROM jsonb_array_elements(p_mappings) 
     LOOP 
         BEGIN 
-            v_class_name := trim(both '' from rec->>'class_name');
-            v_subject_code := trim(both '' from rec->>'subject_code');
+            -- Fix: Use proper trim for trailing spaces
+            v_class_name := trim(rec->>'class_name');
+            v_subject_code := trim(rec->>'subject_code');
+
+            IF v_class_name IS NULL OR v_class_name = '' THEN
+                RAISE EXCEPTION 'Class name is missing in row';
+            END IF;
+
+            IF v_subject_code IS NULL OR v_subject_code = '' THEN
+                RAISE EXCEPTION 'Subject code is missing in row';
+            END IF;
 
             -- Find Class (scoped to user's branches)
+            -- Robust matching: remove spaces for comparison to handle "Grade 10-A" vs "Grade 10 - A"
             SELECT id INTO v_class_id 
             FROM public.school_classes 
-            WHERE upper(trim(name)) = upper(v_class_name) 
-            AND branch_id IN (SELECT * FROM public.get_my_branch_ids()); 
+            WHERE upper(replace(trim(name), ' ', '')) = upper(replace(v_class_name, ' ', '')) 
+            AND branch_id = ANY(v_my_branches); 
             
             IF v_class_id IS NULL THEN 
-                RAISE EXCEPTION 'Class "%" not found in your branches', v_class_name; 
+                RAISE EXCEPTION 'Class "%" not found in your branches. Please verify name corresponds to existing grades and sections.', v_class_name; 
             END IF; 
             
-            -- Find Subject (Course)
+            -- Find Subject (Course) - Scoped to branch to prevent cross-branch accidental mapping
             SELECT id INTO v_subject_id 
             FROM public.courses 
-            WHERE upper(trim(code)) = upper(v_subject_code); -- Subject code should be unique
+            WHERE upper(replace(trim(code), ' ', '')) = upper(replace(v_subject_code, ' ', ''))
+            AND branch_id = ANY(v_my_branches); 
             
             IF v_subject_id IS NULL THEN 
-                RAISE EXCEPTION 'Subject code "%" not found', v_subject_code; 
+                -- Fallback: Try global search if not found in branch (for shared curriculum)
+                SELECT id INTO v_subject_id 
+                FROM public.courses 
+                WHERE upper(replace(trim(code), ' ', '')) = upper(replace(v_subject_code, ' ', ''))
+                AND branch_id IS NULL;
+                
+                IF v_subject_id IS NULL THEN
+                    RAISE EXCEPTION 'Subject code "%" not found in your branch or global repository. Have you imported courses yet?', v_subject_code; 
+                END IF;
             END IF; 
             
             -- Insert Mapping

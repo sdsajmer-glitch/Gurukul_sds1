@@ -7,16 +7,16 @@
 -- 4. Fixes RLS policies to ensure courses are visible to branch users.
 -- ==============================================================================
 
--- 1. UTILITY: Ensure get_my_branch_ids exists and creates a robust branch list
+-- 1. UTILITY: Robust Branch Access (Fix for Super Admins and Staff)
 CREATE OR REPLACE FUNCTION public.get_my_branch_ids()
 RETURNS SETOF bigint
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
 AS $$
-    -- 1. Super Admin sees ALL branches (Fix for "No Courses Found" for Super Admin)
+    -- 1. Super Admin AND School Admin sees ALL branches (Broad fix for admin visibility)
     SELECT id FROM public.school_branches 
-    WHERE EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'Super Admin')
+    WHERE EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role = 'Super Admin' OR role = 'School Administration'))
     
     UNION
     
@@ -36,6 +36,23 @@ AS $$
     SELECT branch_id FROM public.profiles 
     WHERE id = auth.uid() AND branch_id IS NOT NULL;
 $$;
+
+-- 1b. SCHEMA RELATIONSHIPS: Ensure Foreign Keys for Joined Counts
+-- Supabase requires explicit foreign keys for nested .select('*, modules:course_modules(count)') to work.
+DO $$ 
+BEGIN
+    -- Course Modules Relationship
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'course_modules_course_id_fkey') THEN
+        ALTER TABLE public.course_modules 
+        ADD CONSTRAINT course_modules_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+    END IF;
+
+    -- Course Enrollments Relationship
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'course_enrollments_course_id_fkey') THEN
+        ALTER TABLE public.course_enrollments 
+        ADD CONSTRAINT course_enrollments_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
 -- 2. SCHEMA: Add missing columns to 'courses' table
 -- We use IF NOT EXISTS to avoid errors if run multiple times
