@@ -886,8 +886,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 .from('student_profiles')
                 .select(`
                     *,
-                    profiles!inner(phone, email, display_name),
-                    school_classes!student_profiles_assigned_class_id_fkey(name),
+                    profiles!inner(phone, email, display_name, profile_photo_url),
+                    school_classes!student_profiles_assigned_class_id_fkey(name, grade_level, academic_year),
                     admissions:admission_id (
                         id, enquiry_id, application_number, status, submitted_at, grade, applicant_name
                     )
@@ -917,7 +917,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             // 4. Update State
             const activeAdmission = admissionRes;
             const activeEnquiry = enquiryRes;
-            const profileData = profileRaw ? [profileRaw] : []; // formatting for consistency with existing logic if needed, or just use profileRaw
+            const profileData = profileRaw; // Use the single object directly, not an array wrapper
 
             setAdmissionRecord(activeAdmission);
             setEnquiryRecord(activeEnquiry);
@@ -1007,7 +1007,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         };
                     }
                 }
-                else if (profileData && profileData.parent_guardian_details && profileData.parent_guardian_details !== '0') {
+                else if (profileData?.parent_guardian_details && profileData?.parent_guardian_details !== '0') {
                     // Strategy C: Fallback to Identity Registry (Student Profile)
                     // Matches "Name (Relationship)" or "Name (Phone)"
                     const raw = profileData.parent_guardian_details;
@@ -1066,9 +1066,11 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 gender: bestGender,
                 profile_photo_url: bestPhoto,
                 grade: bestGrade,
+                enrollment_status: profileData?.enrollment_status || prev.enrollment_status,
                 // Class assignment logic (Step 3) - Uses profileData
                 assigned_class_id: profileData?.assigned_class_id || prev.assigned_class_id,
-                assigned_class_name: (profileData?.school_classes as any)?.name || prev.assigned_class_name
+                assigned_class_name: (profileData?.school_classes as any)?.name || prev.assigned_class_name,
+                academic_year: (profileData?.school_classes as any)?.academic_year || prev.academic_year
             }));
 
             // --- 3. Additional Data (Documents & Fees) ---
@@ -1608,15 +1610,18 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent opacity-0 group-hover/success:opacity-100 transition-opacity duration-500"></div>
                                                         <div className="relative z-10 flex items-center gap-4">
                                                             <div className="p-3 bg-emerald-500/20 rounded-xl ring-1 ring-emerald-500/30">
-                                                                <CheckCircleIcon className="w-6 h-6 text-emerald-400" />
+                                                                <ShieldCheckIcon className="w-6 h-6 text-emerald-400" />
                                                             </div>
                                                             <div className="flex-grow">
-                                                                <p className="text-sm font-black text-emerald-400 uppercase tracking-wider mb-1">Enrollment Active</p>
-                                                                <p className="text-xs text-white/50 font-medium">Student is successfully enrolled and academically active</p>
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <p className="text-sm font-black text-emerald-400 uppercase tracking-wider">Academic Placement Active</p>
+                                                                    <span className="px-2 py-0.5 bg-emerald-500/20 rounded-md text-[8px] font-black text-emerald-400 uppercase tracking-widest border border-emerald-500/30">Enrollment Initialized</span>
+                                                                </div>
+                                                                <p className="text-xs text-white/50 font-medium">Student identity node successfully localized and academically active</p>
                                                             </div>
                                                             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
                                                                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,1)]"></span>
-                                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">Verified</span>
+                                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">Verified State</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1634,7 +1639,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                     <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Current Grade</span>
                                                                 </div>
                                                                 <p className="text-2xl font-black text-white tracking-tight">Grade {syncedStudent.grade}</p>
-                                                                <p className="text-xs text-white/40 mt-2 font-medium">Academic Year 2025-26</p>
+                                                                <p className="text-xs text-white/40 mt-2 font-medium">Academic Year {(syncedStudent as any).academic_year || '2025-26'}</p>
                                                             </div>
                                                         </div>
 
@@ -1666,7 +1671,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                         </div>
                                                         <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl">
                                                             <p className="text-[9px] font-black text-white/30 uppercase tracking-wider mb-2">Enrollment Date</p>
-                                                            <p className="text-sm font-bold text-white/70">{new Date().toLocaleDateString()}</p>
+                                                            <p className="text-sm font-bold text-white/70">
+                                                                {(syncedStudent as any).updated_at ? new Date((syncedStudent as any).updated_at).toLocaleDateString() : new Date().toLocaleDateString()}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </div>
