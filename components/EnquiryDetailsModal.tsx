@@ -290,6 +290,18 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                     Promote to Admission Vault
                                 </motion.button>
                             )}
+
+                            {(enquiry.status === 'ENQUIRY_CONVERTED' || enquiry.conversion_state === 'CONVERTED') && (
+                                <motion.button
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    onClick={() => onNavigate && onNavigate('Admissions')}
+                                    className="w-full mt-12 py-4 rounded-[1.8rem] bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-3 group"
+                                >
+                                    <ShieldCheckIcon className="w-4 h-4" />
+                                    Access Admission Vault
+                                </motion.button>
+                            )}
                         </section>
 
                         <div className="h-px bg-white/[0.04]" />
