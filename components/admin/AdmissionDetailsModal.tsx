@@ -61,21 +61,41 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 .from('document_requirements')
                 .select('*, admission_documents(*)')
                 .eq('admission_id', admission.id)
-                .order('created_at', { ascending: false });
+                .order('is_mandatory', { ascending: false });
             if (error) throw error;
 
-            const MANDATORY_TYPES = ['Birth Certificate', 'Transfer Certificate', 'ID Proof', 'Report Card'];
-            const existingNames = (data || []).map((d: any) => d.document_name);
-            const missingDocs = MANDATORY_TYPES.filter(name => !existingNames.includes(name)).map((name, idx) => ({
+            // Standard mandatory set to ensure baseline compliance slots show up even if not in DB
+            const STANDARD_MANDATORY = ['Birth Certificate', 'ID Proof', 'Transfer Certificate', 'Student Photograph'];
+
+            // Normalize existing docs and filter out accidental duplicates from DB
+            const seen = new Set();
+            const uniqueDocs = (data || []).filter((d: any) => {
+                if (seen.has(d.document_name)) return false;
+                seen.add(d.document_name);
+                return true;
+            });
+
+            const existingNames = uniqueDocs.map((d: any) => d.document_name);
+            const missingDocs = STANDARD_MANDATORY.filter(name => !existingNames.includes(name)).map((name, idx) => ({
                 id: -1 - idx,
                 document_name: name,
                 status: 'Missing',
                 is_mandatory: true,
                 admission_id: admission.id,
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                admission_documents: []
             }));
 
-            if (isMounted.current) setDocs([...(data || []), ...missingDocs]);
+            if (isMounted.current) {
+                const combined = [...uniqueDocs, ...missingDocs];
+                // Final sort: Mandatory first, then Alphanumeric
+                combined.sort((a, b) => {
+                    if (a.is_mandatory && !b.is_mandatory) return -1;
+                    if (!a.is_mandatory && b.is_mandatory) return 1;
+                    return a.document_name.localeCompare(b.document_name);
+                });
+                setDocs(combined);
+            }
         } catch (error) {
             console.error(error);
         } finally {
@@ -447,14 +467,23 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                         )}
                                     </AnimatePresence>
 
-                                    <div className="space-y-10 pb-12">
-                                        {/* Mandatory Section */}
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 px-2">
-                                                <span className="w-1 h-3 sm:h-4 bg-red-500/40 rounded-full" />
-                                                <h4 className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.3em] sm:tracking-[0.4em]">Mandatory Requirements</h4>
+                                    <div className="space-y-12 pb-12">
+                                        {/* 1. Mandatory Core Deck */}
+                                        <div className="space-y-6">
+                                            <div className="flex items-center justify-between px-2">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-1.5 h-6 bg-red-500 rounded-full shadow-[0_0_15px_rgba(239,68,68,0.4)]" />
+                                                    <div className="space-y-0.5">
+                                                        <h4 className="text-[11px] font-black text-white uppercase tracking-[0.3em]">Mandatory Logic</h4>
+                                                        <p className="text-[8px] font-bold text-red-500/40 uppercase tracking-widest">Enrollment Blocking Requirements</p>
+                                                    </div>
+                                                </div>
+                                                <div className="px-3 py-1 bg-red-500/5 border border-red-500/10 rounded-full">
+                                                    <span className="text-[9px] font-black text-red-500/60 uppercase tracking-widest">Identity Essential</span>
+                                                </div>
                                             </div>
-                                            <div className="space-y-3">
+
+                                            <div className="grid gap-3">
                                                 {docs.filter(d => d.is_mandatory).map((doc, idx) => (
                                                     <DocumentRow
                                                         key={doc.id}
@@ -469,20 +498,27 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                                     />
                                                 ))}
                                                 {docs.filter(d => d.is_mandatory).length === 0 && (
-                                                    <p className="text-[10px] text-white/20 uppercase tracking-widest text-center py-8 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl italic">
-                                                        No mandatory requirements specified
-                                                    </p>
+                                                    <EmptySlot label="No mandatory requirements initialized" />
                                                 )}
                                             </div>
                                         </div>
 
-                                        {/* Optional/Additional Section */}
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 px-2">
-                                                <span className="w-1 h-3 sm:h-4 bg-indigo-500/40 rounded-full" />
-                                                <h4 className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.3em] sm:tracking-[0.4em]">Supporting Evidence</h4>
+                                        {/* 2. Supporting Evidence Deck */}
+                                        <div className="space-y-6">
+                                            <div className="flex items-center justify-between px-2">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-1.5 h-6 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.4)]" />
+                                                    <div className="space-y-0.5">
+                                                        <h4 className="text-[11px] font-black text-white uppercase tracking-[0.3em]">Supporting Evidence</h4>
+                                                        <p className="text-[8px] font-bold text-indigo-500/40 uppercase tracking-widest">Supplementary Identity Buffers</p>
+                                                    </div>
+                                                </div>
+                                                <div className="px-3 py-1 bg-indigo-500/5 border border-indigo-500/10 rounded-full">
+                                                    <span className="text-[9px] font-black text-indigo-500/60 uppercase tracking-widest">Protocol Buffer</span>
+                                                </div>
                                             </div>
-                                            <div className="space-y-3">
+
+                                            <div className="grid gap-3">
                                                 {docs.filter(d => !d.is_mandatory).map((doc, idx) => (
                                                     <DocumentRow
                                                         key={doc.id}
@@ -497,9 +533,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                                     />
                                                 ))}
                                                 {docs.filter(d => !d.is_mandatory).length === 0 && (
-                                                    <p className="text-[10px] text-white/20 uppercase tracking-widest text-center py-8 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl italic">
-                                                        No optional documents uploaded
-                                                    </p>
+                                                    <EmptySlot label="No supporting evidence provided" />
                                                 )}
                                             </div>
                                         </div>
@@ -619,99 +653,81 @@ function ActionButton({ icon, onClick, className }: any) {
 function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, downloading, index }: any) {
     const isVerified = doc.status === 'Verified';
     const isRejected = doc.status === 'Rejected';
-    const isPending = doc.status === 'Pending';
+    const isMissing = doc.status === 'Missing';
     const file = doc.admission_documents?.[0];
 
     return (
         <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.03 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
             className={clsx(
-                "group relative bg-white/[0.02] border transition-all duration-300 rounded-2xl overflow-hidden cursor-pointer",
-                expanded ? "bg-white/[0.06] border-white/20 shadow-xl" : "border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
+                "group relative bg-[#0c0e12] border transition-all duration-500 rounded-[1.8rem] overflow-hidden cursor-pointer",
+                expanded ? "bg-white/[0.04] border-white/20 shadow-2xl scale-[1.01]" : "border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
             )}
             onClick={onToggle}
         >
-            <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 sm:gap-6">
-                <div className="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
+            <div className="px-8 py-5 flex items-center justify-between gap-6 relative">
+                {isVerified && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />}
+
+                <div className="flex items-center gap-6 min-w-0">
                     <div className={clsx(
-                        "p-2.5 sm:p-3 rounded-xl transition-all duration-500 shadow-sm shrink-0",
+                        "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-700 shadow-inner shrink-0",
                         isVerified ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                            isRejected ? "bg-red-500/10 text-red-500 border border-red-500/20" :
-                                doc.status === 'Missing' ? "bg-indigo-500/10 text-white/40 border border-indigo-500/20" :
-                                    isPending && file ? "bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse" :
-                                        "bg-white/5 text-white/20 border border-white/5 group-hover:bg-white/10"
+                            isRejected ? "bg-red-500/10 text-red-400 border border-red-500/20" :
+                                isMissing ? "bg-white/[0.03] text-white/10 border border-white/5" :
+                                    "bg-amber-500/10 text-amber-500 border border-amber-500/20"
                     )}>
-                        {isVerified ? <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5" /> : doc.status === 'Missing' ? <AlertTriangleIcon className="w-4 h-4 sm:w-5 sm:h-5" /> : <FileTextIcon className="w-4 h-4 sm:w-5 sm:h-5" />}
+                        {isVerified ? <ShieldCheckIcon className="w-6 h-6" /> :
+                            isMissing ? <FileTextIcon className="w-6 h-6 opacity-20" /> :
+                                <AlertTriangleIcon className="w-6 h-6" />}
                     </div>
-                    <div className="truncate">
+
+                    <div className="min-w-0">
+                        <h4 className={clsx(
+                            "text-sm font-black uppercase tracking-widest transition-colors mb-1 truncate",
+                            isMissing ? "text-white/20" : "text-white group-hover:text-indigo-400"
+                        )}>
+                            {doc.document_name}
+                        </h4>
                         <div className="flex items-center gap-3">
-                            <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors truncate leading-none">
-                                {doc.document_name}
-                            </h4>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-1.5">
                             <span className={clsx(
-                                "text-[7px] sm:text-[8px] font-bold uppercase tracking-widest px-1.5 sm:px-2 py-0.5 rounded-md border whitespace-nowrap",
-                                isVerified ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/10" :
-                                    isRejected ? "bg-red-500/5 text-red-400 border-red-500/10" :
-                                        doc.status === 'Missing' ? "bg-white/5 text-white/30 border-white/5" :
-                                            "bg-amber-500/5 text-amber-500 border-amber-500/10"
+                                "text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border shadow-sm",
+                                isVerified ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                                    isRejected ? "bg-red-500/10 text-red-400 border-red-500/20" :
+                                        isMissing ? "bg-white/5 text-white/20 border-white/10" :
+                                            "bg-amber-500/10 text-amber-500 border-amber-500/20"
                             )}>
-                                {isVerified ? 'Verified' : isRejected ? 'Rejected' : doc.status === 'Missing' ? 'Requirement Pending' : file ? 'Pending Review' : 'Awaiting Upload'}
+                                {doc.status}
                             </span>
                             {doc.is_mandatory && !isVerified && (
-                                <span className="flex items-center gap-1 text-[7px] sm:text-[8px] font-bold text-red-500/60 uppercase tracking-widest whitespace-nowrap">
-                                    <AlertTriangleIcon className="w-2 sm:w-2.5 h-2 sm:h-2.5" /> Required Artifact
+                                <span className="flex items-center gap-1.5 text-[8px] font-black text-red-500/50 uppercase tracking-widest">
+                                    <div className="w-1 h-1 rounded-full bg-red-500/40" /> Critical Node
                                 </span>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-end xs:self-center" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-4 shrink-0" onClick={e => e.stopPropagation()}>
                     {file ? (
-                        <div className="flex gap-2 items-center">
-                            <div className="flex gap-1 mr-2 px-2 py-1 bg-white/5 rounded-lg border border-white/5">
-                                <ActionButton
-                                    icon={<EyeIcon />}
-                                    className="!p-1.5 !bg-transparent !border-none !text-white/20 hover:!text-white"
-                                    onClick={() => StorageService.getSignedUrl(BUCKETS.DOCUMENTS, file.storage_path).then(url => window.open(url, '_blank'))}
-                                />
-                                <div className="w-[1px] h-3 bg-white/10 self-center" />
-                                <ActionButton
-                                    icon={downloading ? <Spinner size="sm" /> : <DownloadIcon />}
-                                    className="!p-1.5 !bg-transparent !border-none !text-white/20 hover:!text-white"
-                                    onClick={onDownload}
-                                />
-                            </div>
+                        <div className="flex items-center gap-3 bg-white/[0.03] p-1.5 rounded-2xl border border-white/5">
+                            <button onClick={() => StorageService.getSignedUrl(BUCKETS.DOCUMENTS, file.storage_path).then(url => window.open(url, '_blank'))} className="p-3 text-white/20 hover:text-white hover:bg-white/5 rounded-xl transition-all"><EyeIcon className="w-4 h-4" /></button>
+                            <button onClick={onDownload} className="p-3 text-white/20 hover:text-white hover:bg-white/5 rounded-xl transition-all">{downloading ? <Spinner size="sm" /> : <DownloadIcon className="w-4 h-4" />}</button>
 
                             {!isVerified && (
-                                <div className="flex gap-1.5">
-                                    <button
-                                        onClick={onVerify}
-                                        title="Verify Document"
-                                        className="p-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-500 hover:text-white border border-emerald-500/20 rounded-lg transition-all shadow-sm active:scale-90"
-                                    >
-                                        <CheckCircleIcon className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={onReject}
-                                        title="Reject Document"
-                                        className="p-2 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 rounded-lg transition-all shadow-sm active:scale-90"
-                                    >
-                                        <XIcon className="w-4 h-4" />
-                                    </button>
+                                <div className="flex gap-2 pl-2 border-l border-white/10 ml-1">
+                                    <button onClick={onVerify} className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all border border-emerald-500/20">Verify</button>
+                                    <button onClick={onReject} className="px-4 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/20">Reject</button>
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <span className="text-[9px] font-bold text-white/10 uppercase tracking-[0.2em] mr-2">No File Attached</span>
+                        <div className="flex items-center gap-3 opacity-20 mr-4">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] italic">Awaiting Artifact Uplink</span>
+                        </div>
                     )}
-                    <div className={clsx("ml-2 transition-transform duration-300", expanded ? "rotate-180" : "opacity-30")}>
-                        <ChevronDownIcon className="w-4 h-4" />
-                    </div>
+                    <ChevronDownIcon className={clsx("w-5 h-5 transition-all duration-500", expanded ? "rotate-180 text-white/60" : "text-white/10")} />
                 </div>
             </div>
 
@@ -721,24 +737,29 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="px-6 pb-6 overflow-hidden"
+                        className="px-8 pb-8 overflow-hidden"
                     >
-                        <div className="pt-4 border-t border-white/5 space-y-4">
+                        <div className="pt-6 border-t border-white/[0.03] space-y-6">
                             {isRejected && (
-                                <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-xl">
-                                    <p className="text-[10px] text-red-400 font-medium italic">Rejection Feed: “{doc.rejection_reason}”</p>
+                                <div className="p-5 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-start gap-4">
+                                    <AlertTriangleIcon className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-red-500/40 uppercase tracking-widest">Rejection Protocol Log</p>
+                                        <p className="text-[13px] text-red-400 font-medium italic">“{doc.rejection_reason}”</p>
+                                    </div>
                                 </div>
                             )}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-[8px] font-bold text-white/20 uppercase">Registry Note</p>
-                                    <p className="text-[10px] text-white/40 font-medium leading-relaxed">System-generated documentation requirement for academic verification.</p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Registry Meta-Note</p>
+                                    <p className="text-[12px] text-white/40 leading-relaxed font-serif italic">This artifact is required for institutional compliance and academic vetting of the applicant identity node.</p>
                                 </div>
-                                <div className="space-y-1 text-right">
-                                    <p className="text-[8px] font-bold text-white/20 uppercase">Timestamp</p>
-                                    <p className="text-[10px] text-white/40 font-mono italic">
-                                        {new Date(doc.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                    </p>
+                                <div className="flex flex-col items-end gap-2">
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Lifecycle Timestamp</p>
+                                    <span className="px-3 py-1 bg-white/[0.02] border border-white/10 rounded-lg text-[10px] font-mono text-white/30 italic">
+                                        {new Date(doc.created_at).toLocaleString([], { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -746,6 +767,15 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
                 )}
             </AnimatePresence>
         </motion.div>
+    );
+}
+
+function EmptySlot({ label }: { label: string }) {
+    return (
+        <div className="p-12 border-2 border-dashed border-white/5 rounded-[2rem] flex flex-col items-center justify-center gap-4 text-center grayscale opacity-40">
+            <FileTextIcon className="w-8 h-8 text-white/20" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">{label}</p>
+        </div>
     );
 }
 
