@@ -521,7 +521,13 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                                                 <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
                                                     <div className="flex items-center gap-4">
                                                         <MailIcon className="w-4 h-4 text-white/10" />
-                                                        <span className="text-sm text-white/60 font-medium truncate max-w-[200px]">{enquiry.parent_email}</span>
+                                                        {enquiry.parent_email ? (
+                                                            <a href={`mailto:${enquiry.parent_email}`} className="text-sm text-white/60 font-medium truncate max-w-[200px] hover:text-primary transition-colors hover:underline underline-offset-4">
+                                                                {enquiry.parent_email}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-sm text-white/20 font-medium italic">No email linked</span>
+                                                        )}
                                                     </div>
                                                     <button onClick={() => handleCopy(enquiry.parent_email, 'email')} className="text-white/10 hover:text-white/40 transition-colors">
                                                         {copiedField === 'email' ? <CheckCircleIcon className="w-4 h-4 text-emerald-500" /> : <CopyIcon className="w-4 h-4" />}
@@ -590,7 +596,7 @@ const EnquiryDetailsModal: React.FC<EnquiryDetailsModalProps> = ({ enquiry, onCl
                                         }`}
                                 >
                                     <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover/promote:translate-x-[100%] transition-transform duration-1000"></div>
-                                    {loading.converting ? <Spinner size="sm" color="white" /> : (
+                                    {loading.converting ? <Spinner size="sm" className="text-white" /> : (
                                         <>
                                             <GraduationCapIcon className="w-6 h-6 relative z-10 group-hover:scale-110 transition-transform duration-500" />
                                             <span className="relative z-10">PROMOTE TO ADMISSION</span>
