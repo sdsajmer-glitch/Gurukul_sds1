@@ -230,7 +230,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                             <motion.h2
                                 initial={{ x: -20, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
-                                className="text-3xl font-black text-white uppercase tracking-tighter"
+                                className="text-3xl font-bold text-white uppercase tracking-tighter"
                             >
                                 {admission.applicant_name}
                             </motion.h2>
@@ -239,18 +239,18 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                     Grade {admission.grade}
                                 </span>
                                 <span className="text-white/20">•</span>
-                                <span className="text-white/40 text-xs font-mono tracking-wider bg-white/5 px-2 py-0.5 rounded-md">
+                                <span className="text-white/40 text-[11px] font-mono tracking-wider bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
                                     {admission.application_number || 'PENDING_REGISTRATION'}
                                 </span>
                                 {admission.student_user_id && (
                                     <div className="flex items-center gap-2">
-                                        <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] uppercase font-black tracking-widest">
-                                            <ShieldCheckIcon className="w-3 h-3" /> Student Master Active
+                                        <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] uppercase font-bold tracking-widest">
+                                            <ShieldCheckIcon className="w-3 h-3" /> System Provisioned
                                         </span>
                                         {admission.status === 'Enrolled' && (
                                             <button
                                                 onClick={() => setViewStudentProfile(true)}
-                                                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] uppercase font-black tracking-widest hover:bg-indigo-500/20 transition-all"
+                                                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] uppercase font-bold tracking-widest hover:bg-indigo-500/20 transition-all"
                                             >
                                                 <UserIcon className="w-3 h-3" /> View Profile
                                             </button>
@@ -262,11 +262,12 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/5 hover:border-white/10"
+                        className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/5 hover:border-white/10 shadow-lg"
                     >
                         <XIcon className="w-6 h-6" />
                     </button>
                 </div>
+
 
                 <div className="flex-grow overflow-y-auto custom-scrollbar relative z-10 px-4 sm:px-0">
                     <div className="p-6 lg:p-12">
@@ -300,47 +301,54 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                         {finalizeState !== 'success' && (
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                                 {/* Left Column: Identity Passport */}
-                                <div className="lg:col-span-5 space-y-10">
-                                    <div className="space-y-4">
+                                <div className="lg:col-span-4 space-y-8">
+                                    <div className="space-y-4 sticky top-0">
                                         <SectionHeader icon={<UserIcon className="w-4 h-4" />} title="Applicant Identity" badge="Registry Alpha" />
-                                        <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-10 space-y-10 shadow-3xl relative overflow-hidden group">
+                                        <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-8 space-y-8 shadow-3xl relative overflow-hidden group">
                                             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] -mr-32 -mt-32" />
 
-                                            <IdentityMeta icon={<UserIcon className="w-6 h-6" />} label="Parent / Guardian" value={admission.parent_name} color="indigo" />
-                                            <IdentityMeta icon={<MailIcon className="w-6 h-6" />} label="Comm-Link Email" value={admission.parent_email} color="purple" />
-                                            <IdentityMeta icon={<PhoneIcon className="w-6 h-6" />} label="Verified Phone" value={admission.parent_phone} color="pink" />
+                                            <IdentityMeta icon={<UserIcon className="w-5 h-5" />} label="Parent / Guardian" value={admission.parent_name} color="indigo" />
+                                            <IdentityMeta icon={<MailIcon className="w-5 h-5" />} label="Comm-Link Email" value={admission.parent_email} color="purple" />
+                                            <IdentityMeta icon={<PhoneIcon className="w-5 h-5" />} label="Verified Phone" value={admission.parent_phone} color="pink" />
 
                                             <div className="pt-6 border-t border-white/5">
                                                 <div className="flex items-center justify-between mb-4">
-                                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Application State</span>
-                                                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Live Node</span>
+                                                    <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Readiness Engine</span>
+                                                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.2em]">{progressPercentage}% Compliant</span>
                                                 </div>
-                                                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-indigo-500 w-[100%] rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+                                                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${progressPercentage}%` }}
+                                                        className="h-full bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                                                    />
                                                 </div>
+                                                <p className="mt-4 text-[9px] text-white/30 font-medium italic leading-relaxed">
+                                                    * Finalization requires 100% compliance of all mandatory documentation nodes.
+                                                </p>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div className="p-8 border-2 border-dashed border-white/5 rounded-[2.5rem] bg-white/[0.01] flex flex-col items-center gap-4 text-center group hover:bg-white/[0.02] transition-all">
-                                        <PlusIcon className="w-6 h-6 text-white/10 group-hover:text-white/30 transition-colors" />
-                                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Internal Protocol Notes</p>
+                                        <div className="p-8 border-2 border-dashed border-white/5 rounded-[2.5rem] bg-white/[0.01] flex flex-col items-center gap-4 text-center group hover:bg-white/[0.02] transition-all cursor-pointer">
+                                            <PlusIcon className="w-6 h-6 text-white/10 group-hover:text-white/30 transition-colors" />
+                                            <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.4em]">Protocol Logs & Notes</p>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Right Column: Documentation Vault */}
-                                <div className="lg:col-span-7 space-y-10">
+                                <div className="lg:col-span-8 space-y-8">
                                     <div className="flex items-center justify-between gap-4">
                                         <SectionHeader
                                             icon={<ShieldCheckIcon className="w-4 h-4" />}
                                             title="Documentation Vault"
-                                            badge={`${verifiedDocs}/${totalDocs} Verified`}
+                                            badge={`${verifiedDocs}/${totalDocs} Artifacts Verified`}
                                         />
                                         <div className="flex gap-2">
                                             <ActionButton icon={<RefreshCwIcon className={loading ? 'animate-spin' : ''} />} onClick={fetchDocs} />
                                             <button
                                                 onClick={() => setIsRequestingDoc(!isRequestingDoc)}
-                                                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl active:scale-95"
+                                                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-xl active:scale-95 border border-indigo-400/20"
                                             >
                                                 Request Discovery
                                             </button>
@@ -349,39 +357,87 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
 
                                     <AnimatePresence>
                                         {isRequestingDoc && (
-                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                                                 <div className="mb-6 p-6 bg-indigo-600/10 border border-indigo-500/20 rounded-3xl flex items-center gap-4">
                                                     <input
                                                         value={newDocName} onChange={e => setNewDocName(e.target.value)}
-                                                        placeholder="Specify required artifact..."
+                                                        placeholder="Specify required artifact name..."
                                                         className="flex-1 bg-transparent border-none outline-none text-white font-bold placeholder:text-white/20"
+                                                        autoFocus
                                                     />
-                                                    <button onClick={handleRequestDoc} className="p-3 bg-indigo-500 text-white rounded-xl active:scale-90 transition-transform">
-                                                        <PlusIcon className="w-5 h-5" />
+                                                    <button
+                                                        onClick={handleRequestDoc}
+                                                        disabled={requestingLoading}
+                                                        className="p-3 bg-indigo-500 text-white rounded-xl active:scale-90 transition-transform disabled:opacity-50"
+                                                    >
+                                                        {requestingLoading ? <Spinner size="sm" /> : <PlusIcon className="w-5 h-5" />}
                                                     </button>
                                                 </div>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
 
-                                    <div className="space-y-4">
-                                        {docs.map((doc, idx) => (
-                                            <DocumentRow
-                                                key={doc.id}
-                                                doc={doc}
-                                                index={idx}
-                                                expanded={expandedDoc === doc.id}
-                                                onToggle={() => setExpandedDoc(expandedDoc === doc.id ? null : doc.id)}
-                                                onVerify={() => handleVerifyDoc(doc.id)}
-                                                onReject={() => handleRejectDoc(doc.id)}
-                                                onDownload={() => handleDownload(doc)}
-                                                downloading={downloadingId === doc.id}
-                                            />
-                                        ))}
+                                    <div className="space-y-10 pb-12">
+                                        {/* Mandatory Section */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3 px-2">
+                                                <span className="w-1 h-4 bg-red-500/40 rounded-full" />
+                                                <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">Mandatory Requirements</h4>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {docs.filter(d => d.is_mandatory).map((doc, idx) => (
+                                                    <DocumentRow
+                                                        key={doc.id}
+                                                        doc={doc}
+                                                        index={idx}
+                                                        expanded={expandedDoc === doc.id}
+                                                        onToggle={() => setExpandedDoc(expandedDoc === doc.id ? null : doc.id)}
+                                                        onVerify={() => handleVerifyDoc(doc.id)}
+                                                        onReject={() => handleRejectDoc(doc.id)}
+                                                        onDownload={() => handleDownload(doc)}
+                                                        downloading={downloadingId === doc.id}
+                                                    />
+                                                ))}
+                                                {docs.filter(d => d.is_mandatory).length === 0 && (
+                                                    <p className="text-[10px] text-white/20 uppercase tracking-widest text-center py-8 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl italic">
+                                                        No mandatory requirements specified
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Optional/Additional Section */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3 px-2">
+                                                <span className="w-1 h-4 bg-indigo-500/40 rounded-full" />
+                                                <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">Supporting Evidence</h4>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {docs.filter(d => !d.is_mandatory).map((doc, idx) => (
+                                                    <DocumentRow
+                                                        key={doc.id}
+                                                        doc={doc}
+                                                        index={idx}
+                                                        expanded={expandedDoc === doc.id}
+                                                        onToggle={() => setExpandedDoc(expandedDoc === doc.id ? null : doc.id)}
+                                                        onVerify={() => handleVerifyDoc(doc.id)}
+                                                        onReject={() => handleRejectDoc(doc.id)}
+                                                        onDownload={() => handleDownload(doc)}
+                                                        downloading={downloadingId === doc.id}
+                                                    />
+                                                ))}
+                                                {docs.filter(d => !d.is_mandatory).length === 0 && (
+                                                    <p className="text-[10px] text-white/20 uppercase tracking-widest text-center py-8 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl italic">
+                                                        No optional documents uploaded
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         )}
+
                     </div>
                 </div>
 
@@ -440,10 +496,10 @@ function SectionHeader({ icon, title, badge, color = "white" }: any) {
     return (
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/5 rounded-lg text-white/40 border border-white/10">{icon}</div>
-                <h3 className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">{title}</h3>
+                <div className="p-2 bg-white/5 rounded-lg text-white/40 border border-white/10 shadow-sm">{icon}</div>
+                <h3 className="text-[10px] font-bold uppercase text-white/40 tracking-[0.4em]">{title}</h3>
             </div>
-            <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-black text-white/30 uppercase tracking-widest">
+            <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-bold text-white/40 uppercase tracking-widest">
                 {badge}
             </span>
         </div>
@@ -452,20 +508,21 @@ function SectionHeader({ icon, title, badge, color = "white" }: any) {
 
 function IdentityMeta({ icon, label, value, color }: any) {
     const colorMap: any = {
-        indigo: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-        purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-        pink: "bg-pink-500/10 text-pink-400 border-pink-500/20",
+        indigo: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)]",
+        purple: "bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]",
+        pink: "bg-pink-500/10 text-pink-400 border-pink-500/20 shadow-[0_0_15px_rgba(236,72,153,0.1)]",
     };
     return (
-        <div className="flex items-start gap-6 group/item transition-transform hover:translate-x-1 duration-300">
-            <div className={clsx("p-4 rounded-2xl border shadow-lg", colorMap[color])}>{icon}</div>
+        <div className="flex items-center gap-5 group/item transition-all hover:translate-x-1 duration-300">
+            <div className={clsx("p-3.5 rounded-xl border transition-all duration-300 group-hover/item:scale-105", colorMap[color])}>{icon}</div>
             <div className="min-w-0">
-                <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-1.5">{label}</p>
-                <p className="text-white font-black text-xl tracking-tight truncate uppercase leading-none">{value}</p>
+                <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] mb-1">{label}</p>
+                <p className="text-white font-bold text-lg tracking-tight truncate uppercase leading-tight">{value}</p>
             </div>
         </div>
     );
 }
+
 
 function ActionButton({ icon, onClick, className }: any) {
     return (
@@ -478,62 +535,125 @@ function ActionButton({ icon, onClick, className }: any) {
 function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, downloading, index }: any) {
     const isVerified = doc.status === 'Verified';
     const isRejected = doc.status === 'Rejected';
+    const isPending = doc.status === 'Pending';
     const file = doc.admission_documents?.[0];
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.03 }}
             className={clsx(
-                "group relative bg-white/[0.02] border transition-all duration-500 rounded-[2rem] overflow-hidden cursor-pointer",
-                expanded ? "bg-white/[0.05] border-white/20 shadow-2xl" : "border-white/5 hover:border-white/10 hover:bg-white/[0.03]"
+                "group relative bg-white/[0.02] border transition-all duration-300 rounded-2xl overflow-hidden cursor-pointer",
+                expanded ? "bg-white/[0.06] border-white/20 shadow-xl" : "border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
             )}
             onClick={onToggle}
         >
-            <div className="p-6 flex items-center justify-between gap-6">
-                <div className="flex items-center gap-6">
+            <div className="px-6 py-4 flex items-center justify-between gap-6">
+                <div className="flex items-center gap-5 flex-1 min-w-0">
                     <div className={clsx(
-                        "p-4 rounded-2xl transition-all duration-500",
-                        isVerified ? "bg-emerald-500/20 text-emerald-400" : isRejected ? "bg-red-500/20 text-red-500" : "bg-white/5 text-white/20 group-hover:bg-white/10"
+                        "p-3 rounded-xl transition-all duration-500 shadow-sm",
+                        isVerified ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                            isRejected ? "bg-red-500/10 text-red-500 border border-red-500/20" :
+                                isPending && file ? "bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse" :
+                                    "bg-white/5 text-white/20 border border-white/5 group-hover:bg-white/10"
                     )}>
-                        {isVerified ? <CheckCircleIcon className="w-6 h-6" /> : <FileTextIcon className="w-6 h-6" />}
+                        {isVerified ? <CheckCircleIcon className="w-5 h-5" /> : <FileTextIcon className="w-5 h-5" />}
                     </div>
-                    <div>
+                    <div className="truncate">
                         <div className="flex items-center gap-3">
-                            <h4 className="text-lg font-black text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors uppercase leading-none">{doc.document_name}</h4>
-                            {doc.is_mandatory && <span className="px-2 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-md text-[8px] font-black uppercase tracking-widest">Required</span>}
+                            <h4 className="text-sm font-bold text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors truncate uppercase leading-none">
+                                {doc.document_name}
+                            </h4>
                         </div>
-                        <div className="flex items-center gap-4 mt-2">
-                            <span className={clsx("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md", isVerified ? "bg-emerald-500/10 text-emerald-400" : isRejected ? "bg-red-500/10 text-red-400" : "bg-amber-500/10 text-amber-500")}>
-                                {doc.status}
+                        <div className="flex items-center gap-3 mt-1.5">
+                            <span className={clsx(
+                                "text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border",
+                                isVerified ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/10" :
+                                    isRejected ? "bg-red-500/5 text-red-400 border-red-500/10" :
+                                        "bg-amber-500/5 text-amber-500 border-amber-500/10"
+                            )}>
+                                {isVerified ? 'Verified' : isRejected ? 'Rejected' : file ? 'Pending Review' : 'Awaiting Upload'}
                             </span>
+                            {doc.is_mandatory && !isVerified && (
+                                <span className="flex items-center gap-1 text-[8px] font-bold text-red-500/60 uppercase tracking-widest">
+                                    <AlertTriangleIcon className="w-2.5 h-2.5" /> Required Artifact
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto" onClick={e => e.stopPropagation()}>
-                    {file && (
-                        <div className="flex gap-2">
-                            <ActionButton icon={<EyeIcon />} onClick={() => StorageService.getSignedUrl(BUCKETS.DOCUMENTS, file.storage_path).then(url => window.open(url, '_blank'))} />
-                            <ActionButton icon={downloading ? <Spinner size="sm" /> : <DownloadIcon />} onClick={onDownload} />
+                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                    {file ? (
+                        <div className="flex gap-2 items-center">
+                            <div className="flex gap-1 mr-2 px-2 py-1 bg-white/5 rounded-lg border border-white/5">
+                                <ActionButton
+                                    icon={<EyeIcon />}
+                                    className="!p-1.5 !bg-transparent !border-none !text-white/20 hover:!text-white"
+                                    onClick={() => StorageService.getSignedUrl(BUCKETS.DOCUMENTS, file.storage_path).then(url => window.open(url, '_blank'))}
+                                />
+                                <div className="w-[1px] h-3 bg-white/10 self-center" />
+                                <ActionButton
+                                    icon={downloading ? <Spinner size="sm" /> : <DownloadIcon />}
+                                    className="!p-1.5 !bg-transparent !border-none !text-white/20 hover:!text-white"
+                                    onClick={onDownload}
+                                />
+                            </div>
+
+                            {!isVerified && (
+                                <div className="flex gap-1.5">
+                                    <button
+                                        onClick={onVerify}
+                                        title="Verify Document"
+                                        className="p-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-500 hover:text-white border border-emerald-500/20 rounded-lg transition-all shadow-sm active:scale-90"
+                                    >
+                                        <CheckCircleIcon className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={onReject}
+                                        title="Reject Document"
+                                        className="p-2 bg-red-500/20 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 rounded-lg transition-all shadow-sm active:scale-90"
+                                    >
+                                        <XIcon className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
+                    ) : (
+                        <span className="text-[9px] font-bold text-white/10 uppercase tracking-[0.2em] mr-2">No File Attached</span>
                     )}
-                    {!isVerified && file && (
-                        <div className="flex gap-2 ml-4">
-                            <button onClick={onVerify} className="p-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg transition-all active:scale-90"><CheckCircleIcon className="w-5 h-5" /></button>
-                            <button onClick={onReject} className="p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg transition-all active:scale-90"><XIcon className="w-5 h-5" /></button>
-                        </div>
-                    )}
+                    <div className={clsx("ml-2 transition-transform duration-300", expanded ? "rotate-180" : "")}>
+                        <EyeIcon className="w-4 h-4 text-white/10" />
+                    </div>
                 </div>
             </div>
 
             <AnimatePresence>
                 {expanded && (
-                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="px-10 pb-8 overflow-hidden">
-                        <div className="pt-6 border-t border-white/5 space-y-4">
-                            {isRejected && <p className="text-xs text-red-400 italic">“{doc.rejection_reason}”</p>}
-                            <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-                                <span>Artifact Type: Institutional Registry</span>
-                                <span>Node ID: {doc.id}</span>
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="px-6 pb-6 overflow-hidden"
+                    >
+                        <div className="pt-4 border-t border-white/5 space-y-4">
+                            {isRejected && (
+                                <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-xl">
+                                    <p className="text-[10px] text-red-400 font-medium italic">Rejection Feed: “{doc.rejection_reason}”</p>
+                                </div>
+                            )}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <p className="text-[8px] font-bold text-white/20 uppercase">Registry Note</p>
+                                    <p className="text-[10px] text-white/40 font-medium leading-relaxed">System-generated documentation requirement for academic verification.</p>
+                                </div>
+                                <div className="space-y-1 text-right">
+                                    <p className="text-[8px] font-bold text-white/20 uppercase">Timestamp</p>
+                                    <p className="text-[10px] text-white/40 font-mono italic">
+                                        {new Date(doc.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </motion.div>
@@ -542,6 +662,7 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
         </motion.div>
     );
 }
+
 
 
 export default AdmissionDetailsModal;
