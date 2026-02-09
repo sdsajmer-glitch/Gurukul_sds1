@@ -23,11 +23,13 @@ const COLORS = {
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; iconColor: string }> = {
-    'NEW': { label: 'Initial Node', color: 'text-blue-400', bg: 'bg-blue-400/10', iconColor: 'text-blue-500' },
+    'ENQUIRY_NEW': { label: 'Initial Node', color: 'text-blue-400', bg: 'bg-blue-400/10', iconColor: 'text-blue-500' },
     'ENQUIRY_ACTIVE': { label: 'Active Desk', color: 'text-indigo-400', bg: 'bg-indigo-400/10', iconColor: 'text-indigo-500' },
     'ENQUIRY_VERIFIED': { label: 'Verified', color: 'text-emerald-400', bg: 'bg-emerald-400/10', iconColor: 'text-emerald-500' },
     'ENQUIRY_IN_REVIEW': { label: 'In Review', color: 'text-purple-400', bg: 'bg-purple-400/10', iconColor: 'text-purple-500' },
     'ENQUIRY_CONTACTED': { label: 'Contacted', color: 'text-amber-400', bg: 'bg-amber-400/10', iconColor: 'text-amber-500' },
+    'ENQUIRY_REJECTED': { label: 'Rejected', color: 'text-red-400', bg: 'bg-red-400/10', iconColor: 'text-red-500' },
+    'ENQUIRY_CONVERTED': { label: 'Promoted', color: 'text-emerald-500', bg: 'bg-emerald-500/20', iconColor: 'text-emerald-500' },
 };
 
 const formatShortTime = (date: string) => new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -39,6 +41,7 @@ export default function MessagesTab() {
     const [loading, setLoading] = useState(true);
     const [selectedEnquiry, setSelectedEnquiry] = useState<MyEnquiry | null>(null);
     const [selectedBroadcast, setSelectedBroadcast] = useState<Communication | null>(null);
+    const [viewMode, setViewMode] = useState<'list' | 'stream'>('list');
 
     const fetchData = useCallback(async (isSilent = false) => {
         if (!isSilent) setLoading(true);
@@ -63,7 +66,7 @@ export default function MessagesTab() {
 
     if (loading && announcements.length === 0 && enquiries.length === 0) {
         return (
-            <div className="h-[80vh] flex flex-col items-center justify-center space-y-6">
+            <div className="h-full flex flex-col items-center justify-center space-y-6 bg-[#08080a]">
                 <Spinner size="lg" className="text-indigo-500 opacity-20" />
                 <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/10 italic">Synchronizing Governance Nodes...</span>
             </div>
@@ -71,7 +74,7 @@ export default function MessagesTab() {
     }
 
     return (
-        <div className="h-[calc(100vh-80px)] flex flex-col overflow-hidden bg-[#08080a] rounded-[2rem] border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.8)] select-none m-4">
+        <div className="h-full sm:h-[calc(100vh-80px)] flex flex-col overflow-hidden bg-[#08080a] sm:rounded-[2rem] border-x sm:border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.8)] select-none sm:m-4">
 
             {/* Header: Unified Context Bar */}
             <header className="px-8 sm:px-12 py-8 bg-black/40 border-b border-white/[0.04] flex flex-col md:flex-row items-center justify-between shrink-0 gap-8 relative overflow-hidden group">
@@ -119,55 +122,64 @@ export default function MessagesTab() {
                 </div>
             </header>
 
-            <div className="flex-1 flex min-h-0 divide-x divide-white/[0.04]">
-
+            <div className="flex-1 flex min-h-0 divide-x divide-white/[0.04] relative">
                 {/* 1. Inbox Ledger (Sidebar) */}
-                <aside className="w-[360px] flex flex-col bg-black/10 shrink-0">
+                <aside className={clsx(
+                    "w-full md:w-[360px] flex flex-col bg-black/10 shrink-0 transition-all duration-500",
+                    viewMode === 'stream' && "hidden md:flex"
+                )}>
                     <div className="px-6 py-4 flex items-center justify-between border-b border-white/[0.02] bg-white/[0.01]">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/10">Active Ledgers</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/10 italic">Secure Node Ledger</span>
                         <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                            <span className="text-[8px] font-mono text-white/20">LIVE</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] animate-pulse" />
+                            <span className="text-[8px] font-black uppercase tracking-widest text-white/20">Active Session</span>
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-2.5 custom-scrollbar">
                         <AnimatePresence mode="popLayout">
                             {activeTab === 'broadcasts' ? (
-                                announcements.map(msg => (
-                                    <LedgerCard
-                                        key={msg.id}
-                                        active={selectedBroadcast?.id === msg.id}
-                                        onClick={() => setSelectedBroadcast(msg)}
-                                        title={msg.subject}
-                                        subtitle={msg.sender_name || 'Central Authority'}
-                                        time={msg.sent_at}
-                                        icon={<MegaphoneIcon className="w-4 h-4" />}
-                                    />
-                                ))
+                                announcements.length > 0 ? (
+                                    announcements.map(msg => (
+                                        <LedgerCard
+                                            key={msg.id}
+                                            active={selectedBroadcast?.id === msg.id}
+                                            onClick={() => { setSelectedBroadcast(msg); setViewMode('stream'); }}
+                                            title={msg.subject}
+                                            subtitle={msg.sender_name || 'Central Authority'}
+                                            time={msg.sent_at}
+                                            icon={<MegaphoneIcon className="w-4 h-4" />}
+                                        />
+                                    ))
+                                ) : <MiniEmptyState label="No Broadcasts Found" />
                             ) : (
-                                enquiries.map(enq => (
-                                    <LedgerCard
-                                        key={enq.id}
-                                        active={selectedEnquiry?.id === enq.id}
-                                        onClick={() => setSelectedEnquiry(enq)}
-                                        title={enq.applicant_name}
-                                        subtitle={`${enq.grade} Node`}
-                                        time={enq.updated_at}
-                                        status={enq.status}
-                                        icon={<ShieldCheckIcon className="w-4 h-4" />}
-                                    />
-                                ))
+                                enquiries.length > 0 ? (
+                                    enquiries.map(enq => (
+                                        <LedgerCard
+                                            key={enq.id}
+                                            active={selectedEnquiry?.id === enq.id}
+                                            onClick={() => { setSelectedEnquiry(enq); setViewMode('stream'); }}
+                                            title={enq.applicant_name}
+                                            subtitle={`${enq.grade} Node`}
+                                            time={enq.updated_at}
+                                            status={enq.status}
+                                            icon={<ShieldCheckIcon className="w-4 h-4" />}
+                                        />
+                                    ))
+                                ) : <MiniEmptyState label="No Enquiries Found" />
                             )}
                         </AnimatePresence>
                     </div>
                 </aside>
 
                 {/* 2. Primary Workspace (Stream) */}
-                <main className="flex-1 flex flex-col bg-[#0c0c0e]/50 relative overflow-hidden">
+                <main className={clsx(
+                    "flex-1 flex flex-col bg-[#0c0c0e]/50 relative overflow-hidden transition-all duration-500",
+                    viewMode === 'list' && "hidden md:flex"
+                )}>
                     <AnimatePresence mode="wait">
                         {activeTab === 'broadcasts' ? (
                             selectedBroadcast ? (
-                                <BroadcastView broadcast={selectedBroadcast} key={selectedBroadcast.id} />
+                                <BroadcastView broadcast={selectedBroadcast} key={selectedBroadcast.id} onBack={() => setViewMode('list')} />
                             ) : (
                                 <EmptyState
                                     title="Broadcast Stream"
@@ -178,7 +190,12 @@ export default function MessagesTab() {
                             )
                         ) : (
                             selectedEnquiry ? (
-                                <EnquiryHandshake enquiry={selectedEnquiry} key={selectedEnquiry.id} refresh={() => fetchData(true)} />
+                                <EnquiryHandshake
+                                    enquiry={selectedEnquiry}
+                                    key={selectedEnquiry.id}
+                                    refresh={() => fetchData(true)}
+                                    onBack={() => setViewMode('list')}
+                                />
                             ) : (
                                 <EmptyState
                                     title="Enquiry Channel"
@@ -270,28 +287,33 @@ function LedgerCard({ active, onClick, title, subtitle, time, status, icon }: an
     );
 }
 
-function BroadcastView({ broadcast }: { broadcast: Communication }) {
+function BroadcastView({ broadcast, onBack }: { broadcast: Communication; onBack: () => void }) {
     return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col h-full bg-black/20">
-            <header className="p-10 border-b border-white/[0.04] bg-white/[0.01]">
+        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col h-full bg-black/20">
+            <header className="px-6 md:px-10 py-6 sm:py-10 border-b border-white/[0.04] bg-white/[0.01]">
                 <div className="max-w-3xl mx-auto space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20"><MegaphoneIcon className="w-3.5 h-3.5" /></div>
-                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-indigo-400">Official Bulletin Transmitted</span>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20"><MegaphoneIcon className="w-3.5 h-3.5" /></div>
+                            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-indigo-400">Official Bulletin Transmitted</span>
+                        </div>
+                        <button onClick={onBack} className="md:hidden p-3 bg-white/5 rounded-xl border border-white/10 text-white/40 hover:text-white transition-all">
+                            <ArrowLeftIcon className="w-4 h-4" />
+                        </button>
                     </div>
-                    <h2 className="text-3xl md:text-5xl font-serif font-black text-white leading-tight tracking-tighter uppercase">{broadcast.subject}</h2>
-                    <div className="flex items-center gap-6 pt-6 border-t border-white/[0.04]">
+                    <h2 className="text-2xl sm:text-3xl md:text-5xl font-serif font-black text-white leading-tight tracking-tighter uppercase whitespace-pre-wrap">{broadcast.subject}</h2>
+                    <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-white/[0.04]">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10"><ZapIcon className="w-3.5 h-3.5 text-white/40" /></div>
                             <span className="text-[10px] font-black uppercase tracking-widest text-white/60 italic">{broadcast.sender_name || 'Central Command'}</span>
                         </div>
-                        <span className="text-[10px] font-mono text-white/10 uppercase">{new Date(broadcast.sent_at).toLocaleString()}</span>
+                        <span className="text-[10px] font-mono text-white/10 uppercase tracking-tighter">{new Date(broadcast.sent_at).toLocaleString()}</span>
                     </div>
                 </div>
             </header>
-            <div className="flex-1 p-10 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-6 md:p-10 overflow-y-auto custom-scrollbar">
                 <div className="max-w-3xl mx-auto">
-                    <p className="text-lg md:text-xl font-serif leading-relaxed text-white/70 italic border-l-2 border-indigo-500/30 pl-10 whitespace-pre-wrap">
+                    <p className="text-base sm:text-lg md:text-xl font-serif leading-relaxed text-white/70 italic border-l-2 border-indigo-500/30 pl-6 sm:pl-10 whitespace-pre-wrap">
                         {broadcast.body}
                     </p>
                     <div className="mt-20 pt-10 border-t border-white/[0.03] flex items-center justify-center gap-4 opacity-5 grayscale">
@@ -304,18 +326,26 @@ function BroadcastView({ broadcast }: { broadcast: Communication }) {
     );
 }
 
-function EnquiryHandshake({ enquiry, refresh }: { enquiry: MyEnquiry; refresh: () => void }) {
+function EnquiryHandshake({ enquiry, refresh, onBack }: { enquiry: MyEnquiry; refresh: () => void; onBack: () => void }) {
     const [messages, setMessages] = useState<TimelineItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const loadTimeline = useCallback(async () => {
-        const { data, error } = await supabase.rpc('get_enquiry_timeline_v3', { p_enquiry_id: String(enquiry.id) });
-        if (!error && data) {
-            setMessages((data as TimelineItem[]).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
-        }
+        // Use v4 for better metadata if available, fallback to v3
+        try {
+            const { data, error } = await supabase.rpc('get_enquiry_timeline_v4', { p_enquiry_id: String(enquiry.id) });
+            if (!error && data) {
+                setMessages((data as TimelineItem[]).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+            } else {
+                // Fallback attempt with v3
+                const v3Res = await supabase.rpc('get_enquiry_timeline_v3', { p_enquiry_id: String(enquiry.id) });
+                if (v3Res.data) setMessages((v3Res.data as TimelineItem[]).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+            }
+        } catch (e) { console.error(e); }
         setLoading(false);
     }, [enquiry.id]);
 
@@ -332,32 +362,42 @@ function EnquiryHandshake({ enquiry, refresh }: { enquiry: MyEnquiry; refresh: (
         const msg = text.trim();
         if (!msg || sending) return;
         setSending(true);
+        setError(null);
         try {
-            await supabase.rpc('send_enquiry_message_v3', { p_enquiry_id: String(enquiry.id), p_message: msg });
+            const { data, error } = await supabase.rpc('send_enquiry_message_v3', { p_enquiry_id: String(enquiry.id), p_message: msg });
+            if (error || (data && !data.success)) {
+                setError(error?.message || data?.error || 'Transmission failed. Verify node connectivity.');
+                return;
+            }
             setText('');
             await loadTimeline();
             refresh();
+        } catch (e: any) {
+            setError(formatError(e));
         } finally {
             setSending(false);
         }
     };
 
     return (
-        <div className="flex h-full overflow-hidden">
+        <div className="flex h-full overflow-hidden relative">
             {/* Chat Stream */}
             <div className="flex-1 flex flex-col min-w-0 bg-[#08080a]">
-                <header className="px-10 py-5 bg-black/20 border-b border-white/[0.04] flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-5">
+                <header className="px-6 sm:px-10 py-4 sm:py-5 bg-black/20 border-b border-white/[0.04] flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-4 sm:gap-5">
+                        <button onClick={onBack} className="md:hidden p-2.5 bg-white/5 rounded-xl border border-white/10 text-white/40 hover:text-white transition-all">
+                            <ArrowLeftIcon className="w-4 h-4" />
+                        </button>
                         <PremiumAvatar name={enquiry.applicant_name} size="sm" className="rounded-xl ring-2 ring-white/5" />
-                        <div>
-                            <div className="flex items-center gap-3">
-                                <h3 className="text-xl font-serif font-black text-white uppercase tracking-tight">{enquiry.applicant_name}</h3>
-                                <div className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <h3 className="text-base sm:text-xl font-serif font-black text-white uppercase tracking-tight truncate">{enquiry.applicant_name}</h3>
+                                <div className="px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1 sm:gap-1.5 shrink-0">
                                     <div className="w-1 h-1 rounded-full bg-emerald-400" />
-                                    <span className="text-[8px] font-black text-emerald-400/80 uppercase tracking-widest">Verified</span>
+                                    <span className="text-[7px] sm:text-[8px] font-black text-emerald-400/80 uppercase tracking-widest">Verified</span>
                                 </div>
                             </div>
-                            <span className="text-[9px] font-mono text-white/20 uppercase tracking-[0.2em] mt-1 block">Handshake ID: {String(enquiry.id).slice(0, 8)}</span>
+                            <span className="text-[8px] sm:text-[9px] font-mono text-white/20 uppercase tracking-[0.2em] mt-0.5 block truncate">Node: {String(enquiry.id).slice(0, 12).toUpperCase()}</span>
                         </div>
                     </div>
                 </header>
@@ -413,23 +453,30 @@ function EnquiryHandshake({ enquiry, refresh }: { enquiry: MyEnquiry; refresh: (
                     )}
                 </div>
 
-                <div className="px-10 py-6 bg-black/40 border-t border-white/[0.04] shrink-0 backdrop-blur-3xl sticky bottom-0">
-                    <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-center gap-4 p-1.5 bg-white/[0.02] border border-white/[0.08] rounded-2xl focus-within:border-indigo-500/40 transition-all shadow-inner group">
-                        <div className="p-3 bg-white/5 rounded-xl text-white/10 group-focus-within:text-white/30 transition-colors"><ZapIcon className="w-4 h-4" /></div>
+                <div className="px-6 sm:px-10 py-4 sm:py-6 bg-black/40 border-t border-white/[0.04] shrink-0 backdrop-blur-3xl sticky bottom-0">
+                    <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-center gap-3 sm:gap-4 p-1 sm:p-1.5 bg-white/[0.02] border border-white/[0.08] rounded-2xl focus-within:border-indigo-500/40 transition-all shadow-inner group relative">
+                        {error && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute -top-12 left-0 right-0 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-xl flex items-center gap-3 shadow-2xl backdrop-blur-xl">
+                                <AlertTriangleIcon className="w-3 h-3 text-red-400" />
+                                <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest">{error}</span>
+                                <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-white"><XIcon className="w-3 h-3" /></button>
+                            </motion.div>
+                        )}
+                        <div className="hidden sm:block p-3 bg-white/5 rounded-xl text-white/10 group-focus-within:text-white/30 transition-colors"><ZapIcon className="w-4 h-4" /></div>
                         <input
-                            value={text} onChange={e => setText(e.target.value)} type="text"
-                            placeholder="Type a verified response to authority..."
-                            className="flex-1 bg-transparent px-2 py-3 text-white text-sm placeholder:text-white/10 outline-none normal-case"
+                            value={text} onChange={e => { setText(e.target.value); if (error) setError(null); }} type="text"
+                            placeholder="Type a verified response..."
+                            className="flex-1 bg-transparent px-2 py-3 text-white text-sm placeholder:text-white/5 outline-none normal-case min-w-0"
                         />
                         <button
                             type="submit"
                             disabled={!text.trim() || sending}
-                            className="p-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all disabled:opacity-5 active:scale-95 shadow-xl border border-white/10"
+                            className="p-3 sm:p-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all disabled:opacity-5 active:scale-95 shadow-xl border border-white/10 shrink-0"
                         >
                             {sending ? <Spinner size="sm" /> : <SendIcon className="w-5 h-5" />}
                         </button>
                     </form>
-                    <div className="max-w-4xl mx-auto flex items-center justify-center gap-4 mt-4 opacity-10">
+                    <div className="max-w-4xl mx-auto flex items-center justify-center gap-4 mt-4 opacity-5 hidden sm:flex">
                         <div className="h-px w-8 bg-white" />
                         <span className="text-[7px] font-black uppercase tracking-[0.5em]">AES-256 Encryption Active</span>
                         <div className="h-px w-8 bg-white" />
@@ -481,8 +528,20 @@ function EnquiryHandshake({ enquiry, refresh }: { enquiry: MyEnquiry; refresh: (
 // --- Authoritative Icons ---
 const ShieldCheckIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>;
 const ZapIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>;
-const MegaphoneIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+const MegaphoneIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.543-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
 const SendIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg>;
+const ArrowLeftIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>;
+const AlertTriangleIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>;
+const XIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>;
+
+function MiniEmptyState({ label }: { label: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center p-12 opacity-10 space-y-4 grayscale">
+            <ZapIcon className="w-8 h-8" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em]">{label}</span>
+        </div>
+    );
+}
 
 function MetaRow({ label, value }: { label: string; value: string }) {
     return (
