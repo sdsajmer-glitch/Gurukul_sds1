@@ -186,8 +186,13 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         return () => { document.body.style.overflow = 'unset'; };
     }, []);
 
+    const [isParentFetchComplete, setIsParentFetchComplete] = useState(false);
+
     useEffect(() => {
-        if (!currentUserId) return;
+        if (!currentUserId) {
+            setIsParentFetchComplete(true);
+            return;
+        }
 
         const fetchParent = async () => {
             try {
@@ -220,6 +225,8 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                 }
             } catch (err) {
                 console.error("Unexpected error fetching parent:", err);
+            } finally {
+                setIsParentFetchComplete(true);
             }
         };
         fetchParent();
@@ -269,6 +276,10 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
             setFormData(prev => ({ ...prev, emergency_contact: '' }));
             setIsEmergencySynced(false);
         } else {
+            if (!isParentFetchComplete) {
+                setError("Syncing with institutional ledger... please wait.");
+                return;
+            }
             if (!parentProfile || (!parentProfile.name && !parentProfile.phone)) {
                 setError("Parent profile incomplete. Please update your profile first.");
                 return;
@@ -280,15 +291,20 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     };
 
     const handleSyncAddress = () => {
+        if (!isParentFetchComplete) {
+            setError("Profile synchronization in progress... please wait.");
+            return;
+        }
+
         if (!parentProfile) {
-            setError("Parent profile data loading...");
+            setError("Unable to retrieve parent profile. Please ensure your account is fully active.");
             return;
         }
 
         const fullAddr = (parentProfile as any).full_address;
 
         if (!fullAddr) {
-            setError("No address found in your profile. Please update your profile first.");
+            setError("No residential address found in your registry. Please update your profile.");
             return;
         }
 
