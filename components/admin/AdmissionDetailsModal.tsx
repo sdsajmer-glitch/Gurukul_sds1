@@ -224,47 +224,54 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     };
 
     return (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl flex items-center justify-center z-[200] p-4 animate-in fade-in duration-500">
-            <div className="bg-[#0a0c10] w-full max-w-5xl rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/10 flex flex-col max-h-[90vh] overflow-hidden relative ring-1 ring-white/5" onClick={e => e.stopPropagation()}>
+        <div
+            className="fixed inset-0 bg-black/90 backdrop-blur-2xl flex items-center justify-center z-[200] p-4 sm:p-6 animate-in fade-in duration-500"
+            onClick={onClose}
+        >
+            <div
+                className="bg-[#0a0c10] w-full max-w-6xl rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/10 flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden relative ring-1 ring-white/5"
+                onClick={e => e.stopPropagation()}
+            >
 
                 {/* Decorative Background Element */}
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/5 blur-[120px] rounded-full -mr-64 -mt-64 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-600/5 blur-[120px] rounded-full -ml-64 -mb-64 pointer-events-none" />
 
                 {/* Header */}
-                <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01] backdrop-blur-md relative z-10">
-                    <div className="flex items-center gap-6">
+                <div className="p-6 sm:p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01] backdrop-blur-md relative z-10 gap-4">
+                    <div className="flex items-center gap-4 sm:gap-6 min-w-0">
                         <PremiumAvatar
                             src={admission.profile_photo_url}
                             name={admission.applicant_name}
                             size="lg"
-                            className="shadow-[0_8px_30px_rgb(79,70,229,0.3)] ring-4 ring-white/10"
+                            className="shadow-[0_8px_30px_rgb(79,70,229,0.3)] ring-4 ring-white/10 shrink-0 hidden xs:flex"
                         />
-                        <div>
+                        <div className="min-w-0">
                             <motion.h2
                                 initial={{ x: -20, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
-                                className="text-3xl font-bold text-white uppercase tracking-tighter"
+                                className="text-xl sm:text-3xl font-bold text-white uppercase tracking-tighter truncate"
+                                title={admission.applicant_name}
                             >
                                 {admission.applicant_name}
                             </motion.h2>
-                            <div className="flex items-center gap-3 mt-1.5">
-                                <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/50 text-[10px] uppercase font-black tracking-widest">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 min-w-0">
+                                <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/50 text-[9px] sm:text-[10px] uppercase font-black tracking-widest whitespace-nowrap">
                                     Grade {admission.grade}
                                 </span>
-                                <span className="text-white/20">•</span>
-                                <span className="text-white/40 text-[11px] font-mono tracking-wider bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+                                <span className="text-white/20 hidden xs:inline">•</span>
+                                <span className="text-white/40 text-[10px] sm:text-[11px] font-mono tracking-wider bg-white/5 px-2 py-0.5 rounded-md border border-white/5 truncate max-w-[150px] sm:max-w-none">
                                     {admission.application_number || 'PENDING_REGISTRATION'}
                                 </span>
                                 {admission.student_user_id && (
-                                    <div className="flex items-center gap-2">
-                                        <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] uppercase font-bold tracking-widest">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] uppercase font-bold tracking-widest whitespace-nowrap">
                                             <ShieldCheckIcon className="w-3 h-3" /> System Provisioned
                                         </span>
                                         {admission.status === 'Enrolled' && (
                                             <button
                                                 onClick={() => setViewStudentProfile(true)}
-                                                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] uppercase font-bold tracking-widest hover:bg-indigo-500/20 transition-all"
+                                                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] uppercase font-bold tracking-widest hover:bg-indigo-500/20 transition-all whitespace-nowrap"
                                             >
                                                 <UserIcon className="w-3 h-3" /> View Profile
                                             </button>
@@ -272,22 +279,16 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                     </div>
                                 )}
                             </div>
-
                         </div>
-                        {admission.enquiry_id && (
-                            <div className="mt-2 flex items-center gap-2 text-[10px] font-mono text-white/30">
-                                <span className="w-1.5 h-1.5 bg-indigo-500/50 rounded-full" />
-                                LINKED ENQUIRY: #{admission.enquiry_id}
-                            </div>
-                        )}
                     </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/5 hover:border-white/10 shadow-lg shrink-0"
+                        aria-label="Close modal"
+                    >
+                        <XIcon className="w-5 h-5 sm:w-6 sm:w-6" />
+                    </button>
                 </div>
-                <button
-                    onClick={onClose}
-                    className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/5 hover:border-white/10 shadow-lg"
-                >
-                    <XIcon className="w-6 h-6" />
-                </button>
 
 
 
@@ -321,9 +322,9 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                         </AnimatePresence>
 
                         {finalizeState !== 'success' && (
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
                                 {/* Left Column: Identity Passport */}
-                                <div className="lg:col-span-4 space-y-8">
+                                <div className="md:col-span-5 lg:col-span-4 space-y-8">
                                     <div className="space-y-4 sticky top-0">
                                         <SectionHeader
                                             icon={<UserIcon className="w-4 h-4" />}
@@ -406,7 +407,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                 </div>
 
                                 {/* Right Column: Documentation Vault */}
-                                <div className="lg:col-span-8 space-y-8">
+                                <div className="md:col-span-7 lg:col-span-8 space-y-8">
                                     <div className="flex items-center justify-between gap-4">
                                         <SectionHeader
                                             icon={<ShieldCheckIcon className="w-4 h-4" />}
@@ -450,8 +451,8 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                         {/* Mandatory Section */}
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-3 px-2">
-                                                <span className="w-1 h-4 bg-red-500/40 rounded-full" />
-                                                <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">Mandatory Requirements</h4>
+                                                <span className="w-1 h-3 sm:h-4 bg-red-500/40 rounded-full" />
+                                                <h4 className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.3em] sm:tracking-[0.4em]">Mandatory Requirements</h4>
                                             </div>
                                             <div className="space-y-3">
                                                 {docs.filter(d => d.is_mandatory).map((doc, idx) => (
@@ -478,8 +479,8 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                         {/* Optional/Additional Section */}
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-3 px-2">
-                                                <span className="w-1 h-4 bg-indigo-500/40 rounded-full" />
-                                                <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em]">Supporting Evidence</h4>
+                                                <span className="w-1 h-3 sm:h-4 bg-indigo-500/40 rounded-full" />
+                                                <h4 className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.3em] sm:tracking-[0.4em]">Supporting Evidence</h4>
                                             </div>
                                             <div className="space-y-3">
                                                 {docs.filter(d => !d.is_mandatory).map((doc, idx) => (
@@ -587,16 +588,16 @@ function IdentityMeta({ icon, label, value, subValue, color }: any) {
     const isEmpty = !value || value.includes('PENDING') || value.includes('UNLINKED');
 
     return (
-        <div className="flex items-center gap-5 group/item transition-all hover:translate-x-1 duration-300">
-            <div className={clsx("p-3.5 rounded-xl border transition-all duration-300 group-hover/item:scale-105", colorMap[color])}>{icon}</div>
+        <div className="flex items-start sm:items-center gap-4 sm:gap-5 group/item transition-all hover:translate-x-1 duration-300">
+            <div className={clsx("p-3 sm:p-3.5 rounded-xl border transition-all duration-300 group-hover/item:scale-105 shrink-0", colorMap[color])}>{icon}</div>
             <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between mb-1">
-                    <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em]">{label}</p>
-                    {subValue && <span className="text-[7px] font-black text-indigo-500/40 uppercase tracking-widest">{subValue}</span>}
+                <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                    <p className="text-[8px] sm:text-[9px] font-bold text-white/20 uppercase tracking-[0.2em]">{label}</p>
+                    {subValue && <span className="text-[7px] font-black text-indigo-500/40 uppercase tracking-widest whitespace-nowrap hidden sm:inline">{subValue}</span>}
                 </div>
                 <p className={clsx(
-                    "font-bold text-base tracking-tight uppercase leading-tight transition-colors break-all whitespace-normal mt-1",
-                    isEmpty ? "text-white/10 italic" : "text-white group-hover/item:text-indigo-400"
+                    "font-bold text-base sm:text-lg tracking-tight uppercase leading-tight transition-colors break-all whitespace-normal mt-0.5 sm:mt-1",
+                    isEmpty ? "text-white/10 italic text-sm" : "text-white group-hover/item:text-indigo-400"
                 )}>
                     {value}
                 </p>
@@ -632,27 +633,27 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
             )}
             onClick={onToggle}
         >
-            <div className="px-6 py-4 flex items-center justify-between gap-6">
-                <div className="flex items-center gap-5 flex-1 min-w-0">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 sm:gap-6">
+                <div className="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
                     <div className={clsx(
-                        "p-3 rounded-xl transition-all duration-500 shadow-sm",
+                        "p-2.5 sm:p-3 rounded-xl transition-all duration-500 shadow-sm shrink-0",
                         isVerified ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
                             isRejected ? "bg-red-500/10 text-red-500 border border-red-500/20" :
                                 doc.status === 'Missing' ? "bg-indigo-500/10 text-white/40 border border-indigo-500/20" :
                                     isPending && file ? "bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse" :
                                         "bg-white/5 text-white/20 border border-white/5 group-hover:bg-white/10"
                     )}>
-                        {isVerified ? <CheckCircleIcon className="w-5 h-5" /> : doc.status === 'Missing' ? <AlertTriangleIcon className="w-5 h-5" /> : <FileTextIcon className="w-5 h-5" />}
+                        {isVerified ? <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5" /> : doc.status === 'Missing' ? <AlertTriangleIcon className="w-4 h-4 sm:w-5 sm:h-5" /> : <FileTextIcon className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </div>
                     <div className="truncate">
                         <div className="flex items-center gap-3">
-                            <h4 className="text-sm font-bold text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors truncate uppercase leading-none">
+                            <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors truncate leading-none">
                                 {doc.document_name}
                             </h4>
                         </div>
-                        <div className="flex items-center gap-3 mt-1.5">
+                        <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-1.5">
                             <span className={clsx(
-                                "text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border",
+                                "text-[7px] sm:text-[8px] font-bold uppercase tracking-widest px-1.5 sm:px-2 py-0.5 rounded-md border whitespace-nowrap",
                                 isVerified ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/10" :
                                     isRejected ? "bg-red-500/5 text-red-400 border-red-500/10" :
                                         doc.status === 'Missing' ? "bg-white/5 text-white/30 border-white/5" :
@@ -661,15 +662,15 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
                                 {isVerified ? 'Verified' : isRejected ? 'Rejected' : doc.status === 'Missing' ? 'Requirement Pending' : file ? 'Pending Review' : 'Awaiting Upload'}
                             </span>
                             {doc.is_mandatory && !isVerified && (
-                                <span className="flex items-center gap-1 text-[8px] font-bold text-red-500/60 uppercase tracking-widest">
-                                    <AlertTriangleIcon className="w-2.5 h-2.5" /> Required Artifact
+                                <span className="flex items-center gap-1 text-[7px] sm:text-[8px] font-bold text-red-500/60 uppercase tracking-widest whitespace-nowrap">
+                                    <AlertTriangleIcon className="w-2 sm:w-2.5 h-2 sm:h-2.5" /> Required Artifact
                                 </span>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-2 self-end xs:self-center" onClick={e => e.stopPropagation()}>
                     {file ? (
                         <div className="flex gap-2 items-center">
                             <div className="flex gap-1 mr-2 px-2 py-1 bg-white/5 rounded-lg border border-white/5">
