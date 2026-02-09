@@ -196,18 +196,17 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
 
         const fetchParent = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('display_name, email, phone, branch_id, address, city, state, country, pin_code')
-                    .eq('id', currentUserId)
-                    .maybeSingle();
+                // Use robust RPC to fetch merged profile + residential data
+                const { data, error } = await supabase.rpc('get_current_parent_details', {
+                    p_user_id: currentUserId
+                });
 
                 if (error) {
-                    console.error("Error fetching parent profile:", error);
+                    console.error("Error fetching parent profile (RPC):", error);
                     return;
                 }
 
-                if (data) {
+                if (data && data.found) {
                     setParentProfile({
                         name: data.display_name || '',
                         email: data.email,
@@ -222,6 +221,8 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                             .filter(Boolean)
                             .join(', ')
                     } as any);
+                } else {
+                    console.warn("Parent profile fetch returned no data.");
                 }
             } catch (err) {
                 console.error("Unexpected error fetching parent:", err);
