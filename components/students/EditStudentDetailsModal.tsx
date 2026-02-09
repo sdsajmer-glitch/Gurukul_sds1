@@ -380,11 +380,8 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         setError(null);
 
         try {
-            // Only update restricted fields if NOT a school admin
-            const updatePayload = isSchoolAdmin ? {
-                p_student_id: student.id,
-                p_enrollment_status: formData.enrollment_status
-            } : {
+            // UNLOCKED: Allow full profile updates for all authorized admin roles
+            const updatePayload = {
                 p_student_id: student.id,
                 p_display_name: formData.display_name,
                 p_phone: formData.phone,

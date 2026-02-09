@@ -1,12 +1,35 @@
 -- ==============================================================================
--- FIX ENQUIRY DETAILS VISIBILITY
+-- FIX ENQUIRY DETAILS VISIBILITY - V2
 -- ==============================================================================
--- Updates get_all_enquiries_v2 to intelligently resolve parent details 
--- from linked Admissions or Profiles when missing in the Enquiries table.
+-- Updates get_all_enquiries_v2 to Intelligently resolve parent details.
+-- NOW INCLUDES: Fallback to student_profiles.parent_guardian_details
 -- ==============================================================================
 
+DROP FUNCTION IF EXISTS public.get_all_enquiries_v2(bigint);
+
 CREATE OR REPLACE FUNCTION public.get_all_enquiries_v2(p_branch_id bigint DEFAULT NULL)
-RETURNS SETOF public.enquiries
+RETURNS TABLE (
+    id uuid,
+    branch_id bigint,
+    user_id uuid,
+    enquiry_code text,
+    applicant_name text,
+    grade text,
+    status text,
+    verification_status text,
+    parent_name text,
+    parent_email text,
+    parent_phone text,
+    notes text,
+    conversion_state text,
+    admission_id uuid,
+    is_archived boolean,
+    is_deleted boolean,
+    received_at timestamptz,
+    updated_at timestamptz,
+    converted_at timestamptz,
+    profile_photo_url text
+)
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
@@ -21,11 +44,12 @@ BEGIN
         e.grade,
         e.status,
         e.verification_status,
-        -- Resolve Parent Name
+        -- Resolve Parent Name: Enquiry > Admission > Profile(Parent) > StudentProfile(Guardian)
         COALESCE(
             e.parent_name, 
             a.parent_name, 
-            CASE WHEN p.role IN ('Parent', 'Parent/Guardian') THEN p.display_name ELSE NULL END
+            CASE WHEN p.role IN ('Parent', 'Parent/Guardian') THEN p.display_name ELSE NULL END,
+            sp.parent_guardian_details
         ) as parent_name,
         -- Resolve Parent Email
         COALESCE(
@@ -47,11 +71,13 @@ BEGIN
         e.received_at,
         e.updated_at,
         e.converted_at,
-        e.profile_photo_url
+        -- Prioritize Admission Photo > Enquiry Photo > Profile Photo
+        COALESCE(a.profile_photo_url, e.profile_photo_url, p.profile_photo_url) as profile_photo_url
     FROM public.enquiries e
     LEFT JOIN public.school_branches sb ON e.branch_id = sb.id
     LEFT JOIN public.admissions a ON e.admission_id = a.id
     LEFT JOIN public.profiles p ON e.user_id = p.id
+    LEFT JOIN public.student_profiles sp ON e.user_id = sp.user_id
     WHERE 
         (p_branch_id IS NULL OR e.branch_id = p_branch_id)
         AND
@@ -60,7 +86,8 @@ BEGIN
             sb.school_user_id = auth.uid() 
             OR
             sb.branch_admin_id = auth.uid()
-            -- Also allow if user is super admin? (Context dependent, keeping safe default)
+            -- Also allow if user is super admin (implicit via RLS usually, but explicit here for RPC)
+            OR EXISTS (SELECT 1 FROM public.profiles admin_p WHERE admin_p.id = auth.uid() AND admin_p.role IN ('Super Admin', 'super_admin'))
         )
         AND e.is_deleted = false
     ORDER BY e.received_at DESC;
