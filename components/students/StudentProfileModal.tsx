@@ -364,9 +364,9 @@ const GuardianCard: React.FC<{
                         )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                        <div className={`w-1.5 h-1.5 rounded-full ${data ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-white/20'}`}></div>
-                        <p className={`text-[10px] font-black uppercase tracking-widest ${data ? (data.is_unlinked ? 'text-amber-500' : 'text-emerald-400/80') : 'text-white/30'}`}>
-                            {data ? (data.is_unlinked ? 'Draft Profile' : 'Verified') : 'Not Linked'}
+                        <div className={`w-1.5 h-1.5 rounded-full ${data ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-red-400/50'}`}></div>
+                        <p className={`text-[10px] font-black uppercase tracking-widest ${data ? (data.is_unlinked ? 'text-amber-500' : 'text-emerald-400/80') : 'text-red-500/60'}`}>
+                            {data ? (data.is_unlinked ? 'Draft Profile' : 'Verified Identity') : 'Not Linked'}
                         </p>
                     </div>
                 </div>
@@ -412,19 +412,19 @@ const GuardianCard: React.FC<{
                     </div>
 
                     <div className="group/item">
-                        <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Contact Information</p>
+                        <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Digital Contact Protocols</p>
                         <div className="space-y-3">
                             <div className="flex items-center gap-3.5 group/contact cursor-pointer">
                                 <div className="p-2 bg-white/5 rounded-xl text-white/30 group-hover/contact:bg-indigo-500/10 group-hover/contact:text-indigo-400 transition-all border border-white/5">
                                     <MailIcon className="w-4 h-4" />
                                 </div>
-                                <p className="text-sm text-white/60 font-medium group-hover/contact:text-white transition-colors">{data.email || 'NO_EMAIL_PROTO'}</p>
+                                <p className="text-sm text-white/60 font-medium group-hover/contact:text-white transition-colors uppercase tracking-tight">{data.email || 'PROTOCOL_MISSING'}</p>
                             </div>
                             <div className="flex items-center gap-3.5 group/contact cursor-pointer">
                                 <div className="p-2 bg-white/5 rounded-xl text-white/30 group-hover/contact:bg-indigo-500/10 group-hover/contact:text-indigo-400 transition-all border border-white/5">
                                     <PhoneIcon className="w-4 h-4" />
                                 </div>
-                                <p className="text-sm text-white/60 font-medium group-hover/contact:text-white transition-colors">{data.phone || 'NO_COMMS_LINK'}</p>
+                                <p className="text-sm text-white/60 font-medium group-hover/contact:text-white transition-colors">{data.phone || 'COMMS_NODE_OFFLINE'}</p>
                             </div>
                         </div>
                     </div>
@@ -449,36 +449,36 @@ const GuardianCard: React.FC<{
                 </div >
             </div >
         ) : (
-            /* Premium Empty State */
+            /* Premium Empty State - Institutional Design */
             <div className="flex-grow flex flex-col items-center justify-center text-center py-12 px-6 relative z-10">
                 <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-white/10 rounded-full blur-2xl opacity-20 animate-pulse"></div>
-                    <div className="relative p-6 bg-white/5 rounded-[2rem] border border-white/10 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                        <UsersIcon className="w-12 h-12 text-white/20" />
+                    <div className="absolute inset-0 bg-white/5 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+                    <div className="relative p-8 bg-white/5 rounded-[2.5rem] border border-white/10 group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 shadow-2xl">
+                        <UsersIcon className="w-16 h-16 text-white/10 group-hover:text-white/30 transition-colors" />
                     </div>
                 </div>
-                <h5 className="text-base font-bold text-white/60 mb-2">No Guardian Linked</h5>
-                <p className="text-[11px] text-white/30 leading-relaxed max-w-[220px] mb-8 font-medium">
+                <h5 className="text-xl font-black text-white/60 mb-3 tracking-tight">No Guardian Linked</h5>
+                <p className="text-[11px] text-white/30 leading-relaxed max-w-[240px] mb-10 font-bold uppercase tracking-wider">
                     {isPrimary
-                        ? 'Link a primary guardian to enable emergency contacts and academic updates.'
-                        : 'Add a secondary guardian for backup contact and improved safety.'
+                        ? 'Initialize primary contact protocols to enable emergency broadcasting and academic node updates.'
+                        : 'Add a secondary guardian for redundant contact links and improved institutional safety.'
                     }
                 </p>
                 {!readOnly && (
                     <button
                         onClick={onEdit}
                         className={`
-                            px-8 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em]
+                            px-10 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.25em]
                             transition-all duration-500 hover:scale-105 active:scale-95
-                            flex items-center gap-3 group/btn relative overflow-hidden
+                            flex items-center gap-4 group/btn relative overflow-hidden
                             ${isPrimary
                                 ? 'bg-indigo-600 text-white shadow-[0_15px_40px_-10px_rgba(79,70,229,0.5)]'
-                                : 'bg-white/10 text-white/80 border border-white/10 hover:bg-white/20'
+                                : 'bg-white/5 text-white/80 border border-white/10 hover:bg-white/10 shadow-xl'
                             }
                         `}
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
-                        <PlusIcon className="w-4 h-4" />
+                        <PlusIcon className="w-4 h-4 text-indigo-400" />
                         Initialize Link
                     </button>
                 )}
@@ -953,7 +953,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             let combinedGuardianData: any = null;
 
             if (parentRes && parentRes.found) {
-                // Strategy A: Direct Link Found via RPC
+                // Strategy A: Direct Link Found via RPC (Enhanced with Secondary Fields)
                 const baseInfo = {
                     parent_id: parentRes.parent_id,
                     address: parentRes.address,
@@ -970,10 +970,10 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     phone: parentRes.phone,
                     relationship: parentRes.relationship,
                     is_unlinked: !!parentRes.is_unlinked,
-                    source: parentRes.source
+                    source: parentRes.source || 'Institutional Registry'
                 };
 
-                // Secondary Parent Handling
+                // Secondary Parent Handling - Use fields from RPC
                 if (parentRes.secondary_parent_name) {
                     combinedGuardianData = {
                         ...baseInfo,
@@ -983,23 +983,6 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         relationship: parentRes.secondary_parent_relationship,
                         is_unlinked: !!parentRes.is_unlinked
                     };
-                } else if (parentRes.parent_id) {
-                    // Deep Lookup: Check parent profile for secondary guardian if RPC didn't return it
-                    const { data: secParent } = await supabase
-                        .from('parent_profiles')
-                        .select('secondary_parent_name, secondary_parent_email, secondary_parent_phone, secondary_parent_relationship')
-                        .eq('user_id', parentRes.parent_id)
-                        .maybeSingle();
-
-                    if (secParent && secParent.secondary_parent_name) {
-                        combinedGuardianData = {
-                            ...baseInfo,
-                            name: secParent.secondary_parent_name,
-                            email: secParent.secondary_parent_email,
-                            phone: secParent.secondary_parent_phone,
-                            relationship: secParent.secondary_parent_relationship
-                        };
-                    }
                 }
             } else {
                 // Strategy B: Fallback to Admission/Enquiry Data
