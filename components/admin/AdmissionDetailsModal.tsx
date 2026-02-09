@@ -303,18 +303,38 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                 {/* Left Column: Identity Passport */}
                                 <div className="lg:col-span-4 space-y-8">
                                     <div className="space-y-4 sticky top-0">
-                                        <SectionHeader icon={<UserIcon className="w-4 h-4" />} title="Applicant Identity" badge="Registry Alpha" />
+                                        <SectionHeader
+                                            icon={<UserIcon className="w-4 h-4" />}
+                                            title="Applicant Identity"
+                                            badge={admission.student_user_id ? "Registry Synchronized" : "Discovery Phase"}
+                                        />
                                         <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-8 space-y-8 shadow-3xl relative overflow-hidden group">
                                             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] -mr-32 -mt-32" />
 
-                                            <IdentityMeta icon={<UserIcon className="w-5 h-5" />} label="Parent / Guardian" value={admission.parent_name} color="indigo" />
-                                            <IdentityMeta icon={<MailIcon className="w-5 h-5" />} label="Comm-Link Email" value={admission.parent_email} color="purple" />
-                                            <IdentityMeta icon={<PhoneIcon className="w-5 h-5" />} label="Verified Phone" value={admission.parent_phone} color="pink" />
+                                            <IdentityMeta
+                                                icon={<UserIcon className="w-5 h-5" />}
+                                                label="Parent / Guardian"
+                                                value={admission.parent_name || (studentData?.parent_guardian_details ? "REGISTRY_LINKED" : "")}
+                                                subValue={admission.parent_name ? "Primary Contact" : "System Placeholder"}
+                                                color="indigo"
+                                            />
+                                            <IdentityMeta
+                                                icon={<MailIcon className="w-5 h-5" />}
+                                                label="Comm-Link Email"
+                                                value={admission.parent_email || "PROTOCOL_PENDING"}
+                                                color="purple"
+                                            />
+                                            <IdentityMeta
+                                                icon={<PhoneIcon className="w-5 h-5" />}
+                                                label="Verified Phone"
+                                                value={admission.parent_phone || "UNLINKED_NODE"}
+                                                color="pink"
+                                            />
 
                                             <div className="pt-6 border-t border-white/5">
                                                 <div className="flex items-center justify-between mb-4">
-                                                    <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Readiness Engine</span>
-                                                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.2em]">{progressPercentage}% Compliant</span>
+                                                    <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Compliance Readiness</span>
+                                                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.2em]">{progressPercentage}%</span>
                                                 </div>
                                                 <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                                                     <motion.div
@@ -323,11 +343,19 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                                         className="h-full bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"
                                                     />
                                                 </div>
-                                                <p className="mt-4 text-[9px] text-white/30 font-medium italic leading-relaxed">
-                                                    * Finalization requires 100% compliance of all mandatory documentation nodes.
-                                                </p>
+                                                <div className="mt-6 flex items-center justify-between">
+                                                    <div className="flex -space-x-2">
+                                                        {[1, 2, 3].map(i => (
+                                                            <div key={i} className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[8px] font-black text-white/20">
+                                                                {i}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest italic">Verification Chain Active</span>
+                                                </div>
                                             </div>
                                         </div>
+
 
                                         <div className="p-8 border-2 border-dashed border-white/5 rounded-[2.5rem] bg-white/[0.01] flex flex-col items-center gap-4 text-center group hover:bg-white/[0.02] transition-all cursor-pointer">
                                             <PlusIcon className="w-6 h-6 text-white/10 group-hover:text-white/30 transition-colors" />
@@ -506,22 +534,34 @@ function SectionHeader({ icon, title, badge, color = "white" }: any) {
     );
 }
 
-function IdentityMeta({ icon, label, value, color }: any) {
+function IdentityMeta({ icon, label, value, subValue, color }: any) {
     const colorMap: any = {
         indigo: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)]",
         purple: "bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]",
         pink: "bg-pink-500/10 text-pink-400 border-pink-500/20 shadow-[0_0_15px_rgba(236,72,153,0.1)]",
     };
+
+    const isEmpty = !value || value.includes('PENDING') || value.includes('UNLINKED');
+
     return (
         <div className="flex items-center gap-5 group/item transition-all hover:translate-x-1 duration-300">
             <div className={clsx("p-3.5 rounded-xl border transition-all duration-300 group-hover/item:scale-105", colorMap[color])}>{icon}</div>
-            <div className="min-w-0">
-                <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] mb-1">{label}</p>
-                <p className="text-white font-bold text-lg tracking-tight truncate uppercase leading-tight">{value}</p>
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between mb-1">
+                    <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em]">{label}</p>
+                    {subValue && <span className="text-[7px] font-black text-indigo-500/40 uppercase tracking-widest">{subValue}</span>}
+                </div>
+                <p className={clsx(
+                    "font-bold text-lg tracking-tight truncate uppercase leading-tight transition-colors",
+                    isEmpty ? "text-white/10 italic" : "text-white group-hover/item:text-indigo-400"
+                )}>
+                    {value}
+                </p>
             </div>
         </div>
     );
 }
+
 
 
 function ActionButton({ icon, onClick, className }: any) {
