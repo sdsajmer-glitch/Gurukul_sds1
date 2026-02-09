@@ -441,6 +441,8 @@ export interface Enquiry {
     profile_photo_url?: string | null;
     created_at: string;
     source?: string;
+    conversion_state?: 'CONVERTED' | 'NOT_CONVERTED';
+    admission_id?: string | null;
 }
 
 export interface MyEnquiry extends Enquiry {
