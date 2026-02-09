@@ -282,10 +282,13 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                 return;
             }
             if (!parentProfile || (!parentProfile.name && !parentProfile.phone)) {
-                setError("Parent profile incomplete. Please update your profile first.");
+                // If NO data at all, then error. But if partial data serves, let it pass.
+                setError("Parent profile incomplete. Please update your profile with a Name or Phone.");
                 return;
             }
-            setFormData(prev => ({ ...prev, emergency_contact: `${parentProfile.name} | ${parentProfile.phone || 'No Phone'}` }));
+            const phone = parentProfile.phone || 'No Phone';
+            const name = parentProfile.name || 'Guardian';
+            setFormData(prev => ({ ...prev, emergency_contact: `${name} | ${phone}` }));
             setIsEmergencySynced(true);
             setError(null);
         }
