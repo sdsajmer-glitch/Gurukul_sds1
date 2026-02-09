@@ -852,6 +852,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
     const [docs, setDocs] = useState<any[]>([]);
     const [feesSummary, setFeesSummary] = useState<any>(null);
     const [activityLog, setActivityLog] = useState<any[]>([]);
+    const [admissionRecord, setAdmissionRecord] = useState<any>(null);
+    const [enquiryRecord, setEnquiryRecord] = useState<any>(null);
+    const [lifecycleError, setLifecycleError] = useState<string | null>(null);
 
     // --- Modal States ---
     const [showGuardianEdit, setShowGuardianEdit] = useState<'primary' | 'secondary' | null>(null);
@@ -881,22 +884,20 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             // Parallel fetch of all potential data sources to optimize performance and reduce waterfalls
             const [
                 { data: parentRes },
-                { data: admissionRes },
-                { data: enquiryRes },
-                { data: profileData }, // Renamed from classData to profileData to reflect full fetch
+                admissionResRaw,
+                enquiryResRaw,
+                { data: profileData },
                 { data: feeData }
             ] = await Promise.all([
                 supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id }),
                 // Fetch admission record - try student_user_id, admission_id, OR EMAIL (Critical for unlinked imports)
                 supabase.from('admissions')
                     .select('*')
-                    .or(`student_user_id.eq.${student.id},id.eq.${student.admission_id || -1},email.eq.${student.email || 'no_email'},applicant_email.eq.${student.email || 'no_email'}`)
-                    .maybeSingle(),
+                    .or(`student_user_id.eq.${student.id},id.eq.${student.admission_id || -1},email.eq.${student.email || 'no_email'},applicant_email.eq.${student.email || 'no_email'}`),
                 // Fetch enquiry record - try user_id OR email
                 supabase.from('enquiries')
                     .select('*')
-                    .or(`user_id.eq.${student.id},email.eq.${student.email || 'no_email'},parent_email.eq.${student.email || 'no_email'}`)
-                    .maybeSingle(),
+                    .or(`user_id.eq.${student.id},email.eq.${student.email || 'no_email'},parent_email.eq.${student.email || 'no_email'}`),
                 // Fetch FRESH Profile Data (Critical for persistence check) - Includes Class Assignment and Student Contact
                 supabase.from('student_profiles')
                     .select('*, profiles!inner(phone, email, display_name), school_classes!student_profiles_assigned_class_id_fkey(name)')
@@ -905,6 +906,41 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 // Fetch fee summary
                 supabase.rpc('get_student_fee_summary', { p_student_id: student.id })
             ]);
+
+            // Log access to audit trails
+            supabase.auth.getUser().then(({ data: { user } }) => {
+                if (user) {
+                    supabase.from('audit_logs').insert({
+                        user_id: user.id,
+                        action: 'IDENTITY_ACCESS',
+                        module: 'Student Profile',
+                        details: { student_id: student.id, student_name: student.display_name },
+                        severity: 'info'
+                    });
+                }
+            });
+
+            // --- 0. Resolve Lifecycle Transparency (Enquiry & Admission) ---
+            const admissionRes = admissionResRaw;
+            const enquiryRes = enquiryResRaw;
+
+            if (admissionRes.data && admissionRes.data.length > 1) {
+                setLifecycleError("CRITICAL: DUPLICATE_ADMISSIONS_DETECTED. Integrity Breach.");
+            } else if (!admissionRes.data || admissionRes.data.length === 0) {
+                // Check if enquiry exists but admission is missing
+                if (enquiryRes.data && enquiryRes.data.length > 0) {
+                    setLifecycleError("ALERT: ENQUIRY_EXISTS_BUT_ADMISSION_MISSING. Process Discontinuity.");
+                }
+            }
+
+            const activeAdmission = admissionRes.data?.[0] || null;
+            const activeEnquiry = enquiryRes.data?.[0] || null;
+
+            setAdmissionRecord(activeAdmission);
+            setEnquiryRecord(activeEnquiry);
+
+            const admissionResData = activeAdmission;
+            const enquiryResData = activeEnquiry;
 
             // --- 1. Resolve Parent/Guardian Identifier Data ---
             let combinedParentData: any = null;
@@ -962,7 +998,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             } else {
                 // Strategy B: Fallback to Admission/Enquiry Data
                 // Prioritize Admission over Enquiry
-                const source = admissionRes || enquiryRes;
+                const source = activeAdmission || activeEnquiry;
 
                 if (source) {
                     // Extract parent info if available
@@ -981,7 +1017,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                             is_unlinked: true
                         };
                     }
-                } else if (profileData && profileData.parent_guardian_details && profileData.parent_guardian_details !== '0') {
+                }
+                else if (profileData && profileData.parent_guardian_details && profileData.parent_guardian_details !== '0') {
                     // Strategy C: Fallback to Identity Registry (Student Profile)
                     // Matches "Name (Relationship)" or "Name (Phone)"
                     const raw = profileData.parent_guardian_details;
@@ -1009,27 +1046,27 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 (profileData?.profiles?.display_name && profileData?.profiles?.display_name !== 'Academic Identity') ? profileData.profiles.display_name :
                     (profileData?.display_name && profileData?.display_name !== 'Academic Identity') ? profileData.display_name :
                         (student.display_name && student.display_name !== 'Academic Identity') ? student.display_name :
-                            (admissionRes?.applicant_name || enquiryRes?.applicant_name || student.display_name)
+                            (activeAdmission?.applicant_name || activeEnquiry?.applicant_name || student.display_name)
             ) || student.display_name;
 
             const bestPhone = sanitize(profileData?.phone) ||
                 sanitize(profileData?.profiles?.phone) ||
-                sanitize(admissionRes?.student_phone) ||
+                sanitize(activeAdmission?.student_phone) ||
                 sanitize(student.phone) ||
                 sanitize(combinedParentData?.phone) ||
-                sanitize(admissionRes?.parent_phone) ||
-                sanitize(enquiryRes?.parent_phone);
+                sanitize(activeAdmission?.parent_phone) ||
+                sanitize(activeEnquiry?.parent_phone);
 
             const bestAddress = sanitize(profileData?.address) ||
-                sanitize(admissionRes?.address) ||
-                sanitize(enquiryRes?.address) ||
+                sanitize(activeAdmission?.address) ||
+                sanitize(activeEnquiry?.address) ||
                 sanitize(combinedParentData?.address) ||
                 sanitize(student.address);
 
-            const bestDob = sanitize(profileData?.date_of_birth) || sanitize(student.date_of_birth) || sanitize(admissionRes?.date_of_birth);
-            const bestGender = sanitize(profileData?.gender) || sanitize(student.gender) || sanitize(admissionRes?.gender);
-            const bestPhoto = profileData?.profiles?.profile_photo_url || profileData?.profile_photo_url || student.profile_photo_url || admissionRes?.profile_photo_url || enquiryRes?.profile_photo_url;
-            const bestGrade = profileData?.grade || student.grade || admissionRes?.grade || enquiryRes?.grade;
+            const bestDob = sanitize(profileData?.date_of_birth) || sanitize(student.date_of_birth) || sanitize(activeAdmission?.date_of_birth);
+            const bestGender = sanitize(profileData?.gender) || sanitize(student.gender) || sanitize(activeAdmission?.gender);
+            const bestPhoto = profileData?.profiles?.profile_photo_url || profileData?.profile_photo_url || student.profile_photo_url || activeAdmission?.profile_photo_url || activeEnquiry?.profile_photo_url;
+            const bestGrade = profileData?.grade || student.grade || activeAdmission?.grade || activeEnquiry?.grade;
 
             setSyncedStudent(prev => ({
                 ...prev,
@@ -1046,11 +1083,11 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             }));
 
             // --- 3. Additional Data (Documents & Fees) ---
-            if (admissionRes) {
+            if (activeAdmission) {
                 const { data: docList } = await supabase
                     .from('document_requirements')
                     .select('*, admission_documents(*)')
-                    .eq('admission_id', admissionRes.id);
+                    .eq('admission_id', activeAdmission.id);
                 setDocs(docList || []);
             }
 
@@ -1272,6 +1309,149 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 </div>
                                                 <div className="mt-12">
                                                     <DigitalIdCard student={syncedStudent} />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* --- INSTITUTIONAL LIFECYCLE SECTION --- */}
+                                        <div className="pt-12 border-t border-white/5">
+                                            <div className="flex items-center justify-between mb-8">
+                                                <h3 className="text-[12px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-4">
+                                                    Institutional Lifecycle Transparency
+                                                </h3>
+                                                {lifecycleError && (
+                                                    <div className="px-4 py-1.5 bg-red-500/10 border border-red-500/20 rounded-full flex items-center gap-2 animate-pulse">
+                                                        <AlertTriangleIcon className="w-3.5 h-3.5 text-red-500" />
+                                                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">{lifecycleError}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                {/* Enquiry Card */}
+                                                <div className="relative group p-8 rounded-[2.5rem] bg-[#0c0e12] border border-white/5 transition-all duration-500 hover:border-indigo-500/20 overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform duration-700">
+                                                        <MailIcon className="w-48 h-48" />
+                                                    </div>
+                                                    <div className="relative z-10">
+                                                        <div className="flex items-center gap-3 mb-6">
+                                                            <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 text-white/40">
+                                                                <InfoIcon className="w-5 h-5" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-black text-white text-sm uppercase tracking-widest">Enquiry Information</h4>
+                                                                <p className="text-[9px] text-white/20 font-bold uppercase tracking-[0.2em]">Lifecycle Step 01</p>
+                                                            </div>
+                                                        </div>
+
+                                                        {enquiryRecord ? (
+                                                            <div className="space-y-4">
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Enquiry ID</p>
+                                                                        <p className="text-sm font-bold text-white font-mono truncate">{enquiryRecord.enquiry_code || enquiryRecord.id.split('-')[0]}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Receipt Date</p>
+                                                                        <p className="text-sm font-bold text-white">{new Date(enquiryRecord.received_at).toLocaleDateString()}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Initial Grade</p>
+                                                                        <p className="text-sm font-bold text-white uppercase">{enquiryRecord.grade}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Sync Status</p>
+                                                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded border border-emerald-500/20">
+                                                                            <CheckCircleIcon className="w-3 h-3" /> Converted
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Source Context:</p>
+                                                                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest italic">{enquiryRecord.source_type || 'Organic Walk-in'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="py-8 flex flex-col items-center justify-center text-center">
+                                                                <div className="p-4 bg-white/5 rounded-2xl mb-4">
+                                                                    <AlertTriangleIcon className="w-8 h-8 text-white/10" />
+                                                                </div>
+                                                                <p className="text-xs font-bold text-white/30 italic uppercase tracking-widest leading-relaxed">
+                                                                    This student was admitted<br />without a recorded enquiry.
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Admission Card */}
+                                                <div className="relative group p-8 rounded-[2.5rem] bg-[#0c0e12] border border-white/5 transition-all duration-500 hover:border-purple-500/20 overflow-hidden">
+                                                    <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform duration-700">
+                                                        <FileTextIcon className="w-48 h-48" />
+                                                    </div>
+                                                    <div className="relative z-10">
+                                                        <div className="flex items-center gap-3 mb-6">
+                                                            <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 text-white/40">
+                                                                <GraduationCapIcon className="w-5 h-5" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-black text-white text-sm uppercase tracking-widest">Admission Information</h4>
+                                                                <p className="text-[9px] text-white/20 font-bold uppercase tracking-[0.2em]">Lifecycle Step 02</p>
+                                                            </div>
+                                                        </div>
+
+                                                        {admissionRecord ? (
+                                                            <div className="space-y-4">
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Admission ID</p>
+                                                                        <p className="text-sm font-bold text-white font-mono truncate">{admissionRecord.application_number || admissionRecord.id.split('-')[0]}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Approval Date</p>
+                                                                        <p className="text-sm font-bold text-white">{new Date(admissionRecord.submitted_at).toLocaleDateString()}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Academic Year</p>
+                                                                        <p className="text-sm font-bold text-white uppercase">{admissionRecord.academic_year || '2025-26'}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Admission Status</p>
+                                                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded border border-indigo-500/20">
+                                                                            <ShieldCheckIcon className="w-3 h-3" /> {admissionRecord.status || 'Enrolled'}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Registrar Seal:</p>
+                                                                        <p className="text-[10px] font-bold text-purple-400 uppercase tracking-widest italic">{admissionRecord.grade} (Confirmed)</p>
+                                                                    </div>
+                                                                    {!enquiryRecord && (
+                                                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/5 border border-amber-500/10 rounded-lg">
+                                                                            <AlertTriangleIcon className="w-2.5 h-2.5 text-amber-500" />
+                                                                            <span className="text-[7px] font-black text-amber-500 uppercase tracking-widest">Enquiry Missing</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="py-8 flex flex-col items-center justify-center text-center">
+                                                                <div className="p-4 bg-white/5 rounded-2xl mb-4 animate-bounce">
+                                                                    <AlertTriangleIcon className="w-8 h-8 text-red-500/40" />
+                                                                </div>
+                                                                <p className="text-xs font-bold text-red-400/60 uppercase tracking-widest leading-relaxed">
+                                                                    Lifecycle Link Missing:<br />No Admission Record.
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
