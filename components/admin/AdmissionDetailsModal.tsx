@@ -20,6 +20,7 @@ import { PlusIcon } from '../icons/PlusIcon';
 import { RefreshCwIcon } from '../icons/RefreshCwIcon';
 import StudentProfileModal from '../students/StudentProfileModal';
 import { StudentForAdmin } from '../../types';
+import { ChevronDownIcon } from '../icons/ChevronDownIcon';
 import clsx from 'clsx';
 
 interface AdmissionDetailsModalProps {
@@ -594,7 +595,7 @@ function IdentityMeta({ icon, label, value, subValue, color }: any) {
                     {subValue && <span className="text-[7px] font-black text-indigo-500/40 uppercase tracking-widest">{subValue}</span>}
                 </div>
                 <p className={clsx(
-                    "font-bold text-lg tracking-tight uppercase leading-tight transition-colors break-all whitespace-normal",
+                    "font-bold text-base tracking-tight uppercase leading-tight transition-colors break-all whitespace-normal mt-1",
                     isEmpty ? "text-white/10 italic" : "text-white group-hover/item:text-indigo-400"
                 )}>
                     {value}
@@ -707,8 +708,8 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
                     ) : (
                         <span className="text-[9px] font-bold text-white/10 uppercase tracking-[0.2em] mr-2">No File Attached</span>
                     )}
-                    <div className={clsx("ml-2 transition-transform duration-300", expanded ? "rotate-180" : "")}>
-                        <EyeIcon className="w-4 h-4 text-white/10" />
+                    <div className={clsx("ml-2 transition-transform duration-300", expanded ? "rotate-180" : "opacity-30")}>
+                        <ChevronDownIcon className="w-4 h-4" />
                     </div>
                 </div>
             </div>
