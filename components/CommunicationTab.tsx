@@ -209,9 +209,20 @@ const CommunicationTab: React.FC<{ profile: UserProfile }> = ({ profile }) => {
                     {loading.fetching && history.length === 0 ? (
                         <div className="h-full flex items-center justify-center opacity-20 animate-pulse"><TerminalIcon className="w-10 h-10" /></div>
                     ) : history.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center opacity-10 grayscale text-center p-10 space-y-4">
-                            <MegaphoneIcon className="w-16 h-16" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.5em]">Ledger Silent</p>
+                        <div className="h-full flex flex-col items-center justify-center p-12 text-center group">
+                            <div className="relative mb-10">
+                                <div className="absolute inset-0 bg-indigo-500/10 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                                <div className="relative w-24 h-24 flex items-center justify-center rounded-[2rem] bg-white/[0.02] border border-white/5 shadow-2xl overflow-hidden backdrop-blur-md">
+                                    <MegaphoneIcon className="w-10 h-10 text-white/5 mt-[-2px] group-hover:text-indigo-400 group-hover:scale-110 transition-all duration-700" />
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                <h4 className="text-[11px] font-black uppercase tracking-[0.6em] text-white/20">Ledger Silent</h4>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/10 italic max-w-[200px] leading-relaxed">
+                                    No historical transmissions recorded in the current cycle.
+                                </p>
+                            </div>
+                            <div className="mt-12 w-8 h-px bg-white/[0.02]" />
                         </div>
                     ) : (
                         history.map((msg, i) => (

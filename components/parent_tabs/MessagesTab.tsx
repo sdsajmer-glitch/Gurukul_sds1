@@ -75,26 +75,48 @@ export default function MessagesTab() {
         <div className="h-[calc(100vh-120px)] flex flex-col overflow-hidden bg-[#050505] rounded-[3rem] border border-white/5 shadow-3xl select-none">
 
             {/* Header: Unified Context Bar */}
-            <header className="px-12 py-8 bg-black/40 border-b border-white/[0.03] flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-6">
-                    <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 shadow-inner">
-                        <ZapIcon className="w-5 h-5 text-indigo-400" />
+            <header className="px-10 sm:px-16 py-10 sm:py-12 bg-black/40 border-b border-white/[0.03] flex flex-col md:flex-row items-center justify-between shrink-0 gap-8 relative overflow-hidden group">
+                {/* Decorative Glass Reflection */}
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+                <div className="flex items-center gap-8 relative z-10">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative p-4 bg-indigo-500/10 rounded-[1.4rem] border border-indigo-500/20 shadow-[0_0_30px_rgba(79,70,229,0.1)] ring-1 ring-white/5">
+                            <ZapIcon className="w-6 h-6 text-indigo-400" />
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-2xl font-serif font-black text-white leading-tight tracking-tight uppercase">
-                            Inbox <span className="opacity-20 font-light italic ml-2">Channel.</span>
-                        </h2>
-                        <div className="flex items-center gap-3 mt-1 opacity-40">
-                            <span className="text-[9px] font-black uppercase tracking-[0.4em]">Official Registry Gateway</span>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+                            <h2 className="text-2xl sm:text-4xl font-serif font-black text-white leading-none tracking-tighter uppercase flex items-baseline">
+                                Inbox <span className="text-indigo-500/40 font-light italic ml-3 lowercase text-xl sm:text-2xl">Channel.</span>
+                            </h2>
+                        </div>
+                        <div className="flex items-center gap-3 opacity-30 ml-4">
+                            <span className="text-[9px] font-black uppercase tracking-[0.4em]">Governance Uplink Node</span>
                             <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-[9px] font-black uppercase text-emerald-400 tracking-[0.2em]">Encrypted • Audited</span>
+                            <span className="text-[9px] font-black uppercase text-emerald-400 tracking-[0.2em] px-2 py-0.5 rounded border border-emerald-500/20">End-to-End Encrypted</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex bg-white/[0.04] p-1 rounded-2xl border border-white/5 shadow-inner">
-                    <TabButton active={activeTab === 'broadcasts'} onClick={() => setActiveTab('broadcasts')} label="Broadcasts" count={announcements.length} />
-                    <TabButton active={activeTab === 'enquiries'} onClick={() => setActiveTab('enquiries')} label="Enquiries" count={enquiries.length} />
+                <div className="flex items-center gap-8 relative z-10">
+                    <div className="flex bg-white/[0.04] p-1.5 rounded-[1.5rem] border border-white/5 shadow-inner backdrop-blur-xl">
+                        <TabButton active={activeTab === 'broadcasts'} onClick={() => setActiveTab('broadcasts')} label="Broadcast Stream" count={announcements.length} />
+                        <TabButton active={activeTab === 'enquiries'} onClick={() => setActiveTab('enquiries')} label="Enquiry Channel" count={enquiries.length} />
+                    </div>
+                    <div className="h-10 w-px bg-white/5 hidden md:block" />
+                    <div className="hidden lg:flex items-center gap-4 px-6 py-3 bg-white/[0.02] border border-white/5 rounded-2xl">
+                        <div className="flex -space-x-3">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="w-7 h-7 rounded-full bg-indigo-900/40 border-2 border-black flex items-center justify-center text-[8px] font-black text-white/40">
+                                    {i === 1 ? 'A' : i === 2 ? 'S' : 'M'}
+                                </div>
+                            ))}
+                        </div>
+                        <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">+12 Authorities</span>
+                    </div>
                 </div>
             </header>
 
@@ -415,70 +437,91 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 function EmptyState({ title, subtitle, description, icon, primaryCTA, secondaryCTA }: any) {
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            className="h-full w-full flex items-center justify-center p-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="h-full w-full flex items-center justify-center p-6 md:p-12 lg:p-24"
         >
-            <div className="max-w-xl w-full flex flex-col items-center text-center">
-                {/* Visual Anchor */}
-                <div className="relative group mb-12">
-                    <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                    <div className="relative w-32 h-32 flex items-center justify-center rounded-[2.5rem] bg-gradient-to-br from-white/[0.05] to-transparent border border-white/[0.08] shadow-2xl overflow-hidden backdrop-blur-md">
-                        <div className="absolute inset-0 bg-indigo-500/5 animate-pulse" />
-                        <div className="relative text-indigo-400 drop-shadow-[0_0_15px_rgba(129,140,248,0.5)]">
-                            {icon || <ZapIcon className="w-12 h-12" />}
+            <div className="max-w-2xl w-full">
+                {/* Elevated Container Layer */}
+                <div className="relative p-12 md:p-20 rounded-[3.5rem] bg-white/[0.01] border border-white/[0.05] shadow-[0_40px_100px_rgba(0,0,0,0.5)] overflow-hidden backdrop-blur-3xl group">
+                    {/* Atmospheric Glows */}
+                    <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none group-hover:bg-indigo-500/15 transition-all duration-1000" />
+                    <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full pointer-events-none group-hover:bg-indigo-500/10 transition-all duration-1000" />
+
+                    <div className="relative flex flex-col items-center text-center">
+                        {/* Progressive Visual Anchor */}
+                        <div className="mb-14">
+                            <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-[2.2rem] bg-gradient-to-br from-white/[0.08] to-transparent border border-white/[0.1] shadow-2xl relative">
+                                <div className="absolute inset-0 bg-indigo-500/5 rounded-[2.2rem] animate-pulse" />
+                                <div className="relative text-indigo-400/90 filter drop-shadow-[0_0_20px_rgba(129,140,248,0.4)]">
+                                    {React.cloneElement(icon, { className: "w-10 h-10 sm:w-12 sm:h-12" })}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Title & Secondary Guidance */}
+                        <div className="space-y-4 mb-8">
+                            <div className="flex items-center justify-center gap-4 opacity-40 mb-3">
+                                <div className="h-[1px] w-6 bg-indigo-400" />
+                                <span className="text-[9px] font-black uppercase tracking-[0.6em] text-indigo-400">Institutional Protocol</span>
+                                <div className="h-[1px] w-6 bg-indigo-400" />
+                            </div>
+                            <h3 className="text-3xl sm:text-5xl font-serif font-black text-white uppercase tracking-tighter leading-[0.95] md:px-6">
+                                {title}
+                            </h3>
+                            <p className="text-white/40 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] font-sans">
+                                {subtitle}
+                            </p>
+                        </div>
+
+                        {/* Informational Guidance Layer */}
+                        <div className="max-w-md mx-auto mb-16">
+                            <p className="text-sm sm:text-base font-medium text-white/20 leading-relaxed font-serif italic mb-2 px-4 transition-colors group-hover:text-white/30">
+                                "{description}"
+                            </p>
+                            <div className="flex items-center justify-center gap-2 text-[8px] font-black text-white/5 uppercase tracking-[0.1em] pointer-events-none">
+                                <div className="w-1 h-1 rounded-full bg-white/10" />
+                                Secure P2M Transmission Gateway Active
+                            </div>
+                        </div>
+
+                        {/* Intentional Action Row */}
+                        <div className="flex flex-col sm:flex-row items-center gap-5 w-full sm:w-auto px-6">
+                            {primaryCTA && (
+                                <button
+                                    onClick={primaryCTA.onClick}
+                                    className="w-full sm:w-auto px-12 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.4rem] text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-[0_20px_50px_rgba(79,70,229,0.3)] border border-indigo-400/30 ring-1 ring-white/10"
+                                >
+                                    {primaryCTA.label}
+                                </button>
+                            )}
+                            {secondaryCTA && (
+                                <button
+                                    onClick={secondaryCTA.onClick}
+                                    className="w-full sm:w-auto px-10 py-5 bg-white/[0.03] hover:bg-white/[0.08] text-white/40 hover:text-white rounded-[1.4rem] text-[10px] font-black uppercase tracking-widest transition-all border border-white/5"
+                                >
+                                    {secondaryCTA.label}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Typography Header */}
-                <div className="space-y-4 mb-10">
-                    <div className="flex items-center justify-center gap-3 opacity-30 mb-2">
-                        <div className="h-px w-8 bg-white" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.6em] text-white">System Standby</span>
-                        <div className="h-px w-8 bg-white" />
+                {/* Micro-Interaction Footer */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="mt-12 flex flex-col items-center gap-2 opacity-10 grayscale hover:opacity-25 transition-opacity"
+                >
+                    <div className="flex items-center gap-4">
+                        <ShieldCheckIcon className="w-4 h-4" />
+                        <span className="text-[8px] font-black uppercase tracking-[0.8em]">End-to-End Encryption Verified</span>
                     </div>
-                    <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter leading-none">
-                        {title}
-                    </h3>
-                    <p className="text-indigo-400/80 text-[11px] font-black uppercase tracking-[0.2em] italic">
-                        {subtitle}
-                    </p>
-                </div>
-
-                {/* Supporting Copy */}
-                <div className="relative px-8 py-6 rounded-3xl bg-white/[0.02] border border-white/[0.05] mb-12">
-                    <p className="text-sm font-medium text-white/40 leading-relaxed italic">
-                        "{description}"
-                    </p>
-                </div>
-
-                {/* Action Layer */}
-                <div className="flex items-center gap-6">
-                    {primaryCTA && (
-                        <button
-                            onClick={primaryCTA.onClick}
-                            className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-[0_20px_40px_rgba(79,70,229,0.2)] border border-indigo-400/20"
-                        >
-                            {primaryCTA.label}
-                        </button>
-                    )}
-                    {secondaryCTA && (
-                        <button
-                            onClick={secondaryCTA.onClick}
-                            className="px-8 py-5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border border-white/5"
-                        >
-                            {secondaryCTA.label}
-                        </button>
-                    )}
-                </div>
-
-                {/* Trust Footer */}
-                <div className="mt-20 flex items-center gap-4 opacity-5 grayscale">
-                    <ShieldCheckIcon className="w-5 h-5" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.8em]">End-to-End Encryption Verified</span>
-                </div>
+                    <span className="text-[7px] font-mono tracking-tighter opacity-50 uppercase">AES-256 Bit Institutional Secure Uplink</span>
+                </motion.div>
             </div>
         </motion.div>
     );
