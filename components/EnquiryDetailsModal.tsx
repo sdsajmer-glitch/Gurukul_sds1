@@ -138,7 +138,12 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                             </div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-3 bg-white/5 rounded-2xl border border-white/10 text-white/20 hover:text-white transition-all"><XIcon className="w-6 h-6" /></button>
+                    <div className="flex flex-col items-end">
+                        <button onClick={onClose} className="p-3 bg-white/5 rounded-2xl border border-white/10 text-white/20 hover:text-white transition-all"><XIcon className="w-6 h-6" /></button>
+                        <span className="text-[9px] font-mono text-white/20 mt-2 uppercase tracking-[0.1em]">
+                            {new Date(enquiry.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} • {enquiry.source || 'Direct Enquiry'}
+                        </span>
+                    </div>
                 </header>
 
                 {/* 2. Three-Zone Cockpit */}

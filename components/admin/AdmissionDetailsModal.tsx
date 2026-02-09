@@ -61,7 +61,19 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 .eq('admission_id', admission.id)
                 .order('created_at', { ascending: false });
             if (error) throw error;
-            if (isMounted.current) setDocs(data || []);
+
+            const MANDATORY_TYPES = ['Birth Certificate', 'Transfer Certificate', 'ID Proof', 'Report Card'];
+            const existingNames = (data || []).map((d: any) => d.document_name);
+            const missingDocs = MANDATORY_TYPES.filter(name => !existingNames.includes(name)).map((name, idx) => ({
+                id: -1 - idx,
+                document_name: name,
+                status: 'Missing',
+                is_mandatory: true,
+                admission_id: admission.id,
+                created_at: new Date().toISOString()
+            }));
+
+            if (isMounted.current) setDocs([...(data || []), ...missingDocs]);
         } catch (error) {
             console.error(error);
         } finally {
@@ -258,15 +270,23 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                     </div>
                                 )}
                             </div>
+
                         </div>
+                        {admission.enquiry_id && (
+                            <div className="mt-2 flex items-center gap-2 text-[10px] font-mono text-white/30">
+                                <span className="w-1.5 h-1.5 bg-indigo-500/50 rounded-full" />
+                                LINKED ENQUIRY: #{admission.enquiry_id}
+                            </div>
+                        )}
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/5 hover:border-white/10 shadow-lg"
-                    >
-                        <XIcon className="w-6 h-6" />
-                    </button>
                 </div>
+                <button
+                    onClick={onClose}
+                    className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/5 hover:border-white/10 shadow-lg"
+                >
+                    <XIcon className="w-6 h-6" />
+                </button>
+
 
 
                 <div className="flex-grow overflow-y-auto custom-scrollbar relative z-10 px-4 sm:px-0">
@@ -507,14 +527,16 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                     </div>
                 </footer>
             </div>
-            {viewStudentProfile && studentData && (
-                <StudentProfileModal
-                    student={studentData}
-                    onClose={() => setViewStudentProfile(false)}
-                    onUpdate={() => { }}
-                />
-            )}
-        </div>
+            {
+                viewStudentProfile && studentData && (
+                    <StudentProfileModal
+                        student={studentData}
+                        onClose={() => setViewStudentProfile(false)}
+                        onUpdate={() => { }}
+                    />
+                )
+            }
+        </div >
     );
 };
 
@@ -595,10 +617,11 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
                         "p-3 rounded-xl transition-all duration-500 shadow-sm",
                         isVerified ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
                             isRejected ? "bg-red-500/10 text-red-500 border border-red-500/20" :
-                                isPending && file ? "bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse" :
-                                    "bg-white/5 text-white/20 border border-white/5 group-hover:bg-white/10"
+                                doc.status === 'Missing' ? "bg-indigo-500/10 text-white/40 border border-indigo-500/20" :
+                                    isPending && file ? "bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse" :
+                                        "bg-white/5 text-white/20 border border-white/5 group-hover:bg-white/10"
                     )}>
-                        {isVerified ? <CheckCircleIcon className="w-5 h-5" /> : <FileTextIcon className="w-5 h-5" />}
+                        {isVerified ? <CheckCircleIcon className="w-5 h-5" /> : doc.status === 'Missing' ? <AlertTriangleIcon className="w-5 h-5" /> : <FileTextIcon className="w-5 h-5" />}
                     </div>
                     <div className="truncate">
                         <div className="flex items-center gap-3">
@@ -611,9 +634,10 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
                                 "text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border",
                                 isVerified ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/10" :
                                     isRejected ? "bg-red-500/5 text-red-400 border-red-500/10" :
-                                        "bg-amber-500/5 text-amber-500 border-amber-500/10"
+                                        doc.status === 'Missing' ? "bg-white/5 text-white/30 border-white/5" :
+                                            "bg-amber-500/5 text-amber-500 border-amber-500/10"
                             )}>
-                                {isVerified ? 'Verified' : isRejected ? 'Rejected' : file ? 'Pending Review' : 'Awaiting Upload'}
+                                {isVerified ? 'Verified' : isRejected ? 'Rejected' : doc.status === 'Missing' ? 'Requirement Pending' : file ? 'Pending Review' : 'Awaiting Upload'}
                             </span>
                             {doc.is_mandatory && !isVerified && (
                                 <span className="flex items-center gap-1 text-[8px] font-bold text-red-500/60 uppercase tracking-widest">

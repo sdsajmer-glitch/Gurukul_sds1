@@ -43,7 +43,7 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
         if (!isSilent) setLoading(true);
         try {
             const cleanBranchId = branchId === null ? null : Number(branchId);
-            const { data, error } = await supabase.rpc('get_all_enquiries_v2', { p_branch_id: cleanBranchId });
+            const { data, error } = await supabase.rpc('get_all_enquiries_v3', { p_branch_id: cleanBranchId });
             if (error) throw error;
             setEnquiries(data || []);
         } catch (err: any) {

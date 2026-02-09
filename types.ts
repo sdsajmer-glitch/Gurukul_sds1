@@ -193,6 +193,7 @@ export interface AdmissionApplication {
     date_of_birth?: string;
     gender?: string;
     source_type?: 'Enquiry' | 'Admission';
+    enquiry_id?: string;
 }
 
 export interface FinanceData {
@@ -436,7 +437,10 @@ export interface Enquiry {
     notes?: string;
     updated_at: string;
     branch_id?: number | null;
+    branch_name?: string;
     profile_photo_url?: string | null;
+    created_at: string;
+    source?: string;
 }
 
 export interface MyEnquiry extends Enquiry {
@@ -496,6 +500,7 @@ export interface StudentForAdmin extends UserProfile {
     date_of_birth?: string;
     address?: string;
     admission_id?: string;
+    enquiry_id?: string;
     enrollment_status?: string;
 }
 

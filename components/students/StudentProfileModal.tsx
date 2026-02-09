@@ -881,63 +881,69 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            // Parallel fetch of all potential data sources to optimize performance and reduce waterfalls
+            // 1. Fetch Student Profile with RSL links
+            const { data: profileRaw, error: profileError } = await supabase
+                .from('student_profiles')
+                .select(`
+                    *,
+                    profiles!inner(phone, email, display_name),
+                    school_classes!student_profiles_assigned_class_id_fkey(name),
+                    admissions:admission_id (
+                        id, enquiry_id, application_number, status, submitted_at, grade, applicant_name
+                    )
+                `)
+                .eq('user_id', student.id)
+                .maybeSingle();
+
+            if (profileError) console.error("Profile Fetch Error:", profileError);
+
+            // 2. Identify Upstream IDs
+            const admissionId = profileRaw?.admission_id;
+            const enquiryId = profileRaw?.enquiry_id || profileRaw?.admissions?.enquiry_id;
+
+            // 3. Parallel Fetch of Related Data
             const [
                 { data: parentRes },
-                admissionResRaw,
-                enquiryResRaw,
-                { data: profileData },
+                { data: admissionRes },
+                { data: enquiryRes },
                 { data: feeData }
             ] = await Promise.all([
                 supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id }),
-                // Fetch admission record - try student_user_id, admission_id, OR EMAIL (Critical for unlinked imports)
-                supabase.from('admissions')
-                    .select('*')
-                    .or(`student_user_id.eq.${student.id},id.eq.${student.admission_id || -1},email.eq.${student.email || 'no_email'},applicant_email.eq.${student.email || 'no_email'}`),
-                // Fetch enquiry record - try user_id OR email
-                supabase.from('enquiries')
-                    .select('*')
-                    .or(`user_id.eq.${student.id},email.eq.${student.email || 'no_email'},parent_email.eq.${student.email || 'no_email'}`),
-                // Fetch FRESH Profile Data (Critical for persistence check) - Includes Class Assignment and Student Contact
-                supabase.from('student_profiles')
-                    .select('*, profiles!inner(phone, email, display_name), school_classes!student_profiles_assigned_class_id_fkey(name)')
-                    .eq('user_id', student.id)
-                    .maybeSingle(),
-                // Fetch fee summary
+                admissionId ? supabase.from('admissions').select('*').eq('id', admissionId).maybeSingle() : Promise.resolve({ data: null }),
+                enquiryId ? supabase.from('enquiries').select('*').eq('id', enquiryId).maybeSingle() : Promise.resolve({ data: null }),
                 supabase.rpc('get_student_fee_summary', { p_student_id: student.id })
             ]);
 
-            // Log access to audit trails
-            supabase.auth.getUser().then(({ data: { user } }) => {
-                if (user) {
-                    supabase.from('audit_logs').insert({
-                        user_id: user.id,
-                        action: 'IDENTITY_ACCESS',
-                        module: 'Student Profile',
-                        details: { student_id: student.id, student_name: student.display_name },
-                        severity: 'info'
-                    });
-                }
-            });
-
-            // --- 0. Resolve Lifecycle Transparency (Enquiry & Admission) ---
-            const admissionRes = admissionResRaw;
-            const enquiryRes = enquiryResRaw;
-
-            if (admissionRes.data && admissionRes.data.length > 1) {
-                setLifecycleError("CRITICAL: DUPLICATE_ADMISSIONS_DETECTED. Integrity Breach.");
-            } else if (!admissionRes.data || admissionRes.data.length === 0) {
-                // Check if enquiry exists but admission is missing
-                if (enquiryRes.data && enquiryRes.data.length > 0) {
-                    setLifecycleError("ALERT: ENQUIRY_EXISTS_BUT_ADMISSION_MISSING. Process Discontinuity.");
-                }
-            }
-
-            const activeAdmission = admissionRes.data?.[0] || null;
-            const activeEnquiry = enquiryRes.data?.[0] || null;
+            // 4. Update State
+            const activeAdmission = admissionRes;
+            const activeEnquiry = enquiryRes;
+            const profileData = profileRaw ? [profileRaw] : []; // formatting for consistency with existing logic if needed, or just use profileRaw
 
             setAdmissionRecord(activeAdmission);
             setEnquiryRecord(activeEnquiry);
+
+            // Log access to audit trails
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await supabase.from('audit_logs').insert({
+                    user_id: user.id,
+                    action: 'IDENTITY_ACCESS',
+                    module: 'Student Profile',
+                    details: {
+                        student_id: student.id,
+                        student_name: student.display_name,
+                        rsl_status: activeAdmission ? 'LINKED' : 'ORPHAN'
+                    },
+                    severity: activeAdmission ? 'info' : 'warning'
+                });
+            }
+
+            // Check for RSL integrity
+            if (!activeAdmission && !activeEnquiry) {
+                const msg = "CRITICAL: LIFECYCLE_LINK_MISSING. Identity Node appears orphaned.";
+                setLifecycleError(msg);
+                console.error(msg);
+            }
 
             const admissionResData = activeAdmission;
             const enquiryResData = activeEnquiry;
@@ -1353,7 +1359,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                     </div>
                                                                     <div>
                                                                         <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Receipt Date</p>
-                                                                        <p className="text-sm font-bold text-white">{new Date(enquiryRecord.received_at).toLocaleDateString()}</p>
+                                                                        <p className="text-sm font-bold text-white">{new Date(enquiryRecord.created_at || enquiryRecord.received_at).toLocaleDateString()}</p>
                                                                     </div>
                                                                 </div>
                                                                 <div className="grid grid-cols-2 gap-4">
@@ -1371,7 +1377,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                 <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between">
                                                                     <div className="flex items-center gap-2">
                                                                         <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Source Context:</p>
-                                                                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest italic">{enquiryRecord.source_type || 'Organic Walk-in'}</p>
+                                                                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest italic">{enquiryRecord.source || enquiryRecord.source_type || 'Organic Walk-in'}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
