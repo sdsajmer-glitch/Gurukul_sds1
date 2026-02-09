@@ -187,16 +187,40 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
     }, []);
 
     useEffect(() => {
+        if (!currentUserId) return;
+
         const fetchParent = async () => {
-            const { data } = await supabase.from('profiles').select('display_name, email, phone, branch_id, address, city, state, country, pin_code').eq('id', currentUserId).maybeSingle();
-            if (data) setParentProfile({
-                name: data.display_name || '',
-                email: data.email,
-                phone: data.phone || '',
-                branch_id: data.branch_id,
-                // Store full address for sync
-                full_address: [data.address, data.city, data.state, data.country, data.pin_code].filter(Boolean).join(', ')
-            } as any);
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('display_name, email, phone, branch_id, address, city, state, country, pin_code')
+                    .eq('id', currentUserId)
+                    .maybeSingle();
+
+                if (error) {
+                    console.error("Error fetching parent profile:", error);
+                    return;
+                }
+
+                if (data) {
+                    setParentProfile({
+                        name: data.display_name || '',
+                        email: data.email,
+                        phone: data.phone || '',
+                        branch_id: data.branch_id,
+                        address: data.address,
+                        city: data.city,
+                        state: data.state,
+                        country: data.country,
+                        pin_code: data.pin_code,
+                        full_address: [data.address, data.city, data.state, data.country, data.pin_code]
+                            .filter(Boolean)
+                            .join(', ')
+                    } as any);
+                }
+            } catch (err) {
+                console.error("Unexpected error fetching parent:", err);
+            }
         };
         fetchParent();
     }, [currentUserId]);
@@ -244,16 +268,32 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         if (isEmergencySynced) {
             setFormData(prev => ({ ...prev, emergency_contact: '' }));
             setIsEmergencySynced(false);
-        } else if (parentProfile) {
-            setFormData(prev => ({ ...prev, emergency_contact: `${parentProfile.name} / ${parentProfile.phone || 'No Phone'}` }));
+        } else {
+            if (!parentProfile || (!parentProfile.name && !parentProfile.phone)) {
+                setError("Parent profile incomplete. Please update your profile first.");
+                return;
+            }
+            setFormData(prev => ({ ...prev, emergency_contact: `${parentProfile.name} | ${parentProfile.phone || 'No Phone'}` }));
             setIsEmergencySynced(true);
+            setError(null);
         }
     };
 
     const handleSyncAddress = () => {
-        if (parentProfile && (parentProfile as any).full_address) {
-            setFormData(prev => ({ ...prev, address: (parentProfile as any).full_address }));
+        if (!parentProfile) {
+            setError("Parent profile data loading...");
+            return;
         }
+
+        const fullAddr = (parentProfile as any).full_address;
+
+        if (!fullAddr) {
+            setError("No address found in your profile. Please update your profile first.");
+            return;
+        }
+
+        setFormData(prev => ({ ...prev, address: fullAddr }));
+        setError(null);
     };
 
     const handleConsentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -517,7 +557,8 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                                 <button
                                                     type="button"
                                                     onClick={handleSyncAddress}
-                                                    className="text-[9px] font-bold text-primary hover:text-primary/80 uppercase tracking-widest flex items-center gap-1.5 transition-colors"
+                                                    className="px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-[9px] font-black text-primary uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95"
+                                                    title="Auto-fill with your registered address"
                                                 >
                                                     <LocationIcon className="w-3 h-3" /> Use My Address
                                                 </button>
@@ -565,7 +606,12 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                         <button
                                             type="button"
                                             onClick={handleSyncEmergency}
-                                            className="text-[9px] font-bold text-primary hover:text-primary/80 uppercase tracking-widest flex items-center gap-1.5 transition-colors mb-4"
+                                            className={clsx(
+                                                "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95 mb-4",
+                                                isEmergencySynced
+                                                    ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                                                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                                            )}
                                         >
                                             <SparklesIcon className="w-3 h-3" /> {isEmergencySynced ? 'Synced' : 'Use My Data'}
                                         </button>
