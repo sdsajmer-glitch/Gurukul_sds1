@@ -40,7 +40,7 @@ const AdmissionsTab: React.FC<{ branchId?: number | null }> = ({ branchId }) => 
         setFetchError(null);
         try {
             const targetBranchId = (branchId === null || branchId === undefined) ? null : Number(branchId);
-            const { data, error } = await supabase.rpc('get_admissions_v3', { p_branch_id: targetBranchId });
+            const { data, error } = await supabase.rpc('get_admissions_v2', { p_branch_id: targetBranchId });
             if (error) throw error;
 
             // Allow all formal admission records (including promoted ones)

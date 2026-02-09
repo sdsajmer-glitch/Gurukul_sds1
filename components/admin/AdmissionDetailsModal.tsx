@@ -13,6 +13,7 @@ import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { EyeIcon } from '../icons/EyeIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
 import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
+import { LocationIcon } from '../icons/LocationIcon';
 import { StorageService, BUCKETS } from '../../services/storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusIcon } from '../icons/PlusIcon';
@@ -350,6 +351,25 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                                 value={admission.parent_phone || "UNLINKED_NODE"}
                                                 color="pink"
                                             />
+                                            <IdentityMeta
+                                                icon={<LocationIcon className="w-5 h-5" />}
+                                                label="Residential Address"
+                                                value={admission.address || "NO ADDRESS RECORDED"}
+                                                color="indigo"
+                                            />
+                                            <IdentityMeta
+                                                icon={<AlertTriangleIcon className="w-5 h-5" />}
+                                                label="Emergency Contact"
+                                                value={admission.emergency_contact || "NOT SET"}
+                                                color="purple"
+                                            />
+
+                                            {admission.medical_info && (
+                                                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl mt-4">
+                                                    <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-1">Medical Alert</p>
+                                                    <p className="text-sm text-red-200">{admission.medical_info}</p>
+                                                </div>
+                                            )}
 
                                             <div className="pt-6 border-t border-white/5">
                                                 <div className="flex items-center justify-between mb-4">
