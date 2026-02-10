@@ -746,11 +746,30 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
 
             const { data: profileBranch } = await supabase.from('student_profiles').select('branch_id').eq('user_id', student.id).maybeSingle();
 
-            const { data, error: fetchError } = await supabase.rpc('get_all_classes_for_admin', {
+            console.log('[AssignClass] Fetching classes. Grade:', currentGrade, 'Branch:', profileBranch?.branch_id);
+
+            // Try with p_branch_id first, fallback to no-param version if it fails
+            let data: any = null;
+            let fetchError: any = null;
+
+            const result1 = await supabase.rpc('get_all_classes_for_admin', {
                 p_branch_id: profileBranch?.branch_id || null
             });
 
+            if (result1.error) {
+                console.warn('[AssignClass] RPC with p_branch_id failed, trying without:', result1.error.message);
+                // Fallback: call without parameters (original function signature)
+                const result2 = await supabase.rpc('get_all_classes_for_admin');
+                data = result2.data;
+                fetchError = result2.error;
+            } else {
+                data = result1.data;
+                fetchError = result1.error;
+            }
+
             if (fetchError) throw fetchError;
+
+            console.log('[AssignClass] Raw classes fetched:', (data || []).length);
 
             const matchedClasses = (data || []).filter((c: any) => {
                 const cGradeRaw = String(c.grade_level || '').trim();
@@ -762,6 +781,8 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
                 return cGradeRaw.toLowerCase().includes(currentGrade.toLowerCase()) || currentGrade.toLowerCase().includes(cGradeRaw.toLowerCase());
             });
 
+            console.log('[AssignClass] Matched classes for grade', currentGrade, ':', matchedClasses.length);
+
             if (matchedClasses.length === 0) {
                 setError(<div className="space-y-3"><p className="text-white/80 text-sm">No active sections found for Grade {student.grade}.</p></div>);
                 setClasses([]);
@@ -772,7 +793,7 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
                 }
             }
         } catch (err: any) {
-            console.error("Assign Class Error:", err);
+            console.error("[AssignClass] Fetch Classes Error:", err);
             setError(`System failed to retrieve academic structure: ${formatError(err)}`);
         } finally {
             setFetching(false);
