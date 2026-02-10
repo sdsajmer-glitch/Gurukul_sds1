@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, formatError } from '../services/supabase';
 import { SchoolBranch, UserProfile, SchoolAdminProfileData, BuiltInRoles } from '../types';
@@ -286,6 +286,18 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const [isFinishing, setIsFinishing] = useState(false);
 
     const isMounted = useRef(true);
+
+    // Wizard State
+    const [currentStep, setCurrentStep] = useState(0);
+    const [showErrors, setShowErrors] = useState(false);
+
+    // Reset wizard on modal open
+    useEffect(() => {
+        if (isModalOpen) {
+            setCurrentStep(0);
+            setShowErrors(false);
+        }
+    }, [isModalOpen]);
 
     const [formData, setFormData] = useState({
         name: '', address: '', country: 'India', city: '', state: '',
@@ -609,497 +621,552 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
     const stateOptions = useMemo(() => availableStates.map(s => ({ value: s, label: s })), [availableStates]);
     const cityOptions = useMemo(() => availableCities.map(c => ({ value: c, label: c })), [availableCities]);
 
+    // Wizard Logic
+    const steps = [
+        { id: 0, label: 'Node Identity', icon: <SchoolIcon className="w-4 h-4" />, description: 'Naming & Location' },
+        { id: 1, label: 'Jurisdiction', icon: <GlobeIcon className="w-4 h-4" />, description: 'Regional Boundaries' },
+        { id: 2, label: 'Authority', icon: <UsersIcon className="w-4 h-4" />, description: 'Access Control' },
+        { id: 3, label: 'Review', icon: <CheckCircleIcon className="w-4 h-4" />, description: 'Final Confirmation' }
+    ];
+
+    const validateStep = (step: number) => {
+        const errors: Record<string, string> = {};
+        if (step === 0) {
+            if (!formData.name.trim()) errors.name = "Node Name is required";
+            if (!formData.address.trim()) errors.address = "Geo-location is required";
+        }
+        if (step === 1) {
+            if (!formData.country) errors.country = "Jurisdiction is required";
+            if (!formData.state) errors.state = "Administrative State is required";
+            if (!formData.city) errors.city = "City Node is required";
+        }
+        if (step === 2) {
+            if (!formData.adminName.trim()) errors.adminName = "Administrator Identity is required";
+            if (!formData.adminEmail.trim()) errors.adminEmail = "Protocol Email is required";
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.adminEmail)) errors.adminEmail = "Invalid email format";
+        }
+        return errors;
+    };
+
+    const handleNext = () => {
+        const errors = validateStep(currentStep);
+        if (Object.keys(errors).length > 0) {
+            setShowErrors(true);
+            return;
+        }
+        setShowErrors(false);
+        setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+    };
+
+    const handleBack = () => {
+        setCurrentStep(prev => Math.max(prev - 1, 0));
+        setShowErrors(false);
+    };
+
+    const displayErrors = useMemo(() => {
+        if (!showErrors) return {};
+        return validateStep(currentStep);
+    }, [showErrors, currentStep, formData]);
+
     const renderForm = () => (
-        <form onSubmit={handleSave} className="flex flex-col h-full bg-[#0a0a0b]">
-            {/* Scrollable Form Body */}
-            <div className="flex-grow relative overflow-hidden group/scroll">
-                {/* Top Fade */}
-                <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-[#0a0a0b] to-transparent z-20 pointer-events-none transition-opacity duration-300 group-hover/scroll:opacity-100 opacity-60" />
+        <div className="flex flex-col h-full bg-[#0a0a0b] relative">
+            {/* Wizard Header / Step Indicator */}
+            <div className="px-8 py-6 border-b border-white/5 bg-[#0a0a0b]/50 backdrop-blur-md sticky top-0 z-40">
+                <div className="flex items-center justify-between relative">
+                    {/* Progress Bar Background */}
+                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white/5 -z-10 rounded-full" />
+                    {/* Active Progress Bar */}
+                    <div
+                        className="absolute top-1/2 left-0 h-0.5 bg-primary -z-10 rounded-full transition-all duration-500"
+                        style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
+                    />
 
-                <div className="h-full overflow-y-auto custom-scrollbar p-10 space-y-16">
-                    {modalError && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="bg-red-500/[0.03] border border-red-500/10 rounded-[2rem] p-6 flex items-center gap-5"
-                        >
-                            <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center shrink-0">
-                                <XIcon className="w-5 h-5 text-red-500" />
-                            </div>
-                            <div className="space-y-1">
-                                <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">Initialization Blocked</h5>
-                                <p className="text-[11px] font-medium text-red-500/60 leading-relaxed uppercase tracking-widest">{modalError}</p>
-                            </div>
-                        </motion.div>
-                    )}
+                    {steps.map((step, idx) => {
+                        const isActive = currentStep === step.id;
+                        const isCompleted = currentStep > step.id;
 
-                    <div className="space-y-20">
-                        {/* Node Architecture Group */}
-                        <div className="group/section">
-                            <div className="flex items-center gap-5 mb-10">
-                                <div className="w-12 h-12 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center transition-all duration-500 group-hover/section:bg-primary/10 group-hover/section:scale-110 shadow-[0_0_20px_rgba(var(--primary),0.05)]">
-                                    <SchoolIcon className="w-5 h-5 text-primary" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h4 className="text-[13px] font-black uppercase text-white tracking-[0.3em]">Node Architecture</h4>
-                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Primary School Identity Setup</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-10">
-                                <FloatingLabelInput
-                                    label="School/Campus Name"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    required
-                                    error={formErrors.name}
-                                    hint="Official Institutional identification name"
-                                    icon={<SchoolIcon className="w-4 h-4" />}
-                                />
-                                <FloatingLabelInput
-                                    label="Geo-location Address"
-                                    value={formData.address}
-                                    onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                    required
-                                    error={formErrors.address}
-                                    hint="Full physical address for spatial verification"
-                                    icon={<LocationIcon className="w-4 h-4" />}
-                                    action={
-                                        <button
-                                            type="button"
-                                            onClick={handleResolveAddress}
-                                            disabled={isResolvingAddress || !formData.address.trim()}
-                                            className="px-5 py-2.5 bg-primary/5 hover:bg-primary/10 text-primary rounded-xl transition-all disabled:opacity-30 border border-primary/10 flex items-center gap-2.5 group/btn"
-                                        >
-                                            {isResolvingAddress ? <Spinner size="sm" /> : (
-                                                <>
-                                                    <SparklesIcon className="w-3.5 h-3.5 transition-all group-hover/btn:scale-125 group-hover/btn:rotate-12" />
-                                                    <span className="text-[9px] font-black uppercase tracking-[0.15em]">Auto-Detect</span>
-                                                </>
-                                            )}
-                                        </button>
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        {/* Geo-Location Group */}
-                        <div className="group/section">
-                            <div className="flex items-center gap-5 mb-10">
-                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center transition-all duration-500 group-hover/section:bg-emerald-500/10 group-hover/section:scale-110">
-                                    <GlobeIcon className="w-5 h-5 text-emerald-500" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h4 className="text-[13px] font-black uppercase text-white tracking-[0.3em]">Jurisdiction & Boundaries</h4>
-                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Regional Administrative Mapping</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10">
-                                <InstitutionalSelect
-                                    label="Jurisdiction"
-                                    required
-                                    value={formData.country}
-                                    onChange={handleCountryChange}
-                                    options={jurisdictionOptions}
-                                    error={formErrors.country}
-                                    icon={<GlobeIcon className="w-4 h-4" />}
-                                    searchable
-                                />
-
-                                <InstitutionalSelect
-                                    label="Administrative State"
-                                    required
-                                    value={formData.state}
-                                    onChange={handleStateChange}
-                                    disabled={!formData.country}
-                                    options={stateOptions}
-                                    error={formErrors.state}
-                                    icon={<LocationIcon className="w-4 h-4" />}
-                                    searchable
-                                />
-
-                                {availableCities.length > 0 ? (
-                                    <InstitutionalSelect
-                                        className="md:col-span-2"
-                                        label="Sync City"
-                                        required
-                                        value={formData.city}
-                                        onChange={val => setFormData({ ...formData, city: val })}
-                                        disabled={!formData.state}
-                                        options={cityOptions}
-                                        error={formErrors.city}
-                                        icon={<LocationIcon className="w-4 h-4" />}
-                                        searchable
-                                    />
-                                ) : (
-                                    <FloatingLabelInput
-                                        className="md:col-span-2"
-                                        label="Sync City"
-                                        required
-                                        value={formData.city}
-                                        onChange={e => setFormData({ ...formData, city: e.target.value })}
-                                        disabled={!formData.state}
-                                        error={formErrors.city}
-                                        icon={<LocationIcon className="w-4 h-4" />}
-                                    />
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Access Authority Group */}
-                        <div className="group/section">
-                            <div className="flex items-center gap-5 mb-10">
-                                <div className="w-12 h-12 rounded-2xl bg-purple-500/5 border border-purple-500/10 flex items-center justify-center transition-all duration-500 group-hover/section:bg-purple-500/10 group-hover/section:scale-110">
-                                    <UsersIcon className="w-5 h-5 text-purple-500" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h4 className="text-[13px] font-black uppercase text-white tracking-[0.3em]">Administrative Authority</h4>
-                                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Access Control & Identity Oversight</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-10">
-                                <FloatingLabelInput
-                                    label="Administrator Identity"
-                                    value={formData.adminName}
-                                    onChange={e => setFormData({ ...formData, adminName: e.target.value })}
-                                    required
-                                    error={formErrors.adminName}
-                                    hint="Primary node custodian legal name"
-                                    icon={<UsersIcon className="w-4 h-4" />}
-                                />
-                                <FloatingLabelInput
-                                    label="Secure Contact"
-                                    type="tel"
-                                    value={formData.adminPhone}
-                                    onChange={e => setFormData({ ...formData, adminPhone: e.target.value })}
-                                    hint="Verified communication for security alerts"
-                                    icon={<PhoneIcon className="w-4 h-4" />}
-                                />
-                                <div className="md:col-span-2">
-                                    <FloatingLabelInput
-                                        label="Protocol Email"
-                                        type="email"
-                                        required
-                                        value={formData.adminEmail}
-                                        onChange={e => setFormData({ ...formData, adminEmail: e.target.value })}
-                                        error={formErrors.adminEmail}
-                                        hint="Primary administrative alert relay"
-                                        icon={<MailIcon className="w-4 h-4" />}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {isHeadOfficeAdmin && (
-                            <div
-                                className={`flex items-start gap-6 p-8 rounded-[2.5rem] border transition-all duration-700 cursor-pointer 
-                                    ${formData.isMain
-                                        ? 'bg-primary/[0.03] border-primary/20 shadow-[0_20px_50px_rgba(var(--primary),0.05)] scale-[1.01]'
-                                        : 'bg-white/[0.01] border-white/5 hover:bg-white/[0.02] hover:border-white/10'}`}
-                                onClick={() => setFormData({ ...formData, isMain: !formData.isMain })}
-                            >
-                                <div className={`mt-1 w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all duration-500 
-                                    ${formData.isMain
-                                        ? 'bg-primary border-primary shadow-[0_0_20px_rgba(var(--primary),0.4)]'
-                                        : 'bg-black/40 border-white/10'}`}>
-                                    {formData.isMain && <CheckCircleIcon className="w-4 h-4 text-white animate-in zoom-in" />}
-                                </div>
-                                <div className="flex-grow space-y-1.5">
-                                    <p className="font-black text-[12px] uppercase tracking-[0.25em] text-white">Central Authority Node</p>
-                                    <p className="text-[11px] text-white/30 font-medium uppercase tracking-[0.1em] leading-relaxed">Designate this node as the Master Institutional Command center</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Bottom Fade */}
-                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0a0a0b] to-transparent z-20 pointer-events-none transition-opacity duration-300 group-hover/scroll:opacity-100 opacity-60" />
-            </div>
-
-            {/* Fixed Sticky Footer */}
-            <div className="p-8 border-t border-white/5 bg-[#0d0d0e] flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0 relative z-30">
-                <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="px-10 py-4 text-[11px] font-black text-white/20 uppercase tracking-[0.3em] hover:text-red-400 transition-all duration-300 order-2 sm:order-1 hover:bg-red-500/5 rounded-2xl"
-                >
-                    Discard Configuration
-                </button>
-                <button
-                    type="submit"
-                    disabled={isSaving || !isFormValid}
-                    className={`h-16 px-14 rounded-2xl font-black text-[12px] uppercase tracking-[0.3em] transition-all duration-500 flex items-center justify-center gap-4 group/submit order-1 sm:order-2 w-full sm:w-auto overflow-hidden relative
-                        ${!isFormValid
-                            ? 'bg-white/[0.02] text-white/10 cursor-not-allowed border border-white/5'
-                            : 'bg-primary text-white shadow-[0_20px_40px_rgba(var(--primary),0.2)] hover:scale-[1.02] hover:shadow-[0_20px_50px_rgba(var(--primary),0.3)] active:scale-[0.98]'}`}
-                >
-                    <AnimatePresence mode="wait">
-                        {isSaving ? (
-                            <motion.div
-                                key="saving"
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="flex items-center gap-4"
-                            >
-                                <Spinner size="sm" />
-                                <span>Deploying Node...</span>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="default"
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="flex items-center gap-4"
-                            >
-                                <CheckCircleIcon className="w-5 h-5 transition-transform group-hover/submit:scale-125" />
-                                <span>{editingBranch ? 'Re-Sync Node' : 'Initialize Node'}</span>
-                                {!isFormValid && (
-                                    <div className="absolute inset-0 bg-red-500/5 flex items-center justify-center opacity-0 group-hover/submit:opacity-100 transition-opacity">
-                                        <span className="text-red-400 text-[9px] font-black">Fix Validation Errors</span>
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </button>
-            </div>
-        </form>
-    );
-
-    if (hideHero) return <div className="bg-[#0a0a0b]">{renderForm()}</div>;
-
-    return (
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 animate-in fade-in duration-500 pb-20">
-            {/* ENHANCED HERO SECTION - ENTERPRISE COMMAND CENTER */}
-            {!hideHero && (
-                <div className="space-y-8 mb-14">
-                    {/* Page Header with Clear Hierarchy */}
-                    <div className="relative">
-                        <div className="flex flex-col gap-3">
-                            <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-none">
-                                Institutional Network
-                            </h1>
-                            <p className="text-sm md:text-base text-white/30 font-medium max-w-3xl leading-relaxed">
-                                Centralized oversight and management of distributed institutional nodes. Monitor network health, manage branch governance, and expand your infrastructure with enterprise-grade security.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Network Overview - Command Center Metrics */}
-                    <div className="relative bg-gradient-to-br from-[#0a0a0b] to-[#0f0f12] border border-white/10 rounded-3xl p-8 md:p-10 overflow-hidden shadow-2xl">
-                        {/* Subtle Background Pattern */}
-                        <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
-                        </div>
-
-                        <div className="relative z-10 space-y-8">
-                            {/* Header Row */}
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-                                <div>
-                                    <h2 className="text-lg font-black text-white uppercase tracking-wider mb-1.5">Network Overview</h2>
-                                    <p className="text-xs text-white/20 font-medium uppercase tracking-widest">Real-time system status</p>
-                                </div>
-
-                                {/* Primary Action - Strategic Placement */}
-                                <button
-                                    onClick={() => handleOpenCreate()}
-                                    className="group relative bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 min-h-[56px] focus:outline-none focus:ring-4 focus:ring-primary/50"
-                                    aria-label="Expand institutional network by adding a new node"
+                        return (
+                            <div key={step.id} className="flex flex-col items-center gap-3 relative group">
+                                <div
+                                    className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 transition-all duration-500 z-10
+                                        ${isActive
+                                            ? 'bg-[#0a0a0b] border-primary text-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-110'
+                                            : isCompleted
+                                                ? 'bg-primary border-primary text-white scale-100'
+                                                : 'bg-[#0a0a0b] border-white/10 text-white/20 scale-90'}`}
                                 >
-                                    <PlusIcon className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" />
-                                    <span>Expand Network</span>
-                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-primary/50 to-primary rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-300" />
-                                </button>
-                            </div>
-
-                            {/* Metrics Pills - Scannable & Compact */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                {/* Active Nodes Metric */}
-                                <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 rounded-2xl p-6 transition-all duration-300">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="p-2.5 bg-emerald-500/10 rounded-xl">
-                                            <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-3xl md:text-4xl font-black text-white tabular-nums">{branches.filter(b => !b.is_main_branch).length + (branches.some(b => b.is_main_branch) ? 1 : 0)}</div>
-                                            <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Active Nodes</div>
-                                        </div>
-                                    </div>
-                                    <div className="h-1 bg-emerald-500/10 rounded-full overflow-hidden">
-                                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }} />
-                                    </div>
+                                    {isCompleted ? <CheckCircleIcon className="w-5 h-5" /> : step.icon}
                                 </div>
-
-                                {/* Head Office Metric */}
-                                <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 rounded-2xl p-6 transition-all duration-300">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="p-2.5 bg-primary/10 rounded-xl">
-                                            <SchoolIcon className="w-5 h-5 text-primary" />
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-3xl md:text-4xl font-black text-white tabular-nums">{branches.filter(b => b.is_main_branch).length}</div>
-                                            <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Head Office</div>
-                                        </div>
-                                    </div>
-                                    <div className="h-1 bg-primary/10 rounded-full overflow-hidden">
-                                        <div className="h-full bg-primary rounded-full" style={{ width: branches.some(b => b.is_main_branch) ? '100%' : '0%' }} />
-                                    </div>
-                                </div>
-
-                                {/* Branches Metric */}
-                                <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 rounded-2xl p-6 transition-all duration-300">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="p-2.5 bg-blue-500/10 rounded-xl">
-                                            <GlobeIcon className="w-5 h-5 text-blue-500" />
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-3xl md:text-4xl font-black text-white tabular-nums">{branches.filter(b => !b.is_main_branch).length}</div>
-                                            <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Branches</div>
-                                        </div>
-                                    </div>
-                                    <div className="h-1 bg-blue-500/10 rounded-full overflow-hidden">
-                                        <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${branches.length > 0 ? (branches.filter(b => !b.is_main_branch).length / branches.length) * 100 : 0}%` }} />
-                                    </div>
+                                <div className="absolute top-12 flex flex-col items-center whitespace-nowrap">
+                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${isActive || isCompleted ? 'text-white' : 'text-white/20'}`}>
+                                        {step.label}
+                                    </span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Section Header for Node Registry */}
-                    <div className="flex items-center justify-between px-2">
-                        <div>
-                            <h2 className="text-xl font-black text-white uppercase tracking-wider">Node Registry</h2>
-                            <p className="text-xs text-white/20 font-medium mt-1">Infrastructure topology and branch governance</p>
-                        </div>
-                        {onNext && branches.length > 0 && (
-                            <button
-                                onClick={handleFinish}
-                                className="flex items-center gap-3 text-emerald-500 hover:text-emerald-400 font-black text-[10px] uppercase tracking-widest transition-all hover:gap-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-lg px-3 py-2 min-h-[44px]"
-                            >
-                                <span>Complete Setup</span>
-                                <CheckoutIcon className="w-4 h-4" />
-                            </button>
-                        )}
-                    </div>
+                        );
+                    })}
                 </div>
-            )}
+            </div>
 
-            {/* Back Navigation - Subtle & Out of Primary Flow */}
-            {!hideHero && onBack && (
-                <div className="mb-8 px-2">
-                    <button
-                        onClick={onBack}
-                        className="flex items-center gap-2 text-white/20 hover:text-white/60 transition-all text-[10px] font-bold uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-white/20 rounded-lg px-3 py-2 min-h-[44px]"
-                    >
-                        <ChevronLeftIcon className="w-3.5 h-3.5" />
-                        <span>Back</span>
-                    </button>
-                </div>
-            )}
-
-
-            {loading ? (
-                <div className="flex flex-col items-center justify-center p-32 gap-6">
-                    <Spinner size="lg" className="text-primary" />
-                    <p className="text-xs text-white/20 font-medium uppercase tracking-widest">Loading network topology...</p>
-                </div>
-            ) : branches.length === 0 ? (
-                <div
-                    onClick={() => handleOpenCreate()}
-                    className="group relative border-2 border-dashed border-white/10 hover:border-primary/30 rounded-3xl p-16 md:p-24 flex flex-col items-center justify-center text-center gap-8 cursor-pointer transition-all duration-300 hover:bg-white/[0.01] focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-                    tabIndex={0}
-                    role="button"
-                    aria-label="Initialize your first institutional node"
-                    onKeyDown={(e) => e.key === 'Enter' && handleOpenCreate()}
-                >
-                    {/* Animated Icon */}
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 group-hover:border-primary/30 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
-                            <PlusIcon className="w-14 h-14 text-white/20 group-hover:text-primary transition-colors duration-300" />
-                        </div>
-                    </div>
-
-                    {/* Instructional Microcopy */}
-                    <div className="space-y-4 max-w-md">
-                        <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">Initialize Network</h3>
-                        <p className="text-sm md:text-base text-white/30 font-medium leading-relaxed">
-                            Begin by establishing your head office node. This serves as the central authority for your institutional network.
-                        </p>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-xs font-black uppercase tracking-wider">
-                            <SparklesIcon className="w-4 h-4" />
-                            <span>Ready to Deploy</span>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <NodeRegistry>
-                    {/* Node Cards - Enterprise Infrastructure Design */}
-                    {branches.map(branch => (
-                        <NodeCard
-                            key={branch.id}
-                            name={branch.name}
-                            location={`${branch.city}, ${branch.state}`}
-                            adminName={branch.admin_name}
-                            isMain={branch.is_main_branch}
-                            onEdit={() => handleOpenEdit(branch)}
-                            onDelete={() => setDeletingBranch(branch)}
-                        />
-                    ))}
-
-                    {/* Add New Node Card - Expansion Affordance */}
-                    <ExpandNetworkCard onClick={() => handleOpenCreate()} />
-                </NodeRegistry>
-            )
-            }
-
-            {
-                isModalOpen && (
-                    <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-50 flex items-center justify-center p-0 md:p-10 animate-in fade-in duration-500" onClick={handleCloseModal}>
-                        <div
-                            className="bg-[#0a0a0b] w-full max-w-4xl h-full md:h-auto md:max-h-[95vh] rounded-none md:rounded-[3rem] border-0 md:border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
-                            onClick={e => e.stopPropagation()}
+            {/* Scrollable Form Body */}
+            <div className="flex-grow overflow-y-auto custom-scrollbar p-8 md:p-12 relative">
+                <div className="max-w-3xl mx-auto min-h-[400px]">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentStep}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-8"
                         >
-                            {/* Modal Header */}
-                            <div className="px-10 py-10 border-b border-white/5 flex justify-between items-center bg-white/[0.02] relative overflow-hidden shrink-0">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-                                <div>
-                                    <h3 className="text-3xl font-black text-white uppercase tracking-tight italic flex items-center gap-4">
-                                        <div className="p-2 bg-primary/20 rounded-lg">
-                                            <SchoolIcon className="w-6 h-6 text-primary" />
-                                        </div>
-                                        Initialize <span className="text-white/20 not-italic tracking-normal">Node</span>
-                                    </h3>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mt-3 ml-12">
-                                        Configure hardware identity & admin access
-                                    </p>
-                                </div>
-                                <button onClick={handleCloseModal} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white/40 hover:text-white transition-all transform hover:rotate-90 duration-500">
-                                    <XIcon className="w-6 h-6" />
-                                </button>
+                            <div className="mb-8 text-center">
+                                <h2 className="text-2xl font-bold text-white mb-2">{steps[currentStep].label}</h2>
+                                <p className="text-white/40 text-sm">{steps[currentStep].description}</p>
                             </div>
 
-                            {/* Modal Body */}
-                            <div className="flex-grow overflow-hidden relative bg-black/40">
-                                {renderForm()}
+                            {/* STEP 0: IDENTITY */}
+                            {currentStep === 0 && (
+                                <div className="space-y-6">
+                                    <FloatingLabelInput
+                                        label="School/Campus Name"
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                        error={displayErrors.name}
+                                        hint="Official Institutional identification name"
+                                        icon={<SchoolIcon className="w-4 h-4" />}
+                                        autoFocus
+                                    />
+                                    <FloatingLabelInput
+                                        label="Geo-location Address"
+                                        value={formData.address}
+                                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                        required
+                                        error={displayErrors.address}
+                                        hint="Full physical address for spatial verification"
+                                        icon={<LocationIcon className="w-4 h-4" />}
+                                        action={
+                                            <button
+                                                type="button"
+                                                onClick={handleResolveAddress}
+                                                disabled={isResolvingAddress || !formData.address.trim()}
+                                                className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors text-[10px] font-bold uppercase tracking-wider flex items-center gap-2"
+                                            >
+                                                {isResolvingAddress ? <Spinner size="sm" /> : <><SparklesIcon className="w-3 h-3" /> Auto-Detect</>}
+                                            </button>
+                                        }
+                                    />
+                                </div>
+                            )}
+
+                            {/* STEP 1: JURISDICTION */}
+                            {currentStep === 1 && (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <InstitutionalSelect
+                                            label="Jurisdiction"
+                                            required
+                                            value={formData.country}
+                                            onChange={handleCountryChange}
+                                            options={jurisdictionOptions}
+                                            error={displayErrors.country}
+                                            icon={<GlobeIcon className="w-4 h-4" />}
+                                            searchable
+                                        />
+                                        <InstitutionalSelect
+                                            label="Administrative State"
+                                            required
+                                            value={formData.state}
+                                            onChange={handleStateChange}
+                                            disabled={!formData.country}
+                                            options={stateOptions}
+                                            error={displayErrors.state}
+                                            icon={<LocationIcon className="w-4 h-4" />}
+                                            searchable
+                                        />
+                                    </div>
+                                    <div className="pt-2">
+                                        {availableCities.length > 0 ? (
+                                            <InstitutionalSelect
+                                                label="Sync City"
+                                                required
+                                                value={formData.city}
+                                                onChange={val => setFormData({ ...formData, city: val })}
+                                                disabled={!formData.state}
+                                                options={cityOptions}
+                                                error={displayErrors.city}
+                                                icon={<LocationIcon className="w-4 h-4" />}
+                                                searchable
+                                            />
+                                        ) : (
+                                            <FloatingLabelInput
+                                                label="Sync City"
+                                                required
+                                                value={formData.city}
+                                                onChange={e => setFormData({ ...formData, city: e.target.value })}
+                                                disabled={!formData.state}
+                                                error={displayErrors.city}
+                                                icon={<LocationIcon className="w-4 h-4" />}
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 2: AUTHORITY */}
+                            {currentStep === 2 && (
+                                <div className="space-y-6">
+                                    <FloatingLabelInput
+                                        label="Administrator Identity"
+                                        value={formData.adminName}
+                                        onChange={e => setFormData({ ...formData, adminName: e.target.value })}
+                                        required
+                                        error={displayErrors.adminName}
+                                        hint="Primary node custodian legal name"
+                                        icon={<UsersIcon className="w-4 h-4" />}
+                                    />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <FloatingLabelInput
+                                            label="Secure Contact"
+                                            type="tel"
+                                            value={formData.adminPhone}
+                                            onChange={e => setFormData({ ...formData, adminPhone: e.target.value })}
+                                            icon={<PhoneIcon className="w-4 h-4" />}
+                                        />
+                                        <FloatingLabelInput
+                                            label="Protocol Email"
+                                            type="email"
+                                            required
+                                            value={formData.adminEmail}
+                                            onChange={e => setFormData({ ...formData, adminEmail: e.target.value })}
+                                            error={displayErrors.adminEmail}
+                                            icon={<MailIcon className="w-4 h-4" />}
+                                        />
+                                    </div>
+
+                                    {isHeadOfficeAdmin && (
+                                        <div
+                                            onClick={() => setFormData({ ...formData, isMain: !formData.isMain })}
+                                            className={`flex items-start gap-4 p-6 rounded-2xl border transition-all cursor-pointer mt-4
+                                                ${formData.isMain
+                                                    ? 'bg-primary/5 border-primary/30 shadow-lg shadow-primary/5'
+                                                    : 'bg-white/5 border-white/5 hover:bg-white/10'}`}
+                                        >
+                                            <div className={`mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors
+                                                ${formData.isMain ? 'bg-primary border-primary' : 'border-white/20 bg-transparent'}`}>
+                                                {formData.isMain && <CheckCircleIcon className="w-3.5 h-3.5 text-white" />}
+                                            </div>
+                                            <div>
+                                                <h4 className="text-sm font-bold text-white uppercase tracking-wide">Central Authority Node</h4>
+                                                <p className="text-xs text-white/40 mt-1">Designate this node as the Master Institutional Command Center.</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* STEP 3: REVIEW */}
+                            {currentStep === 3 && (
+                                <div className="space-y-6">
+                                    <div className="bg-white/5 rounded-2xl p-6 border border-white/5 space-y-4">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-white/30 border-b border-white/5 pb-2">Identity Configuration</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><span className="block text-[10px] text-white/40 uppercase">Node Name</span><span className="text-sm font-medium text-white">{formData.name}</span></div>
+                                            <div><span className="block text-[10px] text-white/40 uppercase">Address</span><span className="text-sm font-medium text-white truncate">{formData.address}</span></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white/5 rounded-2xl p-6 border border-white/5 space-y-4">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-white/30 border-b border-white/5 pb-2">Jurisdiction Map</h3>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div><span className="block text-[10px] text-white/40 uppercase">City</span><span className="text-sm font-medium text-white">{formData.city}</span></div>
+                                            <div><span className="block text-[10px] text-white/40 uppercase">State</span><span className="text-sm font-medium text-white">{formData.state}</span></div>
+                                            <div><span className="block text-[10px] text-white/40 uppercase">Country</span><span className="text-sm font-medium text-white">{formData.country}</span></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white/5 rounded-2xl p-6 border border-white/5 space-y-4">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-white/30 border-b border-white/5 pb-2">Authority Profile</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><span className="block text-[10px] text-white/40 uppercase">Administrator</span><span className="text-sm font-medium text-white">{formData.adminName}</span></div>
+                                            <div><span className="block text-[10px] text-white/40 uppercase">Email Protocol</span><span className="text-sm font-medium text-white">{formData.adminEmail}</span></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                                        <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
+                                        <span className="text-xs text-emerald-400 font-medium">Ready for deployment to School Ledger.</span>
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+            </div>
+
+            {/* Sticky Action Footer */}
+            <div className="p-6 md:p-8 bg-[#0a0a0b] border-t border-white/5 flex items-center justify-between shrink-0">
+                <button
+                    onClick={currentStep === 0 ? handleCloseModal : handleBack}
+                    className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-white/30 hover:text-white transition-colors"
+                    type="button"
+                >
+                    {currentStep === 0 ? 'Cancel' : 'Back'}
+                </button>
+
+                {currentStep < 3 ? (
+                    <button
+                        onClick={handleNext}
+                        type="button"
+                        className="px-8 py-4 bg-primary hover:bg-primary/90 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-3"
+                    >
+                        Next Step <ChevronLeftIcon className="w-3 h-3 rotate-180" />
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-500/20 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-3"
+                    >
+                        {isSaving ? <Spinner size="sm" className="text-black" /> : <><CheckCircleIcon className="w-4 h-4" /> Initialize Node</>}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+
+if (hideHero) return <div className="bg-[#0a0a0b]">{renderForm()}</div>;
+
+return (
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 animate-in fade-in duration-500 pb-20">
+        {/* ENHANCED HERO SECTION - ENTERPRISE COMMAND CENTER */}
+        {!hideHero && (
+            <div className="space-y-8 mb-14">
+                {/* Page Header with Clear Hierarchy */}
+                <div className="relative">
+                    <div className="flex flex-col gap-3">
+                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-none">
+                            Institutional Network
+                        </h1>
+                        <p className="text-sm md:text-base text-white/30 font-medium max-w-3xl leading-relaxed">
+                            Centralized oversight and management of distributed institutional nodes. Monitor network health, manage branch governance, and expand your infrastructure with enterprise-grade security.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Network Overview - Command Center Metrics */}
+                <div className="relative bg-gradient-to-br from-[#0a0a0b] to-[#0f0f12] border border-white/10 rounded-3xl p-8 md:p-10 overflow-hidden shadow-2xl">
+                    {/* Subtle Background Pattern */}
+                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+                    </div>
+
+                    <div className="relative z-10 space-y-8">
+                        {/* Header Row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                            <div>
+                                <h2 className="text-lg font-black text-white uppercase tracking-wider mb-1.5">Network Overview</h2>
+                                <p className="text-xs text-white/20 font-medium uppercase tracking-widest">Real-time system status</p>
+                            </div>
+
+                            {/* Primary Action - Strategic Placement */}
+                            <button
+                                onClick={() => handleOpenCreate()}
+                                className="group relative bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 min-h-[56px] focus:outline-none focus:ring-4 focus:ring-primary/50"
+                                aria-label="Expand institutional network by adding a new node"
+                            >
+                                <PlusIcon className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" />
+                                <span>Expand Network</span>
+                                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-primary/50 to-primary rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-300" />
+                            </button>
+                        </div>
+
+                        {/* Metrics Pills - Scannable & Compact */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Active Nodes Metric */}
+                            <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 rounded-2xl p-6 transition-all duration-300">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="p-2.5 bg-emerald-500/10 rounded-xl">
+                                        <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-3xl md:text-4xl font-black text-white tabular-nums">{branches.filter(b => !b.is_main_branch).length + (branches.some(b => b.is_main_branch) ? 1 : 0)}</div>
+                                        <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Active Nodes</div>
+                                    </div>
+                                </div>
+                                <div className="h-1 bg-emerald-500/10 rounded-full overflow-hidden">
+                                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }} />
+                                </div>
+                            </div>
+
+                            {/* Head Office Metric */}
+                            <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 rounded-2xl p-6 transition-all duration-300">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="p-2.5 bg-primary/10 rounded-xl">
+                                        <SchoolIcon className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-3xl md:text-4xl font-black text-white tabular-nums">{branches.filter(b => b.is_main_branch).length}</div>
+                                        <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Head Office</div>
+                                    </div>
+                                </div>
+                                <div className="h-1 bg-primary/10 rounded-full overflow-hidden">
+                                    <div className="h-full bg-primary rounded-full" style={{ width: branches.some(b => b.is_main_branch) ? '100%' : '0%' }} />
+                                </div>
+                            </div>
+
+                            {/* Branches Metric */}
+                            <div className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 rounded-2xl p-6 transition-all duration-300">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="p-2.5 bg-blue-500/10 rounded-xl">
+                                        <GlobeIcon className="w-5 h-5 text-blue-500" />
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-3xl md:text-4xl font-black text-white tabular-nums">{branches.filter(b => !b.is_main_branch).length}</div>
+                                        <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Branches</div>
+                                    </div>
+                                </div>
+                                <div className="h-1 bg-blue-500/10 rounded-full overflow-hidden">
+                                    <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${branches.length > 0 ? (branches.filter(b => !b.is_main_branch).length / branches.length) * 100 : 0}%` }} />
+                                </div>
                             </div>
                         </div>
                     </div>
-                )
-            }
+                </div>
 
-            <ConfirmationModal
-                isOpen={!!deletingBranch}
-                onClose={() => setDeletingBranch(null)}
-                onConfirm={handleDelete}
-                title="Decommission Node"
-                message={`Permanently terminate connection to "${deletingBranch?.name}"?`}
-                confirmText="Terminate Node"
-                loading={isDeleting}
-            />
-        </div >
-    );
+                {/* Section Header for Node Registry */}
+                <div className="flex items-center justify-between px-2">
+                    <div>
+                        <h2 className="text-xl font-black text-white uppercase tracking-wider">Node Registry</h2>
+                        <p className="text-xs text-white/20 font-medium mt-1">Infrastructure topology and branch governance</p>
+                    </div>
+                    {onNext && branches.length > 0 && (
+                        <button
+                            onClick={handleFinish}
+                            className="flex items-center gap-3 text-emerald-500 hover:text-emerald-400 font-black text-[10px] uppercase tracking-widest transition-all hover:gap-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-lg px-3 py-2 min-h-[44px]"
+                        >
+                            <span>Complete Setup</span>
+                            <CheckoutIcon className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
+            </div>
+        )}
+
+        {/* Back Navigation - Subtle & Out of Primary Flow */}
+        {!hideHero && onBack && (
+            <div className="mb-8 px-2">
+                <button
+                    onClick={onBack}
+                    className="flex items-center gap-2 text-white/20 hover:text-white/60 transition-all text-[10px] font-bold uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-white/20 rounded-lg px-3 py-2 min-h-[44px]"
+                >
+                    <ChevronLeftIcon className="w-3.5 h-3.5" />
+                    <span>Back</span>
+                </button>
+            </div>
+        )}
+
+
+        {loading ? (
+            <div className="flex flex-col items-center justify-center p-32 gap-6">
+                <Spinner size="lg" className="text-primary" />
+                <p className="text-xs text-white/20 font-medium uppercase tracking-widest">Loading network topology...</p>
+            </div>
+        ) : branches.length === 0 ? (
+            <div
+                onClick={() => handleOpenCreate()}
+                className="group relative border-2 border-dashed border-white/10 hover:border-primary/30 rounded-3xl p-16 md:p-24 flex flex-col items-center justify-center text-center gap-8 cursor-pointer transition-all duration-300 hover:bg-white/[0.01] focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                tabIndex={0}
+                role="button"
+                aria-label="Initialize your first institutional node"
+                onKeyDown={(e) => e.key === 'Enter' && handleOpenCreate()}
+            >
+                {/* Animated Icon */}
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 group-hover:border-primary/30 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                        <PlusIcon className="w-14 h-14 text-white/20 group-hover:text-primary transition-colors duration-300" />
+                    </div>
+                </div>
+
+                {/* Instructional Microcopy */}
+                <div className="space-y-4 max-w-md">
+                    <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight">Initialize Network</h3>
+                    <p className="text-sm md:text-base text-white/30 font-medium leading-relaxed">
+                        Begin by establishing your head office node. This serves as the central authority for your institutional network.
+                    </p>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-xs font-black uppercase tracking-wider">
+                        <SparklesIcon className="w-4 h-4" />
+                        <span>Ready to Deploy</span>
+                    </div>
+                </div>
+            </div>
+        ) : (
+            <NodeRegistry>
+                {/* Node Cards - Enterprise Infrastructure Design */}
+                {branches.map(branch => (
+                    <NodeCard
+                        key={branch.id}
+                        name={branch.name}
+                        location={`${branch.city}, ${branch.state}`}
+                        adminName={branch.admin_name}
+                        isMain={branch.is_main_branch}
+                        onEdit={() => handleOpenEdit(branch)}
+                        onDelete={() => setDeletingBranch(branch)}
+                    />
+                ))}
+
+                {/* Add New Node Card - Expansion Affordance */}
+                <ExpandNetworkCard onClick={() => handleOpenCreate()} />
+            </NodeRegistry>
+        )
+        }
+
+        {
+            isModalOpen && (
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-50 flex items-center justify-center p-0 md:p-10 animate-in fade-in duration-500" onClick={handleCloseModal}>
+                    <div
+                        className="bg-[#0a0a0b] w-full max-w-4xl h-full md:h-auto md:max-h-[95vh] rounded-none md:rounded-[3rem] border-0 md:border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="px-10 py-10 border-b border-white/5 flex justify-between items-center bg-white/[0.02] relative overflow-hidden shrink-0">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                            <div>
+                                <h3 className="text-3xl font-black text-white uppercase tracking-tight italic flex items-center gap-4">
+                                    <div className="p-2 bg-primary/20 rounded-lg">
+                                        <SchoolIcon className="w-6 h-6 text-primary" />
+                                    </div>
+                                    Initialize <span className="text-white/20 not-italic tracking-normal">Node</span>
+                                </h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mt-3 ml-12">
+                                    Configure hardware identity & admin access
+                                </p>
+                            </div>
+                            <button onClick={handleCloseModal} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white/40 hover:text-white transition-all transform hover:rotate-90 duration-500">
+                                <XIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="flex-grow overflow-hidden relative bg-black/40">
+                            {renderForm()}
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        <ConfirmationModal
+            isOpen={!!deletingBranch}
+            onClose={() => setDeletingBranch(null)}
+            onConfirm={handleDelete}
+            title="Decommission Node"
+            message={`Permanently terminate connection to "${deletingBranch?.name}"?`}
+            confirmText="Terminate Node"
+            loading={isDeleting}
+        />
+    </div >
+);
 };

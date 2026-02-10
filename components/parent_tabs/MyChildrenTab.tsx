@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, formatError } from '../../services/supabase';
@@ -9,6 +8,8 @@ import ChildRegistrationModal from './ChildRegistrationModal';
 import { PlusIcon } from '../icons/PlusIcon';
 import { SearchIcon } from '../icons/SearchIcon';
 import clsx from 'clsx';
+import Tooltip from '../common/Tooltip'; // Import Tooltip
+import { motion, AnimatePresence } from 'framer-motion';
 
 type FilterType = 'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED';
 
@@ -45,7 +46,6 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
     useEffect(() => {
         fetchData();
 
-        // Setup Realtime Subscription for instant updates
         const channel = supabase.channel('family-nodes-sync')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'admissions' }, () => {
                 fetchData();
@@ -88,122 +88,147 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
 
     return (
         <div className="w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 font-sans">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10 mb-20">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10 mb-16">
                 <div className="max-w-2xl">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary/60"></div>
                         <span className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">Institutional Roster</span>
                     </div>
-                    <h2 className="text-6xl md:text-8xl font-serif font-black text-white tracking-tighter uppercase leading-[0.8] mb-8">
-                        Family <span className="opacity-100 font-serif">Nodes.</span>
+                    <h2 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tighter uppercase leading-[0.9] mb-6">
+                        Family <span className="opacity-100 font-serif text-primary">Nodes.</span>
                     </h2>
-                    <p className="text-white/40 text-[14px] leading-relaxed max-w-lg mt-10">
-                        Centralized oversight for enrollment identities, academic records, and secure institutional access within a verified environment.
+                    <p className="text-white/40 text-[14px] leading-relaxed max-w-lg">
+                        Manage all your children's profiles, track their academic integrity, and access secure institutional records from a single centralized hub.
                     </p>
                 </div>
 
                 <div className="flex items-center gap-4 w-full lg:w-auto shrink-0">
-                    <button
-                        onClick={() => { setEditingChild(null); setIsModalOpen(true); }}
-                        className="relative group overflow-hidden flex-grow lg:flex-grow-0 h-16 md:h-18 px-14 bg-[#7c3aed] text-white font-black text-[12px] uppercase tracking-[0.4em] rounded-2xl shadow-[0_15px_45px_rgba(124,58,237,0.3)] hover:bg-[#6d28d9] transition-all transform active:scale-[0.95] flex items-center justify-center gap-4"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                        <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
-                        <span>Provision Node</span>
-                    </button>
+                    <Tooltip content="Add a new child to your family roster">
+                        <button
+                            onClick={() => { setEditingChild(null); setIsModalOpen(true); }}
+                            className="relative group overflow-hidden flex-grow lg:flex-grow-0 h-14 md:h-16 px-10 bg-[#7c3aed] text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-[0_10px_40px_rgba(124,58,237,0.3)] hover:bg-[#6d28d9] hover:shadow-[0_15px_45px_rgba(124,58,237,0.5)] transition-all transform active:scale-[0.97] flex items-center justify-center gap-3"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                            <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
+                            <span>Add Child</span>
+                        </button>
+                    </Tooltip>
                 </div>
             </div>
 
             {/* Filter Hub */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-8 bg-black/40 p-4 rounded-[3rem] border border-white/5 mb-16 shadow-inner relative overflow-hidden group/filters">
-                <div className="flex bg-black/60 p-1.5 rounded-[2rem] border border-white/10 w-full md:w-auto overflow-x-auto no-scrollbar shadow-inner">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-black/40 p-3 rounded-[2.5rem] border border-white/5 mb-12 shadow-inner relative overflow-hidden group/filters">
+                <div className="flex bg-black/60 p-1.5 rounded-[2rem] border border-white/10 w-full md:w-auto overflow-x-auto no-scrollbar shadow-inner gap-1">
                     {(['ALL', 'APPROVED', 'PENDING', 'REJECTED'] as FilterType[]).map(f => (
                         <button
                             key={f}
                             onClick={() => setActiveFilter(f)}
                             className={clsx(
-                                "relative px-8 py-3.5 rounded-[1.5rem] text-[10px] font-black tracking-[0.3em] uppercase transition-all duration-500",
+                                "relative px-6 py-3 rounded-[1.5rem] text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-500 whitespace-nowrap",
                                 activeFilter === f
                                     ? "text-white z-10"
-                                    : "text-white/20 hover:text-white/40"
+                                    : "text-white/30 hover:text-white/60 hover:bg-white/5"
                             )}
                         >
                             {activeFilter === f && (
-                                <div className="absolute inset-0 bg-white/10 rounded-[1.5rem] ring-1 ring-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)] -z-10 animate-in zoom-in-90 duration-500"></div>
+                                <motion.div
+                                    layoutId="filter-pill"
+                                    className="absolute inset-0 bg-white/10 rounded-[1.5rem] ring-1 ring-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05)] -z-10"
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                />
                             )}
                             {f}
                         </button>
                     ))}
                 </div>
 
-                <div className="relative flex-grow w-full md:max-w-md group pr-4 transition-all duration-500">
-                    <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-white transition-colors duration-300" />
+                <div className="relative flex-grow w-full md:max-w-md group pr-2 transition-all duration-500">
+                    <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors duration-300" />
                     <input
                         type="text"
-                        placeholder="Search identities by name..."
+                        placeholder="Search child by name, grade or ID..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-16 w-full pl-16 pr-8 bg-black/40 border border-white/5 focus:border-white/20 rounded-2xl text-[13px] font-medium text-white outline-none transition-all placeholder:text-white/10 focus:bg-black/60 focus:ring-0 shadow-inner"
+                        className="h-14 w-full pl-12 pr-6 bg-black/40 border border-white/5 focus:border-white/20 rounded-2xl text-[12px] font-bold text-white outline-none transition-all placeholder:text-white/20 focus:bg-black/80 focus:ring-0 shadow-inner tracking-wide"
                     />
                 </div>
             </div>
 
             {/* Error Display */}
-            {error && (
-                <div className="mb-8 p-6 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center gap-4 animate-in shake">
-                    <AlertTriangleIcon className="w-6 h-6 shrink-0" />
-                    <p className="text-sm font-bold uppercase tracking-wide">{error}</p>
-                </div>
-            )}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="mb-8 p-6 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center gap-4"
+                    >
+                        <AlertTriangleIcon className="w-6 h-6 shrink-0" />
+                        <p className="text-sm font-bold uppercase tracking-wide">{error}</p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Card Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {filteredApplications.map((app, idx) => (
-                    <div key={app.id} className="animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${idx * 60}ms` }}>
-                        <ChildProfileCard
-                            child={app}
-                            isExpanded={false}
-                            onToggleExpand={() => { }}
-                            onEdit={() => { setEditingChild(app); setIsModalOpen(true); }}
-                            onManageDocuments={() => onManageDocuments(app.id)}
-                            onNavigateDashboard={async () => {
-                                const { error } = await supabase.rpc('parent_switch_student_view', { p_new_admission_id: app.id });
-                                if (!error) navigate('/student');
-                            }}
-                            index={idx + 1}
-                        />
-                    </div>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8">
+                <AnimatePresence>
+                    {filteredApplications.map((app, idx) => (
+                        <div key={app.id} className="h-full">
+                            <ChildProfileCard
+                                child={app}
+                                isExpanded={false}
+                                onToggleExpand={() => { }}
+                                onEdit={() => { setEditingChild(app); setIsModalOpen(true); }}
+                                onManageDocuments={() => onManageDocuments(app.id)}
+                                onNavigateDashboard={async () => {
+                                    const { error } = await supabase.rpc('parent_switch_student_view', { p_new_admission_id: app.id });
+                                    if (!error) navigate('/student');
+                                }}
+                                index={idx + 1}
+                            />
+                        </div>
+                    ))}
+                </AnimatePresence>
 
-                {/* Empty State / Add Child Trigger */}
-                <button
+                {/* Enhanced Empty State / Add Child Trigger - Always visible at the end */}
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => { setEditingChild(null); setIsModalOpen(true); }}
-                    className="flex flex-col items-center justify-center p-12 rounded-[2.5rem] border-2 border-dashed border-white/5 hover:border-primary/40 hover:bg-primary/[0.02] transition-all duration-1000 group relative overflow-hidden h-full min-h-[400px] bg-white/[0.01]"
+                    className="flex flex-col items-center justify-center p-12 rounded-[2rem] border-2 border-dashed border-white/10 hover:border-primary/40 hover:bg-primary/[0.03] transition-all duration-500 group relative overflow-hidden h-full min-h-[380px] w-full"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
 
-                    <div className="w-20 h-20 rounded-3xl bg-white/[0.02] flex items-center justify-center mb-10 transition-all duration-700 group-hover:bg-primary/10 group-hover:scale-110 group-hover:rotate-[10deg] border border-white/5 shadow-2xl relative z-10">
-                        <PlusIcon className="w-8 h-8 text-white/5 group-hover:text-primary transition-all duration-500" />
+                    <div className="w-24 h-24 rounded-full bg-white/[0.03] flex items-center justify-center mb-8 transition-all duration-500 group-hover:bg-primary/10 group-hover:scale-110 border border-white/5 shadow-2xl relative z-10">
+                        <PlusIcon className="w-10 h-10 text-white/10 group-hover:text-primary transition-all duration-500" />
                     </div>
 
-                    <div className="text-center relative z-10">
-                        <span className="font-serif font-black text-lg text-white/20 group-hover:text-white/90 transition-all uppercase tracking-[0.2em] block mb-4">Enroll <span className="text-primary/40 group-hover:text-primary">Sibling.</span></span>
-                        <p className="text-[12px] text-white/10 font-medium max-w-[220px] mx-auto leading-relaxed group-hover:text-white/40 transition-all italic">Create a new family node to link an additional identity to your institutional roster.</p>
+                    <div className="text-center relative z-10 px-4">
+                        <span className="font-serif font-black text-xl text-white/30 group-hover:text-white transition-all uppercase tracking-wider block mb-2">
+                            Enroll Sibling
+                        </span>
+                        <p className="text-xs text-white/20 font-medium leading-relaxed group-hover:text-white/50 transition-all max-w-[200px] mx-auto mb-6">
+                            Add another child to your family account to manage their profile.
+                        </p>
+                        <span className="inline-block px-6 py-2.5 rounded-full bg-white/[0.05] text-[10px] font-bold uppercase tracking-widest text-white/30 group-hover:bg-primary group-hover:text-white transition-all">
+                            Start Application
+                        </span>
                     </div>
-
-                    {/* Corner accent */}
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 blur-[40px] rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-all"></div>
-                </button>
+                </motion.button>
             </div>
 
-            {isModalOpen && (
-                <ChildRegistrationModal
-                    child={editingChild}
-                    onClose={() => { setIsModalOpen(false); setEditingChild(null); }}
-                    onSave={fetchData}
-                    currentUserId={profile.id}
-                />
-            )}
+            {/* Modal */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <ChildRegistrationModal
+                        key="modal"
+                        child={editingChild}
+                        onClose={() => { setIsModalOpen(false); setEditingChild(null); }}
+                        onSave={fetchData}
+                        currentUserId={profile.id}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };

@@ -217,6 +217,18 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-[#08090a]">
             <Suspense fallback={<PageLoader label="MOUNTING INTERFACE" />}>
                 <Routes>
+                    <Route path="/student-portal" element={
+                        profile ? (
+                            <StudentDashboard
+                                profile={profile}
+                                onSignOut={handleSignOut}
+                                onSwitchRole={() => { }}
+                                onSelectRole={handleSelectRole}
+                            />
+                        ) : (
+                            <PageLoader label="LOADING PORTAL" />
+                        )
+                    } />
                     <Route path="/" element={renderDashboard()} />
                     <Route path="*" element={<NotFound />} />
                 </Routes>

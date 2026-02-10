@@ -194,8 +194,8 @@ export interface AdmissionApplication {
     gender?: string;
     source_type?: 'Enquiry' | 'Admission';
     enquiry_id?: string;
+    school_name?: string;
 }
-
 export interface FinanceData {
     revenue_ytd: number;
     collections_this_month: number;
