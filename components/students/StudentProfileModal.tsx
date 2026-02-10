@@ -966,55 +966,24 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
         setLoading(true);
         try {
             const classId = parseInt(selectedClassId);
-            const branchId = student.branch_id || (targetClass as any).branch_id || null; // Ensure null if undefined
+            const branchId = student.branch_id || (targetClass as any).branch_id || null;
 
-            console.log('[AssignClass] Starting assignment:', {
+            console.log('[AssignClass] Starting Assignment (V3)...', {
                 student_id: student.id, class_id: classId, branch_id: branchId,
                 class_name: targetClass.name
             });
 
-            let assignSuccess = false;
-            let successMessage = '';
+            // 1. Try V3 RPC (Most Robust)
+            const { data: v3Result, error: v3Error } = await supabase.rpc('assign_student_class_v3', {
+                p_student_id: student.id,
+                p_class_id: classId,
+                p_branch_id: branchId
+            });
 
-            // Strategy 1: RPC (Best for permissions & atomic updates)
-            try {
-                const { data: rawData, error: rpcError } = await supabase.rpc('admin_assign_student_class', {
-                    p_student_id: student.id,
-                    p_class_id: classId,
-                    p_branch_id: branchId
-                });
-
-                if (rpcError) throw rpcError;
-
-                const parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-                if (parsed && parsed.success === true) {
-                    assignSuccess = true;
-                    successMessage = 'RPC Success';
-                } else {
-                    console.warn('[AssignClass] RPC returned fail:', parsed);
-                }
-            } catch (rpcErr: any) {
-                console.warn('[AssignClass] RPC Strategy failed:', rpcErr);
-
-                // Retry RPC without branch_id (Legacy compatibility)
-                if (rpcErr.code === '42883' || rpcErr.message?.includes('function')) {
-                    try {
-                        const { data: rawData2, error: rpcError2 } = await supabase.rpc('admin_assign_student_class', {
-                            p_student_id: student.id,
-                            p_class_id: classId
-                        });
-                        if (!rpcError2 && (rawData2 as any)?.success) {
-                            assignSuccess = true;
-                            successMessage = 'RPC Legacy Success';
-                        }
-                    } catch (e) { console.warn('Legacy RPC failed'); }
-                }
-            }
-
-            // Strategy 2: Direct UPDATE via supabaseAdmin (Service Role)
-            if (!assignSuccess) {
-                console.log('[AssignClass] Attempting Strategy 2: Admin Service Role Update...');
-                const { error: updateError } = await supabaseAdmin
+            if (v3Error) {
+                console.warn('[AssignClass] V3 RPC Failed:', v3Error);
+                // Fallback to Direct Update (Permissions should be fixed by script)
+                const { error: directError } = await supabaseAdmin
                     .from('student_profiles')
                     .update({
                         assigned_class_id: classId,
@@ -1024,48 +993,30 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
                     })
                     .eq('user_id', student.id);
 
-                if (updateError) {
-                    console.error('[AssignClass] Admin Update failed:', updateError);
-                } else {
-                    assignSuccess = true;
-                    successMessage = 'Admin Direct Update Success';
+                if (directError) throw new Error(`Direct Update Failed: ${directError.message}`);
+                console.log('[AssignClass] Direct Update Success');
+
+            } else {
+                // Check internal success flag
+                const parsed = typeof v3Result === 'string' ? JSON.parse(v3Result) : v3Result;
+                if (!parsed?.success) {
+                    throw new Error(parsed?.message || 'Unknown Failure in V3 Logic');
                 }
+                console.log('[AssignClass] V3 RPC Success:', parsed);
             }
 
-            // Strategy 3: Direct UPDATE via Client (Relies on RLS)
-            if (!assignSuccess) {
-                console.log('[AssignClass] Attempting Strategy 3: Client Update (RLS)...');
-                const { error: clientError } = await supabase
-                    .from('student_profiles')
-                    .update({
-                        assigned_class_id: classId,
-                        grade: (targetClass as any).grade_level || student.grade,
-                        enrollment_status: 'Active'
-                    })
-                    .eq('user_id', student.id);
-
-                if (clientError) {
-                    throw new Error(`All assignment strategies failed. Last error: ${clientError.message}`);
-                }
-                assignSuccess = true;
-                successMessage = 'Client Direct Update Success';
-            }
-
-            // Final Verification
-            const { data: verifyRow, error: verifyError } = await supabaseAdmin
+            // 2. Immediate readback (Sanity Check)
+            const { data: verifyRow } = await supabaseAdmin
                 .from('student_profiles')
                 .select('assigned_class_id')
                 .eq('user_id', student.id)
                 .maybeSingle();
 
-            if (verifyError || verifyRow?.assigned_class_id !== classId) {
-                throw new Error(
-                    `Persistence verification failed. Expected class ID ${classId}, got ${verifyRow?.assigned_class_id}. ` +
-                    'Please run FIX_ACADEMIC_PLACEMENT_V2.sql in Supabase SQL Editor.'
-                );
+            if (verifyRow?.assigned_class_id !== classId) {
+                throw new Error(`Persistence Error: Database currently shows class ${verifyRow?.assigned_class_id || 'NULL'}. Expected ${classId}. Please run the V3 SQL script.`);
             }
 
-            console.log(`[AssignClass] ✅ Enrollment Finalized via ${successMessage}`);
+            console.log('[AssignClass] Assignment Verified.');
 
             onSuccess({
                 class_id: classId,
@@ -1076,8 +1027,9 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
             });
 
         } catch (err: any) {
-            console.error("[AssignClass] Assignment error:", err);
-            alert("Enrollment Failed: " + (err.message || "Unknown error"));
+            console.error("[AssignClass] Error:", err);
+            // Show detailed alert so user knows what failed
+            alert(`Enrollment System Error: ${err.message || 'Unknown issue'}. Contact Admin.`);
         } finally {
             setLoading(false);
         }
