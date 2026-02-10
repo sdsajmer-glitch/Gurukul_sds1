@@ -166,6 +166,9 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         grade: sanitizeVal(student.grade),
         date_of_birth: parseDate(student.date_of_birth),
         gender: sanitizeVal(student.gender),
+        blood_group: sanitizeVal((student as any).blood_group),
+        religion: sanitizeVal((student as any).religion),
+        category: sanitizeVal((student as any).category),
         phone: sanitizeVal(student.phone),
         address: sanitizeVal(student.address),
         parent_guardian_details: sanitizeVal(student.parent_guardian_details),
@@ -182,6 +185,9 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 grade: sanitizeVal(student.grade) || prev.grade,
                 date_of_birth: parseDate(student.date_of_birth) || prev.date_of_birth,
                 gender: sanitizeVal(student.gender) || prev.gender,
+                blood_group: sanitizeVal((student as any).blood_group) || prev.blood_group,
+                religion: sanitizeVal((student as any).religion) || prev.religion,
+                category: sanitizeVal((student as any).category) || prev.category,
                 phone: sanitizeVal(student.phone) || prev.phone,
                 address: sanitizeVal(student.address) || prev.address,
                 parent_guardian_details: sanitizeVal(student.parent_guardian_details) || prev.parent_guardian_details,
@@ -398,6 +404,21 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
 
             if (rpcError) throw rpcError;
 
+            // Update additional fields (blood_group, religion, category) in student_profiles
+            const { error: profileError } = await supabase
+                .from('student_profiles')
+                .update({
+                    blood_group: formData.blood_group || null,
+                    religion: formData.religion || null,
+                    category: formData.category || null,
+                })
+                .eq('user_id', student.id);
+
+            if (profileError) {
+                console.warn('Additional fields update warning:', profileError);
+                // Don't throw - these are optional fields
+            }
+
             onSave();
             onClose();
         } catch (err: any) {
@@ -577,6 +598,110 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             </div>
 
                             <FloatingInput label="Date of Birth" type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} icon={<CalendarIcon className="w-4 h-4" />} readOnly={isSchoolAdmin} />
+
+                            {/* Blood Group Field */}
+                            <div className="relative group/select">
+                                <select
+                                    name="blood_group"
+                                    value={formData.blood_group}
+                                    onChange={handleChange}
+                                    disabled={isSchoolAdmin}
+                                    className={`peer w-full h-[58px] rounded-2xl border border-white/5 bg-black/40 px-5 pl-12 text-sm text-white shadow-inner focus:outline-none focus:border-[#7c3aed]/30 focus:ring-4 focus:ring-[#7c3aed]/5 transition-all duration-500 appearance-none relative z-10 ${isSchoolAdmin ? 'cursor-default opacity-40' : 'cursor-pointer'}`}
+                                >
+                                    <option value="" className="bg-[#0c0e12]">Select Blood Group...</option>
+                                    <option value="A+" className="bg-[#0c0e12]">A+</option>
+                                    <option value="A-" className="bg-[#0c0e12]">A-</option>
+                                    <option value="B+" className="bg-[#0c0e12]">B+</option>
+                                    <option value="B-" className="bg-[#0c0e12]">B-</option>
+                                    <option value="AB+" className="bg-[#0c0e12]">AB+</option>
+                                    <option value="AB-" className="bg-[#0c0e12]">AB-</option>
+                                    <option value="O+" className="bg-[#0c0e12]">O+</option>
+                                    <option value="O-" className="bg-[#0c0e12]">O-</option>
+                                </select>
+                                <div className="absolute top-1/2 -translate-y-1/2 left-5 text-white/20 pointer-events-none transition-colors group-focus-within/select:text-[#7c3aed] z-20">
+                                    <div className="w-4 h-4 flex items-center justify-center">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.25em] text-white/40 transition-all duration-500 peer-focus:text-[#a78bfa] z-20">Blood Group</label>
+                                {!isSchoolAdmin && (
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover/select:text-white/40 transition-colors z-20">
+                                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Religion Field */}
+                            <div className="relative group/select">
+                                <select
+                                    name="religion"
+                                    value={formData.religion}
+                                    onChange={handleChange}
+                                    disabled={isSchoolAdmin}
+                                    className={`peer w-full h-[58px] rounded-2xl border border-white/5 bg-black/40 px-5 pl-12 text-sm text-white shadow-inner focus:outline-none focus:border-[#7c3aed]/30 focus:ring-4 focus:ring-[#7c3aed]/5 transition-all duration-500 appearance-none relative z-10 ${isSchoolAdmin ? 'cursor-default opacity-40' : 'cursor-pointer'}`}
+                                >
+                                    <option value="" className="bg-[#0c0e12]">Select Religion...</option>
+                                    <option value="Hinduism" className="bg-[#0c0e12]">Hinduism</option>
+                                    <option value="Islam" className="bg-[#0c0e12]">Islam</option>
+                                    <option value="Christianity" className="bg-[#0c0e12]">Christianity</option>
+                                    <option value="Sikhism" className="bg-[#0c0e12]">Sikhism</option>
+                                    <option value="Buddhism" className="bg-[#0c0e12]">Buddhism</option>
+                                    <option value="Jainism" className="bg-[#0c0e12]">Jainism</option>
+                                    <option value="Other" className="bg-[#0c0e12]">Other</option>
+                                </select>
+                                <div className="absolute top-1/2 -translate-y-1/2 left-5 text-white/20 pointer-events-none transition-colors group-focus-within/select:text-[#7c3aed] z-20">
+                                    <div className="w-4 h-4 flex items-center justify-center">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.25em] text-white/40 transition-all duration-500 peer-focus:text-[#a78bfa] z-20">Religion</label>
+                                {!isSchoolAdmin && (
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover/select:text-white/40 transition-colors z-20">
+                                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Category Field */}
+                            <div className="relative group/select">
+                                <select
+                                    name="category"
+                                    value={formData.category}
+                                    onChange={handleChange}
+                                    disabled={isSchoolAdmin}
+                                    className={`peer w-full h-[58px] rounded-2xl border border-white/5 bg-black/40 px-5 pl-12 text-sm text-white shadow-inner focus:outline-none focus:border-[#7c3aed]/30 focus:ring-4 focus:ring-[#7c3aed]/5 transition-all duration-500 appearance-none relative z-10 ${isSchoolAdmin ? 'cursor-default opacity-40' : 'cursor-pointer'}`}
+                                >
+                                    <option value="" className="bg-[#0c0e12]">Select Category...</option>
+                                    <option value="General" className="bg-[#0c0e12]">General</option>
+                                    <option value="OBC" className="bg-[#0c0e12]">OBC (Other Backward Class)</option>
+                                    <option value="SC" className="bg-[#0c0e12]">SC (Scheduled Caste)</option>
+                                    <option value="ST" className="bg-[#0c0e12]">ST (Scheduled Tribe)</option>
+                                    <option value="EWS" className="bg-[#0c0e12]">EWS (Economically Weaker Section)</option>
+                                </select>
+                                <div className="absolute top-1/2 -translate-y-1/2 left-5 text-white/20 pointer-events-none transition-colors group-focus-within/select:text-[#7c3aed] z-20">
+                                    <div className="w-4 h-4 flex items-center justify-center">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <label className="absolute left-10 top-0 -translate-y-1/2 bg-[#0c0e12] px-2 text-[10px] font-black uppercase tracking-[0.25em] text-white/40 transition-all duration-500 peer-focus:text-[#a78bfa] z-20">Category</label>
+                                {!isSchoolAdmin && (
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover/select:text-white/40 transition-colors z-20">
+                                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </section>
 
