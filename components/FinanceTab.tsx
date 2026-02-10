@@ -38,6 +38,7 @@ import RevenueTrendChart from './finance/charts/RevenueTrendChart';
 import CollectionDistributionChart from './finance/charts/CollectionDistributionChart';
 import { StatsSkeleton, Skeleton } from './common/Skeleton';
 import PremiumAvatar from './common/PremiumAvatar';
+import FinanceAuditLog from './finance/FinanceAuditLog';
 
 const formatCurrency = (amount: number, currency: CurrencyCode = 'INR') => {
     return new Intl.NumberFormat('en-IN', {
@@ -176,14 +177,19 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
         if (!financeData) return;
         setIsAnalyzing(true);
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            // FIX: Correct SDK initialization for @google/genai
+            const genAI = new GoogleGenAI(process.env.API_KEY || '');
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
             const prompt = `Act as an institutional CFO. Analyze these school stats: Revenue YTD: ${financeData.revenue_ytd}, Pending Dues: ${financeData.pending_dues}, Online Sync Rate: ${financeData.online_payments}. Provide a 25-word strategic insight on institutional liquidity and collection risk. Use professional, architectural tone.`;
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-pro-preview',
-                contents: prompt
-            });
-            setAiInsight(response.text || "Synchronizing insights...");
+
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+
+            setAiInsight(text || "Synchronizing insights...");
         } catch (e) {
+            console.error("AI Oracle Error:", e);
             setAiInsight("AI context currently unavailable.");
         } finally {
             setIsAnalyzing(false);
@@ -439,8 +445,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                                             <div className="w-72 mx-auto">
                                                                 <div className="flex justify-between items-center mb-5 px-1">
                                                                     <span className={`text-[10px] font-black uppercase tracking-widest ${integrity >= 90 ? 'text-emerald-500' :
-                                                                            isCritical ? 'text-red-500' :
-                                                                                isWarning ? 'text-amber-500' : 'text-white/40'
+                                                                        isCritical ? 'text-red-500' :
+                                                                            isWarning ? 'text-amber-500' : 'text-white/40'
                                                                         }`}>
                                                                         {integrity >= 90 ? 'STABLE_NODE' : isCritical ? 'CRITICAL_RISK' : 'AT_RISK'}
                                                                     </span>
@@ -449,8 +455,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                                                 <div className="h-2 w-full bg-white/[0.03] rounded-full overflow-hidden border border-white/5 p-0.5 shadow-inner group-hover:border-white/10 transition-colors">
                                                                     <div
                                                                         className={`h-full rounded-full transition-all duration-2000 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[0_0_20px_rgba(0,0,0,0.5)] ${integrity >= 90 ? 'bg-emerald-500 shadow-emerald-500/20' :
-                                                                                isCritical ? 'bg-red-500 shadow-red-500/20' :
-                                                                                    isWarning ? 'bg-amber-500 shadow-amber-500/20' : 'bg-primary shadow-primary/20'
+                                                                            isCritical ? 'bg-red-500 shadow-red-500/20' :
+                                                                                isWarning ? 'bg-amber-500 shadow-amber-500/20' : 'bg-primary shadow-primary/20'
                                                                             }`}
                                                                         style={{ width: `${integrity}%` }}
                                                                     ></div>
@@ -570,10 +576,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     )}
 
                     {activeView === 'audit' && (
-                        <div className="p-40 text-center flex flex-col items-center gap-10 opacity-20 animate-in fade-in duration-1000">
-                            <ShieldCheckIcon className="w-24 h-24 text-white" />
-                            <h3 className="text-3xl font-black uppercase tracking-[0.6em]">Audit Matrix Standby</h3>
-                            <p className="text-sm font-bold uppercase tracking-[0.3em] max-w-sm mx-auto">Access restricted to Head Office administrators. Verifying protocol clearances...</p>
+                        <div className="animate-in fade-in duration-700">
+                            <FinanceAuditLog branchId={branchId || null} />
                         </div>
                     )}
                 </AnimatePresence>

@@ -80,15 +80,29 @@ const EnrollmentChart = () => (
             ))}
         </div>
         <div className="flex-grow relative overflow-hidden pt-8">
-            <div
-                className="absolute bottom-0 left-0 right-0 h-[70%] bg-gradient-to-t from-primary/30 to-transparent animate-aurora"
-                style={{ clipPath: 'path("M0,100 C15,80 35,90 50,70 S85,30 100,40 V100 Z")' }}
+            <motion.div
+                initial={{ opacity: 0, scaleY: 0 }}
+                animate={{ opacity: 1, scaleY: 1 }}
+                transition={{ duration: 1.5, ease: "circOut" }}
+                className="absolute bottom-0 left-0 right-0 h-[70%] bg-gradient-to-t from-primary/30 via-primary/5 to-transparent origin-bottom"
+                style={{ clipPath: 'polygon(0% 80%, 15% 60%, 35% 70%, 50% 50%, 65% 30%, 85% 10%, 100% 20%, 100% 100%, 0% 100%)' }}
             />
             <svg className="w-full h-full absolute inset-0 overflow-visible" preserveAspectRatio="none">
-                <path className="sparkline" d="M0,80 C15,60 35,70 50,50 S85,10 100,20" fill="none" stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round" vectorEffect="non-scaling-stroke shadow-2xl" />
+                <motion.path
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 2, ease: "easeInOut" }}
+                    d="M0,80 C15,60 35,70 50,50 S85,10 100,20"
+                    fill="none"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                    className="drop-shadow-[0_0_12px_rgba(var(--primary),0.8)]"
+                />
             </svg>
-            <div className="absolute left-[65%] top-[25%]">
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white text-black text-[10px] font-black px-4 py-2 rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.2)] whitespace-nowrap uppercase tracking-widest">
+            <div className="absolute left-[85%] top-[10%] group">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white text-black text-[10px] font-black px-4 py-2 rounded-xl shadow-[0_0_30px_rgba(255,255,255,0.2)] whitespace-nowrap uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     Peak: 1,102 Students
                     <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-white"></div>
                 </div>
@@ -99,9 +113,43 @@ const EnrollmentChart = () => (
         <div className="flex justify-between mt-6 text-[10px] text-white/20 font-black uppercase tracking-[0.3em] px-4">
             <span>Quarter 01</span><span>Quarter 02</span><span>Quarter 03</span><span>Quarter 04</span>
         </div>
-        <style>{`.sparkline { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: 3s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards path-draw; } @keyframes path-draw { to { stroke-dashoffset: 0; } }`}</style>
     </div>
 );
+
+const GradeRevenueChart = () => {
+    const data = [
+        { grade: '1-3', value: 85, color: 'bg-primary' },
+        { grade: '4-6', value: 65, color: 'bg-indigo-500' },
+        { grade: '7-9', value: 95, color: 'bg-emerald-500' },
+        { grade: '10-12', value: 75, color: 'bg-blue-500' }
+    ];
+
+    return (
+        <div className="w-full h-full flex flex-col justify-end gap-12 pt-4">
+            <div className="flex-grow flex items-end justify-between gap-6 px-4">
+                {data.map((item, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-6 group">
+                        <div className="relative w-full flex flex-col items-center justify-end h-full min-h-[180px]">
+                            <motion.div
+                                initial={{ height: 0 }}
+                                animate={{ height: `${item.value}%` }}
+                                transition={{ duration: 1.5, delay: idx * 0.1, ease: "circOut" }}
+                                className={`w-full max-w-[40px] ${item.color} rounded-t-2xl relative shadow-[0_0_40px_-5px_rgba(0,0,0,0.3)] group-hover:brightness-125 transition-all duration-500`}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-[10px] font-black text-white opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest">
+                                    {item.value}%
+                                </div>
+                            </motion.div>
+                        </div>
+                        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] group-hover:text-white transition-colors">Grade {item.grade}</span>
+                    </div>
+                ))}
+            </div>
+            <div className="h-px bg-white/5 w-full"></div>
+        </div>
+    );
+};
 
 const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ branchId }) => {
     const [stats, setStats] = useState<AdminAnalyticsStats | null>(null);
@@ -216,11 +264,8 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ branchId }) => {
                             </div>
                         </div>
                     </div>
-                    <div className="p-10 flex-grow flex flex-col items-center justify-center space-y-6 relative z-10">
-                        <div className="w-24 h-24 border-4 border-dashed border-white/10 rounded-full flex items-center justify-center animate-spin-slow text-white/10">
-                            <SparklesIcon className="w-10 h-10" />
-                        </div>
-                        <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.4em] text-center max-w-[200px] leading-relaxed">Synthesizing Fiscal Intelligence Feed...</p>
+                    <div className="p-10 md:p-14 flex-grow relative z-10 flex flex-col justify-end">
+                        <GradeRevenueChart />
                     </div>
                 </div>
             </div>
@@ -228,40 +273,82 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ branchId }) => {
             {/* --- Insights & Recent Activity --- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div className="lg:col-span-1 group relative bg-[#0a0a0c]/80 backdrop-blur-2xl border border-white/5 rounded-[3rem] shadow-2xl p-10 ring-1 ring-white/5 overflow-hidden transition-all duration-700 hover:ring-white/20">
-                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
-                    <div className="flex items-center gap-5 mb-8 relative z-10">
-                        <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-inner">
+                    <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent"></div>
+                    <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/10 rounded-full blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+
+                    <div className="flex items-center gap-5 mb-10 relative z-10">
+                        <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-inner group-hover:rotate-12 transition-transform">
                             <SparklesIcon className="w-7 h-7 animate-pulse" />
                         </div>
                         <h3 className="font-black text-2xl text-white font-serif uppercase tracking-tight">Core Insights</h3>
                     </div>
-                    <div className="space-y-6 text-sm relative z-10">
-                        <div className="p-6 bg-white/5 rounded-2xl border border-white/5 group-hover:bg-white/10 transition-colors">
+
+                    <div className="space-y-6 relative z-10">
+                        <motion.div
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            className="p-8 bg-white/5 rounded-[2rem] border border-white/5 group-hover:bg-white/[0.07] group-hover:border-white/10 transition-all duration-500"
+                        >
                             <p className="text-white/40 leading-relaxed font-medium">
-                                <strong className="text-primary uppercase tracking-widest text-[10px] block mb-2 font-black">Growth Marker</strong>
-                                Enrollment velocity has accelerated by <strong className="text-white">12.4%</strong> since last audit, primarily clustered in the Secondary Grade brackets.
+                                <strong className="text-primary uppercase tracking-[0.4em] text-[10px] block mb-4 font-black">Growth Marker</strong>
+                                Enrollment velocity has accelerated by <strong className="text-white text-lg">12.4%</strong> since last audit, primarily clustered in Secondary Grade brackets.
                             </p>
-                        </div>
-                        <div className="p-6 bg-white/5 rounded-2xl border border-white/5 group-hover:bg-white/10 transition-colors">
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.8 }}
+                            className="p-8 bg-white/5 rounded-[2rem] border border-white/5 group-hover:bg-white/[0.07] group-hover:border-white/10 transition-all duration-500"
+                        >
                             <p className="text-white/40 leading-relaxed font-medium">
-                                <strong className="text-amber-500 uppercase tracking-widest text-[10px] block mb-2 font-black">Fiscal Alert</strong>
-                                Cash liquidity remains high, however, <strong className="text-white">12 protocol reviews</strong> are pending in the financial vault needing immediate verification.
+                                <strong className="text-amber-500 uppercase tracking-[0.4em] text-[10px] block mb-4 font-black">Fiscal Alert</strong>
+                                Cash liquidity remains high, however, <strong className="text-white text-lg">12 protocol reviews</strong> are pending in the financial vault for verification.
                             </p>
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
 
                 <div className="lg:col-span-2 group relative bg-[#0a0a0c]/80 backdrop-blur-2xl border border-white/5 rounded-[3rem] shadow-2xl ring-1 ring-white/5 overflow-hidden transition-all duration-700 hover:ring-white/20">
                     <div className="p-10 md:p-12 border-b border-white/5 bg-white/[0.02] flex justify-between items-center relative z-10">
                         <div className="flex items-center gap-5">
-                            <div className="p-4 bg-white/5 rounded-2xl text-white/40 border border-white/10"><ClockIcon className="w-6 h-6" /></div>
-                            <h3 className="font-black text-2xl text-white font-serif uppercase tracking-tight text-white/60">Telemetry Feed</h3>
+                            <div className="p-4 bg-white/5 rounded-2xl text-white/40 border border-white/10 group-hover:text-white transition-colors"><ClockIcon className="w-6 h-6" /></div>
+                            <h3 className="font-black text-2xl text-white font-serif uppercase tracking-tight">Telemetry Feed</h3>
                         </div>
-                        <span className="text-[9px] font-black text-white/20 uppercase tracking-widest px-4 py-2 border border-white/5 rounded-full">Stream Offline</span>
+                        <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 px-5 py-2 rounded-full">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Active Stream</span>
+                        </div>
                     </div>
-                    <div className="p-20 flex flex-col items-center justify-center opacity-20 relative z-10 grayscale">
-                        <ClipboardListIcon className="w-32 h-32 mb-8 text-white/20" />
-                        <p className="text-[10px] text-white/50 font-black uppercase tracking-[0.5em] text-center">Protocol log awaiting active stream connection.</p>
+
+                    <div className="p-14 relative z-10 flex flex-col gap-6">
+                        {[
+                            { action: 'CREDIT_ALLOCATION', subject: 'Class 10-B Fees', time: '2m ago', color: 'bg-emerald-500' },
+                            { action: 'IDENTITY_SYNC', subject: 'Student #4102', time: '14m ago', color: 'bg-primary' },
+                            { action: 'REGISTRY_SEAL', subject: 'Fiscal Q3 Report', time: '1h ago', color: 'bg-blue-500' }
+                        ].map((item, idx) => (
+                            <motion.div
+                                key={idx}
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 1 + (idx * 0.2) }}
+                                className="flex items-center justify-between p-6 bg-white/[0.03] rounded-2xl border border-white/5 hover:border-white/10 transition-all group/item"
+                            >
+                                <div className="flex items-center gap-6">
+                                    <div className={`w-2 h-2 rounded-full ${item.color} shadow-[0_0_10px_rgba(var(--primary),0.5)]`}></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest group-hover/item:text-white transition-colors">{item.action}</p>
+                                        <p className="text-[13px] text-white/20 font-serif italic mt-0.5">{item.subject}</p>
+                                    </div>
+                                </div>
+                                <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">{item.time}</span>
+                            </motion.div>
+                        ))}
+
+                        <div className="mt-4 p-8 border border-dashed border-white/10 rounded-[2rem] flex items-center justify-center opacity-40 group-hover:opacity-60 transition-opacity">
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">Monitoring Real-time Grid Activity...</p>
+                        </div>
                     </div>
                 </div>
             </div>
