@@ -178,10 +178,10 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                 </header>
 
                 {/* 2. Command Cockpit Layout */}
-                <div className="flex-1 flex min-h-0 divide-x divide-white/[0.03]">
+                <div className="flex-1 flex flex-col lg:flex-row min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.03] overflow-y-auto lg:overflow-hidden">
 
                     {/* Zone A: Central Communication Hub (Primary) */}
-                    <div className="flex-1 flex flex-col bg-black/20 relative min-w-0">
+                    <div className="flex-1 flex flex-col bg-black/20 relative min-w-0 min-h-[500px] lg:min-h-0">
                         <div ref={scrollRef} className="flex-1 overflow-y-auto px-12 py-12 space-y-12 custom-scrollbar scroll-smooth">
                             {loading ? (
                                 <div className="h-full flex items-center justify-center">
@@ -262,26 +262,26 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                         </div>
 
                         {/* Interactive Dispatch Terminal */}
-                        <div className="px-12 py-10 border-t border-white/[0.03] bg-black/40 shrink-0 relative">
+                        <div className="px-6 md:px-12 py-10 border-t border-white/[0.03] bg-black/40 shrink-0 relative">
                             <form onSubmit={handleSend} className="max-w-4xl mx-auto group">
                                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-5 text-[10px] font-black text-white/10 tracking-[0.5em] uppercase pointer-events-none group-focus-within:text-indigo-400 group-focus-within:tracking-[0.6em] transition-all duration-700">
                                     <div className="w-12 h-px bg-white/[0.02] group-focus-within:bg-indigo-500/20 transition-all" />
                                     <span>Authorized Uplink Terminal</span>
                                     <div className="w-12 h-px bg-white/[0.02] group-focus-within:bg-indigo-500/20 transition-all" />
                                 </div>
-                                <div className="flex gap-6 p-3.5 bg-white/[0.02] border border-white/5 rounded-[3rem] focus-within:border-indigo-500/30 transition-all shadow-inner backdrop-blur-xl group-focus-within:shadow-[0_0_50px_rgba(79,70,229,0.05)]">
+                                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 p-2.5 sm:p-3.5 bg-white/[0.02] border border-white/5 rounded-[2rem] sm:rounded-[3rem] focus-within:border-indigo-500/30 transition-all shadow-inner backdrop-blur-xl group-focus-within:shadow-[0_0_50px_rgba(79,70,229,0.05)]">
                                     <input
                                         type="text"
                                         value={newMessage}
                                         onChange={e => setNewMessage(e.target.value)}
                                         placeholder="Compose institutional dispatch..."
                                         disabled={loading || sending}
-                                        className="flex-1 bg-transparent px-10 py-5 text-white placeholder:text-white/10 outline-none text-lg font-medium normal-case"
+                                        className="flex-1 bg-transparent px-6 sm:px-10 py-4 sm:py-5 text-white placeholder:text-white/10 outline-none text-base sm:text-lg font-medium normal-case"
                                     />
                                     <button
                                         type="submit"
                                         disabled={!newMessage.trim() || sending}
-                                        className="w-16 h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center shadow-[0_15px_35px_rgba(79,70,229,0.3)] active:scale-90 transition-all disabled:opacity-10 group-focus-within:scale-105"
+                                        className="w-full sm:w-16 h-12 sm:h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl sm:rounded-full flex items-center justify-center shadow-[0_15px_35px_rgba(79,70,229,0.3)] active:scale-95 transition-all disabled:opacity-10 group-focus-within:scale-105"
                                     >
                                         {sending ? <Spinner size="sm" /> : <SendIcon className="w-6 h-6" />}
                                     </button>
@@ -291,7 +291,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                     </div>
 
                     {/* Zone B: Decision Intelligence Sidebar */}
-                    <div className="w-[480px] bg-[#040507] flex flex-col p-12 space-y-12 overflow-y-auto custom-scrollbar shrink-0">
+                    <div className="w-full lg:w-[480px] bg-[#040507] flex flex-col p-6 md:p-12 space-y-12 overflow-y-auto lg:overflow-y-auto custom-scrollbar shrink-0">
                         {/* 1. Progressive Lifecycle Narrative */}
                         <section>
                             <div className="flex items-center justify-between mb-10">
@@ -401,22 +401,22 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                             </div>
 
                             {/* Unified Contact Intelligence */}
-                            <div className="p-8 bg-white/[0.01] border border-white/5 rounded-[2.5rem] space-y-8 relative overflow-hidden">
+                            <div className="p-8 bg-white/[0.005] border border-white/[0.03] rounded-[2.5rem] space-y-8 relative overflow-hidden group/primary">
                                 <div className="flex items-center gap-6 border-b border-white/[0.03] pb-6">
                                     <div className="relative">
-                                        <div className="absolute inset-0 bg-white/10 blur-md rounded-2xl opacity-0 group-hover:opacity-100" />
+                                        <div className="absolute inset-0 bg-white/10 blur-md rounded-2xl opacity-0 group-hover/primary:opacity-100 transition-opacity" />
                                         <PremiumAvatar src={enquiry.profile_photo_url} name={enquiry.parent_name} size="md" className="rounded-2xl border border-white/10" />
                                     </div>
-                                    <div>
-                                        <p className="text-lg font-bold text-white tracking-tight leading-none mb-2">{enquiry.parent_name}</p>
+                                    <div className="min-w-0">
+                                        <p className="text-lg font-bold text-white tracking-tight leading-none mb-2 truncate">{enquiry.parent_name}</p>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50" />
-                                            <span className="text-[9px] font-black uppercase text-white/20 tracking-[0.2em]">Authorized Parent Delegate</span>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50 shrink-0" />
+                                            <span className="text-[9px] font-black uppercase text-white/20 tracking-[0.2em] truncate">Primary Parent Delegate</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-6">
+                                <div className="space-y-4">
                                     {[
                                         { label: 'Verified Email Uplink', val: enquiry.parent_email, id: 'email' },
                                         { label: 'Secure Mobile Node', val: enquiry.parent_phone, id: 'phone' }
@@ -436,6 +436,45 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                     ))}
                                 </div>
                             </div>
+
+                            {/* Secondary Parent Intelligence */}
+                            {enquiry.secondary_parent_name && (
+                                <div className="p-8 bg-white/[0.005] border border-white/[0.03] rounded-[2.5rem] space-y-8 relative overflow-hidden group/sec">
+                                    <div className="flex items-center gap-6 border-b border-white/[0.03] pb-6">
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-white/5 blur-md rounded-2xl opacity-0 group-hover/sec:opacity-100 transition-opacity" />
+                                            <PremiumAvatar name={enquiry.secondary_parent_name} size="md" className="rounded-2xl border border-white/5 opacity-60" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-lg font-bold text-white/80 tracking-tight leading-none mb-2 truncate">{enquiry.secondary_parent_name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-white/20 shrink-0" />
+                                                <span className="text-[9px] font-black uppercase text-white/10 tracking-[0.2em] truncate">Secondary Parent Delegate</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {[
+                                            { label: 'Secondary Email Node', val: enquiry.secondary_parent_email, id: 'sec_email' },
+                                            { label: 'Secondary Mobile Uplink', val: enquiry.secondary_parent_phone, id: 'sec_phone' }
+                                        ].map(it => it.val && (
+                                            <div key={it.id} className="group/meta flex items-center justify-between p-4 rounded-2xl hover:bg-white/[0.03] transition-all border border-transparent hover:border-white/5">
+                                                <div className="min-w-0">
+                                                    <span className="text-[9px] font-black text-white/10 uppercase block mb-1 tracking-widest">{it.label}</span>
+                                                    <p className="text-[13px] text-white/40 font-mono truncate tracking-tight">{it.val}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleCopy(it.val!, it.id)}
+                                                    className="p-3 opacity-0 group-hover/meta:opacity-100 transition-all bg-white/5 rounded-xl text-white/40 hover:text-white hover:scale-110 active:scale-90"
+                                                >
+                                                    {copied === it.id ? <ShieldCheckIcon className="w-4 h-4 text-emerald-400" /> : <CopyIcon className="w-4 h-4" />}
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Jurisdiction Mapping */}
                             <div className="px-8 py-6 bg-gradient-to-r from-indigo-500/[0.02] to-transparent border-l-2 border-indigo-500/20 rounded-r-[2.5rem] flex items-center justify-between group">

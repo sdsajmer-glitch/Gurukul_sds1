@@ -432,6 +432,9 @@ export interface Enquiry {
     parent_name: string;
     parent_email: string;
     parent_phone?: string;
+    secondary_parent_name?: string;
+    secondary_parent_email?: string;
+    secondary_parent_phone?: string;
     grade: string;
     status: EnquiryStatus;
     notes?: string;
