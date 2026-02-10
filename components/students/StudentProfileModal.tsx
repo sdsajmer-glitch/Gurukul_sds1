@@ -1713,8 +1713,10 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                 </div>
                                                                 <div className="w-8 h-px bg-white/10"></div>
                                                                 <div className="flex items-center gap-2">
-                                                                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-[10px] font-black border border-emerald-500/20"><CheckCircleIcon className="w-3 h-3" /></div>
-                                                                    <span className="text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">Guardian</span>
+                                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border ${parentData || guardianData ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse'}`}>
+                                                                        {parentData || guardianData ? <CheckCircleIcon className="w-3 h-3" /> : '2'}
+                                                                    </div>
+                                                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${parentData || guardianData ? 'text-emerald-500/80' : 'text-amber-500/80'}`}>Guardian</span>
                                                                 </div>
                                                                 <div className="w-8 h-px bg-white/10"></div>
                                                                 <div className="flex items-center gap-2">
@@ -1750,66 +1752,81 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 </button>
                                             </div>
 
-                                            {/* Performance Cards - Enhanced */}
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                {[
-                                                    { subject: 'Mathematics', grade: 'A', percentage: 92, color: 'blue', teacher: 'Dr. R. Gupta', trend: 'up' },
-                                                    { subject: 'Science', grade: 'A-', percentage: 88, color: 'green', teacher: 'Mrs. S. Kaur', trend: 'up' },
-                                                    { subject: 'English', grade: 'B+', percentage: 85, color: 'purple', teacher: 'Mr. J. Smith', trend: 'flat' },
-                                                    { subject: 'Social Studies', grade: 'A', percentage: 90, color: 'amber', teacher: 'Ms. P. Sharma', trend: 'up' },
-                                                    { subject: 'Hindi', grade: 'B', percentage: 82, color: 'pink', teacher: 'Mrs. A. Verma', trend: 'down' },
-                                                    { subject: 'Computer Science', grade: 'A+', percentage: 95, color: 'cyan', teacher: 'Mr. T. Rogers', trend: 'up' },
-                                                ].map((subject, idx) => (
-                                                    <div key={idx} className="group/subject relative p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] hover:border-white/10 transition-all duration-500 overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:shadow-black/50">
-                                                        {/* Dynamic Gradient Background */}
-                                                        <div className={`absolute top-0 right-0 w-32 h-32 bg-${subject.color}-500/5 rounded-full blur-[60px] group-hover/subject:bg-${subject.color}-500/10 transition-colors duration-500`}></div>
+                                            <div className="relative">
+                                                {/* Locked Overlay for Unassigned Students */}
+                                                {!hasClass && (
+                                                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-sm bg-[#08090a]/60 rounded-[2rem] border border-white/5">
+                                                        <div className="p-4 bg-white/5 rounded-full mb-4 ring-1 ring-white/10 shadow-2xl">
+                                                            <LockIcon className="w-8 h-8 text-white/40" />
+                                                        </div>
+                                                        <h4 className="text-lg font-black text-white tracking-tight mb-2">Curriculum Locked</h4>
+                                                        <p className="text-xs text-white/40 font-medium max-w-xs text-center leading-relaxed">
+                                                            Academic performance modules are disabled until class placement is finalized.
+                                                        </p>
+                                                    </div>
+                                                )}
 
-                                                        <div className="relative z-10 flex flex-col h-full justify-between">
-                                                            <div>
-                                                                <div className="flex items-start justify-between mb-6">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className={`p-2.5 rounded-xl bg-${subject.color}-500/10 text-${subject.color}-400 border border-${subject.color}-500/10`}>
-                                                                            <BookIcon className="w-5 h-5" />
+                                                {/* Performance Cards - Enhanced */}
+                                                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-500 ${!hasClass ? 'blur-sm opacity-50 pointer-events-none select-none grayscale-[0.5]' : ''}`}>
+                                                    {[
+                                                        { subject: 'Mathematics', grade: 'A', percentage: 92, color: 'blue', teacher: 'Dr. R. Gupta', trend: 'up' },
+                                                        { subject: 'Science', grade: 'A-', percentage: 88, color: 'green', teacher: 'Mrs. S. Kaur', trend: 'up' },
+                                                        { subject: 'English', grade: 'B+', percentage: 85, color: 'purple', teacher: 'Mr. J. Smith', trend: 'flat' },
+                                                        { subject: 'Social Studies', grade: 'A', percentage: 90, color: 'amber', teacher: 'Ms. P. Sharma', trend: 'up' },
+                                                        { subject: 'Hindi', grade: 'B', percentage: 82, color: 'pink', teacher: 'Mrs. A. Verma', trend: 'down' },
+                                                        { subject: 'Computer Science', grade: 'A+', percentage: 95, color: 'cyan', teacher: 'Mr. T. Rogers', trend: 'up' },
+                                                    ].map((subject, idx) => (
+                                                        <div key={idx} className="group/subject relative p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] hover:border-white/10 transition-all duration-500 overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:shadow-black/50">
+                                                            {/* Dynamic Gradient Background */}
+                                                            <div className={`absolute top-0 right-0 w-32 h-32 bg-${subject.color}-500/5 rounded-full blur-[60px] group-hover/subject:bg-${subject.color}-500/10 transition-colors duration-500`}></div>
+
+                                                            <div className="relative z-10 flex flex-col h-full justify-between">
+                                                                <div>
+                                                                    <div className="flex items-start justify-between mb-6">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className={`p-2.5 rounded-xl bg-${subject.color}-500/10 text-${subject.color}-400 border border-${subject.color}-500/10`}>
+                                                                                <BookIcon className="w-5 h-5" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <h4 className="text-sm font-black text-white tracking-tight">{subject.subject}</h4>
+                                                                                <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider">{subject.teacher}</p>
+                                                                            </div>
                                                                         </div>
-                                                                        <div>
-                                                                            <h4 className="text-sm font-black text-white tracking-tight">{subject.subject}</h4>
-                                                                            <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider">{subject.teacher}</p>
+
+                                                                        <div className={`flex flex-col items-end`}>
+                                                                            <div className={`px-3 py-1 bg-${subject.color}-500/10 border border-${subject.color}-500/20 rounded-lg mb-1`}>
+                                                                                <span className={`text-sm font-black text-${subject.color}-400`}>{subject.grade}</span>
+                                                                            </div>
+                                                                            {subject.trend === 'up' && <span className="text-[9px] font-bold text-emerald-500 flex items-center gap-1">▲ Rising</span>}
+                                                                            {subject.trend === 'down' && <span className="text-[9px] font-bold text-rose-500 flex items-center gap-1">▼ Falling</span>}
+                                                                            {subject.trend === 'flat' && <span className="text-[9px] font-bold text-white/30 flex items-center gap-1">• Stable</span>}
                                                                         </div>
                                                                     </div>
 
-                                                                    <div className={`flex flex-col items-end`}>
-                                                                        <div className={`px-3 py-1 bg-${subject.color}-500/10 border border-${subject.color}-500/20 rounded-lg mb-1`}>
-                                                                            <span className={`text-sm font-black text-${subject.color}-400`}>{subject.grade}</span>
+                                                                    <div className="space-y-3 mb-4">
+                                                                        <div className="flex items-center justify-between text-xs">
+                                                                            <span className="text-white/40 font-medium text-[10px] uppercase tracking-wider">Performance</span>
+                                                                            <span className="text-white font-black">{subject.percentage}%</span>
                                                                         </div>
-                                                                        {subject.trend === 'up' && <span className="text-[9px] font-bold text-emerald-500 flex items-center gap-1">▲ Rising</span>}
-                                                                        {subject.trend === 'down' && <span className="text-[9px] font-bold text-rose-500 flex items-center gap-1">▼ Falling</span>}
-                                                                        {subject.trend === 'flat' && <span className="text-[9px] font-bold text-white/30 flex items-center gap-1">• Stable</span>}
+                                                                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                                            <div
+                                                                                className={`h-full bg-gradient-to-r from-${subject.color}-600 to-${subject.color}-400 rounded-full transition-all duration-1000 group-hover/subject:shadow-[0_0_10px_rgba(255,255,255,0.3)]`}
+                                                                                style={{ width: `${subject.percentage}%` }}
+                                                                            ></div>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="space-y-3 mb-4">
-                                                                    <div className="flex items-center justify-between text-xs">
-                                                                        <span className="text-white/40 font-medium text-[10px] uppercase tracking-wider">Performance</span>
-                                                                        <span className="text-white font-black">{subject.percentage}%</span>
-                                                                    </div>
-                                                                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                                                        <div
-                                                                            className={`h-full bg-gradient-to-r from-${subject.color}-600 to-${subject.color}-400 rounded-full transition-all duration-1000 group-hover/subject:shadow-[0_0_10px_rgba(255,255,255,0.3)]`}
-                                                                            style={{ width: `${subject.percentage}%` }}
-                                                                        ></div>
-                                                                    </div>
+                                                                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                                                                    <span className="text-[10px] text-white/20 font-medium">Last assessed 2 days ago</span>
+                                                                    <button className="p-2 rounded-full hover:bg-white/5 text-white/30 hover:text-white transition-colors">
+                                                                        <ChevronRightIcon className="w-4 h-4" />
+                                                                    </button>
                                                                 </div>
-                                                            </div>
-
-                                                            <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                                                                <span className="text-[10px] text-white/20 font-medium">Last assessed 2 days ago</span>
-                                                                <button className="p-2 rounded-full hover:bg-white/5 text-white/30 hover:text-white transition-colors">
-                                                                    <ChevronRightIcon className="w-4 h-4" />
-                                                                </button>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                                </div>
                                             </div>
 
                                             {/* Coming Soon Notice */}
