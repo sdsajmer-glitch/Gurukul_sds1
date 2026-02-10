@@ -1771,14 +1771,19 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="py-8 flex flex-col items-center justify-center text-center relative overflow-hidden rounded-2xl bg-black/20 border border-white/5">
-                                                                <div className="p-4 bg-white/5 rounded-2xl mb-4 shadow-inner">
-                                                                    <AlertTriangleIcon className="w-8 h-8 text-white/10" />
+                                                            <div className="relative py-12 flex flex-col items-center justify-center text-center min-h-[200px] overflow-hidden rounded-3xl bg-black/20 border border-white/5 group/empty">
+                                                                {/* Watermark for empty state */}
+                                                                <div className="absolute -right-8 -top-8 opacity-[0.02] group-hover/empty:opacity-[0.04] transition-opacity duration-500 pointer-events-none">
+                                                                    <MailIcon className="w-48 h-48 transform -rotate-12" />
                                                                 </div>
-                                                                <p className="text-xs font-bold text-white/30 italic uppercase tracking-widest leading-relaxed">
+
+                                                                <div className="relative z-10 p-4 bg-[#1a1d23] rounded-2xl mb-5 ring-1 ring-white/5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] group-hover/empty:scale-110 group-hover/empty:rotate-3 transition-all duration-500">
+                                                                    <AlertTriangleIcon className="w-6 h-6 text-white/20" />
+                                                                </div>
+
+                                                                <p className="relative z-10 text-[9px] font-black text-white/20 italic uppercase tracking-[0.25em] leading-loose max-w-[240px]">
                                                                     This student was admitted<br />without a recorded enquiry.
                                                                 </p>
-                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none"></div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -1831,9 +1836,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                         <p className="text-[10px] font-bold text-purple-400 uppercase tracking-widest italic">{admissionRecord.grade} (Confirmed)</p>
                                                                     </div>
                                                                     {!enquiryRecord && (
-                                                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/5 border border-amber-500/10 rounded-lg">
-                                                                            <AlertTriangleIcon className="w-2.5 h-2.5 text-amber-500" />
-                                                                            <span className="text-[7px] font-black text-amber-500 uppercase tracking-widest">Enquiry Missing</span>
+                                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.15)] group-hover:scale-105 transition-transform duration-300">
+                                                                            <AlertTriangleIcon className="w-3 h-3 text-amber-500" />
+                                                                            <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Enquiry Missing</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
