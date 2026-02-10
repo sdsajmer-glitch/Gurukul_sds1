@@ -1693,34 +1693,81 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                         </div>
 
                                                         {enquiryRecord ? (
-                                                            <div className="space-y-4">
-                                                                <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-6">
+                                                                {/* Primary Identifiers */}
+                                                                <div className="grid grid-cols-2 gap-6 pb-6 border-b border-white/5">
                                                                     <div className="group/item">
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-indigo-400/50 transition-colors">Enquiry ID</p>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Enquiry Reference</p>
                                                                         <p className="text-sm font-bold text-white font-mono truncate tracking-tight">{enquiryRecord.enquiry_code || enquiryRecord.id.split('-')[0]}</p>
                                                                     </div>
                                                                     <div className="group/item">
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-indigo-400/50 transition-colors">Receipt Date</p>
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Received On</p>
                                                                         <p className="text-sm font-bold text-white">{new Date(enquiryRecord.created_at || enquiryRecord.received_at).toLocaleDateString()}</p>
                                                                     </div>
                                                                 </div>
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="group/item">
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-indigo-400/50 transition-colors">Initial Grade</p>
-                                                                        <p className="text-sm font-bold text-white uppercase">{enquiryRecord.grade}</p>
+
+                                                                {/* Extended Details Matrix */}
+                                                                <div className="space-y-4">
+                                                                    <div className="grid grid-cols-2 gap-6">
+                                                                        <div className="group/item">
+                                                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Target Grade</p>
+                                                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-bold text-white shadow-sm">
+                                                                                {enquiryRecord.grade}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="group/item">
+                                                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Status Node</p>
+                                                                            <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase tracking-widest rounded border border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
+                                                                                <CheckCircleIcon className="w-3 h-3" /> Converted
+                                                                            </span>
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="group/item">
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-indigo-400/50 transition-colors">Sync Status</p>
-                                                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded border border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
-                                                                            <CheckCircleIcon className="w-3 h-3" /> Converted
-                                                                        </span>
+
+                                                                    {/* Guardian & Background Context */}
+                                                                    <div className="p-5 bg-white/[0.02] rounded-2xl border border-white/5 space-y-4 hover:bg-white/[0.04] transition-colors">
+                                                                        <div className="group/inner">
+                                                                            <div className="flex items-center gap-2 mb-1.5">
+                                                                                <UserIcon className="w-3 h-3 text-indigo-400 opacity-70" />
+                                                                                <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-indigo-300 transition-colors">Originating Guardian</p>
+                                                                            </div>
+                                                                            <p className="text-xs font-bold text-white ml-5">
+                                                                                {enquiryRecord.parent_name || enquiryRecord.father_name || enquiryRecord.mother_name || 'N/A'}
+                                                                            </p>
+                                                                        </div>
+
+                                                                        <div className="group/inner">
+                                                                            <div className="flex items-center gap-2 mb-1.5">
+                                                                                <SchoolIcon className="w-3 h-3 text-purple-400 opacity-70" />
+                                                                                <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-purple-300 transition-colors">Previous Institution</p>
+                                                                            </div>
+                                                                            <p className="text-xs font-bold text-white ml-5">
+                                                                                {enquiryRecord.previous_school || 'Not Recorded'}
+                                                                            </p>
+                                                                        </div>
+
+                                                                        {(enquiryRecord.city || enquiryRecord.location) && (
+                                                                            <div className="group/inner">
+                                                                                <div className="flex items-center gap-2 mb-1.5">
+                                                                                    <LocationIcon className="w-3 h-3 text-emerald-400 opacity-70" />
+                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-emerald-300 transition-colors">Regional Origin</p>
+                                                                                </div>
+                                                                                <p className="text-xs font-bold text-white ml-5">
+                                                                                    {enquiryRecord.city || enquiryRecord.location}
+                                                                                </p>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
-                                                                <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between">
+
+                                                                {/* Footer Source Context */}
+                                                                <div className="pt-4 border-t border-white/5 flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity">
                                                                     <div className="flex items-center gap-2">
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Source Context:</p>
-                                                                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest italic">{enquiryRecord.source || enquiryRecord.source_type || 'Organic Walk-in'}</p>
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
+                                                                        <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Source Protocol:</p>
                                                                     </div>
+                                                                    <p className="text-[9px] font-bold text-indigo-300 uppercase tracking-widest italic text-right truncate max-w-[120px]">
+                                                                        {enquiryRecord.source || enquiryRecord.source_type || 'Organic Walk-in'}
+                                                                    </p>
                                                                 </div>
                                                             </div>
                                                         ) : (
