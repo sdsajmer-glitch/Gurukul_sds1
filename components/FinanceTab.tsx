@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase, formatError } from '../services/supabase';
 import {
-    FinanceData, FeeStructure,
+    FinanceData, FeeStructure, GradeCollectionStats,
     StudentFeeSummary, UserProfile, SchoolBranch, CurrencyCode
 } from '../types';
 import Spinner from './common/Spinner';
@@ -31,8 +31,7 @@ import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from 'framer-motion';
 
 import FeeMasterWizard from './finance/FeeMasterWizard';
-// FIX: Using default import for ExpenseDashboard to resolve line 28 error
-import ExpenseDashboard from './finance/ExpenseDashboard';
+import FeeMasterWizard from './finance/FeeMasterWizard';
 import StudentFinanceDetailView from './finance/StudentFinanceDetailView';
 import RevenueTrendChart from './finance/charts/RevenueTrendChart';
 import CollectionDistributionChart from './finance/charts/CollectionDistributionChart';
@@ -102,10 +101,11 @@ const FinanceStatCard: React.FC<{
 );
 
 const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, branches: SchoolBranch[] }> = ({ profile, branchId, branches }) => {
-    const [activeView, setActiveView] = useState<'overview' | 'accounts' | 'expenses' | 'master' | 'audit'>('overview');
+    const [activeView, setActiveView] = useState<'overview' | 'accounts' | 'master' | 'audit'>('overview');
     const [financeData, setFinanceData] = useState<FinanceData | null>(null);
     const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
     const [studentLedgers, setStudentLedgers] = useState<StudentFeeSummary[]>([]);
+    const [gradeStats, setGradeStats] = useState<GradeCollectionStats[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<StudentFeeSummary | null>(null);
     const [loading, setLoading] = useState(true);
     const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -134,19 +134,22 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 structQuery = structQuery.eq('branch_id', bid);
             }
 
-            const [finRes, structRes, ledgerRes] = await Promise.all([
-                supabase.rpc('get_finance_dashboard_data', { p_branch_id: bid }),
+            const [finRes, structRes, ledgerRes, gradeRes] = await Promise.all([
+                supabase.rpc('get_finance_overview_stats_v2', { p_branch_id: bid }),
                 structQuery,
-                supabase.rpc('get_student_fee_summary_all', { p_branch_id: bid })
+                supabase.rpc('get_student_fee_summary_all', { p_branch_id: bid }),
+                supabase.rpc('get_grade_wise_collection_stats', { p_branch_id: bid })
             ]);
 
             if (finRes.error) throw finRes.error;
             if (structRes.error) throw structRes.error;
             if (ledgerRes.error) throw ledgerRes.error;
+            // gradeRes might be empty, check error only
 
-            setFinanceData(finRes.data || { revenue_ytd: 0, pending_dues: 0, collections_this_month: 0, online_payments: 0 });
+            setFinanceData(finRes.data || { total_assigned: 0, total_collected: 0, total_pending: 0, total_overdue: 0, monthly_collection: 0, today_collection: 0, currency: 'INR' });
             setFeeStructures(structRes.data || []);
             setStudentLedgers(Array.isArray(ledgerRes.data) ? ledgerRes.data : []);
+            setGradeStats(Array.isArray(gradeRes.data) ? gradeRes.data : []);
 
         } catch (err: any) {
             console.error("Finance Registry Sync Failure:", err);
@@ -182,7 +185,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
             const genAI = new GoogleGenAI(process.env.API_KEY || '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            const prompt = `Act as an institutional CFO. Analyze these school stats: Revenue YTD: ${financeData.revenue_ytd}, Pending Dues: ${financeData.pending_dues}, Online Sync Rate: ${financeData.online_payments}. Provide a 25-word strategic insight on institutional liquidity and collection risk. Use professional, architectural tone.`;
+            const prompt = `Act as an institutional CFO. Analyze these stats: Total Assigned: ${financeData.total_assigned}, Collected: ${financeData.total_collected}, Pending: ${financeData.total_pending}, Overdue: ${financeData.total_overdue}, Monthly Collection: ${financeData.monthly_collection}. Provide a 25-word strategic insight on liquidity and collection efficiency.`;
 
             const result = await model.generateContent(prompt);
             const response = await result.response;
@@ -270,7 +273,6 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 <div className="flex bg-[#12141c]/60 p-1.5 rounded-full border border-white/5 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] ring-1 ring-white/5">
                     <TabButton id="overview" label="Overview" icon={<ChartBarIcon className="w-4 h-4" />} isActive={activeView === 'overview'} onClick={setActiveView} />
                     <TabButton id="accounts" label="Accounts" icon={<UsersIcon className="w-4 h-4" />} isActive={activeView === 'accounts'} onClick={setActiveView} />
-                    <TabButton id="expenses" label="Expenses" icon={<BriefcaseIcon className="w-4 h-4" />} isActive={activeView === 'expenses'} onClick={setActiveView} />
                     <TabButton id="master" label="Master" icon={<BookIcon className="w-4 h-4" />} isActive={activeView === 'master'} onClick={setActiveView} />
                     <TabButton id="audit" label="Audit" icon={<ShieldCheckIcon className="w-4 h-4" />} isActive={activeView === 'audit'} onClick={setActiveView} />
                 </div>
@@ -298,39 +300,41 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-16">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                                 <FinanceStatCard
-                                    title="Revenue (YTD)"
-                                    value={formatCurrency(financeData.revenue_ytd, viewCurrency)}
+                                    title="Total Assigned (Billed)"
+                                    value={formatCurrency(financeData.total_assigned, viewCurrency)}
                                     trend="+12.5%"
                                     trendUp={true}
                                     icon={<TrendingUpCustomIcon className="w-8 h-8" />}
                                     color="bg-primary"
                                 />
                                 <FinanceStatCard
-                                    title="Pending Ledger"
-                                    value={formatCurrency(financeData.pending_dues, viewCurrency)}
-                                    trend="2.4%"
-                                    trendUp={false}
-                                    icon={<AlertTriangleIcon className="w-8 h-8" />}
-                                    color="bg-red-500"
-                                />
-                                <FinanceStatCard
-                                    title="Digital Stream"
-                                    value={formatCurrency(financeData.online_payments, viewCurrency)}
-                                    icon={<CreditCardIcon className="w-8 h-8" />}
+                                    title="Total Collected"
+                                    value={formatCurrency(financeData.total_collected, viewCurrency)}
+                                    trend="Strong"
+                                    trendUp={true}
+                                    icon={<CheckCircleIcon className="w-8 h-8" />}
                                     color="bg-emerald-500"
                                 />
                                 <FinanceStatCard
-                                    title="Institutional Burn"
-                                    value={formatCurrency(financeData.collections_this_month * 0.4, viewCurrency)}
-                                    icon={<BriefcaseIcon className="w-8 h-8" />}
-                                    color="bg-violet-500"
+                                    title="Active Pending"
+                                    value={formatCurrency(financeData.total_pending, viewCurrency)}
+                                    icon={<ClockIcon className="w-8 h-8" />}
+                                    color="bg-amber-500"
+                                />
+                                <FinanceStatCard
+                                    title="Critical Overdue"
+                                    value={formatCurrency(financeData.total_overdue, viewCurrency)}
+                                    trend="Risk"
+                                    trendUp={false}
+                                    icon={<AlertTriangleIcon className="w-8 h-8" />}
+                                    color="bg-red-500"
                                 />
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
                                 <div className="lg:col-span-8 space-y-10">
                                     <div className="bg-[#0c0d12] border border-white/5 rounded-[4rem] p-8 md:p-16 shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] relative overflow-hidden h-[540px] ring-1 ring-white/10">
-                                        <RevenueTrendChart total={financeData.revenue_ytd} />
+                                        <RevenueTrendChart total={financeData.total_collected} />
                                     </div>
                                     <div className="bg-primary/5 border border-primary/20 rounded-[3.5rem] p-8 md:p-12 relative overflow-hidden group shadow-2xl">
                                         <div className="absolute top-0 right-0 p-16 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000"><SparklesIcon className="w-48 h-48 text-primary" /></div>
@@ -361,9 +365,9 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                     <div className="relative z-10 h-full flex flex-col">
                                         <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] mb-16">Collection Integrity</h4>
                                         <CollectionDistributionChart
-                                            paid={financeData.revenue_ytd}
-                                            pending={financeData.pending_dues}
-                                            overdue={financeData.pending_dues * 0.3}
+                                            paid={financeData.total_collected}
+                                            pending={financeData.total_pending}
+                                            overdue={financeData.total_overdue}
                                         />
                                     </div>
                                 </div>
@@ -385,19 +389,51 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                     />
                                 </div>
                                 <div className="flex gap-4 pr-4">
+                                    <div className="hidden xl:flex items-center gap-4 bg-black/40 px-6 rounded-2xl border border-white/5">
+                                        <span className="text-[10px] uppercase font-black text-white/40 tracking-widest">Collection Accuracy</span>
+                                        <div className="h-4 w-[1px] bg-white/10"></div>
+                                        <span className="text-emerald-400 font-bold font-mono text-sm">
+                                            {financeData?.total_assigned ? Math.round((financeData.total_collected / financeData.total_assigned) * 100) : 0}%
+                                        </span>
+                                    </div>
                                     <button
                                         onClick={() => setRiskOnly(!riskOnly)}
                                         className={`px-10 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all border shadow-2xl active:scale-95 ${riskOnly ? 'bg-red-500/10 text-red-500 border-red-500/30' : 'bg-white/[0.03] text-white/40 border-white/5'
                                             }`}
                                     >
-                                        At-Risk Only
+                                        Risk View
                                     </button>
                                     <button onClick={handleExportRegistry} className="px-12 py-6 bg-white/[0.03] hover:bg-white/[0.08] text-white/40 hover:text-white border border-white/5 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] transition-all shadow-2xl active:scale-95 group">
                                         <span className="flex items-center gap-3">
-                                            <DownloadIcon className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" /> Export Registry
+                                            <DownloadIcon className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" /> Export
                                         </span>
                                     </button>
                                 </div>
+                            </div>
+
+                            {/* Grade Summary Section - New */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                {gradeStats.length > 0 && gradeStats.slice(0, 4).map((g, i) => (
+                                    <div key={i} className="bg-[#0c0d12] border border-white/5 rounded-3xl p-6 relative overflow-hidden group hover:border-white/10 transition-colors">
+                                        <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity"><ActivityIcon className="w-24 h-24 text-white" /></div>
+                                        <div className="relative z-10">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <span className="text-[10px] font-black uppercase text-white/30 tracking-widest">Grade {g.grade}</span>
+                                                <span className="text-[10px] font-bold text-white/20 bg-white/5 px-2 py-1 rounded">{g.total_students} Students</span>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <h4 className="text-xl font-black text-white font-mono tracking-tighter">{formatCurrency(g.total_collected, viewCurrency)}</h4>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[9px] uppercase font-bold text-white/20">Collected</span>
+                                                    <span className="text-[9px] uppercase font-bold text-red-400">{formatCurrency(g.total_pending, viewCurrency)} Pending</span>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(g.total_collected / (g.total_billed || 1)) * 100}%` }}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
                             <div className="bg-[#0a0a0c] border border-white/5 rounded-[4rem] shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] overflow-hidden min-h-[600px] ring-1 ring-white/10 relative group">
@@ -513,11 +549,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                         </motion.div>
                     )}
 
-                    {activeView === 'expenses' && (
-                        <div className="animate-in fade-in duration-700">
-                            <ExpenseDashboard branches={branches} branchId={branchId || null} data={{ total_expenses_month: 0, pending_approvals: 0, recent_expenses: [] }} onRefresh={fetchAllData} viewCurrency={viewCurrency} />
-                        </div>
-                    )}
+
 
                     {activeView === 'master' && (
                         <div className="space-y-10 animate-in fade-in duration-500">

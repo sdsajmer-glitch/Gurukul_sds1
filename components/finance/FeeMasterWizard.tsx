@@ -46,11 +46,12 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
         targetGrade: '1',
         description: '',
         currency: 'INR' as CurrencyCode,
-        isDefault: false
+        isDefault: false,
+        type: 'Standard'
     });
 
-    const [components, setComponents] = useState<{ id?: number; name: string; amount: string; frequency: string; is_mandatory: boolean }[]>([
-        { name: 'TUITION_FEES', amount: '0', frequency: 'Monthly', is_mandatory: true }
+    const [components, setComponents] = useState<{ id?: number; name: string; amount: string; frequency: string; is_mandatory: boolean; category: string }[]>([
+        { name: 'TUITION_FEES', amount: '0', frequency: 'Monthly', is_mandatory: true, category: 'Tuition' }
     ]);
 
     useEffect(() => {
@@ -70,7 +71,8 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                     name: c.name,
                     amount: c.amount.toString(),
                     frequency: c.frequency,
-                    is_mandatory: c.is_mandatory
+                    is_mandatory: c.is_mandatory,
+                    category: c.category || 'Tuition'
                 })));
             }
         }
@@ -78,7 +80,7 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
 
     const handleAddComponent = () => {
         if (isLocked) return;
-        setComponents([...components, { name: '', amount: '0', frequency: 'Monthly', is_mandatory: false }]);
+        setComponents([...components, { name: '', amount: '0', frequency: 'Monthly', is_mandatory: false, category: 'Tuition' }]);
     };
 
     const handleRemoveComponent = (index: number) => {
@@ -139,6 +141,7 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                         description: formData.description,
                         currency: formData.currency,
                         is_default: formData.isDefault,
+                        type: formData.type,
                         status: publish ? 'Active' : 'Draft'
                     })
                     .eq('id', editingStructure.id);
@@ -159,6 +162,7 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                         description: formData.description,
                         currency: formData.currency,
                         is_default: formData.isDefault,
+                        type: formData.type,
                         status: publish ? 'Active' : 'Draft',
                         branch_id: bid
                     })
@@ -176,7 +180,8 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                 name: c.name || 'MISC_FEE',
                 amount: Number(c.amount) || 0,
                 frequency: c.frequency,
-                is_mandatory: c.is_mandatory
+                is_mandatory: c.is_mandatory,
+                category: c.category
             }));
 
             const { error: compError } = await supabase.from('fee_components').insert(componentsPayload);
@@ -268,6 +273,22 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                                     <p className="text-[10px] text-white/30 ml-1">A unique identifier for this fee structure.</p>
                                 </div>
 
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Structure Type</label>
+                                    <div className="flex gap-2 p-1 bg-[#1A1D25] rounded-xl border border-white/5">
+                                        {['Standard', 'Package', 'Transport'].map(t => (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, type: t })}
+                                                className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${formData.type === t ? 'bg-primary text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
+                                            >
+                                                {t}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Currency</label>
@@ -279,8 +300,8 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                                                     type="button"
                                                     onClick={() => setFormData({ ...formData, currency: curr as CurrencyCode })}
                                                     className={`py-2.5 rounded-lg text-xs font-bold transition-all ${formData.currency === curr
-                                                            ? 'bg-primary text-white shadow-lg'
-                                                            : 'text-white/40 hover:text-white/60 hover:bg-white/5'
+                                                        ? 'bg-primary text-white shadow-lg'
+                                                        : 'text-white/40 hover:text-white/60 hover:bg-white/5'
                                                         } disabled:opacity-50`}
                                                 >
                                                     {curr}
@@ -310,8 +331,8 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                                 <div
                                     onClick={() => !isLocked && setFormData(f => ({ ...f, isDefault: !f.isDefault }))}
                                     className={`group p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${formData.isDefault
-                                            ? 'bg-primary/5 border-primary/30'
-                                            : 'bg-[#1A1D25]/50 border-white/5 hover:border-white/10 hover:bg-[#1A1D25]'
+                                        ? 'bg-primary/5 border-primary/30'
+                                        : 'bg-[#1A1D25]/50 border-white/5 hover:border-white/10 hover:bg-[#1A1D25]'
                                         }`}
                                 >
                                     <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${formData.isDefault ? 'bg-primary border-primary' : 'border-white/20 group-hover:border-primary/50'
@@ -352,15 +373,30 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                                 {components.map((comp, idx) => (
                                     <div key={idx} className="flex flex-col xl:flex-row gap-4 p-5 bg-[#1A1D25]/40 border border-white/5 rounded-2xl hover:border-white/10 transition-colors group">
                                         <div className="flex-grow space-y-1.5">
-                                            <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Identifier</label>
-                                            <input
-                                                disabled={isLocked}
-                                                type="text"
-                                                placeholder="TUITION_FEE"
-                                                className="w-full bg-transparent border-b border-white/10 py-2 text-base font-bold text-white placeholder:text-white/10 focus:outline-none focus:border-primary uppercase tracking-wide disabled:opacity-50 font-mono"
-                                                value={comp.name}
-                                                onChange={e => updateComponent(idx, 'name', e.target.value.toUpperCase().replace(/\s/g, '_'))}
-                                            />
+                                            <div className="flex gap-2">
+                                                <div className="w-1/3">
+                                                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Category</label>
+                                                    <select
+                                                        disabled={isLocked}
+                                                        className="w-full bg-transparent border-b border-white/10 py-2 text-xs font-bold text-white focus:outline-none focus:border-primary uppercase tracking-wide disabled:opacity-50"
+                                                        value={comp.category}
+                                                        onChange={e => updateComponent(idx, 'category', e.target.value)}
+                                                    >
+                                                        {['Tuition', 'Books', 'Uniform', 'Transport', 'Hostel', 'Exam', 'Misc'].map(c => <option key={c} value={c} className="bg-black text-white">{c}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="w-2/3">
+                                                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Identifier</label>
+                                                    <input
+                                                        disabled={isLocked}
+                                                        type="text"
+                                                        placeholder="TUITION_FEE"
+                                                        className="w-full bg-transparent border-b border-white/10 py-2 text-base font-bold text-white placeholder:text-white/10 focus:outline-none focus:border-primary uppercase tracking-wide disabled:opacity-50 font-mono"
+                                                        value={comp.name}
+                                                        onChange={e => updateComponent(idx, 'name', e.target.value.toUpperCase().replace(/\s/g, '_'))}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div className="flex gap-4 w-full xl:w-auto">

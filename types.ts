@@ -197,11 +197,37 @@ export interface AdmissionApplication {
     school_name?: string;
 }
 export interface FinanceData {
-    revenue_ytd: number;
-    collections_this_month: number;
-    pending_dues: number;
-    online_payments: number;
+    total_assigned: number;
+    total_collected: number;
+    total_pending: number;
+    total_overdue: number;
+    monthly_collection: number;
+    today_collection: number;
     currency: CurrencyCode;
+    // Legacy mapping (optional support for old components)
+    revenue_ytd?: number;
+    collections_this_month?: number;
+    pending_dues?: number;
+    online_payments?: number;
+}
+
+export interface GradeCollectionStats {
+    grade: string;
+    section: string;
+    total_students: number;
+    total_billed: number;
+    total_collected: number;
+    total_pending: number;
+}
+
+export interface FeeComponent {
+    id?: number;
+    name: string;
+    amount: string;
+    frequency: string;
+    is_mandatory: boolean;
+    category?: string;
+    is_refundable?: boolean;
 }
 
 export interface FeeStructure {
@@ -211,7 +237,8 @@ export interface FeeStructure {
     target_grade: string;
     currency: CurrencyCode;
     status: 'Active' | 'Draft';
-    components?: any[];
+    type?: 'Standard' | 'Package' | 'Transport';
+    components?: FeeComponent[];
 }
 
 export interface StudentFeeSummary {
