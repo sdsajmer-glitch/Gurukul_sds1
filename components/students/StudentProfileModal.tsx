@@ -1658,68 +1658,149 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Extended Details Matrix */}
+                                                                {/* Applicant Information Section */}
                                                                 <div className="space-y-4">
+                                                                    <h5 className="text-[10px] font-black text-indigo-400/80 uppercase tracking-[0.25em] flex items-center gap-2">
+                                                                        <div className="w-1 h-3 bg-indigo-500 rounded-full"></div>
+                                                                        Applicant Details
+                                                                    </h5>
                                                                     <div className="grid grid-cols-2 gap-6">
+                                                                        <div className="group/item">
+                                                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Student Name</p>
+                                                                            <p className="text-sm font-bold text-white">{enquiryRecord.applicant_name || syncedStudent.display_name}</p>
+                                                                        </div>
                                                                         <div className="group/item">
                                                                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Target Grade</p>
                                                                             <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-bold text-white shadow-sm">
                                                                                 {enquiryRecord.grade}
                                                                             </span>
                                                                         </div>
+                                                                        {(enquiryRecord as any).date_of_birth && (
+                                                                            <div className="group/item">
+                                                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Date of Birth</p>
+                                                                                <p className="text-sm font-bold text-white">{new Date((enquiryRecord as any).date_of_birth).toLocaleDateString()}</p>
+                                                                            </div>
+                                                                        )}
+                                                                        {(enquiryRecord as any).gender && (
+                                                                            <div className="group/item">
+                                                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Gender</p>
+                                                                                <p className="text-sm font-bold text-white capitalize">{(enquiryRecord as any).gender}</p>
+                                                                            </div>
+                                                                        )}
                                                                         <div className="group/item">
-                                                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Status Node</p>
+                                                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 group-hover/item:text-indigo-400/50 transition-colors">Enquiry Status</p>
                                                                             <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase tracking-widest rounded border border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
                                                                                 <CheckCircleIcon className="w-3 h-3" /> Converted
                                                                             </span>
                                                                         </div>
                                                                     </div>
+                                                                </div>
 
-                                                                    {/* Guardian & Background Context */}
+                                                                {/* Parent/Guardian Contact Information */}
+                                                                <div className="space-y-4">
+                                                                    <h5 className="text-[10px] font-black text-purple-400/80 uppercase tracking-[0.25em] flex items-center gap-2">
+                                                                        <div className="w-1 h-3 bg-purple-500 rounded-full"></div>
+                                                                        Guardian Contact Registry
+                                                                    </h5>
                                                                     <div className="p-5 bg-white/[0.02] rounded-2xl border border-white/5 space-y-4 hover:bg-white/[0.04] transition-colors">
-                                                                        <div className="group/inner">
-                                                                            <div className="flex items-center gap-2 mb-1.5">
-                                                                                <UserIcon className="w-3 h-3 text-indigo-400 opacity-70" />
-                                                                                <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-indigo-300 transition-colors">Originating Guardian</p>
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                            <div className="group/inner">
+                                                                                <div className="flex items-center gap-2 mb-1.5">
+                                                                                    <UserIcon className="w-3 h-3 text-indigo-400 opacity-70" />
+                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-indigo-300 transition-colors">Guardian Name</p>
+                                                                                </div>
+                                                                                <p className="text-xs font-bold text-white ml-5">
+                                                                                    {enquiryRecord.parent_name || (enquiryRecord as any).father_name || (enquiryRecord as any).mother_name || 'N/A'}
+                                                                                </p>
                                                                             </div>
-                                                                            <p className="text-xs font-bold text-white ml-5">
-                                                                                {enquiryRecord.parent_name || enquiryRecord.father_name || enquiryRecord.mother_name || 'N/A'}
-                                                                            </p>
-                                                                        </div>
 
+                                                                            <div className="group/inner">
+                                                                                <div className="flex items-center gap-2 mb-1.5">
+                                                                                    <PhoneIcon className="w-3 h-3 text-emerald-400 opacity-70" />
+                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-emerald-300 transition-colors">Contact Number</p>
+                                                                                </div>
+                                                                                <p className="text-xs font-bold text-white ml-5 font-mono">
+                                                                                    {enquiryRecord.parent_phone || (enquiryRecord as any).phone || 'Not Provided'}
+                                                                                </p>
+                                                                            </div>
+
+                                                                            <div className="group/inner">
+                                                                                <div className="flex items-center gap-2 mb-1.5">
+                                                                                    <MailIcon className="w-3 h-3 text-blue-400 opacity-70" />
+                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-blue-300 transition-colors">Email Address</p>
+                                                                                </div>
+                                                                                <p className="text-xs font-bold text-white ml-5 truncate">
+                                                                                    {enquiryRecord.parent_email || (enquiryRecord as any).email || 'Not Provided'}
+                                                                                </p>
+                                                                            </div>
+
+                                                                            {((enquiryRecord as any).address || (enquiryRecord as any).city) && (
+                                                                                <div className="group/inner">
+                                                                                    <div className="flex items-center gap-2 mb-1.5">
+                                                                                        <LocationIcon className="w-3 h-3 text-amber-400 opacity-70" />
+                                                                                        <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-amber-300 transition-colors">Address</p>
+                                                                                    </div>
+                                                                                    <p className="text-xs font-bold text-white ml-5">
+                                                                                        {(enquiryRecord as any).address || (enquiryRecord as any).city || enquiryRecord.location}
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Background Context */}
+                                                                <div className="space-y-4">
+                                                                    <h5 className="text-[10px] font-black text-white/20 uppercase tracking-[0.25em] flex items-center gap-2">
+                                                                        <div className="w-1 h-3 bg-white/20 rounded-full"></div>
+                                                                        Additional Context
+                                                                    </h5>
+                                                                    <div className="p-5 bg-white/[0.02] rounded-2xl border border-white/5 space-y-4 hover:bg-white/[0.04] transition-colors">
                                                                         <div className="group/inner">
                                                                             <div className="flex items-center gap-2 mb-1.5">
                                                                                 <SchoolIcon className="w-3 h-3 text-purple-400 opacity-70" />
                                                                                 <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-purple-300 transition-colors">Previous Institution</p>
                                                                             </div>
                                                                             <p className="text-xs font-bold text-white ml-5">
-                                                                                {enquiryRecord.previous_school || 'Not Recorded'}
+                                                                                {(enquiryRecord as any).previous_school || 'Not Recorded'}
                                                                             </p>
                                                                         </div>
 
-                                                                        {(enquiryRecord.city || enquiryRecord.location) && (
+                                                                        {enquiryRecord.notes && (
                                                                             <div className="group/inner">
                                                                                 <div className="flex items-center gap-2 mb-1.5">
-                                                                                    <LocationIcon className="w-3 h-3 text-emerald-400 opacity-70" />
-                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-emerald-300 transition-colors">Regional Origin</p>
+                                                                                    <InfoIcon className="w-3 h-3 text-cyan-400 opacity-70" />
+                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-cyan-300 transition-colors">Enquiry Notes</p>
                                                                                 </div>
-                                                                                <p className="text-xs font-bold text-white ml-5">
-                                                                                    {enquiryRecord.city || enquiryRecord.location}
+                                                                                <p className="text-xs text-white/70 ml-5 italic leading-relaxed">
+                                                                                    {enquiryRecord.notes}
                                                                                 </p>
                                                                             </div>
                                                                         )}
-                                                                    </div>
-                                                                </div>
 
-                                                                {/* Footer Source Context */}
-                                                                <div className="pt-4 border-t border-white/5 flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
-                                                                        <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Source Protocol:</p>
+                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                            <div className="group/inner">
+                                                                                <div className="flex items-center gap-2 mb-1.5">
+                                                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
+                                                                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Source</p>
+                                                                                </div>
+                                                                                <p className="text-xs font-bold text-indigo-300 ml-5">
+                                                                                    {enquiryRecord.source || (enquiryRecord as any).source_type || 'Organic Walk-in'}
+                                                                                </p>
+                                                                            </div>
+                                                                            {enquiryRecord.branch_name && (
+                                                                                <div className="group/inner">
+                                                                                    <div className="flex items-center gap-2 mb-1.5">
+                                                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                                                        <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Branch</p>
+                                                                                    </div>
+                                                                                    <p className="text-xs font-bold text-emerald-300 ml-5">
+                                                                                        {enquiryRecord.branch_name}
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
-                                                                    <p className="text-[9px] font-bold text-indigo-300 uppercase tracking-widest italic text-right truncate max-w-[120px]">
-                                                                        {enquiryRecord.source || enquiryRecord.source_type || 'Organic Walk-in'}
-                                                                    </p>
                                                                 </div>
                                                             </div>
                                                         ) : (
