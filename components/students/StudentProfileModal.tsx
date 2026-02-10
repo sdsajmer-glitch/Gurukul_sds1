@@ -887,7 +887,6 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 .select(`
                     *,
                     profiles!inner(phone, email, display_name, profile_photo_url),
-                    school_classes!student_profiles_assigned_class_id_fkey(name, grade_level, academic_year),
                     admissions:admission_id (
                         id, enquiry_id, application_number, status, submitted_at, grade, applicant_name
                     )
