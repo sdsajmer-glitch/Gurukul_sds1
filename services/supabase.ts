@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://uakcydchamgtjbmcyfzi.supabase.co';
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVha2N5ZGNoYW1ndGpibWN5ZnppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4MjE3NzgsImV4cCI6MjA4NTM5Nzc3OH0.rRP1gfU7_-Wrxkd7qwRDpZsb6o-OcdS34w6Nt_wMYkE';
+const supabaseServiceKey = (import.meta as any).env?.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || '';
 
 export const STORAGE_KEY = 'school_v15_auth_session';
 
@@ -19,6 +20,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         flowType: 'pkce'
     }
 });
+
+/**
+ * Admin-level Supabase client (bypasses RLS).
+ * Used for admin operations like assigning classes to students,
+ * where the admin's auth.uid() doesn't match the student's user_id.
+ * Falls back to anon client if service role key is unavailable.
+ */
+export const supabaseAdmin = supabaseServiceKey
+    ? createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    })
+    : supabase;
 
 /**
  * Institutional Error Protocol v3.5
