@@ -16,7 +16,15 @@ const CopyIcon = ({ className }: { className?: string }) => <svg xmlns="http://w
 const ShieldCheckIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>;
 const AlertCircleIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>;
 
-const STATUS_LINE: EnquiryStatus[] = ['NEW', 'ENQUIRY_ACTIVE', 'ENQUIRY_VERIFIED', 'ENQUIRY_IN_REVIEW', 'ENQUIRY_CONTACTED', 'ENQUIRY_REJECTED', 'ENQUIRY_CONVERTED' as any];
+const PROTOCOL_STAGES: { id: EnquiryStatus; label: string; description: string }[] = [
+    { id: 'NEW', label: 'Identity Initialized', description: 'New inbound enquiry node' },
+    { id: 'ENQUIRY_ACTIVE', label: 'Active Pipeline', description: 'Under active institutional review' },
+    { id: 'ENQUIRY_VERIFIED', label: 'Verified Uplink', description: 'Documentation and identity verified' },
+    { id: 'ENQUIRY_IN_REVIEW', label: 'Strategic Evaluation', description: 'Academic alignment in progress' },
+    { id: 'ENQUIRY_CONTACTED', label: 'Stakeholder Dialogue', description: 'Direct communication established' },
+    { id: 'ENQUIRY_REJECTED', label: 'Protocol Terminated', description: 'Identity node archived' },
+    { id: 'ENQUIRY_CONVERTED' as any, label: 'Promoted to Admission', description: 'Final vault promotion successful' }
+];
 
 interface EnquiryDetailsModalProps {
     enquiry: Enquiry;
@@ -89,9 +97,23 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
     };
 
     const handleAction = async (status: EnquiryStatus) => {
+        if (sending) return;
         setSending(true);
         try {
-            await EnquiryService.updateStatus(String(enquiry.id), status, `Protocol updated to ${status}`);
+            // [A] Identity Promotion Protocol
+            if (status === 'ENQUIRY_CONVERTED' as any) {
+                const res = await EnquiryService.convertToAdmission(String(enquiry.id));
+                if (res.success) {
+                    onUpdate();
+                    // Optional: auto-navigate if the user is a branch admin
+                    onClose();
+                    onNavigate?.('Admissions');
+                    return;
+                }
+            }
+
+            // [B] Standard Lifecycle Transition
+            await EnquiryService.updateStatus(String(enquiry.id), status, `Status transitioned to ${status}`);
             await fetchTimeline();
             onUpdate();
         } catch (e: any) {
@@ -302,79 +324,98 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                 </div>
                             </div>
 
-                            <div className="relative pl-10 space-y-12">
+                            <div className="relative pl-10 space-y-12 mb-10">
                                 <div className="absolute top-2 left-[5px] bottom-2 w-[1px] bg-white/[0.03]" />
-                                {STATUS_LINE.map((st, sIdx) => {
-                                    const currentIndex = STATUS_LINE.indexOf(enquiry.status);
-                                    const thisIndex = sIdx;
-                                    const isActive = currentIndex === thisIndex;
-                                    const isCompleted = currentIndex > thisIndex;
-                                    const isFuture = currentIndex < thisIndex;
+                                {PROTOCOL_STAGES.map((st, sIdx) => {
+                                    const currentIndex = PROTOCOL_STAGES.findIndex(s => s.id === enquiry.status);
+                                    const isActive = currentIndex === sIdx;
+                                    const isCompleted = currentIndex > sIdx;
+
+                                    // Optimization: Hide Archived/Converted stages in the timeline if not reached
+                                    if (st.id === 'ENQUIRY_CONVERTED' as any && enquiry.status !== 'ENQUIRY_CONVERTED') return null;
+                                    if (st.id === 'ENQUIRY_REJECTED' && enquiry.status !== 'ENQUIRY_REJECTED') return null;
 
                                     return (
-                                        <div key={st} className="relative flex items-center group/step">
+                                        <div key={st.id} className="relative flex items-center group/step">
                                             <div className={clsx(
                                                 "absolute -left-10 w-3 h-3 rounded-full border-2 transition-all duration-1000",
                                                 isActive ? "bg-indigo-500 border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.8)] scale-125" :
-                                                    isCompleted ? "bg-emerald-500 border-emerald-400/50 opacity-40" : "bg-black border-white/10 opacity-20"
+                                                    isCompleted ? "bg-emerald-500 border-emerald-400/50 opacity-40 shadow-[0_0_10px_rgba(16,185,129,0.3)]" : "bg-black border-white/10 opacity-20"
                                             )} />
 
-                                            <button
-                                                onClick={() => handleAction(st)}
-                                                disabled={isActive || sending || enquiry.status === 'ENQUIRY_CONVERTED'}
-                                                className={clsx(
-                                                    "flex flex-col text-left transition-all",
-                                                    isActive ? "translate-x-2" : "opacity-40 group-hover/step:opacity-100"
-                                                )}
-                                            >
+                                            <div className={clsx(
+                                                "flex flex-col text-left transition-all",
+                                                isActive ? "translate-x-3" : "opacity-30"
+                                            )}>
                                                 <span className={clsx(
                                                     "text-[10px] font-black uppercase tracking-widest leading-none",
                                                     isActive ? "text-white" : isCompleted ? "text-emerald-400" : "text-white/40"
                                                 )}>
-                                                    {st.replace('ENQUIRY_', '').replace('_', ' ')}
+                                                    {st.label}
                                                 </span>
-                                                {isActive && (
-                                                    <span className="text-[8px] font-bold text-indigo-400/60 uppercase mt-1 tracking-widest">Current Protocol State</span>
-                                                )}
-                                            </button>
+                                                <span className="text-[8px] font-bold text-white/20 uppercase mt-1 tracking-widest">
+                                                    {isActive ? 'Current Protocol State' : st.description}
+                                                </span>
+                                            </div>
                                         </div>
                                     );
                                 })}
                             </div>
 
-                            <AnimatePresence>
-                                {enquiry.status === 'ENQUIRY_VERIFIED' && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 1.05 }}
-                                        className="mt-14"
-                                    >
-                                        <button
-                                            onClick={() => setShowConfirmPromote(true)}
-                                            className="w-full py-6 rounded-[2rem] bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[12px] uppercase tracking-[0.3em] shadow-[0_25px_50px_rgba(79,70,229,0.3)] ring-1 ring-white/10 flex items-center justify-center gap-4 group transition-all"
-                                        >
-                                            <ZapIcon className="w-5 h-5 group-hover:scale-125 transition-transform duration-500" />
-                                            Promote to Admission Vault
-                                        </button>
-                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] text-center mt-6 italic">
-                                            Institutional Authority Verification Required
-                                        </p>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                            {/* Institutional Authority Controls */}
+                            <div className="space-y-6">
+                                <h3 className="text-[9px] font-black uppercase text-indigo-400/40 tracking-[0.4em]">Administrative Commands</h3>
 
-                            {(enquiry.status === 'ENQUIRY_CONVERTED' || enquiry.conversion_state === 'CONVERTED') && (
-                                <motion.button
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    onClick={() => onNavigate && onNavigate('Admissions')}
-                                    className="w-full mt-14 py-6 rounded-[2rem] bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 group transition-all shadow-2xl"
-                                >
-                                    <ShieldCheckIcon className="w-5 h-5" />
-                                    Identity Archived in Vault
-                                </motion.button>
-                            )}
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { id: 'ENQUIRY_ACTIVE', label: 'ACTIVATE' },
+                                        { id: 'ENQUIRY_VERIFIED', label: 'VERIFY' },
+                                        { id: 'ENQUIRY_IN_REVIEW', label: 'REVIEW' },
+                                        { id: 'ENQUIRY_CONTACTED', label: 'CONTACT' }
+                                    ].map(cmd => (
+                                        <button
+                                            key={cmd.id}
+                                            onClick={() => handleAction(cmd.id as any)}
+                                            disabled={enquiry.status === cmd.id || sending || enquiry.status === 'ENQUIRY_CONVERTED'}
+                                            className={clsx(
+                                                "px-4 py-3 rounded-xl border text-[9px] font-black tracking-widest uppercase transition-all",
+                                                enquiry.status === cmd.id
+                                                    ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-400 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]"
+                                                    : "bg-white/[0.02] border-white/5 text-white/40 hover:bg-white/[0.05] hover:text-white"
+                                            )}
+                                        >
+                                            {cmd.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* High Intensity Promotion Trigger */}
+                                {enquiry.status === 'ENQUIRY_VERIFIED' && (
+                                    <button
+                                        onClick={() => handleAction('ENQUIRY_CONVERTED' as any)}
+                                        disabled={sending}
+                                        className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl transition-all flex items-center justify-center gap-3 relative overflow-hidden group/convert"
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/convert:translate-x-full transition-transform duration-1000" />
+                                        {sending ? <Spinner size="sm" /> : (
+                                            <>
+                                                <ZapIcon className="w-4 h-4" />
+                                                PROMOTE TO ADMISSION
+                                            </>
+                                        )}
+                                    </button>
+                                )}
+
+                                {enquiry.status === 'ENQUIRY_CONVERTED' && (
+                                    <button
+                                        onClick={() => onNavigate?.('Admissions')}
+                                        className="w-full py-5 rounded-2xl bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(16,185,129,0.1)]"
+                                    >
+                                        <ShieldCheckIcon className="w-4 h-4 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                        IDENTITY ARCHIVED IN VAULT
+                                    </button>
+                                )}
+                            </div>
                         </section>
 
                         <div className="h-px bg-white/[0.04]" />
@@ -384,85 +425,78 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                             <h3 className="text-[11px] font-black uppercase text-white/30 tracking-[0.5em]">Node Metadata</h3>
 
                             {/* Academic Alignment Display */}
-                            <div className="relative group">
-                                <div className="absolute inset-0 bg-white/[0.02] blur-xl rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="relative p-8 bg-white/[0.01] border border-white/5 rounded-[2.5rem] flex items-center justify-between overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-[0.02] transform rotate-12">
-                                        <ShieldIcon className="w-24 h-24" />
-                                    </div>
-                                    <div className="relative z-10">
-                                        <span className="text-[9px] font-black text-white/20 uppercase tracking-widest block mb-2">Subject Alignment</span>
-                                        <h4 className="text-4xl font-serif font-black text-white/90 italic tracking-tighter">Grade {enquiry.grade}</h4>
-                                    </div>
-                                    <div className="relative z-10 flex flex-col items-end">
-                                        <span className="px-3 py-1 bg-white/5 rounded-full text-[9px] font-black text-white/30 uppercase tracking-widest border border-white/5">Primary Node</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Unified Contact Intelligence */}
-                            <div className="p-8 bg-white/[0.005] border border-white/[0.03] rounded-[2.5rem] space-y-8 relative overflow-hidden group/primary">
-                                <div className="flex items-center gap-6 border-b border-white/[0.03] pb-6">
-                                    <div className="relative">
-                                        <div className="absolute inset-0 bg-white/10 blur-md rounded-2xl opacity-0 group-hover/primary:opacity-100 transition-opacity" />
-                                        <PremiumAvatar src={enquiry.profile_photo_url} name={enquiry.parent_name} size="md" className="rounded-2xl border border-white/10" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-lg font-bold text-white tracking-tight leading-none mb-2 truncate">{enquiry.parent_name}</p>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50 shrink-0" />
-                                            <span className="text-[9px] font-black uppercase text-white/20 tracking-[0.2em] truncate">Primary Parent Delegate</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {[
-                                        { label: 'Verified Email Uplink', val: enquiry.parent_email, id: 'email' },
-                                        { label: 'Secure Mobile Node', val: enquiry.parent_phone, id: 'phone' }
-                                    ].map(it => it.val && (
-                                        <div key={it.id} className="group/meta flex items-center justify-between p-4 rounded-2xl hover:bg-white/[0.03] transition-all border border-transparent hover:border-white/5">
+                            <div className="space-y-6">
+                                {/* Student Identity Node */}
+                                <div className="relative group">
+                                    <div className="absolute inset-0 bg-white/[0.02] blur-xl rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="relative p-10 bg-white/[0.01] border border-white/5 rounded-[3rem] space-y-8">
+                                        <div className="flex items-center gap-8">
+                                            <div className="relative">
+                                                <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <PremiumAvatar src={enquiry.profile_photo_url} name={enquiry.applicant_name} size="lg" className="rounded-3xl border border-white/10 shadow-2xl relative z-10" />
+                                            </div>
                                             <div className="min-w-0">
-                                                <span className="text-[9px] font-black text-white/10 uppercase block mb-1 tracking-widest">{it.label}</span>
-                                                <p className="text-[13px] text-white/60 font-mono truncate tracking-tight">{it.val}</p>
-                                            </div>
-                                            <button
-                                                onClick={() => handleCopy(it.val!, it.id)}
-                                                className="p-3 opacity-0 group-hover/meta:opacity-100 transition-all bg-white/5 rounded-xl text-white/40 hover:text-white hover:scale-110 active:scale-90"
-                                            >
-                                                {copied === it.id ? <ShieldCheckIcon className="w-4 h-4 text-emerald-400" /> : <CopyIcon className="w-4 h-4" />}
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Secondary Parent Intelligence */}
-                            {enquiry.secondary_parent_name && (
-                                <div className="p-8 bg-white/[0.005] border border-white/[0.03] rounded-[2.5rem] space-y-8 relative overflow-hidden group/sec">
-                                    <div className="flex items-center gap-6 border-b border-white/[0.03] pb-6">
-                                        <div className="relative">
-                                            <div className="absolute inset-0 bg-white/5 blur-md rounded-2xl opacity-0 group-hover/sec:opacity-100 transition-opacity" />
-                                            <PremiumAvatar name={enquiry.secondary_parent_name} size="md" className="rounded-2xl border border-white/5 opacity-60" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-lg font-bold text-white/80 tracking-tight leading-none mb-2 truncate">{enquiry.secondary_parent_name}</p>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-white/20 shrink-0" />
-                                                <span className="text-[9px] font-black uppercase text-white/10 tracking-[0.2em] truncate">Secondary Parent Delegate</span>
+                                                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] block mb-2">Subject Alignment</span>
+                                                <h4 className="text-4xl font-serif font-black text-white italic tracking-tighter mb-2">{enquiry.applicant_name}</h4>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="px-3 py-1 bg-white/5 rounded-full text-[9px] font-black text-white/30 uppercase tracking-widest border border-white/5">Grade {enquiry.grade} Node</span>
+                                                    <div className="w-1 h-1 rounded-full bg-white/10" />
+                                                    <span className="text-[9px] font-mono text-white/20 uppercase tracking-widest">Primary Identity</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="space-y-4">
-                                        {[
-                                            { label: 'Secondary Email Node', val: enquiry.secondary_parent_email, id: 'sec_email' },
-                                            { label: 'Secondary Mobile Uplink', val: enquiry.secondary_parent_phone, id: 'sec_phone' }
-                                        ].map(it => it.val && (
-                                            <div key={it.id} className="group/meta flex items-center justify-between p-4 rounded-2xl hover:bg-white/[0.03] transition-all border border-transparent hover:border-white/5">
+                                {/* Guardian Identity Hierarchy */}
+                                <div className="p-10 bg-white/[0.005] border border-white/[0.03] rounded-[3rem] space-y-10 relative overflow-hidden group/guard">
+                                    <div className="absolute top-0 right-0 p-8 opacity-[0.02] transform rotate-12 transition-transform duration-1000 group-hover/guard:rotate-45">
+                                        <UserGroupIcon className="w-40 h-40" />
+                                    </div>
+
+                                    <div className="space-y-8 relative z-10">
+                                        {/* Primary Parent */}
+                                        <div className="flex items-center gap-6 group/p">
+                                            <div className="relative">
+                                                <div className="absolute inset-0 bg-white/10 blur-md rounded-2xl opacity-0 group-hover/p:opacity-100 transition-opacity" />
+                                                <PremiumAvatar name={enquiry.parent_name} size="md" className="rounded-2xl border border-white/10 shadow-xl" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <span className="text-[9px] font-black text-indigo-500/60 uppercase tracking-[0.3em] block mb-1">Primary Parent / Guardian</span>
+                                                <p className="text-xl font-bold text-white tracking-tight leading-none truncate">{enquiry.parent_name}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Secondary Parent Delegate (Nested for hierarchy) */}
+                                        {enquiry.secondary_parent_name && (
+                                            <div className="flex items-center gap-6 pl-10 border-l border-white/[0.03] group/s">
+                                                <div className="relative">
+                                                    <div className="absolute inset-0 bg-white/5 blur-md rounded-xl opacity-0 group-hover/s:opacity-100 transition-opacity" />
+                                                    <PremiumAvatar name={enquiry.secondary_parent_name} size="sm" className="rounded-xl border border-white/5 opacity-60 shadow-lg" />
+                                                </div>
                                                 <div className="min-w-0">
-                                                    <span className="text-[9px] font-black text-white/10 uppercase block mb-1 tracking-widest">{it.label}</span>
-                                                    <p className="text-[13px] text-white/40 font-mono truncate tracking-tight">{it.val}</p>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] block mb-1">Secondary Guardian</span>
+                                                    <p className="text-base font-bold text-white/60 tracking-tight leading-none truncate">{enquiry.secondary_parent_name}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="h-px bg-white/[0.03]" />
+
+                                    {/* Integrated Contact Uplinks */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-[9px] font-black uppercase text-white/10 tracking-[0.4em] mb-4">Contact Uplinks</h3>
+                                        {[
+                                            { label: 'Primary Verified Email', val: enquiry.parent_email, id: 'email' },
+                                            { label: 'Primary Mobile Node', val: enquiry.parent_phone, id: 'phone' },
+                                            { label: 'Secondary Email Link', val: enquiry.secondary_parent_email, id: 'sec_email' },
+                                            { label: 'Secondary Mobile Node', val: enquiry.secondary_parent_phone, id: 'sec_phone' }
+                                        ].map(it => it.val && (
+                                            <div key={it.id} className="group/meta flex items-center justify-between p-5 rounded-2xl hover:bg-white/[0.03] transition-all border border-transparent hover:border-white/5">
+                                                <div className="min-w-0">
+                                                    <span className="text-[8px] font-black text-white/10 uppercase block mb-1 tracking-widest">{it.label}</span>
+                                                    <p className="text-[13px] text-white/50 font-mono truncate tracking-tight">{it.val}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => handleCopy(it.val!, it.id)}
@@ -474,7 +508,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                         ))}
                                     </div>
                                 </div>
-                            )}
+                            </div>
 
                             {/* Jurisdiction Mapping */}
                             <div className="px-8 py-6 bg-gradient-to-r from-indigo-500/[0.02] to-transparent border-l-2 border-indigo-500/20 rounded-r-[2.5rem] flex items-center justify-between group">
