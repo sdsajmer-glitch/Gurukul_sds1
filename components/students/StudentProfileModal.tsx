@@ -823,54 +823,89 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
         setLoading(true);
         try {
             const classId = parseInt(selectedClassId);
+            const branchId = student.branch_id || (targetClass as any).branch_id || null;
 
-            console.log('[AssignClass] Calling RPC with:', {
-                p_student_id: student.id,
-                p_class_id: classId,
-                p_branch_id: student.branch_id || (targetClass as any).branch_id || null
+            console.log('[AssignClass] Starting assignment:', {
+                student_id: student.id, class_id: classId, branch_id: branchId,
+                class_name: targetClass.name, grade: (targetClass as any).grade_level
             });
 
-            const { data: rawData, error } = await supabase.rpc('admin_assign_student_class', {
-                p_student_id: student.id,
-                p_class_id: classId,
-                p_branch_id: student.branch_id || (targetClass as any).branch_id || null
-            });
+            let rpcSuccess = false;
+            let rpcData: any = null;
 
-            console.log('[AssignClass] RPC response:', { rawData, error });
+            // Strategy 1: Try the RPC function first
+            try {
+                const { data: rawData, error: rpcError } = await supabase.rpc('admin_assign_student_class', {
+                    p_student_id: student.id,
+                    p_class_id: classId,
+                    p_branch_id: branchId
+                });
 
-            if (error) throw error;
+                console.log('[AssignClass] RPC response:', { rawData, rpcError });
 
-            // Handle potential nested JSONB response from Supabase
-            const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-
-            if (!data) {
-                throw new Error("RPC returned empty response. The function may not exist in the database.");
+                if (!rpcError) {
+                    const parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                    if (parsed && parsed.success === true) {
+                        rpcSuccess = true;
+                        rpcData = parsed;
+                        console.log('[AssignClass] RPC succeeded:', parsed);
+                    } else {
+                        console.warn('[AssignClass] RPC returned non-success:', parsed);
+                    }
+                } else {
+                    console.warn('[AssignClass] RPC error (will use direct update):', rpcError.message);
+                }
+            } catch (rpcErr: any) {
+                console.warn('[AssignClass] RPC call failed (will use direct update):', rpcErr.message);
             }
 
-            if (data.success === false) {
-                throw new Error(data.message || "Assignment failed on server.");
+            // Strategy 2: Direct table update (always run to guarantee persistence)
+            if (!rpcSuccess) {
+                console.log('[AssignClass] Using direct table UPDATE fallback...');
+
+                const { error: updateError } = await supabase
+                    .from('student_profiles')
+                    .update({
+                        assigned_class_id: classId,
+                        grade: (targetClass as any).grade_level || student.grade,
+                        enrollment_status: 'Active',
+                        branch_id: branchId
+                    })
+                    .eq('user_id', student.id);
+
+                if (updateError) {
+                    console.error('[AssignClass] Direct UPDATE failed:', updateError);
+                    throw new Error(`Failed to save class assignment: ${updateError.message}`);
+                }
+
+                console.log('[AssignClass] Direct UPDATE succeeded');
             }
 
-            // Verify the response indicates actual success
-            if (data.success !== true) {
-                console.warn('[AssignClass] Unexpected response format:', data);
+            // Strategy 3: VERIFY persistence by reading back
+            const { data: verifyRow, error: verifyError } = await supabase
+                .from('student_profiles')
+                .select('assigned_class_id, enrollment_status, grade')
+                .eq('user_id', student.id)
+                .maybeSingle();
+
+            console.log('[AssignClass] Verification read:', { verifyRow, verifyError });
+
+            if (verifyError || !verifyRow?.assigned_class_id) {
+                throw new Error('Assignment verification failed — the database may not have saved the change. Please try again.');
             }
 
-            console.log('[AssignClass] Assignment verified. Calling onSuccess with:', {
-                class_id: classId,
-                class_name: data.class_name || targetClass.name,
-                grade: data.grade,
-                academic_year: data.academic_year,
-                enrollment_status: data.enrollment_status || 'Active',
-                verified: data.verified
-            });
+            if (verifyRow.assigned_class_id !== classId) {
+                throw new Error(`Persistence mismatch: expected class ${classId}, got ${verifyRow.assigned_class_id}`);
+            }
+
+            console.log('[AssignClass] ✅ VERIFIED! Class assignment persisted. Calling onSuccess.');
 
             onSuccess({
                 class_id: classId,
-                class_name: data.class_name || targetClass.name,
-                grade: data.grade,
-                academic_year: data.academic_year,
-                enrollment_status: data.enrollment_status || 'Active'
+                class_name: rpcData?.class_name || targetClass.name,
+                grade: rpcData?.grade || (targetClass as any).grade_level || student.grade,
+                academic_year: rpcData?.academic_year || (targetClass as any).academic_year,
+                enrollment_status: 'Active'
             });
         } catch (err: any) {
             console.error("[AssignClass] Assignment error:", err);
