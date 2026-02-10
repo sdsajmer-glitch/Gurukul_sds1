@@ -38,6 +38,7 @@ import { XCircleIcon } from '../icons/XCircleIcon';
 import { ReceiptIcon } from '../icons/ReceiptIcon';
 import { DollarSignIcon } from '../icons/DollarSignIcon';
 import { ActivityIcon } from '../icons/ActivityIcon';
+import { GlobeIcon } from '../icons/GlobeIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import { TeacherIcon } from '../icons/TeacherIcon';
 import CustomSelect from '../common/CustomSelect';
@@ -1510,9 +1511,13 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 </div>
                                                 <div className="space-y-2">
                                                     <InfoRow label="Legal Name" value={syncedStudent.display_name} icon={<UserIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Student ID" value={syncedStudent.student_id_number || 'Pending Generation'} icon={<UserIcon className="w-5 h-5" />} />
                                                     <InfoRow label="Gender" value={syncedStudent.gender} icon={<UserIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                     <InfoRow label="Date of Birth" value={syncedStudent.date_of_birth ? new Date(syncedStudent.date_of_birth).toLocaleDateString() : null} icon={<CalendarIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Address" value={syncedStudent.address} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Blood Group" value={(syncedStudent as any).blood_group || (admissionRecord as any)?.blood_group || 'Not Recorded'} icon={<ActivityIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Nationality" value={(syncedStudent as any).nationality || (admissionRecord as any)?.nationality || 'Indian'} icon={<GlobeIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Religion" value={(syncedStudent as any).religion || (admissionRecord as any)?.religion || 'Not Specified'} icon={<InfoIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Category" value={(syncedStudent as any).category || (admissionRecord as any)?.category || 'General'} icon={<InfoIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                 </div>
                                             </div>
                                             <div className="space-y-8">
@@ -1524,7 +1529,14 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                 <div className="space-y-2">
                                                     <InfoRow label="Primary Email" value={syncedStudent.email} icon={<MailIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                     <InfoRow label="Student Phone" value={syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Parent Contact" value={parentData?.phone || parentData?.parent_phone || syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Residential Address" value={syncedStudent.address} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="City" value={(syncedStudent as any).city || (admissionRecord as any)?.city || (enquiryRecord as any)?.city || (parentData as any)?.city || 'Not Recorded'} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="State" value={(syncedStudent as any).state || (admissionRecord as any)?.state || (parentData as any)?.state || 'Not Recorded'} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Pincode" value={(syncedStudent as any).pin_code || (syncedStudent as any).pincode || (admissionRecord as any)?.pin_code || (parentData as any)?.pin_code || 'Not Recorded'} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Parent/Guardian Name" value={parentData?.name || syncedStudent.parent_guardian_details || 'Not Recorded'} icon={<UsersIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Parent Contact" value={parentData?.phone || parentData?.parent_phone || (enquiryRecord as any)?.parent_phone || syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Parent Email" value={parentData?.email || (admissionRecord as any)?.parent_email || (enquiryRecord as any)?.parent_email || 'Not Recorded'} icon={<MailIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Emergency Contact" value={(admissionRecord as any)?.emergency_contact || (syncedStudent as any).emergency_contact || 'Not Recorded'} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                 </div>
                                             </div>
                                         </div>
