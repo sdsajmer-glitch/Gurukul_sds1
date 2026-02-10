@@ -327,6 +327,150 @@ const DocumentCard: React.FC<{
         )
     }
 
+const DocumentRow: React.FC<{
+    doc: any;
+    onVerify: (id: number) => void;
+    onReject: (id: number) => void;
+    onView: (path: string) => void;
+    isSchoolAdmin?: boolean;
+}> = ({ doc, onVerify, onReject, onView, isSchoolAdmin }) => {
+    const status = doc.status || 'Pending';
+    const file = doc.admission_documents?.[0];
+    const isMandatory = doc.is_mandatory;
+
+    return (
+        <div className="group flex items-center justify-between p-5 bg-[#0c0e12] border border-white/5 rounded-2xl hover:border-indigo-500/30 transition-all duration-300 relative overflow-hidden">
+            {/* Hover Gradient */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${isMandatory ? 'bg-rose-500' : 'bg-indigo-500'} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+            <div className={`absolute inset-0 ${isMandatory ? 'bg-rose-500/[0.02]' : 'bg-indigo-500/[0.02]'} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}></div>
+
+            <div className="flex items-center gap-5 relative z-10">
+                <div className={`p-3 rounded-xl border ${isMandatory ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-500'}`}>
+                    <ShieldCheckIcon className="w-5 h-5" />
+                </div>
+                <div>
+                    <h4 className="text-sm font-bold text-white tracking-wide">{doc.document_name}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${status === 'Verified' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            status === 'Rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                                'bg-white/5 text-white/40 border border-white/10'
+                            }`}>
+                            {status}
+                        </span>
+                        {file && (
+                            <span className="text-[9px] text-white/30 font-medium flex items-center gap-1">
+                                <ClockIcon className="w-3 h-3" /> {new Date(file.uploaded_at).toLocaleDateString()}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-3 relative z-10">
+                {file ? (
+                    <>
+                        <button
+                            onClick={() => onView(file.storage_path)}
+                            className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider transition-all flex items-center gap-2"
+                        >
+                            <EyeIcon className="w-3.5 h-3.5" /> View
+                        </button>
+
+                        {isSchoolAdmin && status !== 'Verified' && (
+                            <div className="flex gap-1 bg-white/5 p-1 rounded-lg border border-white/5">
+                                <button onClick={() => onVerify(doc.id)} className="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors" title="Verify">
+                                    <CheckCircleIcon className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => onReject(doc.id)} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Reject">
+                                    <XCircleIcon className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <span className="px-4 py-2 rounded-lg border border-dashed border-white/10 text-[10px] font-bold text-white/20 uppercase tracking-wider">
+                        Pending Upload
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const ApplicantIdentityCard: React.FC<{ student: any; parent: any }> = ({ student, parent }) => (
+    <div className="h-full bg-[#0c0e12] border border-white/5 rounded-[2.5rem] p-8 flex flex-col relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
+            <UserIcon className="w-48 h-48" />
+        </div>
+
+        <div className="flex items-center gap-4 mb-8 relative z-10">
+            <div className="p-3 bg-white/5 rounded-2xl border border-white/10 text-white/40">
+                <UserIcon className="w-6 h-6" />
+            </div>
+            <div>
+                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Applicant Identity</p>
+                <h3 className="text-xl font-black text-white tracking-tight">{student.display_name}</h3>
+            </div>
+        </div>
+
+        <div className="space-y-6 flex-grow relative z-10">
+            <div className="group">
+                <div className="flex items-center gap-3 mb-2 text-indigo-400">
+                    <MailIcon className="w-4 h-4" />
+                    <span className="text-[9px] font-black uppercase tracking-widest opacity-70">Contact Email</span>
+                </div>
+                <div className="p-4 bg-white/5 border border-white/5 rounded-2xl group-hover:border-indigo-500/20 transition-colors">
+                    <p className="text-sm font-bold text-white break-all">{student.email || parent?.email || 'N/A'}</p>
+                </div>
+            </div>
+
+            <div className="group">
+                <div className="flex items-center gap-3 mb-2 text-purple-400">
+                    <PhoneIcon className="w-4 h-4" />
+                    <span className="text-[9px] font-black uppercase tracking-widest opacity-70">Primary Phone</span>
+                </div>
+                <div className="p-4 bg-white/5 border border-white/5 rounded-2xl group-hover:border-purple-500/20 transition-colors">
+                    <p className="text-sm font-bold text-white">{student.phone || parent?.phone || 'N/A'}</p>
+                </div>
+            </div>
+
+            <div className="group">
+                <div className="flex items-center gap-3 mb-2 text-emerald-400">
+                    <LocationIcon className="w-4 h-4" />
+                    <span className="text-[9px] font-black uppercase tracking-widest opacity-70">Residential Address</span>
+                </div>
+                <div className="p-4 bg-white/5 border border-white/5 rounded-2xl group-hover:border-emerald-500/20 transition-colors">
+                    <p className="text-xs font-bold text-white leading-relaxed opacity-80">
+                        {student.address || parent?.address || 'Address not registered'}
+                        {(student.city || parent?.city) && `, ${student.city || parent?.city}`}
+                    </p>
+                </div>
+            </div>
+            <div className="group">
+                <div className="flex items-center gap-3 mb-2 text-amber-400">
+                    <UsersIcon className="w-4 h-4" />
+                    <span className="text-[9px] font-black uppercase tracking-widest opacity-70">Guardian Identity</span>
+                </div>
+                <div className="p-4 bg-white/5 border border-white/5 rounded-2xl group-hover:border-amber-500/20 transition-colors">
+                    <p className="text-sm font-bold text-white">{parent?.name || 'Unlinked'}</p>
+                    <p className="text-[10px] text-white/40 mt-1 uppercase tracking-wider">{parent?.phone || ''}</p>
+                </div>
+            </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-white/5">
+            <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Profile Score</span>
+                <span className="text-sm font-black text-emerald-400">100%</span>
+            </div>
+            <div className="w-full h-1.5 bg-white/5 rounded-full mt-3 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-300 w-full"></div>
+            </div>
+            <p className="text-[9px] text-white/20 mt-3 text-center uppercase tracking-widest">Verification Validated Output</p>
+        </div>
+    </div>
+);
+
 const GuardianCard: React.FC<{
     title: string;
     data: any;
@@ -2049,24 +2193,96 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                 )}
 
                                 {activeTab === 'documents' && (
-                                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                                        <div className="flex justify-between items-center">
-                                            <h3 className="text-lg font-bold text-white">Digital Vault</h3>
-                                            <button className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-2">
-                                                <PlusIcon className="w-4 h-4" /> Request Document
-                                            </button>
+                                    <div className="space-y-0 h-full flex flex-col md:flex-row gap-8 animate-in fade-in slide-in-from-right-4 duration-500">
+
+                                        {/* Left Side: Applicant Identity */}
+                                        <div className="w-full md:w-1/3 shrink-0">
+                                            <ApplicantIdentityCard student={syncedStudent} parent={parentData} />
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                            {docs.map(doc => (
-                                                <DocumentCard
-                                                    key={doc.id}
-                                                    doc={doc}
-                                                    onVerify={handleDocVerify}
-                                                    onReject={handleDocReject}
-                                                    onView={handleDocView}
-                                                />
-                                            ))}
+                                        {/* Right Side: Document Lists */}
+                                        <div className="flex-grow space-y-8 overflow-y-auto custom-scrollbar pr-2 pb-20">
+
+                                            {/* Header Actions */}
+                                            <div className="flex justify-between items-center mb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-white/5 rounded-lg border border-white/10">
+                                                        <FileTextIcon className="w-5 h-5 text-white/60" />
+                                                    </div>
+                                                    <h3 className="text-lg font-black text-white tracking-tight">Documentation Vault</h3>
+                                                </div>
+                                                <button className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 hover:-translate-y-0.5 flex items-center gap-2">
+                                                    <PlusIcon className="w-4 h-4" /> Request Document
+                                                </button>
+                                            </div>
+
+                                            {/* Mandatory Section */}
+                                            <div>
+                                                <div className="flex items-center gap-4 mb-5">
+                                                    <div className="w-1 h-4 bg-rose-500 rounded-full"></div>
+                                                    <h4 className="text-[11px] font-black text-white/40 uppercase tracking-[0.3em]">Mandatory Logic</h4>
+                                                    <div className="h-px bg-white/5 flex-grow"></div>
+                                                    <span className="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[9px] font-black uppercase tracking-widest rounded">
+                                                        Identity Essential
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    {docs.filter(d => d.is_mandatory).length > 0 ? (
+                                                        docs.filter(d => d.is_mandatory).map(doc => (
+                                                            <DocumentRow
+                                                                key={doc.id}
+                                                                doc={doc}
+                                                                isSchoolAdmin={isSchoolAdmin}
+                                                                onVerify={handleDocVerify}
+                                                                onReject={handleDocReject}
+                                                                onView={handleDocView}
+                                                            />
+                                                        ))
+                                                    ) : (
+                                                        <p className="text-sm text-white/20 italic p-4 text-center border border-dashed border-white/5 rounded-xl">No mandatory documents pending.</p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Supporting Section */}
+                                            <div>
+                                                <div className="flex items-center gap-4 mb-5 pt-4">
+                                                    <div className="w-1 h-4 bg-indigo-500 rounded-full"></div>
+                                                    <h4 className="text-[11px] font-black text-white/40 uppercase tracking-[0.3em]">Supporting Evidence</h4>
+                                                    <div className="h-px bg-white/5 flex-grow"></div>
+                                                    <span className="px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-widest rounded">
+                                                        Protocol Suites
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    {docs.filter(d => !d.is_mandatory).length > 0 ? (
+                                                        docs.filter(d => !d.is_mandatory).map(doc => (
+                                                            <DocumentRow
+                                                                key={doc.id}
+                                                                doc={doc}
+                                                                isSchoolAdmin={isSchoolAdmin}
+                                                                onVerify={handleDocVerify}
+                                                                onReject={handleDocReject}
+                                                                onView={handleDocView}
+                                                            />
+                                                        ))
+                                                    ) : (
+                                                        <p className="text-sm text-white/20 italic p-4 text-center border border-dashed border-white/5 rounded-xl">No supporting documents requested.</p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Action Sticky Footer */}
+                                            <div className="sticky bottom-0 bg-[#08090a] pt-4 pb-2 border-t border-white/5 flex items-center justify-between z-20">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Administrative Finalization Zone</span>
+                                                </div>
+                                                <button className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/20 hover:shadow-indigo-600/40 transition-all hover:-translate-y-0.5 flex items-center gap-3">
+                                                    <ShieldCheckIcon className="w-4 h-4" /> Finalize Enrollment
+                                                </button>
+                                            </div>
+
                                         </div>
                                     </div>
                                 )}
