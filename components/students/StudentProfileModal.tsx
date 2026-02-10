@@ -902,6 +902,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 .select(`
                     *,
                     profiles!inner(phone, email, display_name, profile_photo_url),
+                    school_classes:assigned_class_id (name, grade_level, academic_year),
                     admissions:admission_id (
                         id, enquiry_id, application_number, status, submitted_at, grade, applicant_name
                     )
@@ -920,14 +921,12 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 { data: parentRes },
                 { data: admissionRes },
                 { data: enquiryRes },
-                { data: feeData },
-                { data: fallbackClassData }
+                { data: feeData }
             ] = await Promise.all([
                 supabase.rpc('get_linked_parent_for_student', { p_student_id: student.id }),
                 admissionId ? supabase.from('admissions').select('*').eq('id', admissionId).maybeSingle() : Promise.resolve({ data: null }),
                 enquiryId ? supabase.from('enquiries').select('*').eq('id', enquiryId).maybeSingle() : Promise.resolve({ data: null }),
-                supabase.rpc('get_student_fee_summary', { p_student_id: student.id }),
-                profileRaw?.assigned_class_id ? supabase.from('school_classes').select('name, grade_level, academic_year').eq('id', profileRaw.assigned_class_id).maybeSingle() : Promise.resolve({ data: null })
+                supabase.rpc('get_student_fee_summary', { p_student_id: student.id })
             ]);
 
             // 4. Update State
@@ -1085,8 +1084,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 enrollment_status: profileData?.enrollment_status || prev.enrollment_status,
                 // Class assignment logic (Step 3) - Uses profileData
                 assigned_class_id: profileData?.assigned_class_id || prev.assigned_class_id,
-                assigned_class_name: (profileData?.school_classes as any)?.name || (fallbackClassData as any)?.name || prev.assigned_class_name,
-                academic_year: (profileData?.school_classes as any)?.academic_year || (fallbackClassData as any)?.academic_year || prev.academic_year
+                assigned_class_name: (profileData?.school_classes as any)?.name || prev.assigned_class_name,
+                academic_year: (profileData?.school_classes as any)?.academic_year || prev.academic_year
             }));
 
             // --- 3. Additional Data (Documents & Fees) ---
