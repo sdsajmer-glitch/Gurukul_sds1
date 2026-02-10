@@ -966,16 +966,17 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
         setLoading(true);
         try {
             const classId = parseInt(selectedClassId);
-            const branchId = student.branch_id || (targetClass as any).branch_id || null;
+            const branchId = student.branch_id || (targetClass as any).branch_id || null; // Ensure null if undefined
 
             console.log('[AssignClass] Starting assignment:', {
                 student_id: student.id, class_id: classId, branch_id: branchId,
-                class_name: targetClass.name, grade: (targetClass as any).grade_level
+                class_name: targetClass.name
             });
 
             let assignSuccess = false;
+            let successMessage = '';
 
-            // Strategy 1: Try RPC (uses SECURITY DEFINER → bypasses RLS)
+            // Strategy 1: RPC (Best for permissions & atomic updates)
             try {
                 const { data: rawData, error: rpcError } = await supabase.rpc('admin_assign_student_class', {
                     p_student_id: student.id,
@@ -983,90 +984,88 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
                     p_branch_id: branchId
                 });
 
-                console.log('[AssignClass] RPC response:', { rawData, rpcError });
+                if (rpcError) throw rpcError;
 
-                if (!rpcError) {
-                    const parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-                    if (parsed && parsed.success === true) {
-                        assignSuccess = true;
-                        console.log('[AssignClass] ✅ RPC succeeded:', parsed);
-                    } else {
-                        console.warn('[AssignClass] RPC returned non-success:', parsed);
-                    }
+                const parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                if (parsed && parsed.success === true) {
+                    assignSuccess = true;
+                    successMessage = 'RPC Success';
                 } else {
-                    console.warn('[AssignClass] RPC error (with branch_id):', rpcError.message);
-                    throw rpcError; // Throw to trigger fallback
+                    console.warn('[AssignClass] RPC returned fail:', parsed);
                 }
             } catch (rpcErr: any) {
-                console.warn('[AssignClass] RPC with branch_id failed, retrying without:', rpcErr.message);
+                console.warn('[AssignClass] RPC Strategy failed:', rpcErr);
 
-                // Fallback: Try RPC without p_branch_id (Legacy support)
-                try {
-                    const { data: rawData2, error: rpcError2 } = await supabase.rpc('admin_assign_student_class', {
-                        p_student_id: student.id,
-                        p_class_id: classId
-                    });
-
-                    if (!rpcError2) {
-                        const parsed = typeof rawData2 === 'string' ? JSON.parse(rawData2) : rawData2;
-                        if (parsed && parsed.success === true) {
+                // Retry RPC without branch_id (Legacy compatibility)
+                if (rpcErr.code === '42883' || rpcErr.message?.includes('function')) {
+                    try {
+                        const { data: rawData2, error: rpcError2 } = await supabase.rpc('admin_assign_student_class', {
+                            p_student_id: student.id,
+                            p_class_id: classId
+                        });
+                        if (!rpcError2 && (rawData2 as any)?.success) {
                             assignSuccess = true;
-                            console.log('[AssignClass] ✅ RPC succeeded (Legacy Mode):', parsed);
+                            successMessage = 'RPC Legacy Success';
                         }
-                    } else {
-                        console.warn('[AssignClass] RPC Legacy error:', rpcError2.message);
-                    }
-                } catch (legacyErr) {
-                    console.warn('[AssignClass] RPC Legacy failed:', legacyErr);
+                    } catch (e) { console.warn('Legacy RPC failed'); }
                 }
             }
 
-            // Strategy 2: Direct UPDATE using supabaseAdmin (service role → bypasses RLS)
+            // Strategy 2: Direct UPDATE via supabaseAdmin (Service Role)
             if (!assignSuccess) {
-                console.log('[AssignClass] Using supabaseAdmin direct UPDATE...');
-
-                const { data: updateData, error: updateError } = await supabaseAdmin
+                console.log('[AssignClass] Attempting Strategy 2: Admin Service Role Update...');
+                const { error: updateError } = await supabaseAdmin
                     .from('student_profiles')
                     .update({
                         assigned_class_id: classId,
                         grade: (targetClass as any).grade_level || student.grade,
                         enrollment_status: 'Active',
-                        branch_id: branchId
+                        updated_at: new Date().toISOString()
                     })
-                    .eq('user_id', student.id)
-                    .select('assigned_class_id')
-                    .single();
-
-                console.log('[AssignClass] Direct UPDATE result:', { updateData, updateError });
+                    .eq('user_id', student.id);
 
                 if (updateError) {
-                    console.error('[AssignClass] Direct UPDATE failed:', updateError);
-                    throw new Error(`Failed to save class assignment: ${updateError.message}`);
-                }
-
-                if (updateData?.assigned_class_id === classId) {
+                    console.error('[AssignClass] Admin Update failed:', updateError);
+                } else {
                     assignSuccess = true;
-                    console.log('[AssignClass] ✅ Direct UPDATE succeeded and verified');
+                    successMessage = 'Admin Direct Update Success';
                 }
             }
 
-            // Strategy 3: Final verification read
+            // Strategy 3: Direct UPDATE via Client (Relies on RLS)
+            if (!assignSuccess) {
+                console.log('[AssignClass] Attempting Strategy 3: Client Update (RLS)...');
+                const { error: clientError } = await supabase
+                    .from('student_profiles')
+                    .update({
+                        assigned_class_id: classId,
+                        grade: (targetClass as any).grade_level || student.grade,
+                        enrollment_status: 'Active'
+                    })
+                    .eq('user_id', student.id);
+
+                if (clientError) {
+                    throw new Error(`All assignment strategies failed. Last error: ${clientError.message}`);
+                }
+                assignSuccess = true;
+                successMessage = 'Client Direct Update Success';
+            }
+
+            // Final Verification
             const { data: verifyRow, error: verifyError } = await supabaseAdmin
                 .from('student_profiles')
-                .select('assigned_class_id, enrollment_status, grade')
+                .select('assigned_class_id')
                 .eq('user_id', student.id)
                 .maybeSingle();
 
-            console.log('[AssignClass] Verification read:', { verifyRow, verifyError });
-
-            if (verifyError || !verifyRow?.assigned_class_id || verifyRow.assigned_class_id !== classId) {
+            if (verifyError || verifyRow?.assigned_class_id !== classId) {
                 throw new Error(
-                    `Persistence verification failed. Expected class ${classId}, got ${verifyRow?.assigned_class_id || 'NULL'}. ` +
-                    'Please ensure the SQL fix has been deployed to Supabase.'
+                    `Persistence verification failed. Expected class ID ${classId}, got ${verifyRow?.assigned_class_id}. ` +
+                    'Please run FIX_ACADEMIC_PLACEMENT_V2.sql in Supabase SQL Editor.'
                 );
             }
 
-            console.log('[AssignClass] ✅ VERIFIED! Class assignment persisted successfully.');
+            console.log(`[AssignClass] ✅ Enrollment Finalized via ${successMessage}`);
 
             onSuccess({
                 class_id: classId,
@@ -1075,6 +1074,7 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
                 academic_year: (targetClass as any).academic_year,
                 enrollment_status: 'Active'
             });
+
         } catch (err: any) {
             console.error("[AssignClass] Assignment error:", err);
             alert("Enrollment Failed: " + (err.message || "Unknown error"));
@@ -2428,9 +2428,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         student={syncedStudent}
                         onClose={() => setShowAssignClass(false)}
                         onSuccess={async (updatedData: any) => {
-                            console.log('[ProfileModal] onSuccess received:', updatedData);
+                            console.log('[ProfileModal] Enrollment Success:', updatedData);
 
-                            // Step 1: Immediately update UI for instant feedback
+                            // 1. Optimistic Update (Instant UI feedback)
                             setSyncedStudent(prev => ({
                                 ...prev,
                                 assigned_class_id: updatedData.class_id,
@@ -2439,50 +2439,11 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                 enrollment_status: updatedData.enrollment_status || 'Active',
                                 academic_year: updatedData.academic_year || prev.academic_year
                             }));
+
                             setShowAssignClass(false);
 
-                            // Step 2: Verify persistence by re-reading from DB
-                            try {
-                                const { data: verifyData, error: verifyError } = await supabaseAdmin
-                                    .from('student_profiles')
-                                    .select('assigned_class_id, enrollment_status, grade, school_classes:assigned_class_id(name, academic_year)')
-                                    .eq('user_id', student.id)
-                                    .maybeSingle();
-
-                                console.log('[ProfileModal] Persistence verification:', { verifyData, verifyError });
-
-                                if (verifyError) {
-                                    console.error('[ProfileModal] Verification query failed:', verifyError);
-                                } else if (!verifyData?.assigned_class_id || verifyData.assigned_class_id !== updatedData.class_id) {
-                                    // DB does NOT reflect the assignment - the RPC likely rolled back
-                                    console.error('[ProfileModal] PERSISTENCE FAILURE DETECTED!', {
-                                        expected: updatedData.class_id,
-                                        actual: verifyData?.assigned_class_id
-                                    });
-                                    alert(
-                                        'WARNING: The class assignment may not have been saved permanently. ' +
-                                        'Please check the Supabase SQL Editor and run the FIX_ACADEMIC_PLACEMENT_ULTIMATE.sql script. ' +
-                                        'Then try assigning the class again.'
-                                    );
-                                    // Revert optimistic update to reflect true DB state
-                                    setSyncedStudent(prev => ({
-                                        ...prev,
-                                        assigned_class_id: verifyData?.assigned_class_id || undefined,
-                                        assigned_class_name: (verifyData?.school_classes as any)?.name || undefined,
-                                        enrollment_status: verifyData?.enrollment_status || prev.enrollment_status,
-                                        academic_year: (verifyData?.school_classes as any)?.academic_year || prev.academic_year
-                                    }));
-                                } else {
-                                    console.log('[ProfileModal] Persistence VERIFIED. Class assignment is permanent.');
-                                    // Refresh all data to ensure full consistency
-                                    fetchData();
-                                }
-                            } catch (verifyErr) {
-                                console.error('[ProfileModal] Verification check failed:', verifyErr);
-                                // Still try a full refresh as fallback
-                                fetchData();
-                            }
-
+                            // 2. Full Data Refresh (Ensure consistency)
+                            await fetchData();
                             onUpdate();
                         }}
                     />
