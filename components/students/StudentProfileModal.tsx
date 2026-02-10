@@ -38,6 +38,7 @@ import { XCircleIcon } from '../icons/XCircleIcon';
 import { ReceiptIcon } from '../icons/ReceiptIcon';
 import { DollarSignIcon } from '../icons/DollarSignIcon';
 import { ActivityIcon } from '../icons/ActivityIcon';
+import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import { TeacherIcon } from '../icons/TeacherIcon';
 import CustomSelect from '../common/CustomSelect';
 import RecordPaymentModal from '../finance/RecordPaymentModal';
@@ -214,12 +215,9 @@ const DigitalIdCard: React.FC<{ student: StudentForAdmin; onNavigate?: (tab: Tab
                     {student.assigned_class_name ? (
                         <p className="text-sm font-bold text-white/80 uppercase tracking-tight">{student.assigned_class_name}</p>
                     ) : (
-                        <button
-                            onClick={() => onNavigate && onNavigate('academic')}
-                            className="text-sm font-black text-amber-500 hover:text-amber-400 uppercase tracking-widest animate-pulse hover:underline decoration-amber-500/30 underline-offset-4 transition-all"
-                        >
-                            UNASSIGNED <span className="text-[9px] bg-amber-500/10 border border-amber-500/20 px-1.5 rounded ml-1">FIX</span>
-                        </button>
+                        <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                            Placement Required
+                        </span>
                     )}
                 </div>
             </div>
@@ -1245,10 +1243,19 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     </div>
                                                     <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] group-hover:text-indigo-400/50 transition-colors">Placement</span>
                                                 </div>
-                                                <div className="relative z-10">
-                                                    <p className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-2 group-hover:text-indigo-100 transition-colors">
-                                                        {syncedStudent.assigned_class_name || 'Unassigned'}
-                                                    </p>
+                                                <div className="flex flex-col gap-1">
+                                                    {syncedStudent.assigned_class_name ? (
+                                                        <p className="text-2xl font-black text-white uppercase tracking-tight leading-none group-hover:text-indigo-100 transition-colors">
+                                                            {syncedStudent.assigned_class_name}
+                                                        </p>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setActiveTab('academic')}
+                                                            className="flex items-center gap-2 text-sm font-black text-amber-500 hover:text-amber-400 uppercase tracking-wider transition-all hover:translate-x-1"
+                                                        >
+                                                            Assign Class <ArrowRightIcon className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                     <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em]">Current Class</p>
                                                 </div>
                                             </div>
@@ -1313,13 +1320,91 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     <InfoRow label="Student Phone" value={syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                     <InfoRow label="Parent Contact" value={parentData?.phone || parentData?.parent_phone || syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                 </div>
-                                                <div className="mt-12">
-                                                    <div className="mt-12">
-                                                        <DigitalIdCard student={syncedStudent} onNavigate={setActiveTab} />
+                                            </div>
+                                        </div>
+
+                                        {/* --- GUIDED ENROLLMENT PROGRESS & USER GUIDE --- */}
+                                        {!syncedStudent.assigned_class_id && (
+                                            <div className="pt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                                <div className="flex items-center gap-4 mb-8">
+                                                    <div className="h-px bg-white/5 flex-grow"></div>
+                                                    <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Managed Enrollment Protocol</h3>
+                                                    <div className="h-px bg-white/5 flex-grow"></div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                    <div className="md:col-span-2 p-10 rounded-[2.5rem] bg-gradient-to-br from-[#0c0e12] to-transparent border border-white/5 relative overflow-hidden group">
+                                                        <div className="absolute top-0 right-0 p-10 opacity-[0.02] group-hover:scale-110 transition-transform duration-1000">
+                                                            <ShieldCheckIcon className="w-48 h-48" />
+                                                        </div>
+                                                        <div className="relative z-10">
+                                                            <div className="flex items-center gap-3 mb-6">
+                                                                <div className="p-2.5 bg-indigo-500/20 rounded-xl text-indigo-400">
+                                                                    <GraduationCapIcon className="w-5 h-5" />
+                                                                </div>
+                                                                <h4 className="font-bold text-white text-lg tracking-tight">Guided Enrollment Checklist</h4>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                {[
+                                                                    { label: 'Identity Protocol', status: 'complete', desc: 'Demographic synchronization secured' },
+                                                                    { label: 'Admission Link', status: admissionRecord ? 'complete' : 'pending', desc: 'Vault registration record' },
+                                                                    { label: 'Document Portfolio', status: docs.length > 0 ? (docs.every((d: any) => d.status === 'Verified') ? 'complete' : 'warning') : 'pending', desc: 'Verification of credentials' },
+                                                                    { label: 'Academic Placement', status: syncedStudent.assigned_class_id ? 'complete' : 'pending', desc: 'Final segment assignment' }
+                                                                ].map((step, idx) => (
+                                                                    <div key={idx} className={`p-5 rounded-2xl border transition-all duration-300 ${step.status === 'complete' ? 'bg-emerald-500/5 border-emerald-500/10' :
+                                                                        step.status === 'warning' ? 'bg-amber-500/5 border-amber-500/10' :
+                                                                            'bg-white/5 border-white/5 opacity-50'
+                                                                        }`}>
+                                                                        <div className="flex items-center justify-between mb-2">
+                                                                            <span className={`text-[9px] font-black uppercase tracking-widest ${step.status === 'complete' ? 'text-emerald-400' :
+                                                                                step.status === 'warning' ? 'text-amber-400' :
+                                                                                    'text-white/40'
+                                                                                }`}>{step.label}</span>
+                                                                            {step.status === 'complete' && <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-500" />}
+                                                                            {step.status === 'warning' && <AlertTriangleIcon className="w-3.5 h-3.5 text-amber-500" />}
+                                                                        </div>
+                                                                        <p className="text-[10px] text-white/30 font-medium">{step.desc}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="p-8 rounded-[2.5rem] bg-[#0c0e12] border border-white/5 flex flex-col justify-center gap-6 relative overflow-hidden group">
+                                                        <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                                                        <div className="relative z-10">
+                                                            <h5 className="text-[11px] font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                                <InfoIcon className="w-4 h-4 text-indigo-400" /> User Guide
+                                                            </h5>
+                                                            <div className="space-y-4">
+                                                                <div className="flex gap-3">
+                                                                    <div className="w-1 h-6 bg-indigo-500 rounded-full shrink-0"></div>
+                                                                    <p className="text-[10px] text-white/50 leading-relaxed">
+                                                                        To finalize enrollment, ensure all <span className="text-white font-bold">Mandatory Documents</span> are uploaded and verified by the administration.
+                                                                    </p>
+                                                                </div>
+                                                                <div className="flex gap-3">
+                                                                    <div className="w-1 h-6 bg-purple-500 rounded-full shrink-0"></div>
+                                                                    <p className="text-[10px] text-white/50 leading-relaxed">
+                                                                        Student must have an <span className="text-white font-bold">Active Admission Record</span> linked to their profile before class placement.
+                                                                    </p>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setActiveTab('academic');
+                                                                        setShowAssignClass(true);
+                                                                    }}
+                                                                    className="w-full mt-4 py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-white/90 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                                                >
+                                                                    Start Enrollment <ArrowRightIcon className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
+
 
                                         {/* --- INSTITUTIONAL LIFECYCLE SECTION --- */}
                                         <div className="pt-12 border-t border-white/5">
@@ -1932,55 +2017,63 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         )}
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Sub-Modals */}
-            {isEditing && (
-                <EditStudentDetailsModal
-                    student={syncedStudent}
-                    onClose={() => setIsEditing(false)}
-                    onSave={() => { setIsEditing(false); fetchData(); onUpdate(); }}
-                />
-            )}
-            {showGuardianEdit && (
-                <GuardianEditModal
-                    type={showGuardianEdit}
-                    initialData={showGuardianEdit === 'primary' ? parentData : guardianData}
-                    parentId={parentData?.parent_id}
-                    onClose={() => setShowGuardianEdit(null)}
-                    onSave={() => { setShowGuardianEdit(null); fetchData(); onUpdate(); }}
-                />
-            )}
-            {showAssignClass && (
-                <AssignClassModal
-                    student={syncedStudent}
-                    onClose={() => setShowAssignClass(false)}
-                    onSuccess={(updatedData: any) => {
-                        // Immediately update the UI state for instant feedback without waiting for fetch
-                        setSyncedStudent(prev => ({
-                            ...prev,
-                            assigned_class_id: updatedData.class_id,
-                            assigned_class_name: updatedData.class_name,
-                            grade: updatedData.grade || prev.grade,
-                            enrollment_status: updatedData.enrollment_status || 'Active',
-                            academic_year: updatedData.academic_year || prev.academic_year
-                        }));
-                        setShowAssignClass(false);
-                        // Delay fetch slightly to allow DB propagation if needed, though RPC should be instant
-                        setTimeout(fetchData, 500);
-                        onUpdate();
-                    }}
-                />
-            )}
-            {showPayment && (
-                <RecordPaymentModal
-                    studentId={student.id}
-                    studentName={student.display_name}
-                    onClose={() => setShowPayment(false)}
-                    onSuccess={() => { setShowPayment(false); fetchData(); onUpdate(); }}
-                />
-            )}
-        </div>
+            {
+                isEditing && (
+                    <EditStudentDetailsModal
+                        student={syncedStudent}
+                        onClose={() => setIsEditing(false)}
+                        onSave={() => { setIsEditing(false); fetchData(); onUpdate(); }}
+                    />
+                )
+            }
+            {
+                showGuardianEdit && (
+                    <GuardianEditModal
+                        type={showGuardianEdit}
+                        initialData={showGuardianEdit === 'primary' ? parentData : guardianData}
+                        parentId={parentData?.parent_id}
+                        onClose={() => setShowGuardianEdit(null)}
+                        onSave={() => { setShowGuardianEdit(null); fetchData(); onUpdate(); }}
+                    />
+                )
+            }
+            {
+                showAssignClass && (
+                    <AssignClassModal
+                        student={syncedStudent}
+                        onClose={() => setShowAssignClass(false)}
+                        onSuccess={(updatedData: any) => {
+                            // Immediately update the UI state for instant feedback without waiting for fetch
+                            setSyncedStudent(prev => ({
+                                ...prev,
+                                assigned_class_id: updatedData.class_id,
+                                assigned_class_name: updatedData.class_name,
+                                grade: updatedData.grade || prev.grade,
+                                enrollment_status: updatedData.enrollment_status || 'Active',
+                                academic_year: updatedData.academic_year || prev.academic_year
+                            }));
+                            setShowAssignClass(false);
+                            // Delay fetch slightly to allow DB propagation if needed, though RPC should be instant
+                            setTimeout(fetchData, 500);
+                            onUpdate();
+                        }}
+                    />
+                )
+            }
+            {
+                showPayment && (
+                    <RecordPaymentModal
+                        studentId={student.id}
+                        studentName={student.display_name}
+                        onClose={() => setShowPayment(false)}
+                        onSuccess={() => { setShowPayment(false); fetchData(); onUpdate(); }}
+                    />
+                )
+            }
+        </div >
     );
 };
 
