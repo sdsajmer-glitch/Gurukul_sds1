@@ -120,17 +120,20 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
         setLoading(true);
         setError(null);
         try {
-            const bid = branchId ? Number(branchId) : null;
+            const bid = (branchId === undefined || branchId === null) ? null : Number(branchId);
             let structureId: number;
 
-            // If this is set as default, we need to clear other defaults for this grade/branch first
+            // 1. If this is set as default, we need to clear other defaults for this grade/branch first
             if (formData.isDefault) {
-                await supabase
+                const { error: clearError } = await supabase
                     .from('fee_structures')
                     .update({ is_default: false })
                     .match({ branch_id: bid, target_grade: formData.targetGrade });
+
+                if (clearError) console.warn("Failed to clear other defaults:", clearError);
             }
 
+            // 2. Insert or Update Structure
             if (isEditMode && editingStructure) {
                 const { error: structError } = await supabase
                     .from('fee_structures')
@@ -148,7 +151,9 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                 if (structError) throw structError;
                 structureId = editingStructure.id;
 
-                await supabase.from('fee_components').delete().eq('structure_id', structureId);
+                // Clear components to re-insert them (Clean sync protocol)
+                const { error: delError } = await supabase.from('fee_components').delete().eq('structure_id', structureId);
+                if (delError) throw delError;
             } else {
                 const { data: struct, error: structError } = await supabase
                     .from('fee_structures')
@@ -166,9 +171,11 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                     .single();
 
                 if (structError) throw structError;
+                if (!struct) throw new Error("Synchronization established but no registry payload returned.");
                 structureId = struct.id;
             }
 
+            // 3. Insert Components
             const componentsPayload = components.map(c => ({
                 structure_id: structureId,
                 name: c.name || 'MISC_FEE',
@@ -180,8 +187,10 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
             const { error: compError } = await supabase.from('fee_components').insert(componentsPayload);
             if (compError) throw compError;
 
+            // 4. Success Protocol
             onSuccess();
         } catch (err: any) {
+            console.error("Master Architect Protocol Failure:", err);
             setError(formatError(err));
         } finally {
             setLoading(false);
@@ -213,6 +222,18 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                 </div>
 
                 <div className="flex-grow overflow-y-auto custom-scrollbar p-7 md:p-12 bg-transparent relative">
+                    {error && (
+                        <div className="mb-10 p-8 bg-red-500/10 border border-red-500/20 rounded-[2.5rem] flex items-start gap-5 animate-in slide-in-from-top-4 duration-500 shadow-2xl">
+                            <div className="p-4 bg-red-500/20 rounded-2xl text-red-500 shadow-inner">
+                                <AlertTriangleIcon className="w-6 h-6" />
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black uppercase text-red-500 tracking-[0.3em]">Institutional Protocol Failure</p>
+                                <p className="text-sm font-medium text-white/70 leading-relaxed italic">{error}</p>
+                            </div>
+                        </div>
+                    )}
+
                     {isLocked && (
                         <div className="mb-10 p-6 bg-amber-500/5 border border-amber-500/20 rounded-[2rem] flex items-start gap-4 animate-in slide-in-from-top-2">
                             <div className="p-3 bg-amber-500/10 rounded-lg text-amber-500">

@@ -109,6 +109,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
     const [selectedStudent, setSelectedStudent] = useState<StudentFeeSummary | null>(null);
     const [loading, setLoading] = useState(true);
     const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [editingStructure, setEditingStructure] = useState<FeeStructure | null>(null);
     const [accountSearch, setAccountSearch] = useState('');
     const [riskOnly, setRiskOnly] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -537,7 +538,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-12">
                                 {feeStructures.map((fs) => (
                                     <div key={fs.id} className="bg-[#0c0d12] border border-white/10 rounded-[4.5rem] p-12 md:p-16 shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] hover:border-primary/40 transition-all duration-1000 flex flex-col h-full group ring-1 ring-white/10 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-16 opacity-[0.01] pointer-events-none group-hover:opacity-[0.04] transition-opacity duration-1000"><BookIcon className="w-56 h-56 text-white" /></div>
+                                        <div className="absolute top-0 right-14 p-16 opacity-[0.01] pointer-events-none group-hover:opacity-[0.04] transition-opacity duration-1000"><BookIcon className="w-56 h-56 text-white" /></div>
                                         <div className="flex justify-between items-start mb-16 relative z-10">
                                             <div>
                                                 <h4 className="text-4xl font-serif font-black text-white group-hover:text-primary transition-colors tracking-tight uppercase leading-none">{fs.name}</h4>
@@ -567,7 +568,15 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                                 <p className="text-[11px] font-black text-white/20 uppercase tracking-[0.5em] mb-3">Global Valuation (Annual)</p>
                                                 <span className="text-5xl font-black text-primary font-mono tracking-tighter drop-shadow-[0_0_20px_rgba(var(--primary),0.3)]">{formatCurrency(fs.components?.reduce((a, c) => a + Number(c.amount), 0) || 0, fs.currency as CurrencyCode)}</span>
                                             </div>
-                                            <button className="p-5 bg-white/5 text-white/20 rounded-2xl hover:text-white hover:bg-white/10 transition-all shadow-3xl border border-transparent hover:border-white/10 active:scale-90"><EditIcon className="w-8 h-8" /></button>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingStructure(fs);
+                                                    setIsWizardOpen(true);
+                                                }}
+                                                className="p-5 bg-white/5 text-white/20 rounded-2xl hover:text-white hover:bg-white/10 transition-all shadow-3xl border border-white/10 active:scale-90 relative z-10"
+                                            >
+                                                <EditIcon className="w-8 h-8" />
+                                            </button>
                                         </div>
                                     </div>
                                 ))}
@@ -585,10 +594,15 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
 
             {isWizardOpen && (
                 <FeeMasterWizard
-                    onClose={() => setIsWizardOpen(false)}
+                    onClose={() => {
+                        setIsWizardOpen(false);
+                        setEditingStructure(null);
+                    }}
                     branchId={branchId || null}
+                    editingStructure={editingStructure}
                     onSuccess={() => {
                         setIsWizardOpen(false);
+                        setEditingStructure(null);
                         fetchAllData();
                     }}
                 />
