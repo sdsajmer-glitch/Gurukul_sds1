@@ -1523,7 +1523,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                             <div className="space-y-8">
                                                 <div className="pb-4">
                                                     <h3 className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center gap-4">
-                                                        Contact Information <div className="h-px bg-white/5 flex-grow"></div>
+                                                        Contact & Address Details <div className="h-px bg-white/5 flex-grow"></div>
                                                     </h3>
                                                 </div>
                                                 <div className="space-y-2">
@@ -1533,10 +1533,6 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     <InfoRow label="City" value={(syncedStudent as any).city || (admissionRecord as any)?.city || (enquiryRecord as any)?.city || (parentData as any)?.city || 'Not Recorded'} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                     <InfoRow label="State" value={(syncedStudent as any).state || (admissionRecord as any)?.state || (parentData as any)?.state || 'Not Recorded'} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                     <InfoRow label="Pincode" value={(syncedStudent as any).pin_code || (syncedStudent as any).pincode || (admissionRecord as any)?.pin_code || (parentData as any)?.pin_code || 'Not Recorded'} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Parent/Guardian Name" value={parentData?.name || syncedStudent.parent_guardian_details || 'Not Recorded'} icon={<UsersIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Parent Contact" value={parentData?.phone || parentData?.parent_phone || (enquiryRecord as any)?.parent_phone || syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Parent Email" value={parentData?.email || (admissionRecord as any)?.parent_email || (enquiryRecord as any)?.parent_email || 'Not Recorded'} icon={<MailIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Emergency Contact" value={(admissionRecord as any)?.emergency_contact || (syncedStudent as any).emergency_contact || 'Not Recorded'} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                 </div>
                                             </div>
                                         </div>
@@ -1624,11 +1620,11 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                         )}
 
 
-                                        {/* --- INSTITUTIONAL LIFECYCLE SECTION --- */}
+                                        {/* --- ENQUIRY & ADMISSION DETAILS SECTION --- */}
                                         <div className="pt-12 border-t border-white/5">
                                             <div className="flex items-center justify-between mb-8">
                                                 <h3 className="text-[12px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-4">
-                                                    Institutional Lifecycle Transparency
+                                                    Registration & Admission History
                                                 </h3>
                                                 {lifecycleError && (
                                                     <div className="px-4 py-1.5 bg-red-500/10 border border-red-500/20 rounded-full flex items-center gap-2 animate-pulse">
@@ -1712,14 +1708,14 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                 <div className="space-y-4">
                                                                     <h5 className="text-[10px] font-black text-purple-400/80 uppercase tracking-[0.25em] flex items-center gap-2">
                                                                         <div className="w-1 h-3 bg-purple-500 rounded-full"></div>
-                                                                        Guardian Contact Registry
+                                                                        Parent/Guardian Information
                                                                     </h5>
                                                                     <div className="p-5 bg-white/[0.02] rounded-2xl border border-white/5 space-y-4 hover:bg-white/[0.04] transition-colors">
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                                             <div className="group/inner">
                                                                                 <div className="flex items-center gap-2 mb-1.5">
                                                                                     <UserIcon className="w-3 h-3 text-indigo-400 opacity-70" />
-                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-indigo-300 transition-colors">Guardian Name</p>
+                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-indigo-300 transition-colors">Parent Name</p>
                                                                                 </div>
                                                                                 <p className="text-xs font-bold text-white ml-5">
                                                                                     {enquiryRecord.parent_name || (enquiryRecord as any).father_name || (enquiryRecord as any).mother_name || 'N/A'}
@@ -1729,7 +1725,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                             <div className="group/inner">
                                                                                 <div className="flex items-center gap-2 mb-1.5">
                                                                                     <PhoneIcon className="w-3 h-3 text-emerald-400 opacity-70" />
-                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-emerald-300 transition-colors">Contact Number</p>
+                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-emerald-300 transition-colors">Phone Number</p>
                                                                                 </div>
                                                                                 <p className="text-xs font-bold text-white ml-5 font-mono">
                                                                                     {enquiryRecord.parent_phone || (enquiryRecord as any).phone || 'Not Provided'}
@@ -1739,24 +1735,22 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                             <div className="group/inner">
                                                                                 <div className="flex items-center gap-2 mb-1.5">
                                                                                     <MailIcon className="w-3 h-3 text-blue-400 opacity-70" />
-                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-blue-300 transition-colors">Email Address</p>
+                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-blue-300 transition-colors">Email</p>
                                                                                 </div>
                                                                                 <p className="text-xs font-bold text-white ml-5 truncate">
                                                                                     {enquiryRecord.parent_email || (enquiryRecord as any).email || 'Not Provided'}
                                                                                 </p>
                                                                             </div>
 
-                                                                            {((enquiryRecord as any).address || (enquiryRecord as any).city) && (
-                                                                                <div className="group/inner">
-                                                                                    <div className="flex items-center gap-2 mb-1.5">
-                                                                                        <LocationIcon className="w-3 h-3 text-amber-400 opacity-70" />
-                                                                                        <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-amber-300 transition-colors">Address</p>
-                                                                                    </div>
-                                                                                    <p className="text-xs font-bold text-white ml-5">
-                                                                                        {(enquiryRecord as any).address || (enquiryRecord as any).city || enquiryRecord.location}
-                                                                                    </p>
+                                                                            <div className="group/inner">
+                                                                                <div className="flex items-center gap-2 mb-1.5">
+                                                                                    <PhoneIcon className="w-3 h-3 text-rose-400 opacity-70" />
+                                                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-widest group-hover/inner:text-rose-300 transition-colors">Emergency Contact</p>
                                                                                 </div>
-                                                                            )}
+                                                                                <p className="text-xs font-bold text-white ml-5 font-mono">
+                                                                                    {(admissionRecord as any)?.emergency_contact || (syncedStudent as any).emergency_contact || enquiryRecord.parent_phone || 'Not Recorded'}
+                                                                                </p>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
