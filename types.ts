@@ -504,6 +504,7 @@ export interface StudentForAdmin extends UserProfile {
     admission_id?: string;
     enquiry_id?: string;
     enrollment_status?: string;
+    academic_year?: string;
 }
 
 export interface VerifiedShareCodeData {

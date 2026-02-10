@@ -153,7 +153,7 @@ const InfoRow: React.FC<{ label: string; value: string | null | undefined; icon:
 );
 
 // Fix: Added missing DigitalIdCard component to visualize student identity node.
-const DigitalIdCard: React.FC<{ student: StudentForAdmin }> = ({ student }) => (
+const DigitalIdCard: React.FC<{ student: StudentForAdmin; onNavigate?: (tab: TabType) => void }> = ({ student, onNavigate }) => (
     <div className="relative group overflow-hidden rounded-[2.5rem] bg-[#0c0e12] border border-white/10 transition-all duration-500 hover:shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)] hover:border-indigo-500/30">
         {/* Holographic Background Gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
@@ -211,7 +211,16 @@ const DigitalIdCard: React.FC<{ student: StudentForAdmin }> = ({ student }) => (
                 </div>
                 <div className="space-y-1.5 text-right">
                     <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em]">Registry Node</p>
-                    <p className="text-sm font-bold text-white/80 uppercase tracking-tight">{student.assigned_class_name || 'UNASSIGNED'}</p>
+                    {student.assigned_class_name ? (
+                        <p className="text-sm font-bold text-white/80 uppercase tracking-tight">{student.assigned_class_name}</p>
+                    ) : (
+                        <button
+                            onClick={() => onNavigate && onNavigate('academic')}
+                            className="text-sm font-black text-amber-500 hover:text-amber-400 uppercase tracking-widest animate-pulse hover:underline decoration-amber-500/30 underline-offset-4 transition-all"
+                        >
+                            UNASSIGNED <span className="text-[9px] bg-amber-500/10 border border-amber-500/20 px-1.5 rounded ml-1">FIX</span>
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -720,7 +729,7 @@ const GuardianEditModal: React.FC<{
     );
 };
 
-export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () => void, onSuccess: (updatedData: { class_id: number; class_name: string }) => void }> = ({ student, onClose, onSuccess }) => {
+export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () => void, onSuccess: (updatedData: { class_id: number; class_name: string; grade?: string; academic_year?: string; enrollment_status?: string }) => void }> = ({ student, onClose, onSuccess }) => {
     const [step, setStep] = useState(1);
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -1306,7 +1315,9 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     <InfoRow label="Parent Contact" value={parentData?.phone || parentData?.parent_phone || syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                 </div>
                                                 <div className="mt-12">
-                                                    <DigitalIdCard student={syncedStudent} />
+                                                    <div className="mt-12">
+                                                        <DigitalIdCard student={syncedStudent} onNavigate={setActiveTab} />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
