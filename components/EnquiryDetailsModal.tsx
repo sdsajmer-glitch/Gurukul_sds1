@@ -391,9 +391,9 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                 </div>
 
                                 {/* High Intensity Promotion Trigger */}
-                                {enquiry.status === 'ENQUIRY_VERIFIED' && (
+                                {enquiry.status !== 'ENQUIRY_CONVERTED' && enquiry.status !== 'ENQUIRY_REJECTED' && (
                                     <button
-                                        onClick={() => handleAction('ENQUIRY_CONVERTED' as any)}
+                                        onClick={() => setShowConfirmPromote(true)}
                                         disabled={sending}
                                         className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl transition-all flex items-center justify-center gap-3 relative overflow-hidden group/convert"
                                     >
