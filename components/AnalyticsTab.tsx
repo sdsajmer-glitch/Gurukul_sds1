@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { supabase } from '../services/supabase';
 import { AdminAnalyticsStats } from '../types';
 import Spinner from './common/Spinner';
