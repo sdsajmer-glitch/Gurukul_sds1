@@ -808,7 +808,13 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
                 throw new Error(data.message || "Assignment failed on server.");
             }
 
-            onSuccess({ class_id: classId, class_name: targetClass.name });
+            onSuccess({
+                class_id: classId,
+                class_name: targetClass.name,
+                grade: data.grade, // Enhanced response
+                academic_year: data.academic_year,
+                enrollment_status: data.enrollment_status
+            });
         } catch (err: any) {
             console.error("Assignment error:", err);
             alert("Enrollment Failed: " + (err.message || "Unknown error"));
@@ -1922,15 +1928,19 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 <AssignClassModal
                     student={syncedStudent}
                     onClose={() => setShowAssignClass(false)}
-                    onSuccess={(updatedData) => {
-                        // Immediately update the UI state for instant feedback
+                    onSuccess={(updatedData: any) => {
+                        // Immediately update the UI state for instant feedback without waiting for fetch
                         setSyncedStudent(prev => ({
                             ...prev,
                             assigned_class_id: updatedData.class_id,
-                            assigned_class_name: updatedData.class_name
+                            assigned_class_name: updatedData.class_name,
+                            grade: updatedData.grade || prev.grade,
+                            enrollment_status: updatedData.enrollment_status || 'Active',
+                            academic_year: updatedData.academic_year || prev.academic_year
                         }));
                         setShowAssignClass(false);
-                        fetchData();
+                        // Delay fetch slightly to allow DB propagation if needed, though RPC should be instant
+                        setTimeout(fetchData, 500);
                         onUpdate();
                     }}
                 />
