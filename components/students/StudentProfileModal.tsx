@@ -803,27 +803,56 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
         try {
             const classId = parseInt(selectedClassId);
 
-            const { data, error } = await supabase.rpc('admin_assign_student_class', {
+            console.log('[AssignClass] Calling RPC with:', {
                 p_student_id: student.id,
                 p_class_id: classId,
                 p_branch_id: student.branch_id || (targetClass as any).branch_id || null
             });
 
+            const { data: rawData, error } = await supabase.rpc('admin_assign_student_class', {
+                p_student_id: student.id,
+                p_class_id: classId,
+                p_branch_id: student.branch_id || (targetClass as any).branch_id || null
+            });
+
+            console.log('[AssignClass] RPC response:', { rawData, error });
+
             if (error) throw error;
 
-            if (data && !data.success) {
+            // Handle potential nested JSONB response from Supabase
+            const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+
+            if (!data) {
+                throw new Error("RPC returned empty response. The function may not exist in the database.");
+            }
+
+            if (data.success === false) {
                 throw new Error(data.message || "Assignment failed on server.");
             }
 
+            // Verify the response indicates actual success
+            if (data.success !== true) {
+                console.warn('[AssignClass] Unexpected response format:', data);
+            }
+
+            console.log('[AssignClass] Assignment verified. Calling onSuccess with:', {
+                class_id: classId,
+                class_name: data.class_name || targetClass.name,
+                grade: data.grade,
+                academic_year: data.academic_year,
+                enrollment_status: data.enrollment_status || 'Active',
+                verified: data.verified
+            });
+
             onSuccess({
                 class_id: classId,
-                class_name: targetClass.name,
-                grade: data.grade, // Enhanced response
+                class_name: data.class_name || targetClass.name,
+                grade: data.grade,
                 academic_year: data.academic_year,
-                enrollment_status: data.enrollment_status
+                enrollment_status: data.enrollment_status || 'Active'
             });
         } catch (err: any) {
-            console.error("Assignment error:", err);
+            console.error("[AssignClass] Assignment error:", err);
             alert("Enrollment Failed: " + (err.message || "Unknown error"));
         } finally {
             setLoading(false);
@@ -1080,9 +1109,10 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 profile_photo_url: bestPhoto,
                 grade: bestGrade,
                 enrollment_status: profileData?.enrollment_status || prev.enrollment_status,
-                // Class assignment logic (Step 3) - Uses profileData
-                assigned_class_id: profileData?.assigned_class_id || prev.assigned_class_id,
-                assigned_class_name: (profileData?.school_classes as any)?.name || prev.assigned_class_name,
+                // Class assignment: DB is AUTHORITATIVE - do NOT fall back to prev state
+                // If DB says null, the assignment was never saved or was rolled back
+                assigned_class_id: profileData?.assigned_class_id || undefined,
+                assigned_class_name: (profileData?.school_classes as any)?.name || undefined,
                 academic_year: (profileData?.school_classes as any)?.academic_year || prev.academic_year
             }));
 
@@ -2045,8 +2075,10 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     <AssignClassModal
                         student={syncedStudent}
                         onClose={() => setShowAssignClass(false)}
-                        onSuccess={(updatedData: any) => {
-                            // Immediately update the UI state for instant feedback without waiting for fetch
+                        onSuccess={async (updatedData: any) => {
+                            console.log('[ProfileModal] onSuccess received:', updatedData);
+
+                            // Step 1: Immediately update UI for instant feedback
                             setSyncedStudent(prev => ({
                                 ...prev,
                                 assigned_class_id: updatedData.class_id,
@@ -2056,8 +2088,49 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                 academic_year: updatedData.academic_year || prev.academic_year
                             }));
                             setShowAssignClass(false);
-                            // Delay fetch slightly to allow DB propagation if needed, though RPC should be instant
-                            setTimeout(fetchData, 500);
+
+                            // Step 2: Verify persistence by re-reading from DB
+                            try {
+                                const { data: verifyData, error: verifyError } = await supabase
+                                    .from('student_profiles')
+                                    .select('assigned_class_id, enrollment_status, grade, school_classes:assigned_class_id(name, academic_year)')
+                                    .eq('user_id', student.id)
+                                    .maybeSingle();
+
+                                console.log('[ProfileModal] Persistence verification:', { verifyData, verifyError });
+
+                                if (verifyError) {
+                                    console.error('[ProfileModal] Verification query failed:', verifyError);
+                                } else if (!verifyData?.assigned_class_id || verifyData.assigned_class_id !== updatedData.class_id) {
+                                    // DB does NOT reflect the assignment - the RPC likely rolled back
+                                    console.error('[ProfileModal] PERSISTENCE FAILURE DETECTED!', {
+                                        expected: updatedData.class_id,
+                                        actual: verifyData?.assigned_class_id
+                                    });
+                                    alert(
+                                        'WARNING: The class assignment may not have been saved permanently. ' +
+                                        'Please check the Supabase SQL Editor and run the FIX_ACADEMIC_PLACEMENT_ULTIMATE.sql script. ' +
+                                        'Then try assigning the class again.'
+                                    );
+                                    // Revert optimistic update to reflect true DB state
+                                    setSyncedStudent(prev => ({
+                                        ...prev,
+                                        assigned_class_id: verifyData?.assigned_class_id || undefined,
+                                        assigned_class_name: (verifyData?.school_classes as any)?.name || undefined,
+                                        enrollment_status: verifyData?.enrollment_status || prev.enrollment_status,
+                                        academic_year: (verifyData?.school_classes as any)?.academic_year || prev.academic_year
+                                    }));
+                                } else {
+                                    console.log('[ProfileModal] Persistence VERIFIED. Class assignment is permanent.');
+                                    // Refresh all data to ensure full consistency
+                                    fetchData();
+                                }
+                            } catch (verifyErr) {
+                                console.error('[ProfileModal] Verification check failed:', verifyErr);
+                                // Still try a full refresh as fallback
+                                fetchData();
+                            }
+
                             onUpdate();
                         }}
                     />
