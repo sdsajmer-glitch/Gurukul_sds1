@@ -70,33 +70,32 @@ const TabButton: React.FC<{
         onClick={() => onClick(id)}
         className={`
             w-full flex items-center gap-4 px-6 py-4 rounded-xl 
-            transition-all duration-300 group relative overflow-hidden
+            transition-all duration-500 group relative overflow-hidden ring-1 inset
             ${active
-                ? 'bg-indigo-500/10 text-white shadow-[0_0_20px_-5px_rgba(99,102,241,0.3)] border border-indigo-500/30'
-                : 'text-white/40 hover:text-white/90 hover:bg-white/5 border border-transparent hover:border-white/5'
+                ? 'bg-indigo-500/10 text-white ring-indigo-500/30 shadow-[0_0_20px_-5px_rgba(99,102,241,0.3)]'
+                : 'text-white/40 ring-transparent hover:text-white/90 hover:bg-white/5 hover:ring-white/10'
             }
         `}
-        aria-current={active ? 'page' : undefined}
     >
         {/* Active Indicator & Glow */}
         {active && (
             <>
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-10 bg-indigo-500 rounded-r-lg shadow-[0_0_15px_rgba(99,102,241,0.8)]"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent pointer-events-none" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-indigo-500 rounded-r-lg shadow-[0_0_15px_rgba(99,102,241,0.8)]"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-transparent to-transparent pointer-events-none" />
             </>
         )}
 
         {/* Icon Container */}
         <div className={`
-            relative z-10 p-1 transition-all duration-300
-            ${active ? 'text-indigo-400 drop-shadow-[0_0_8px_rgba(129,140,248,0.5)] scale-110' : 'text-white/40 group-hover:text-white group-hover:scale-110'}
+            relative z-10 p-1.5 rounded-lg transition-all duration-500
+            ${active ? 'bg-indigo-500/20 text-indigo-400 rotate-3 scale-110' : 'bg-transparent text-white/40 group-hover:bg-white/10 group-hover:text-white group-hover:scale-110'}
         `}>
             {icon}
         </div>
 
         {/* Label */}
         <span className={`
-            relative z-10 text-xs font-black tracking-[0.15em] uppercase transition-all duration-300
+            relative z-10 text-[10px] font-black tracking-[0.2em] uppercase transition-all duration-300
             ${active ? 'text-white translate-x-1' : 'text-white/50 group-hover:text-white group-hover:translate-x-1'}
         `}>
             {label}
@@ -104,7 +103,7 @@ const TabButton: React.FC<{
 
         {/* Hover Shine Effect */}
         {!active && (
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
         )}
     </button>
 );
@@ -1415,7 +1414,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                             <div className="flex items-center gap-3">
                                 {/* Student ID */}
                                 <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider font-mono px-2.5 py-1 bg-white/5 rounded-lg border border-white/5">
-                                    ID: {syncedStudent.student_id_number || 'Pending'}
+                                    ID: <span className="text-white">{syncedStudent.student_id_number || 'PENDING'}</span>
                                 </span>
 
                                 <div className="w-1 h-1 rounded-full bg-white/20"></div>
@@ -1677,17 +1676,18 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                                 {/* Enquiry Card */}
-                                                <div className="relative group p-8 rounded-[2.5rem] bg-[#0c0e12] border border-white/5 transition-all duration-500 hover:border-indigo-500/20 overflow-hidden">
-                                                    <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform duration-700">
+                                                <div className="relative group p-8 rounded-[2.5rem] bg-gradient-to-br from-[#0c0e12] to-[#0f1115] border border-white/5 transition-all duration-500 hover:border-indigo-500/20 hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.1)] overflow-hidden">
+                                                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+                                                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-700">
                                                         <MailIcon className="w-48 h-48" />
                                                     </div>
                                                     <div className="relative z-10">
                                                         <div className="flex items-center gap-3 mb-6">
-                                                            <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 text-white/40">
+                                                            <div className="p-2.5 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-xl border border-indigo-500/10 text-indigo-400 group-hover:scale-110 transition-transform duration-500">
                                                                 <InfoIcon className="w-5 h-5" />
                                                             </div>
                                                             <div>
-                                                                <h4 className="font-black text-white text-sm uppercase tracking-widest">Enquiry Information</h4>
+                                                                <h4 className="font-black text-white text-sm uppercase tracking-widest group-hover:text-indigo-200 transition-colors">Enquiry Information</h4>
                                                                 <p className="text-[9px] text-white/20 font-bold uppercase tracking-[0.2em]">Lifecycle Step 01</p>
                                                             </div>
                                                         </div>
@@ -1695,23 +1695,23 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                         {enquiryRecord ? (
                                                             <div className="space-y-4">
                                                                 <div className="grid grid-cols-2 gap-4">
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Enquiry ID</p>
-                                                                        <p className="text-sm font-bold text-white font-mono truncate">{enquiryRecord.enquiry_code || enquiryRecord.id.split('-')[0]}</p>
+                                                                    <div className="group/item">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-indigo-400/50 transition-colors">Enquiry ID</p>
+                                                                        <p className="text-sm font-bold text-white font-mono truncate tracking-tight">{enquiryRecord.enquiry_code || enquiryRecord.id.split('-')[0]}</p>
                                                                     </div>
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Receipt Date</p>
+                                                                    <div className="group/item">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-indigo-400/50 transition-colors">Receipt Date</p>
                                                                         <p className="text-sm font-bold text-white">{new Date(enquiryRecord.created_at || enquiryRecord.received_at).toLocaleDateString()}</p>
                                                                     </div>
                                                                 </div>
                                                                 <div className="grid grid-cols-2 gap-4">
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Initial Grade</p>
+                                                                    <div className="group/item">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-indigo-400/50 transition-colors">Initial Grade</p>
                                                                         <p className="text-sm font-bold text-white uppercase">{enquiryRecord.grade}</p>
                                                                     </div>
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Sync Status</p>
-                                                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded border border-emerald-500/20">
+                                                                    <div className="group/item">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-indigo-400/50 transition-colors">Sync Status</p>
+                                                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded border border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
                                                                             <CheckCircleIcon className="w-3 h-3" /> Converted
                                                                         </span>
                                                                     </div>
@@ -1724,30 +1724,32 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="py-8 flex flex-col items-center justify-center text-center">
-                                                                <div className="p-4 bg-white/5 rounded-2xl mb-4">
+                                                            <div className="py-8 flex flex-col items-center justify-center text-center relative overflow-hidden rounded-2xl bg-black/20 border border-white/5">
+                                                                <div className="p-4 bg-white/5 rounded-2xl mb-4 shadow-inner">
                                                                     <AlertTriangleIcon className="w-8 h-8 text-white/10" />
                                                                 </div>
                                                                 <p className="text-xs font-bold text-white/30 italic uppercase tracking-widest leading-relaxed">
                                                                     This student was admitted<br />without a recorded enquiry.
                                                                 </p>
+                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none"></div>
                                                             </div>
                                                         )}
                                                     </div>
                                                 </div>
 
                                                 {/* Admission Card */}
-                                                <div className="relative group p-8 rounded-[2.5rem] bg-[#0c0e12] border border-white/5 transition-all duration-500 hover:border-purple-500/20 overflow-hidden">
-                                                    <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform duration-700">
+                                                <div className="relative group p-8 rounded-[2.5rem] bg-gradient-to-br from-[#0c0e12] to-[#0f1115] border border-white/5 transition-all duration-500 hover:border-purple-500/20 hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.1)] overflow-hidden">
+                                                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+                                                    <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-700">
                                                         <FileTextIcon className="w-48 h-48" />
                                                     </div>
                                                     <div className="relative z-10">
                                                         <div className="flex items-center gap-3 mb-6">
-                                                            <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 text-white/40">
+                                                            <div className="p-2.5 bg-gradient-to-br from-purple-500/10 to-transparent rounded-xl border border-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform duration-500">
                                                                 <GraduationCapIcon className="w-5 h-5" />
                                                             </div>
                                                             <div>
-                                                                <h4 className="font-black text-white text-sm uppercase tracking-widest">Admission Information</h4>
+                                                                <h4 className="font-black text-white text-sm uppercase tracking-widest group-hover:text-purple-200 transition-colors">Admission Information</h4>
                                                                 <p className="text-[9px] text-white/20 font-bold uppercase tracking-[0.2em]">Lifecycle Step 02</p>
                                                             </div>
                                                         </div>
@@ -1755,23 +1757,23 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                         {admissionRecord ? (
                                                             <div className="space-y-4">
                                                                 <div className="grid grid-cols-2 gap-4">
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Admission ID</p>
-                                                                        <p className="text-sm font-bold text-white font-mono truncate">{admissionRecord.application_number || admissionRecord.id.split('-')[0]}</p>
+                                                                    <div className="group/item">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-purple-400/50 transition-colors">Admission ID</p>
+                                                                        <p className="text-sm font-bold text-white font-mono truncate tracking-tight">{admissionRecord.application_number || admissionRecord.id.split('-')[0]}</p>
                                                                     </div>
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Approval Date</p>
+                                                                    <div className="group/item">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-purple-400/50 transition-colors">Approval Date</p>
                                                                         <p className="text-sm font-bold text-white">{new Date(admissionRecord.submitted_at).toLocaleDateString()}</p>
                                                                     </div>
                                                                 </div>
                                                                 <div className="grid grid-cols-2 gap-4">
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Academic Year</p>
+                                                                    <div className="group/item">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-purple-400/50 transition-colors">Academic Year</p>
                                                                         <p className="text-sm font-bold text-white uppercase">{admissionRecord.academic_year || '2025-26'}</p>
                                                                     </div>
-                                                                    <div>
-                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Admission Status</p>
-                                                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded border border-indigo-500/20">
+                                                                    <div className="group/item">
+                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover/item:text-purple-400/50 transition-colors">Admission Status</p>
+                                                                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded border border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.2)]">
                                                                             <ShieldCheckIcon className="w-3 h-3" /> {admissionRecord.status || 'Enrolled'}
                                                                         </span>
                                                                     </div>
@@ -1790,13 +1792,14 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="py-8 flex flex-col items-center justify-center text-center">
-                                                                <div className="p-4 bg-white/5 rounded-2xl mb-4 animate-bounce">
+                                                            <div className="py-8 flex flex-col items-center justify-center text-center relative overflow-hidden rounded-2xl bg-black/20 border border-white/5">
+                                                                <div className="p-4 bg-white/5 rounded-2xl mb-4 animate-bounce shadow-inner">
                                                                     <AlertTriangleIcon className="w-8 h-8 text-red-500/40" />
                                                                 </div>
                                                                 <p className="text-xs font-bold text-red-400/60 uppercase tracking-widest leading-relaxed">
                                                                     Lifecycle Link Missing:<br />No Admission Record.
                                                                 </p>
+                                                                <div className="absolute inset-0 bg-gradient-to-t from-red-500/10 to-transparent pointer-events-none"></div>
                                                             </div>
                                                         )}
                                                     </div>
