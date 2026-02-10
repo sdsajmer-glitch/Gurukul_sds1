@@ -130,7 +130,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
             case 'Dashboard': return <DashboardOverview schoolProfile={schoolData} currentBranch={currentBranch} profile={profile} onNavigate={setActiveComponent} />;
             case 'Profile': return <ProfileCreationPage profile={profile} role={profile.role!} onComplete={onProfileUpdate} onBack={() => setActiveComponent('Dashboard')} showBackButton={true} />;
             case 'Branches': return <BranchManagementTab isHeadOfficeAdmin={isHeadOfficeAdmin} branches={branches} isLoading={loadingData} error={dataError} onBranchUpdate={fetchDashboardData} onSelectBranch={setCurrentBranchId} schoolProfile={schoolData} />;
-            case 'Admissions': return <AdmissionsTab branchId={currentBranchId} />;
+            case 'Admissions': return <AdmissionsTab branchId={currentBranchId} onNavigate={setActiveComponent} />;
             case 'Enquiries': return <EnquiryTab branchId={currentBranchId} onNavigate={setActiveComponent} />;
             case 'Code Verification': return <CodeVerificationTab branchId={currentBranchId} onNavigate={setActiveComponent} />;
             case 'Student Management': return <StudentManagementTab branchId={currentBranchId} />;

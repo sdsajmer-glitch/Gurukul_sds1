@@ -26,7 +26,7 @@ const statusColors: Record<string, string> = {
 
 const formatStatus = (s: string) => s === 'Approved' ? 'Admitted' : s;
 
-const AdmissionsTab: React.FC<{ branchId?: number | null }> = ({ branchId }) => {
+const AdmissionsTab: React.FC<{ branchId?: number | null, onNavigate?: (comp: string) => void }> = ({ branchId, onNavigate }) => {
     const [applicants, setApplicants] = useState<AdmissionApplication[]>([]);
     const [loading, setLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
@@ -232,6 +232,7 @@ const AdmissionsTab: React.FC<{ branchId?: number | null }> = ({ branchId }) => 
                     onUpdate={() => {
                         fetchApplicants();
                     }}
+                    onNavigate={onNavigate}
                 />
             )}
         </div>

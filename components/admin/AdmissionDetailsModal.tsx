@@ -27,9 +27,10 @@ interface AdmissionDetailsModalProps {
     admission: AdmissionApplication;
     onClose: () => void;
     onUpdate: () => void;
+    onNavigate?: (comp: string) => void;
 }
 
-const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission, onClose, onUpdate }) => {
+const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission, onClose, onUpdate, onNavigate }) => {
     const [loading, setLoading] = useState(false);
     const [docs, setDocs] = useState<any[]>([]);
     const [finalizeState, setFinalizeState] = useState<'idle' | 'processing' | 'success'>('idle');
@@ -215,6 +216,9 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                     setTimeout(() => {
                         onUpdate();
                         onClose();
+                        if (onNavigate) {
+                            onNavigate('Student Management');
+                        }
                     }, 2500);
                 }
             } else {
@@ -549,37 +553,55 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 <footer className="p-8 lg:px-12 bg-black/40 border-t border-white/5 backdrop-blur-3xl flex flex-col md:flex-row items-center justify-between gap-8 z-20">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3">
-                            <div className={clsx("w-2 h-2 rounded-full animate-pulse", allMandatoryVerified ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]")} />
+                            <div className={clsx("w-2 h-2 rounded-full animate-pulse",
+                                admission.status === 'Enrolled' ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" :
+                                    allMandatoryVerified ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" :
+                                        "bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]")} />
                             <span className="text-[11px] font-black uppercase text-white/60 tracking-[0.4em]">Administrative Finalization Deck</span>
                         </div>
                         <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] ml-5 italic">
-                            {allMandatoryVerified ? "Compliance Protocol: Ready for Execution" : "Compliance Protocol: Awaiting Mandatory Artifacts"}
+                            {admission.status === 'Enrolled' ? "Enrollment Active: Node secured in Student Directory" :
+                                allMandatoryVerified ? "Compliance Protocol: Ready for Execution" :
+                                    "Compliance Protocol: Awaiting Mandatory Artifacts"}
                         </p>
                     </div>
 
                     <div className="flex items-center gap-6 w-full md:w-auto">
-                        {!allMandatoryVerified && (
+                        {!allMandatoryVerified && admission.status !== 'Enrolled' && (
                             <p className="text-[10px] font-black text-amber-500/60 uppercase tracking-widest text-right max-w-[200px] leading-relaxed hidden sm:block">
                                 Verify all <span className="underline underline-offset-4">Mandatory Documents</span> to proceed.
                             </p>
                         )}
-                        <button
-                            onClick={handleFinalize}
-                            disabled={!allMandatoryVerified || finalizeState === 'processing'}
-                            className={clsx(
-                                "flex-1 md:flex-none px-12 py-5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 relative overflow-hidden group shadow-3xl active:scale-95",
-                                allMandatoryVerified
-                                    ? "bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/30"
-                                    : "bg-white/5 text-white/10 border border-white/5 grayscale pointer-events-none"
-                            )}
-                        >
-                            {finalizeState === 'processing' ? <Spinner size="sm" /> : (
-                                <>
-                                    <ShieldCheckIcon className="w-5 h-5" />
-                                    Finalize Enrollment
-                                </>
-                            )}
-                        </button>
+                        {admission.status === 'Enrolled' ? (
+                            <button
+                                onClick={() => {
+                                    onClose();
+                                    onNavigate?.('Student Management');
+                                }}
+                                className="flex-1 md:flex-none px-12 py-5 rounded-[1.5rem] bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 relative overflow-hidden group shadow-3xl active:scale-95 border border-indigo-400/30"
+                            >
+                                <UsersIcon className="w-5 h-5" />
+                                View in Directory
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleFinalize}
+                                disabled={!allMandatoryVerified || finalizeState === 'processing'}
+                                className={clsx(
+                                    "flex-1 md:flex-none px-12 py-5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 relative overflow-hidden group shadow-3xl active:scale-95",
+                                    allMandatoryVerified
+                                        ? "bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/30"
+                                        : "bg-white/5 text-white/10 border border-white/5 grayscale pointer-events-none"
+                                )}
+                            >
+                                {finalizeState === 'processing' ? <Spinner size="sm" /> : (
+                                    <>
+                                        <ShieldCheckIcon className="w-5 h-5" />
+                                        Finalize Enrollment
+                                    </>
+                                )}
+                            </button>
+                        )}
                     </div>
                 </footer>
             </div>
