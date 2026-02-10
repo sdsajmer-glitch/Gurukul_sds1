@@ -59,14 +59,14 @@ const TabButton: React.FC<{
     <button
         onClick={() => onClick(id)}
         className={`
-            flex items-center gap-3 px-8 md:px-10 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-500 relative overflow-hidden group
+            flex items-center gap-2.5 px-6 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-300 relative overflow-hidden group
             ${isActive
-                ? 'bg-primary text-white shadow-[0_12px_40px_rgba(var(--primary),0.3)] ring-1 ring-white/20 scale-105 z-10'
-                : 'text-white/20 hover:text-white/50 hover:bg-white/5'
+                ? 'bg-primary text-white shadow-lg shadow-primary/25 ring-1 ring-white/10 z-10'
+                : 'text-white/40 hover:text-white hover:bg-white/5'
             }
         `}
     >
-        <span className="relative z-10 flex items-center gap-3">
+        <span className="relative z-10 flex items-center gap-2">
             {icon} {label}
         </span>
     </button>
@@ -520,62 +520,63 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     )}
 
                     {activeView === 'master' && (
-                        <div className="space-y-16 animate-in fade-in duration-700">
-                            <div className="bg-[#0c0d12] p-12 md:p-20 rounded-[4rem] border border-white/5 flex flex-col md:flex-row justify-between items-center gap-16 shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] ring-1 ring-white/10 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-24 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000 group-hover:opacity-[0.06]"><SparklesIcon className="w-64 h-64 text-primary" /></div>
-                                <div className="space-y-5 relative z-10">
-                                    <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tight">Master Architect</h3>
-                                    <p className="text-xl text-white/20 font-medium tracking-[0.2em] uppercase max-w-2xl leading-relaxed">Configure global institutional billing nodes and multi-tenant fee structures.</p>
+                        <div className="space-y-10 animate-in fade-in duration-500">
+                            <div className="bg-[#0f1016] p-10 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 shadow-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-24 opacity-[0.02] pointer-events-none group-hover:scale-110 transition-transform duration-1000"><SparklesIcon className="w-64 h-64 text-primary" /></div>
+                                <div className="space-y-3 relative z-10">
+                                    <h3 className="text-3xl font-bold text-white tracking-tight">Fee Structures</h3>
+                                    <p className="text-sm text-white/40 font-medium max-w-xl leading-relaxed">Manage and configure institutional fee structures, billing cycles, and currency nodes.</p>
                                 </div>
                                 <button
                                     onClick={() => setIsWizardOpen(true)}
-                                    className="px-16 py-8 bg-primary text-white font-black text-sm uppercase tracking-[0.5em] rounded-[2.5rem] shadow-[0_48px_96px_-16px_rgba(var(--primary),0.6)] hover:bg-primary/90 transition-all flex items-center gap-6 transform hover:-translate-y-2 active:scale-95 border border-white/10 ring-[12px] ring-primary/5 relative z-10"
+                                    className="px-8 py-4 bg-primary text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-3 active:scale-95 border border-white/10 relative z-10"
                                 >
-                                    <PlusIcon className="w-8 h-8" /> Provision Structure
+                                    <PlusIcon className="w-5 h-5" /> New Structure
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-12">
+                            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8">
                                 {feeStructures.map((fs) => (
-                                    <div key={fs.id} className="bg-[#0c0d12] border border-white/10 rounded-[4.5rem] p-12 md:p-16 shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] hover:border-primary/40 transition-all duration-1000 flex flex-col h-full group ring-1 ring-white/10 relative overflow-hidden">
-                                        <div className="absolute top-0 right-14 p-16 opacity-[0.01] pointer-events-none group-hover:opacity-[0.04] transition-opacity duration-1000"><BookIcon className="w-56 h-56 text-white" /></div>
-                                        <div className="flex justify-between items-start mb-16 relative z-10">
+                                    <div key={fs.id} className="bg-[#0f1016] border border-white/5 rounded-3xl p-8 shadow-xl hover:border-white/10 transition-all duration-300 flex flex-col h-full group relative overflow-hidden">
+                                        <div className="flex justify-between items-start mb-8 relative z-10">
                                             <div>
-                                                <h4 className="text-4xl font-serif font-black text-white group-hover:text-primary transition-colors tracking-tight uppercase leading-none">{fs.name}</h4>
-                                                <div className="flex items-center gap-4 mt-6">
-                                                    <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em]">{fs.academic_year} Context</span>
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-white/10"></div>
-                                                    <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em]">Grade {fs.target_grade}</span>
+                                                <h4 className="text-xl font-bold text-white group-hover:text-primary transition-colors tracking-tight mb-2">{fs.name}</h4>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="px-2 py-1 rounded bg-white/5 text-[10px] font-bold text-white/40 uppercase tracking-wider">{fs.academic_year}</span>
+                                                    <span className="px-2 py-1 rounded bg-white/5 text-[10px] font-bold text-white/40 uppercase tracking-wider">Grade {fs.target_grade}</span>
                                                 </div>
                                             </div>
-                                            <span className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${fs.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-2xl' : 'bg-white/5 text-white/20 border-white/10'}`}>{fs.status}</span>
+                                            <span className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${fs.status === 'Active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-white/5 text-white/30 border-white/5'}`}>{fs.status}</span>
                                         </div>
 
-                                        <div className="space-y-8 mb-16 flex-grow relative z-10">
+                                        <div className="space-y-4 mb-8 flex-grow relative z-10">
                                             {(fs.components || []).slice(0, 4).map((comp: any) => (
-                                                <div key={comp.id} className="flex justify-between items-center border-b border-white/[0.04] pb-8">
-                                                    <div className="space-y-1.5">
-                                                        <span className="text-white/60 font-black uppercase tracking-[0.2em] text-[13px] block">{comp.name}</span>
-                                                        <span className="text-[10px] text-white/20 font-black uppercase tracking-[0.3em]">{comp.frequency} Cycle</span>
+                                                <div key={comp.id} className="flex justify-between items-center border-b border-white/[0.04] pb-3 last:border-0 last:pb-0">
+                                                    <span className="text-white/60 font-medium text-xs">{comp.name}</span>
+                                                    <div className="text-right">
+                                                        <span className="block font-mono font-bold text-white text-sm">{formatCurrency(comp.amount, fs.currency as CurrencyCode)}</span>
+                                                        <span className="text-[9px] text-white/20 uppercase tracking-wider">{comp.frequency}</span>
                                                     </div>
-                                                    <span className="font-mono font-black text-white text-2xl tracking-tighter">{formatCurrency(comp.amount, fs.currency as CurrencyCode)}</span>
                                                 </div>
                                             ))}
+                                            {(fs.components?.length || 0) > 4 && (
+                                                <p className="text-[10px] text-white/20 italic text-center pt-2">+{((fs.components?.length || 0) - 4)} more components</p>
+                                            )}
                                         </div>
 
-                                        <div className="pt-12 border-t border-white/[0.08] flex justify-between items-end mt-auto relative z-10">
+                                        <div className="pt-6 border-t border-white/[0.08] flex justify-between items-center mt-auto relative z-10">
                                             <div>
-                                                <p className="text-[11px] font-black text-white/20 uppercase tracking-[0.5em] mb-3">Global Valuation (Annual)</p>
-                                                <span className="text-5xl font-black text-primary font-mono tracking-tighter drop-shadow-[0_0_20px_rgba(var(--primary),0.3)]">{formatCurrency(fs.components?.reduce((a, c) => a + Number(c.amount), 0) || 0, fs.currency as CurrencyCode)}</span>
+                                                <p className="text-[10px] font-bold text-white/20 uppercase tracking-wider mb-1">Total Value</p>
+                                                <span className="text-2xl font-bold text-white font-mono tracking-tight">{formatCurrency(fs.components?.reduce((a, c) => a + Number(c.amount), 0) || 0, fs.currency as CurrencyCode)}</span>
                                             </div>
                                             <button
                                                 onClick={() => {
                                                     setEditingStructure(fs);
                                                     setIsWizardOpen(true);
                                                 }}
-                                                className="p-5 bg-white/5 text-white/20 rounded-2xl hover:text-white hover:bg-white/10 transition-all shadow-3xl border border-white/10 active:scale-90 relative z-10"
+                                                className="p-3 bg-white/5 text-white/40 rounded-xl hover:text-white hover:bg-white/10 transition-all border border-white/5"
                                             >
-                                                <EditIcon className="w-8 h-8" />
+                                                <EditIcon className="w-5 h-5" />
                                             </button>
                                         </div>
                                     </div>

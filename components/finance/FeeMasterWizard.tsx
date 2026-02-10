@@ -6,16 +6,12 @@ import { PlusIcon } from '../icons/PlusIcon';
 import { TrashIcon } from '../icons/TrashIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { BookIcon } from '../icons/BookIcon';
-import { DollarSignIcon } from '../icons/DollarSignIcon';
 import { ChevronRightIcon } from '../icons/ChevronRightIcon';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ChevronDownIcon } from '../icons/ChevronDownIcon';
-import { TrendingUpCustomIcon } from '../icons/TrendingUpIcon';
 import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
-import { SparklesIcon } from '../icons/SparklesIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { LockIcon } from '../icons/LockIcon';
-import { GoogleGenAI } from '@google/genai';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FeeStructure, CurrencyCode } from '../../types';
 
@@ -42,7 +38,6 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
     const isLocked = !!(editingStructure as any)?.is_version_locked;
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
-    const [aiGenerating, setAiGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
@@ -198,249 +193,285 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
     };
 
     return (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[150] flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[150] flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                initial={{ opacity: 0, scale: 0.98, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-[#0c0d12] w-full max-w-3xl rounded-[2.5rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] border border-white/10 flex flex-col overflow-hidden max-h-[95vh] ring-1 ring-white/5 font-sans"
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                className="bg-[#0f1016] w-full max-w-4xl rounded-3xl shadow-2xl border border-white/5 flex flex-col overflow-hidden max-h-[92vh] font-sans relative"
                 onClick={e => e.stopPropagation()}
             >
+                {/* Background ambient glow */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-500/5 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
                 {/* Header */}
-                <div className="p-7 border-b border-white/5 bg-[#12141c]/60 backdrop-blur-md flex justify-between items-center relative z-20">
-                    <div className="flex items-center gap-5">
-                        <div className="p-2.5 bg-primary/10 rounded-xl text-primary shadow-inner border border-primary/20 ring-4 ring-primary/5">
-                            {isLocked ? <LockIcon className="w-5 h-5 text-amber-500" /> : <BookIcon className="w-5 h-5" />}
+                <div className="px-8 py-6 border-b border-white/5 bg-[#0f1016]/80 backdrop-blur-lg flex justify-between items-center relative z-20">
+                    <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-2xl ${isLocked ? 'bg-amber-500/10 text-amber-500' : 'bg-primary/10 text-primary'} border border-white/5`}>
+                            {isLocked ? <LockIcon className="w-6 h-6" /> : <BookIcon className="w-6 h-6" />}
                         </div>
                         <div>
-                            <h3 className="text-[9px] font-black text-white/30 uppercase tracking-[0.35em] mb-0.5">Phase 0{step} of 03</h3>
-                            <p className="text-xl font-serif font-black text-white tracking-tight uppercase leading-none">
-                                {isLocked ? 'Immutable Node Architecture' : isEditMode ? 'Refining Architecture' : 'Provisioning Node'}
-                            </p>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] uppercase font-bold tracking-widest text-white/40">Step 0{step} / 03</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-white tracking-tight">
+                                {isLocked ? 'Immutable Fee Structure' : isEditMode ? 'Edit Fee Structure' : 'New Fee Structure'}
+                            </h3>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-3 rounded-xl hover:bg-white/5 text-white/20 hover:text-white transition-all border border-transparent hover:border-white/10 active:scale-90"><XIcon className="w-6 h-6" /></button>
+                    <button
+                        onClick={onClose}
+                        className="p-2.5 rounded-xl hover:bg-white/5 text-white/40 hover:text-white transition-all"
+                    >
+                        <XIcon className="w-5 h-5" />
+                    </button>
                 </div>
 
-                <div className="flex-grow overflow-y-auto custom-scrollbar p-7 md:p-12 bg-transparent relative">
+                {/* Body */}
+                <div className="flex-grow overflow-y-auto custom-scrollbar p-8 relative z-10">
+                    {/* Error Display */}
                     {error && (
-                        <div className="mb-10 p-8 bg-red-500/10 border border-red-500/20 rounded-[2.5rem] flex items-start gap-5 animate-in slide-in-from-top-4 duration-500 shadow-2xl">
-                            <div className="p-4 bg-red-500/20 rounded-2xl text-red-500 shadow-inner">
-                                <AlertTriangleIcon className="w-6 h-6" />
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase text-red-500 tracking-[0.3em]">Institutional Protocol Failure</p>
-                                <p className="text-sm font-medium text-white/70 leading-relaxed italic">{error}</p>
-                            </div>
+                        <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-3">
+                            <AlertTriangleIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-red-200">{error}</p>
                         </div>
                     )}
 
+                    {/* Locked Warning */}
                     {isLocked && (
-                        <div className="mb-10 p-6 bg-amber-500/5 border border-amber-500/20 rounded-[2rem] flex items-start gap-4 animate-in slide-in-from-top-2">
-                            <div className="p-3 bg-amber-500/10 rounded-lg text-amber-500">
-                                <LockIcon className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black uppercase text-amber-500 tracking-[0.2em] mb-1">Architecture Locked</p>
-                                <p className="text-sm font-medium text-white/60 leading-relaxed font-serif italic">This structure has been utilized for active billing cycles. Parameters are now immutable to preserve ledger integrity.</p>
-                            </div>
+                        <div className="mb-8 p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex items-start gap-3">
+                            <LockIcon className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-amber-200/80">This specific structure is locked as it has been used in active billing cycles. Modifications are restricted to preserve financial data integrity.</p>
                         </div>
                     )}
 
+                    {/* Step 1: Core Registry */}
                     {step === 1 && (
-                        <div className="space-y-10 animate-in slide-in-from-right-8 duration-500 relative z-10">
-                            <div className="space-y-3">
-                                <span className="text-[9px] font-black uppercase text-primary/60 tracking-[0.4em] ml-1">Core Registry Parameters</span>
-                                <h4 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-[0.85]">
-                                    CORE <span className="text-white/20">REGISTRY.</span>
-                                </h4>
+                        <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                            <div>
+                                <h4 className="text-2xl font-bold text-white mb-2">Core Registry</h4>
+                                <p className="text-white/40 text-sm">Define the primary identification and applicability of this fee structure.</p>
                             </div>
 
-                            <div className="space-y-10">
-                                <div className="p-6 bg-[#12141c]/50 border border-white/5 rounded-[2rem] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
-                                    <div className="space-y-4">
-                                        <label className="text-[9px] font-black uppercase text-white/20 tracking-[0.4em] ml-1">Node Designation</label>
-                                        <input
-                                            disabled={isLocked}
-                                            type="text"
-                                            className={`w-full bg-black/40 border border-white/5 rounded-xl p-6 md:p-8 text-lg md:text-2xl font-serif font-black text-white focus:ring-4 focus:ring-primary/5 focus:border-primary/40 outline-none transition-all shadow-inner uppercase tracking-wide placeholder:text-white/5 disabled:opacity-50`}
-                                            value={formData.name}
-                                            onChange={e => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
-                                        />
-                                    </div>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Structure Designation</label>
+                                    <input
+                                        disabled={isLocked}
+                                        type="text"
+                                        placeholder="e.g. GRADE 10 GENERAL 2025"
+                                        className="w-full bg-[#1A1D25] border border-white/5 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all font-semibold uppercase tracking-wide disabled:opacity-50"
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                                    />
+                                    <p className="text-[10px] text-white/30 ml-1">A unique identifier for this fee structure.</p>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="space-y-4">
-                                        <label className="text-[9px] font-black uppercase text-white/20 tracking-[0.4em] ml-1">Monetary Standard</label>
-                                        <div className="grid grid-cols-2 gap-3 p-1.5 bg-black/60 border border-white/5 rounded-xl shadow-inner">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Currency</label>
+                                        <div className="grid grid-cols-2 gap-2 p-1 bg-[#1A1D25] rounded-xl border border-white/5">
                                             {['INR', 'USD'].map(curr => (
                                                 <button
                                                     disabled={isLocked}
                                                     key={curr}
                                                     type="button"
                                                     onClick={() => setFormData({ ...formData, currency: curr as CurrencyCode })}
-                                                    className={`py-3 rounded-lg text-[10px] font-black tracking-[0.25em] uppercase transition-all duration-300 ${formData.currency === curr ? 'bg-primary text-white shadow-lg scale-[1.02] z-10' : 'text-white/20 hover:text-white/40'} disabled:opacity-50`}
+                                                    className={`py-2.5 rounded-lg text-xs font-bold transition-all ${formData.currency === curr
+                                                            ? 'bg-primary text-white shadow-lg'
+                                                            : 'text-white/40 hover:text-white/60 hover:bg-white/5'
+                                                        } disabled:opacity-50`}
                                                 >
                                                     {curr}
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="space-y-4">
-                                        <label className="text-[9px] font-black uppercase text-white/20 tracking-[0.4em] ml-1">Academic Target</label>
-                                        <div className="relative group">
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Target Academic Grade</label>
+                                        <div className="relative">
                                             <select
                                                 disabled={isLocked}
-                                                className="w-full h-[52px] bg-black/60 border border-white/5 rounded-xl px-6 text-[10px] font-black text-white focus:border-primary/40 outline-none appearance-none cursor-pointer uppercase tracking-[0.3em] shadow-inner transition-all hover:bg-black/80 disabled:opacity-50"
+                                                className="w-full bg-[#1A1D25] border border-white/5 rounded-xl px-5 py-3.5 text-white/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 uppercase text-sm font-semibold appearance-none cursor-pointer disabled:opacity-50"
                                                 value={formData.targetGrade}
                                                 onChange={e => setFormData({ ...formData, targetGrade: e.target.value })}
                                             >
                                                 {Array.from({ length: 12 }, (_, i) => i + 1).map(g => (
-                                                    <option key={g} value={String(g)}>GRADE {g} CONTEXT</option>
+                                                    <option key={g} value={String(g)}>GRADE {g}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/10 group-hover:text-primary transition-colors"><ChevronDownIcon className="w-4 h-4" /></div>
+                                            <ChevronDownIcon className="w-4 h-4 text-white/30 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className={`p-6 rounded-[1.8rem] border transition-all cursor-pointer flex items-center justify-between group ${formData.isDefault ? 'bg-primary/5 border-primary/20' : 'bg-white/[0.01] border-white/5 hover:border-white/10'}`} onClick={() => !isLocked && setFormData(f => ({ ...f, isDefault: !f.isDefault }))}>
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-6 h-6 rounded border transition-colors flex items-center justify-center ${formData.isDefault ? 'bg-primary border-primary' : 'bg-black/20 border-white/10 group-hover:border-primary/40'}`}>
-                                            {formData.isDefault && <CheckCircleIcon className="w-4 h-4 text-white" />}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-white uppercase tracking-tight">Set as Grade Default</p>
-                                            <p className="text-[10px] text-white/20 font-medium">Auto-assigns to new students in Grade {formData.targetGrade}.</p>
-                                        </div>
+                                <div
+                                    onClick={() => !isLocked && setFormData(f => ({ ...f, isDefault: !f.isDefault }))}
+                                    className={`group p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${formData.isDefault
+                                            ? 'bg-primary/5 border-primary/30'
+                                            : 'bg-[#1A1D25]/50 border-white/5 hover:border-white/10 hover:bg-[#1A1D25]'
+                                        }`}
+                                >
+                                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${formData.isDefault ? 'bg-primary border-primary' : 'border-white/20 group-hover:border-primary/50'
+                                        }`}>
+                                        {formData.isDefault && <CheckCircleIcon className="w-4 h-4 text-white" />}
                                     </div>
-                                    <ShieldCheckIcon className={`w-5 h-5 transition-colors ${formData.isDefault ? 'text-primary' : 'text-white/10'}`} />
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <p className={`text-sm font-bold uppercase tracking-wide ${formData.isDefault ? 'text-white' : 'text-white/70'}`}>Set as Default Structure</p>
+                                            <ShieldCheckIcon className={`w-5 h-5 ${formData.isDefault ? 'text-primary' : 'text-white/10'}`} />
+                                        </div>
+                                        <p className="text-xs text-white/40 mt-1">Automatically assign this structure to new students enrolled in Grade {formData.targetGrade}.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     )}
 
+                    {/* Step 2: Ledger Nodes */}
                     {step === 2 && (
-                        <div className="space-y-12 animate-in slide-in-from-right-8 duration-500 relative z-10">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
-                                <div className="space-y-2">
-                                    <span className="text-[9px] font-black uppercase text-primary/60 tracking-[0.4em] ml-1">Ledger Definition</span>
-                                    <h4 className="text-5xl font-serif font-black text-white tracking-tighter uppercase leading-[0.85]">LEDGER <span className="text-white/20 italic tracking-widest">NODES.</span></h4>
+                        <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                                <div>
+                                    <h4 className="text-2xl font-bold text-white mb-2">Fee Components</h4>
+                                    <p className="text-white/40 text-sm">Define each line item that makes up the total fee structure.</p>
                                 </div>
                                 {!isLocked && (
                                     <button
                                         onClick={handleAddComponent}
-                                        className="px-8 py-4 bg-primary text-white text-[10px] font-black uppercase tracking-[0.35em] rounded-2xl shadow-xl hover:bg-primary/90 transition-all transform active:scale-95 border border-white/10 ring-4 ring-primary/5"
+                                        className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs uppercase tracking-wider rounded-xl border border-white/10 transition-all flex items-center gap-2"
                                     >
-                                        <PlusIcon className="w-5 h-5" /> Add Entity
+                                        <PlusIcon className="w-4 h-4" /> Add Component
                                     </button>
                                 )}
                             </div>
 
-                            <div className="space-y-4 max-w-6xl">
+                            <div className="space-y-4">
                                 {components.map((comp, idx) => (
-                                    <div key={idx} className="flex flex-col lg:flex-row items-center gap-6 p-7 bg-white/[0.01] border border-white/5 rounded-2xl group hover:border-primary/30 transition-all duration-500 shadow-xl relative overflow-hidden">
-                                        <div className="flex-grow min-w-0 relative z-10">
+                                    <div key={idx} className="flex flex-col xl:flex-row gap-4 p-5 bg-[#1A1D25]/40 border border-white/5 rounded-2xl hover:border-white/10 transition-colors group">
+                                        <div className="flex-grow space-y-1.5">
+                                            <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Identifier</label>
                                             <input
                                                 disabled={isLocked}
                                                 type="text"
-                                                placeholder="ENTITY IDENTIFIER"
-                                                className="w-full bg-transparent border-none p-0 text-2xl font-serif font-black text-white focus:ring-0 placeholder:text-white/5 uppercase tracking-tighter leading-none disabled:opacity-50"
+                                                placeholder="TUITION_FEE"
+                                                className="w-full bg-transparent border-b border-white/10 py-2 text-base font-bold text-white placeholder:text-white/10 focus:outline-none focus:border-primary uppercase tracking-wide disabled:opacity-50 font-mono"
                                                 value={comp.name}
                                                 onChange={e => updateComponent(idx, 'name', e.target.value.toUpperCase().replace(/\s/g, '_'))}
                                             />
                                         </div>
-                                        <div className="w-full lg:w-56 relative z-10">
-                                            <div className="relative group/input">
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black text-primary opacity-60">{formData.currency === 'INR' ? '₹' : '$'}</span>
-                                                <input
-                                                    disabled={isLocked}
-                                                    type="number"
-                                                    className="w-full bg-black/40 border border-white/5 rounded-xl p-4 pl-10 text-xl font-mono font-black text-white text-right focus:border-primary/40 outline-none transition-all shadow-inner disabled:opacity-50"
-                                                    value={comp.amount}
-                                                    onChange={e => updateComponent(idx, 'amount', e.target.value)}
-                                                />
+
+                                        <div className="flex gap-4 w-full xl:w-auto">
+                                            <div className="w-1/2 xl:w-48 space-y-1.5">
+                                                <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Amount</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs font-bold">
+                                                        {formData.currency === 'INR' ? '₹' : '$'}
+                                                    </span>
+                                                    <input
+                                                        disabled={isLocked}
+                                                        type="number"
+                                                        className="w-full bg-[#0f1016] border border-white/10 rounded-lg py-2.5 pl-8 pr-4 text-right font-mono text-sm font-bold text-white focus:outline-none focus:border-primary disabled:opacity-50"
+                                                        value={comp.amount}
+                                                        onChange={e => updateComponent(idx, 'amount', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="w-1/2 xl:w-40 space-y-1.5">
+                                                <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Frequency</label>
+                                                <div className="relative">
+                                                    <select
+                                                        disabled={isLocked}
+                                                        className="w-full bg-[#0f1016] border border-white/10 rounded-lg py-2.5 px-3 pr-8 text-xs font-bold text-white focus:outline-none focus:border-primary appearance-none cursor-pointer disabled:opacity-50 uppercase"
+                                                        value={comp.frequency}
+                                                        onChange={e => updateComponent(idx, 'frequency', e.target.value)}
+                                                    >
+                                                        {FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
+                                                    </select>
+                                                    <ChevronDownIcon className="w-3 h-3 text-white/30 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="w-full lg:w-48 relative z-10">
-                                            <div className="relative">
-                                                <select
-                                                    disabled={isLocked}
-                                                    className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-[9px] font-black uppercase tracking-[0.35em] text-white/60 appearance-none cursor-pointer text-center focus:border-primary/40 outline-none shadow-inner transition-all hover:bg-black/60 disabled:opacity-50"
-                                                    value={comp.frequency}
-                                                    onChange={e => updateComponent(idx, 'frequency', e.target.value)}
-                                                >
-                                                    {FREQUENCIES.map(f => <option key={f} value={f}>{f.toUpperCase()}</option>)}
-                                                </select>
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/10 group-hover:text-primary transition-colors"><ChevronDownIcon className="w-4 h-4" /></div>
-                                            </div>
-                                        </div>
+
                                         {!isLocked && (
-                                            <button
-                                                onClick={() => handleRemoveComponent(idx)}
-                                                className="p-3 text-white/5 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all active:scale-90 flex-shrink-0"
-                                            >
-                                                <TrashIcon className="w-5 h-5" />
-                                            </button>
+                                            <div className="flex items-end justify-end pb-1.5">
+                                                <button
+                                                    onClick={() => handleRemoveComponent(idx)}
+                                                    className="p-2 text-white/20 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                                >
+                                                    <TrashIcon className="w-5 h-5" />
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="p-12 bg-[#0d0f14] border border-white/5 rounded-[2.5rem] flex flex-col lg:flex-row justify-between items-center gap-10 relative overflow-hidden group shadow-2xl">
-                                <div className="relative z-10 text-center lg:text-right">
-                                    <span className="text-[clamp(48px,5vw,84px)] font-black text-primary font-mono tracking-tighter drop-shadow-[0_0_40px_rgba(var(--primary),0.4)] leading-none">{formatCurrency(totalYearlyAmount, formData.currency)}</span>
-                                </div>
+                            <div className="p-6 bg-[#1A1D25] rounded-2xl flex items-center justify-between border border-white/5 shadow-inner">
+                                <span className="text-sm font-bold text-white/50 uppercase tracking-wide">Total Annual Projection</span>
+                                <span className="text-3xl font-bold text-primary font-mono tracking-tight">
+                                    {formatCurrency(totalYearlyAmount, formData.currency)}
+                                </span>
                             </div>
                         </div>
                     )}
 
+                    {/* Step 3: Success */}
                     {step === 3 && (
-                        <div className="text-center space-y-14 py-16 animate-in zoom-in-98 duration-700 relative z-10">
-                            <div className="relative inline-block group">
-                                <div className="absolute inset-0 bg-emerald-500/10 blur-[100px] rounded-full animate-pulse"></div>
-                                <div className="relative w-32 h-32 bg-emerald-500/10 text-emerald-500 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-[0_0_60px_rgba(16,185,129,0.1)] border border-emerald-500/20 ring-4 ring-emerald-500/5 group-hover:scale-105 transition-transform duration-700">
-                                    <CheckCircleIcon animate className="w-16 h-16" />
-                                </div>
+                        <div className="flex flex-col items-center justify-center py-12 text-center animate-in zoom-in-95 duration-500">
+                            <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
+                                <CheckCircleIcon className="w-10 h-10 text-emerald-500" />
                             </div>
-
-                            <div className="max-w-3xl mx-auto space-y-4">
-                                <h4 className="text-4xl md:text-6xl font-serif font-black text-white tracking-tighter uppercase leading-[0.85]">SEAL <span className="text-white/20 italic">PROTOCOL.</span></h4>
-                                <p className="text-xl text-white/40 font-serif italic leading-relaxed max-w-xl mx-auto">Financial Node <strong>{formData.name}</strong> is architected and ready for institutional synchronization.</p>
-                            </div>
+                            <h4 className="text-3xl font-bold text-white mb-3">Ready to Deploy</h4>
+                            <p className="text-white/40 max-w-md leading-relaxed mx-auto">
+                                The fee structure <strong className="text-white">{formData.name}</strong> has been configured successfully.
+                                Review the details before finalizing.
+                            </p>
                         </div>
                     )}
                 </div>
 
                 {/* Footer */}
-                <div className="p-7 border-t border-white/5 bg-[#08090a] flex flex-col md:flex-row justify-between items-center gap-6 relative z-30">
+                <div className="p-6 border-t border-white/5 bg-[#0f1016] flex justify-between items-center relative z-20">
                     <button
                         onClick={() => step > 1 ? setStep(step - 1) : onClose()}
-                        className="px-8 py-4 text-[10px] font-black text-white/20 uppercase tracking-[0.5em] hover:text-white transition-all flex items-center gap-3 group"
+                        className="px-6 py-3 text-xs font-bold text-white/40 hover:text-white uppercase tracking-wider transition-colors flex items-center gap-2"
                         disabled={loading}
                     >
-                        {step === 1 ? 'Abort Sequence' : <><ChevronLeftIcon className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> Previous Phase</>}
+                        {step > 1 && <ChevronLeftIcon className="w-4 h-4" />}
+                        {step === 1 ? 'Cancel' : 'Back'}
                     </button>
 
-                    <div className="flex flex-col items-center gap-3 w-full md:w-auto">
-                        <div className="flex gap-4 w-full">
-                            {step === 3 && (
+                    <div className="flex gap-3">
+                        {step === 3 ? (
+                            <>
+                                <button
+                                    onClick={() => handleFinalize(false)}
+                                    disabled={loading || isLocked}
+                                    className="px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all disabled:opacity-50"
+                                >
+                                    Save Draft
+                                </button>
                                 <button
                                     onClick={() => handleFinalize(true)}
                                     disabled={loading || isLocked}
-                                    className="flex-1 md:flex-none px-10 py-5 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-emerald-500/20 hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-30"
+                                    className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-900/20 transition-all disabled:opacity-50 flex items-center gap-2"
                                 >
-                                    {loading ? <Spinner size="sm" className="text-white" /> : 'Sync & Activate'}
+                                    {loading ? <Spinner size="sm" className="text-white" /> : 'Deploy Structure'}
                                 </button>
-                            )}
+                            </>
+                        ) : (
                             <button
-                                onClick={() => step === 3 ? handleFinalize(false) : setStep(step + 1)}
+                                onClick={() => setStep(step + 1)}
                                 disabled={loading || (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)}
-                                className={`flex-1 md:flex-none px-14 py-5 bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-[0.4em] rounded-2xl shadow-[0_30px_60px_-12px_rgba(var(--primary),0.4)] hover:bg-primary/90 transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-30 disabled:transform-none flex items-center justify-center gap-4 ring-4 ring-primary/5`}
+                                className="px-8 py-3.5 bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
-                                {loading ? <Spinner size="sm" className="text-white" /> : step === 3 ? (isLocked ? 'Close' : 'Store Draft') : <>Next Phase <ChevronRightIcon className="w-4 h-4" /></>}
+                                Next Step <ChevronRightIcon className="w-4 h-4" />
                             </button>
-                        </div>
+                        )}
                     </div>
                 </div>
             </motion.div>
