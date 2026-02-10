@@ -851,10 +851,31 @@ export const AssignClassModal: React.FC<{ student: StudentForAdmin, onClose: () 
                         console.warn('[AssignClass] RPC returned non-success:', parsed);
                     }
                 } else {
-                    console.warn('[AssignClass] RPC error:', rpcError.message);
+                    console.warn('[AssignClass] RPC error (with branch_id):', rpcError.message);
+                    throw rpcError; // Throw to trigger fallback
                 }
             } catch (rpcErr: any) {
-                console.warn('[AssignClass] RPC failed:', rpcErr.message);
+                console.warn('[AssignClass] RPC with branch_id failed, retrying without:', rpcErr.message);
+
+                // Fallback: Try RPC without p_branch_id (Legacy support)
+                try {
+                    const { data: rawData2, error: rpcError2 } = await supabase.rpc('admin_assign_student_class', {
+                        p_student_id: student.id,
+                        p_class_id: classId
+                    });
+
+                    if (!rpcError2) {
+                        const parsed = typeof rawData2 === 'string' ? JSON.parse(rawData2) : rawData2;
+                        if (parsed && parsed.success === true) {
+                            assignSuccess = true;
+                            console.log('[AssignClass] ✅ RPC succeeded (Legacy Mode):', parsed);
+                        }
+                    } else {
+                        console.warn('[AssignClass] RPC Legacy error:', rpcError2.message);
+                    }
+                } catch (legacyErr) {
+                    console.warn('[AssignClass] RPC Legacy failed:', legacyErr);
+                }
             }
 
             // Strategy 2: Direct UPDATE using supabaseAdmin (service role → bypasses RLS)
