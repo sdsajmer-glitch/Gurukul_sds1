@@ -36,6 +36,7 @@ interface ClassWorkspaceProps {
     onClose: () => void;
     onUpdate: () => void;
     schoolProfile: SchoolAdminProfileData | null;
+    initialOpenAssignFaculty?: boolean;
 }
 
 type TabType = 'overview' | 'students' | 'teachers' | 'subjects' | 'timetable' | 'analytics' | 'docs' | 'activity';
@@ -71,7 +72,7 @@ const StatWidget: React.FC<{ title: string, value: string | number, icon: React.
     </motion.div>
 );
 
-const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onUpdate, schoolProfile }) => {
+const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onUpdate, schoolProfile, initialOpenAssignFaculty = false }) => {
     const [activeTab, setActiveTab] = useState<TabType>('overview');
     const [loading, setLoading] = useState(false);
     const [students, setStudents] = useState<StudentForAdmin[]>([]);
@@ -86,7 +87,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
     });
 
     // Faculty Assignment State
-    const [isAssignFacultyOpen, setIsAssignFacultyOpen] = useState(false);
+    const [isAssignFacultyOpen, setIsAssignFacultyOpen] = useState(initialOpenAssignFaculty);
     const [availableTeachers, setAvailableTeachers] = useState<any[]>([]);
     const [searchTeacherQuery, setSearchTeacherQuery] = useState('');
     const [assigningTeacher, setAssigningTeacher] = useState(false);

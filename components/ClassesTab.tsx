@@ -330,7 +330,9 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [quickFilter, setQuickFilter] = useState<QuickFilterType>('All');
     const [sortConfig, setSortConfig] = useState<{ key: keyof ExtendedClass; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
+
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+    const [initialOpenAssignFaculty, setInitialOpenAssignFaculty] = useState(false);
 
     const fetchClasses = useCallback(async () => {
         setLoading(true);
@@ -565,7 +567,10 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
                                             animate={{ opacity: 1, x: 0 }}
                                             exit={{ opacity: 0, scale: 0.95 }}
                                             transition={{ delay: Math.min(idx * 0.03, 0.4) }}
-                                            onClick={() => setSelectedClass(cls)}
+                                            onClick={() => {
+                                                setInitialOpenAssignFaculty(false);
+                                                setSelectedClass(cls);
+                                            }}
                                             className="hover:bg-primary/[0.02] transition-colors cursor-pointer group/row border-l-4 border-l-transparent hover:border-l-primary"
                                         >
                                             <td className="p-8">
@@ -589,9 +594,17 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
                                                         <span className="text-sm font-black text-foreground tracking-tight">{cls.teacher_name}</span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-[9px] text-amber-600 font-black uppercase tracking-[0.2em] bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/20 inline-flex items-center gap-2 group-hover/row:bg-amber-500 group-hover/row:text-white transition-all">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setInitialOpenAssignFaculty(true);
+                                                            setSelectedClass(cls);
+                                                        }}
+                                                        className="text-[9px] text-amber-600 font-black uppercase tracking-[0.2em] bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/20 inline-flex items-center gap-2 group-hover/row:bg-amber-500 group-hover/row:text-white transition-all hover:scale-105 active:scale-95"
+                                                    >
                                                         <AlertTriangleIcon className="w-3.5 h-3.5" /> Assign Faculty
-                                                    </span>
+                                                    </button>
                                                 )}
                                             </td>
                                             <td className="p-8">
@@ -633,10 +646,15 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
             <AnimatePresence>
                 {selectedClass && (
                     <ClassWorkspace
+                        key={selectedClass.id}
                         classData={selectedClass}
-                        onClose={() => setSelectedClass(null)}
+                        onClose={() => {
+                            setSelectedClass(null);
+                            setInitialOpenAssignFaculty(false);
+                        }}
                         onUpdate={fetchClasses}
                         schoolProfile={schoolProfile}
+                        initialOpenAssignFaculty={initialOpenAssignFaculty}
                     />
                 )}
 
