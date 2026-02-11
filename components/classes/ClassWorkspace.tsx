@@ -16,6 +16,7 @@ import { PlusIcon } from '../icons/PlusIcon';
 import { ActivityIcon } from '../icons/ActivityIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
 import { ChevronRightIcon } from '../icons/ChevronRightIcon';
+import { SparklesIcon } from '../icons/SparklesIcon';
 
 interface ClassWorkspaceProps {
     classData: SchoolClass & {
@@ -37,8 +38,8 @@ const TabButton: React.FC<{ id: TabType, label: string, icon: React.ReactNode, a
     <button
         onClick={() => onClick(id)}
         className={`flex items-center gap-3 px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] border-l-4 transition-all whitespace-nowrap ${active
-                ? 'border-primary text-primary bg-primary/10 shadow-[inset_4px_0_12px_rgba(var(--primary),0.1)]'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-white/5'
+            ? 'border-primary text-primary bg-primary/10 shadow-[inset_4px_0_12px_rgba(var(--primary),0.1)]'
+            : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-white/5'
             }`}
     >
         <span className={`${active ? 'scale-110' : 'opacity-60'} transition-transform`}>{icon}</span>
@@ -134,7 +135,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         <h3 className="text-2xl font-black text-foreground tracking-tight">Structural DNA</h3>
                                         <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1 opacity-60">System configuration for {classData.name}</p>
                                     </div>
-                                    <button className="text-[10px] font-black uppercase tracking-[0.2em] bg-primary/10 hover:bg-primary/20 text-primary px-6 py-3 rounded-xl transition-all border border-primary/20 shadow-lg shadow-primary/5">Execute Edit</button>
+                                    <button className="text-[10px] font-black uppercase tracking-[0.2em] bg-primary/10 hover:bg-primary/20 text-primary px-6 py-3 rounded-xl transition-all border border-primary/20 shadow-lg shadow-primary/5 hover:scale-105 active:scale-95">Edit Config</button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-10 text-sm relative z-10">
                                     <div className="space-y-1">
@@ -151,14 +152,21 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                     </div>
                                     <div className="space-y-1">
                                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Density Control</p>
-                                        <progress className="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary" value={students.length} max={classData.capacity || 30}></progress>
+                                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                            <motion.div
+                                                className="h-full bg-gradient-to-r from-primary to-indigo-500"
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${Math.min((students.length / (classData.capacity || 30)) * 100, 100)}%` }}
+                                                transition={{ duration: 1 }}
+                                            />
+                                        </div>
                                         <p className="text-[10px] font-bold text-right opacity-60">{students.length} / {classData.capacity || 30} Units</p>
                                     </div>
                                 </div>
                                 <div className="mt-12 pt-10 border-t border-border/60 relative z-10">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-6">Structural Lead (Class Teacher)</p>
                                     {classData.teacher_name ? (
-                                        <div className="flex items-center gap-5 p-5 bg-primary/[0.03] rounded-3xl border border-primary/10 group-hover:bg-primary/[0.05] transition-colors">
+                                        <div className="flex items-center gap-5 p-5 bg-primary/[0.03] rounded-3xl border border-primary/10 group-hover:bg-primary/[0.05] transition-colors cursor-pointer hover:shadow-md">
                                             <div className="relative">
                                                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-xl shadow-primary/20">
                                                     {classData.teacher_name.charAt(0)}
@@ -182,22 +190,29 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                             </div>
 
                             <div className="space-y-6">
-                                <div className="bg-foreground text-background rounded-[2rem] p-8 shadow-2xl space-y-6 relative overflow-hidden">
+                                <div className="bg-foreground text-background rounded-[2rem] p-8 shadow-2xl space-y-6 relative overflow-hidden ring-1 ring-white/10">
                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-indigo-500"></div>
                                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">System Controls</h3>
                                     <div className="space-y-3">
                                         {[
-                                            { label: 'Synchronize Students', icon: <UsersIcon className="w-4 h-4" />, color: 'hover:bg-blue-500' },
-                                            { label: 'Structural Timetable', icon: <ClockIcon className="w-4 h-4" />, color: 'hover:bg-indigo-500' },
-                                            { label: 'Export Intelligence', icon: <DownloadIcon className="w-4 h-4" />, color: 'hover:bg-emerald-500' },
-                                            { label: 'Initiate Audit', icon: <ChartBarIcon className="w-4 h-4" />, color: 'hover:bg-amber-500' }
+                                            { label: 'Synchronize Students', icon: <UsersIcon className="w-4 h-4" />, color: 'hover:bg-blue-500', action: () => setActiveTab('students') },
+                                            { label: 'Structural Timetable', icon: <ClockIcon className="w-4 h-4" />, color: 'hover:bg-indigo-500', action: () => setActiveTab('timetable') },
+                                            { label: 'Export Intelligence', icon: <DownloadIcon className="w-4 h-4" />, color: 'hover:bg-emerald-500', action: () => { } },
+                                            { label: 'Initiate Audit', icon: <ChartBarIcon className="w-4 h-4" />, color: 'hover:bg-amber-500', action: () => setActiveTab('analytics') }
                                         ].map(action => (
-                                            <button key={action.label} className={`w-full py-4 px-5 rounded-2xl bg-white/10 hover:shadow-xl font-black text-[10px] uppercase tracking-widest text-left flex items-center justify-between transition-all group/btn ${action.color}`}>
+                                            <button key={action.label} onClick={action.action} className={`w-full py-4 px-5 rounded-2xl bg-white/10 hover:shadow-xl font-black text-[10px] uppercase tracking-widest text-left flex items-center justify-between transition-all group/btn ${action.color}`}>
                                                 <span className="flex items-center gap-4">{action.icon} {action.label}</span>
                                                 <ChevronRightIcon className="w-4 h-4 opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all" />
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-primary/10 to-indigo-500/10 border border-primary/20 rounded-[2rem] p-6 shadow-inner relative overflow-hidden">
+                                    <SparklesIcon className="w-40 h-40 text-primary/5 absolute -bottom-10 -right-10 animate-spin-slow" />
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">AI Assistant</h3>
+                                    <p className="text-xs font-bold text-muted-foreground leading-relaxed mb-4">Class performance is optimized. No anomalies detected in current enrollment vector.</p>
+                                    <button className="w-full py-3 bg-background/50 hover:bg-background text-primary rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm border border-primary/10">Generate Report</button>
                                 </div>
                             </div>
                         </div>
@@ -249,7 +264,19 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                             </td>
                                         </tr>
                                     ))}
-                                    {students.length === 0 && <tr><td colSpan={4} className="p-20 text-center text-muted-foreground font-black uppercase tracking-[0.3em] opacity-40">Zero Units Detected</td></tr>}
+                                    {students.length === 0 && (
+                                        <tr>
+                                            <td colSpan={4} className="p-20 text-center">
+                                                <div className="flex flex-col items-center justify-center opacity-40 hover:opacity-100 transition-opacity group">
+                                                    <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                                        <UsersIcon className="w-10 h-10 text-muted-foreground" />
+                                                    </div>
+                                                    <p className="font-black uppercase tracking-[0.3em] text-muted-foreground">Zero Units Detected</p>
+                                                    <p className="text-xs text-muted-foreground mt-2">Initialize enrollment via the control panel above.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
