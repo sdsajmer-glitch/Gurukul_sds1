@@ -17,6 +17,10 @@ import { ActivityIcon } from '../icons/ActivityIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
 import { ChevronRightIcon } from '../icons/ChevronRightIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
+import { SearchIcon } from '../icons/SearchIcon';
+import { UserPlusIcon } from '../icons/UserPlusIcon';
+import { UserIcon } from '../icons/UserIcon';
+import { CheckIcon } from '../icons/CheckIcon';
 
 interface ClassWorkspaceProps {
     classData: SchoolClass & {
@@ -26,6 +30,7 @@ interface ClassWorkspaceProps {
         section?: string;
         academic_year?: string;
         capacity?: number;
+        class_teacher_id?: string | null;
     };
     onClose: () => void;
     onUpdate: () => void;
@@ -78,6 +83,47 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
         pendingFees: 3,
         engagementScore: 88
     });
+
+    // Faculty Assignment State
+    const [isAssignFacultyOpen, setIsAssignFacultyOpen] = useState(false);
+    const [availableTeachers, setAvailableTeachers] = useState<any[]>([]);
+    const [searchTeacherQuery, setSearchTeacherQuery] = useState('');
+    const [assigningTeacher, setAssigningTeacher] = useState(false);
+
+    const fetchTeachers = async () => {
+        const { data } = await supabase.rpc('get_all_teachers_for_admin');
+        if (data) setAvailableTeachers(data);
+    };
+
+    useEffect(() => {
+        if (isAssignFacultyOpen) fetchTeachers();
+    }, [isAssignFacultyOpen]);
+
+    const handleAssignTeacher = async (teacherId: string) => {
+        setAssigningTeacher(true);
+        try {
+            const { error } = await supabase
+                .from('school_classes')
+                .update({ class_teacher_id: teacherId })
+                .eq('id', classData.id);
+
+            if (error) throw error;
+            onUpdate();
+            setIsAssignFacultyOpen(false);
+            // Optimistic update or wait for onUpdate to refresh parent
+        } catch (err: any) {
+            alert(formatError(err));
+        } finally {
+            setAssigningTeacher(false);
+        }
+    };
+
+    const filteredTeachers = useMemo(() => {
+        return availableTeachers.filter(t =>
+            t.display_name.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
+            t.email?.toLowerCase().includes(searchTeacherQuery.toLowerCase())
+        );
+    }, [availableTeachers, searchTeacherQuery]);
 
     const fetchDetails = useCallback(async () => {
         setLoading(true);
@@ -166,7 +212,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                 <div className="mt-12 pt-10 border-t border-border/60 relative z-10">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-6">Structural Lead (Class Teacher)</p>
                                     {classData.teacher_name ? (
-                                        <div className="flex items-center gap-5 p-5 bg-primary/[0.03] rounded-3xl border border-primary/10 group-hover:bg-primary/[0.05] transition-colors cursor-pointer hover:shadow-md">
+                                        <div onClick={() => setIsAssignFacultyOpen(true)} className="flex items-center gap-5 p-5 bg-primary/[0.03] rounded-3xl border border-primary/10 group-hover:bg-primary/[0.05] transition-colors cursor-pointer hover:shadow-md">
                                             <div className="relative">
                                                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-xl shadow-primary/20">
                                                     {classData.teacher_name.charAt(0)}
@@ -178,12 +224,12 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Authorized Faculty Lead</p>
                                             </div>
                                             <button className="ml-auto p-3 hover:bg-primary/[0.08] rounded-2xl text-primary transition-all">
-                                                <ChevronRightIcon className="w-6 h-6" />
+                                                <EditIcon className="w-5 h-5" />
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="p-6 bg-amber-500/5 border-2 border-dashed border-amber-500/20 rounded-3xl text-amber-600/90 text-sm flex items-center justify-center gap-3 font-bold italic">
-                                            <AlertTriangleIcon className="w-5 h-5 animate-bounce" /> No System Lead Assigned. Manual Override Required.
+                                        <div onClick={() => setIsAssignFacultyOpen(true)} className="p-6 bg-amber-500/5 border-2 border-dashed border-amber-500/20 rounded-3xl text-amber-600/90 text-sm flex items-center justify-center gap-3 font-bold italic cursor-pointer hover:bg-amber-500/10 transition-colors">
+                                            <AlertTriangleIcon className="w-5 h-5 animate-bounce" /> No System Lead Assigned. Click to Assign.
                                         </div>
                                     )}
                                 </div>
@@ -447,6 +493,102 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                         </div>
                     </motion.div>
                 );
+            case 'subjects':
+                return (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                        <div className="flex justify-between items-center bg-card/50 p-8 rounded-[2rem] border border-border/60 backdrop-blur-md">
+                            <div>
+                                <h3 className="text-2xl font-black text-foreground tracking-tight">Curriculum Map</h3>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Academic subject distribution for {classData.name}.</p>
+                            </div>
+                            <div className="px-4 py-2 bg-primary/10 text-primary rounded-xl text-xs font-black uppercase tracking-widest border border-primary/20">
+                                {subjects.length} Modules Active
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {subjects.map((subject, i) => (
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} key={subject.id || i} className="bg-card border border-border/80 p-6 rounded-[2rem] hover:shadow-xl hover:scale-[1.02] transition-all group relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[50px] -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors"></div>
+                                    <div className="flex items-start justify-between mb-6 relative z-10">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/10 to-indigo-500/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-inner">
+                                            <BookIcon className="w-6 h-6" />
+                                        </div>
+                                        <span className="px-3 py-1 bg-muted/50 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/5">{subject.code || 'CORE'}</span>
+                                    </div>
+                                    <div className="relative z-10">
+                                        <h4 className="text-lg font-black text-foreground leading-tight mb-2 group-hover:text-primary transition-colors">{subject.name}</h4>
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider opacity-60">Standard Credit Module</p>
+                                    </div>
+                                </motion.div>
+                            ))}
+                            {subjects.length === 0 && (
+                                <div className="col-span-full py-20 text-center flex flex-col items-center opacity-50">
+                                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"><BookIcon className="w-8 h-8 text-muted-foreground" /></div>
+                                    <p className="font-black uppercase tracking-widest text-muted-foreground">No Curriculum Mapped</p>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                );
+            case 'teachers':
+                return (
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-10">
+                        <div className="flex justify-between items-center bg-card/50 p-8 rounded-[2.5rem] border border-border/60 backdrop-blur-md">
+                            <div>
+                                <h3 className="text-3xl font-black text-foreground tracking-tight">Faculty Matrix</h3>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Authorized instructional leadership.</p>
+                            </div>
+                            <button
+                                onClick={() => setIsAssignFacultyOpen(true)}
+                                className="bg-foreground text-background px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl"
+                            >
+                                <UserPlusIcon className="w-4 h-4" /> {classData.teacher_name ? 'Reassign Lead' : 'Assign System Lead'}
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-card border border-border/80 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[120px] -mr-40 -mt-40"></div>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-8">Class Operational Lead</h4>
+
+                                {classData.teacher_name ? (
+                                    <div className="flex items-start gap-8 relative z-10">
+                                        <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-[0_20px_40px_rgba(var(--primary),0.3)] ring-4 ring-white/5">
+                                            {classData.teacher_name.charAt(0)}
+                                        </div>
+                                        <div className="space-y-3">
+                                            <h3 className="text-3xl font-black text-foreground tracking-tighter">{classData.teacher_name}</h3>
+                                            <div className="flex items-center gap-3">
+                                                <span className="px-4 py-1.5 bg-primary/10 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/20">Class Teacher</span>
+                                                <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Active</span>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground font-bold max-w-xs leading-relaxed mt-2">Authorized to manage roster, attendance, and structural configurations for this section.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-border rounded-[2rem] bg-muted/5 group-hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => setIsAssignFacultyOpen(true)}>
+                                        <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mb-4 text-amber-500 animate-pulse">
+                                            <AlertTriangleIcon className="w-8 h-8" />
+                                        </div>
+                                        <h4 className="text-lg font-black text-foreground">No Lead Assigned</h4>
+                                        <p className="text-xs text-muted-foreground mt-2 max-w-xs mx-auto">This section currently lacks a designated faculty lead. Operational usage is restricted.</p>
+                                        <button className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:underline">Assign Now</button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="bg-card border border-border/80 rounded-[2.5rem] p-10 shadow-sm opacity-60 hover:opacity-100 transition-opacity">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-8">Subject Faculty Map</h4>
+                                <div className="space-y-4">
+                                    <p className="text-sm font-bold text-muted-foreground italic">Subject-specific mappings are managed in the Curriculum Core.</p>
+                                    <button onClick={() => setActiveTab('subjects')} className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 text-foreground hover:text-primary transition-colors">
+                                        View Curriculum <ChevronRightIcon className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                );
             case 'timetable':
                 return (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -545,6 +687,69 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                         </AnimatePresence>
                     </div>
                 </div>
+
+                <AnimatePresence>
+                    {isAssignFacultyOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-8"
+                            onClick={() => setIsAssignFacultyOpen(false)}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.9, y: 20 }}
+                                onClick={e => e.stopPropagation()}
+                                className="bg-card w-full max-w-2xl rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col overflow-hidden max-h-[80vh]"
+                            >
+                                <div className="p-8 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="text-2xl font-black text-foreground tracking-tight">Faculty Assignment</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Designate a structural lead for {classData.name}</p>
+                                    </div>
+                                    <button onClick={() => setIsAssignFacultyOpen(false)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors"><XIcon className="w-6 h-6" /></button>
+                                </div>
+                                <div className="p-6 border-b border-white/5">
+                                    <div className="relative">
+                                        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            placeholder="Search faculty database..."
+                                            value={searchTeacherQuery}
+                                            onChange={e => setSearchTeacherQuery(e.target.value)}
+                                            className="w-full bg-background border border-border rounded-xl pl-12 pr-4 py-4 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="overflow-y-auto custom-scrollbar p-4 space-y-2 flex-grow">
+                                    {filteredTeachers.map((teacher) => (
+                                        <div key={teacher.id} onClick={() => handleAssignTeacher(teacher.id)} className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-primary/5 border border-transparent hover:border-primary/20 cursor-pointer transition-all">
+                                            <div className="w-12 h-12 rounded-xl bg-muted group-hover:bg-primary group-hover:text-white transition-colors flex items-center justify-center text-lg font-black">
+                                                {teacher.display_name.charAt(0)}
+                                            </div>
+                                            <div className="flex-grow">
+                                                <p className="font-bold text-base text-foreground group-hover:text-primary transition-colors">{teacher.display_name}</p>
+                                                <p className="text-xs text-muted-foreground font-medium">{teacher.email}</p>
+                                            </div>
+                                            {classData.class_teacher_id === teacher.id && (
+                                                <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Current Lead</div>
+                                            )}
+                                            <ChevronRightIcon className="w-5 h-5 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                                        </div>
+                                    ))}
+                                    {filteredTeachers.length === 0 && (
+                                        <div className="text-center py-10 opacity-50">
+                                            <p className="text-sm font-bold">No matching faculty found.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </motion.div>
         </motion.div>
     );
