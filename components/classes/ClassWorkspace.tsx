@@ -21,6 +21,7 @@ import { SearchIcon } from '../icons/SearchIcon';
 import { UserPlusIcon } from '../icons/UserPlusIcon';
 import { UserIcon } from '../icons/UserIcon';
 import { CheckIcon } from '../icons/CheckIcon';
+import { EditIcon } from '../icons/EditIcon';
 
 interface ClassWorkspaceProps {
     classData: SchoolClass & {
@@ -89,6 +90,46 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
     const [availableTeachers, setAvailableTeachers] = useState<any[]>([]);
     const [searchTeacherQuery, setSearchTeacherQuery] = useState('');
     const [assigningTeacher, setAssigningTeacher] = useState(false);
+
+    // Edit Config State
+    const [isEditConfigOpen, setIsEditConfigOpen] = useState(false);
+    const [configForm, setConfigForm] = useState({
+        name: classData.name,
+        section: classData.section || '',
+        capacity: classData.capacity || 30,
+        grade_level: classData.grade_level || ''
+    });
+
+    useEffect(() => {
+        if (isEditConfigOpen) {
+            setConfigForm({
+                name: classData.name,
+                section: classData.section || '',
+                capacity: classData.capacity || 30,
+                grade_level: classData.grade_level || ''
+            });
+        }
+    }, [isEditConfigOpen, classData]);
+
+    const handleUpdateConfig = async () => {
+        try {
+            const { error } = await supabase
+                .from('school_classes')
+                .update({
+                    name: configForm.name,
+                    section: configForm.section,
+                    capacity: configForm.capacity,
+                    grade_level: configForm.grade_level
+                })
+                .eq('id', classData.id);
+
+            if (error) throw error;
+            onUpdate();
+            setIsEditConfigOpen(false);
+        } catch (err: any) {
+            alert(formatError(err));
+        }
+    };
 
     const fetchTeachers = async () => {
         const { data } = await supabase.rpc('get_all_teachers_for_admin');
@@ -243,7 +284,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         {[
                                             { label: 'Synchronize Students', icon: <UsersIcon className="w-4 h-4" />, color: 'hover:bg-blue-500', action: () => setActiveTab('students') },
                                             { label: 'Structural Timetable', icon: <ClockIcon className="w-4 h-4" />, color: 'hover:bg-indigo-500', action: () => setActiveTab('timetable') },
-                                            { label: 'Export Intelligence', icon: <DownloadIcon className="w-4 h-4" />, color: 'hover:bg-emerald-500', action: () => { } },
+                                            { label: 'Export Intelligence', icon: <DownloadIcon className="w-4 h-4" />, color: 'hover:bg-emerald-500', action: () => alert("Exporting Intelligence Report...") },
                                             { label: 'Initiate Audit', icon: <ChartBarIcon className="w-4 h-4" />, color: 'hover:bg-amber-500', action: () => setActiveTab('analytics') }
                                         ].map(action => (
                                             <button key={action.label} onClick={action.action} className={`w-full py-4 px-5 rounded-2xl bg-white/10 hover:shadow-xl font-black text-[10px] uppercase tracking-widest text-left flex items-center justify-between transition-all group/btn ${action.color}`}>
@@ -258,7 +299,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                     <SparklesIcon className="w-40 h-40 text-primary/5 absolute -bottom-10 -right-10 animate-spin-slow" />
                                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">AI Assistant</h3>
                                     <p className="text-xs font-bold text-muted-foreground leading-relaxed mb-4">Class performance is optimized. No anomalies detected in current enrollment vector.</p>
-                                    <button className="w-full py-3 bg-background/50 hover:bg-background text-primary rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm border border-primary/10">Generate Report</button>
+                                    <button onClick={() => alert("Generating AI Report...")} className="w-full py-3 bg-background/50 hover:bg-background text-primary rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm border border-primary/10">Generate Report</button>
                                 </div>
                             </div>
                         </div>
@@ -276,7 +317,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                 <h3 className="text-2xl font-black text-foreground tracking-tight">Active Roster ({students.length})</h3>
                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-0.5">Enrolled unit details for {classData.name}</p>
                             </div>
-                            <button className="bg-foreground text-background px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl">
+                            <button onClick={() => alert("Enrollment Deployment Initialized")} className="bg-foreground text-background px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl">
                                 <PlusIcon className="w-4 h-4" /> Deploy Enrollment
                             </button>
                         </div>
@@ -418,7 +459,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                             </div>
                                         </div>
                                     ))}
-                                    <button className="w-full py-4 bg-foreground text-background rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all">Download Audit</button>
+                                    <button onClick={() => alert("Downloading Audit Log...")} className="w-full py-4 bg-foreground text-background rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all">Download Audit</button>
                                 </div>
                             </div>
                         </div>
@@ -435,7 +476,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                             </div>
                             <div className="flex gap-4 relative z-10">
                                 <button className="p-4 bg-muted hover:bg-neutral-500/10 rounded-2xl transition-all shadow-md"><DownloadIcon className="w-6 h-6 text-muted-foreground" /></button>
-                                <button className="px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all">Upload Document</button>
+                                <button onClick={() => alert("Upload Document Feature Coming Soon")} className="px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all">Upload Document</button>
                             </div>
                         </div>
 
@@ -600,7 +641,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                         </div>
                         <h3 className="text-3xl font-black text-foreground tracking-tight italic uppercase">Temporal Matrix</h3>
                         <p className="text-muted-foreground text-sm mt-3 mb-10 max-w-md mx-auto font-medium">Weekly structural schedules are managed in the global Timetable Core module for cross-institutional alignment.</p>
-                        <button className="px-10 py-4 bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all">Access Nexus Interface</button>
+                        <button onClick={() => alert("Accessing Nexus Interface...")} className="px-10 py-4 bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all">Access Nexus Interface</button>
                     </div>
                 );
             default:
@@ -745,6 +786,78 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                             <p className="text-sm font-bold">No matching faculty found.</p>
                                         </div>
                                     )}
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {isEditConfigOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-8"
+                            onClick={() => setIsEditConfigOpen(false)}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.9, y: 20 }}
+                                onClick={e => e.stopPropagation()}
+                                className="bg-card w-full max-w-lg rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col overflow-hidden"
+                            >
+                                <div className="p-8 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="text-2xl font-black text-foreground tracking-tight">System Configuration</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Edit structural DNA for {classData.name}</p>
+                                    </div>
+                                    <button onClick={() => setIsEditConfigOpen(false)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors"><XIcon className="w-6 h-6" /></button>
+                                </div>
+                                <div className="p-8 space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Class Name</label>
+                                        <input
+                                            type="text"
+                                            value={configForm.name}
+                                            onChange={e => setConfigForm({ ...configForm, name: e.target.value })}
+                                            className="w-full bg-background border border-border rounded-xl px-4 py-3 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Section</label>
+                                            <input
+                                                type="text"
+                                                value={configForm.section}
+                                                onChange={e => setConfigForm({ ...configForm, section: e.target.value })}
+                                                className="w-full bg-background border border-border rounded-xl px-4 py-3 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Capacity</label>
+                                            <input
+                                                type="number"
+                                                value={configForm.capacity}
+                                                onChange={e => setConfigForm({ ...configForm, capacity: parseInt(e.target.value) })}
+                                                className="w-full bg-background border border-border rounded-xl px-4 py-3 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Grade Level</label>
+                                        <input
+                                            type="text"
+                                            value={configForm.grade_level}
+                                            onChange={e => setConfigForm({ ...configForm, grade_level: e.target.value })}
+                                            className="w-full bg-background border border-border rounded-xl px-4 py-3 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                        />
+                                    </div>
+                                    <div className="pt-4 flex gap-4">
+                                        <button onClick={() => setIsEditConfigOpen(false)} className="flex-1 py-4 rounded-xl bg-muted/20 hover:bg-muted/30 text-muted-foreground font-black text-[10px] uppercase tracking-widest transition-colors">Cancel</button>
+                                        <button onClick={handleUpdateConfig} className="flex-1 py-4 rounded-xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20">Save Configuration</button>
+                                    </div>
                                 </div>
                             </motion.div>
                         </motion.div>
