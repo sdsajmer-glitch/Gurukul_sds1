@@ -1,5 +1,5 @@
-
 import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../services/supabase';
 import Spinner from './common/Spinner';
 import { XIcon } from './icons/XIcon';
@@ -14,7 +14,8 @@ import { UploadIcon } from './icons/UploadIcon';
 import { FilePlusIcon } from './icons/FilePlusIcon';
 import { BookIcon } from './icons/BookIcon';
 import Stepper from './common/Stepper';
-import { XCircleIcon } from './icons/XCircleIcon';
+import { SparklesIcon } from './icons/SparklesIcon';
+import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 
 interface AddTeacherModalProps {
     onClose: () => void;
@@ -28,9 +29,9 @@ const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-
 
 const FloatingInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string, icon?: React.ReactNode, readOnly?: boolean }> = ({ label, icon, className, readOnly, ...props }) => (
     <div className="relative group w-full">
-        <div className="absolute top-1/2 -translate-y-1/2 left-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors z-10 pointer-events-none">{icon}</div>
-        <input {...props} readOnly={readOnly} placeholder=" " className={`peer block w-full rounded-xl border border-input bg-background px-4 py-3.5 pl-11 text-sm text-foreground shadow-sm focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none placeholder-transparent ${readOnly ? 'bg-muted/30 cursor-not-allowed border-transparent' : ''} ${className}`} />
-        <label className={`absolute left-11 top-0 -translate-y-1/2 bg-background px-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-focus:top-0 peer-focus:text-[10px] peer-focus:font-bold peer-focus:uppercase peer-focus:text-primary pointer-events-none ${readOnly ? 'bg-transparent' : ''}`}>{label}</label>
+        <div className="absolute top-1/2 -translate-y-1/2 left-5 text-white/10 group-focus-within:text-primary transition-all duration-500 z-10 pointer-events-none">{icon}</div>
+        <input {...props} readOnly={readOnly} placeholder=" " className={`peer block w-full rounded-2xl border border-white/5 bg-black/40 px-5 py-4 pl-12 text-sm text-white shadow-inner focus:border-primary/40 focus:ring-[12px] focus:ring-primary/5 focus:outline-none placeholder-transparent transition-all ${readOnly ? 'bg-muted/10 cursor-not-allowed border-transparent' : ''} ${className}`} />
+        <label className={`absolute left-12 top-0 -translate-y-1/2 bg-[#0d0f14] px-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/20 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-xs peer-placeholder-shown:font-bold peer-placeholder-shown:normal-case peer-focus:top-0 peer-focus:text-[9px] peer-focus:font-black peer-focus:uppercase peer-focus:text-primary pointer-events-none ${readOnly ? 'bg-transparent' : ''}`}>{label}</label>
     </div>
 );
 
@@ -45,7 +46,7 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    
+
     // Form Data
     const [formData, setFormData] = useState({
         // Step 0: Basic
@@ -58,7 +59,7 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
 
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-    
+
     // Documents
     const [resumeFile, setResumeFile] = useState<File | null>(null);
     const [idProofFile, setIdProofFile] = useState<File | null>(null);
@@ -76,7 +77,7 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
 
     const toggleGrade = (grade: string) => {
         setFormData(prev => {
-            const grades = prev.grades.includes(grade) 
+            const grades = prev.grades.includes(grade)
                 ? prev.grades.filter(g => g !== grade)
                 : [...prev.grades, grade];
             return { ...prev, grades };
@@ -95,8 +96,8 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
 
         try {
             // Generate a UUID for the new teacher (simulating auth.uid)
-            const mockUserId = crypto.randomUUID(); 
-            
+            const mockUserId = crypto.randomUUID();
+
             const { error } = await supabase.rpc('upsert_teacher_profile', {
                 p_user_id: mockUserId,
                 p_display_name: formData.display_name,
@@ -142,7 +143,7 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
 
     const handleNext = () => {
         const nextStep = currentStep + 1;
-        
+
         // Basic Step Validation
         if (currentStep === 0) {
             if (!formData.display_name.trim()) {
@@ -162,7 +163,7 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
         }
         setCurrentStep(nextStep);
     };
-    
+
     const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 0));
 
     // Render Steps
@@ -173,10 +174,10 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
                 return (
                     <div className="space-y-5 animate-in slide-in-from-right-4 duration-300">
                         <h3 className="text-lg font-bold text-foreground">Basic Information</h3>
-                        <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4"/>} autoFocus />
-                        <FloatingInput label="Email Address" type="email" name="email" value={formData.email} onChange={handleChange} icon={<MailIcon className="w-4 h-4"/>} />
+                        <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} autoFocus />
+                        <FloatingInput label="Email Address" type="email" name="email" value={formData.email} onChange={handleChange} icon={<MailIcon className="w-4 h-4" />} />
                         <div className="grid grid-cols-2 gap-4">
-                            <FloatingInput label="Phone Number" type="tel" name="phone" value={formData.phone} onChange={handleChange} icon={<PhoneIcon className="w-4 h-4"/>} />
+                            <FloatingInput label="Phone Number" type="tel" name="phone" value={formData.phone} onChange={handleChange} icon={<PhoneIcon className="w-4 h-4" />} />
                             <div className="relative group">
                                 <select name="gender" value={formData.gender} onChange={handleChange} className="w-full h-[50px] rounded-xl border border-input bg-background px-4 text-sm shadow-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none appearance-none cursor-pointer">
                                     <option>Male</option><option>Female</option><option>Other</option>
@@ -184,7 +185,7 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
                                 <label className="absolute left-4 top-0 -translate-y-1/2 bg-background px-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 pointer-events-none">Gender</label>
                             </div>
                         </div>
-                        <FloatingInput label="Date of Birth" type="date" name="dob" value={formData.dob} onChange={handleChange} icon={<div className="w-4"/>} />
+                        <FloatingInput label="Date of Birth" type="date" name="dob" value={formData.dob} onChange={handleChange} icon={<div className="w-4" />} />
                     </div>
                 );
             case 1: // Photo
@@ -215,9 +216,9 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
                         <h3 className="text-lg font-bold text-foreground">Role & Department</h3>
                         <div className="grid grid-cols-2 gap-5">
                             <FloatingInput label="Employee ID" name="employee_id" value={formData.employee_id} readOnly={true} icon={<div className="w-4 h-4 font-bold text-[10px] flex items-center justify-center border border-current rounded">ID</div>} />
-                            <FloatingInput label="Department" name="department" value={formData.department} onChange={handleChange} icon={<BriefcaseIcon className="w-4 h-4"/>} />
+                            <FloatingInput label="Department" name="department" value={formData.department} onChange={handleChange} icon={<BriefcaseIcon className="w-4 h-4" />} />
                         </div>
-                        <FloatingInput label="Designation" name="designation" value={formData.designation} onChange={handleChange} icon={<UserIcon className="w-4 h-4"/>} />
+                        <FloatingInput label="Designation" name="designation" value={formData.designation} onChange={handleChange} icon={<UserIcon className="w-4 h-4" />} />
                         <div>
                             <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Employment Type</label>
                             <div className="grid grid-cols-3 gap-3">
@@ -225,7 +226,7 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
                                     <button
                                         type="button"
                                         key={type}
-                                        onClick={() => setFormData({...formData, employment_type: type})}
+                                        onClick={() => setFormData({ ...formData, employment_type: type })}
                                         className={`py-2.5 rounded-lg text-sm font-medium border transition-all ${formData.employment_type === type ? 'bg-primary/10 border-primary text-primary' : 'bg-background border-input hover:bg-muted'}`}
                                     >
                                         {type}
@@ -239,12 +240,12 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
                 return (
                     <div className="space-y-5 animate-in slide-in-from-right-4 duration-300">
                         <h3 className="text-lg font-bold text-foreground">Academic Assignments</h3>
-                        <FloatingInput label="Primary Subject" name="subject" value={formData.subject} onChange={handleChange} icon={<BookIcon className="w-4 h-4"/>} />
-                        
+                        <FloatingInput label="Primary Subject" name="subject" value={formData.subject} onChange={handleChange} icon={<BookIcon className="w-4 h-4" />} />
+
                         <div>
                             <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Assign Grades</label>
                             <div className="flex flex-wrap gap-2">
-                                {Array.from({length: 12}, (_, i) => i + 1).map(g => (
+                                {Array.from({ length: 12 }, (_, i) => i + 1).map(g => (
                                     <button
                                         type="button"
                                         key={g}
@@ -258,8 +259,8 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
                         </div>
 
                         <div className="grid grid-cols-2 gap-5">
-                            <FloatingInput label="Qualification" name="qualification" value={formData.qualification} onChange={handleChange} icon={<BookIcon className="w-4 h-4"/>} />
-                            <FloatingInput label="Experience (Yrs)" type="number" name="experience_years" value={formData.experience_years} onChange={handleChange} icon={<BriefcaseIcon className="w-4 h-4"/>} />
+                            <FloatingInput label="Qualification" name="qualification" value={formData.qualification} onChange={handleChange} icon={<BookIcon className="w-4 h-4" />} />
+                            <FloatingInput label="Experience (Yrs)" type="number" name="experience_years" value={formData.experience_years} onChange={handleChange} icon={<BriefcaseIcon className="w-4 h-4" />} />
                         </div>
                     </div>
                 );
@@ -267,11 +268,11 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
                 return (
                     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                         <h3 className="text-lg font-bold text-foreground">Upload Documents</h3>
-                        
+
                         <div className="border-2 border-dashed border-border rounded-xl p-6 hover:bg-muted/30 transition-colors relative group bg-muted/5">
                             <div className="flex items-center gap-4">
                                 <div className={`p-3 rounded-lg ${resumeFile ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'}`}>
-                                    {resumeFile ? <CheckCircleIcon className="w-6 h-6"/> : <FilePlusIcon className="w-6 h-6"/>}
+                                    {resumeFile ? <CheckCircleIcon className="w-6 h-6" /> : <FilePlusIcon className="w-6 h-6" />}
                                 </div>
                                 <div>
                                     <p className="font-bold text-foreground">Resume / CV</p>
@@ -284,7 +285,7 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
                         <div className="border-2 border-dashed border-border rounded-xl p-6 hover:bg-muted/30 transition-colors relative group bg-muted/5">
                             <div className="flex items-center gap-4">
                                 <div className={`p-3 rounded-lg ${idProofFile ? 'bg-green-100 text-green-600' : 'bg-primary/10 text-primary'}`}>
-                                    {idProofFile ? <CheckCircleIcon className="w-6 h-6"/> : <FilePlusIcon className="w-6 h-6"/>}
+                                    {idProofFile ? <CheckCircleIcon className="w-6 h-6" /> : <FilePlusIcon className="w-6 h-6" />}
                                 </div>
                                 <div>
                                     <p className="font-bold text-foreground">ID Proof</p>
@@ -354,64 +355,123 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
 
     if (isSuccess) {
         return (
-            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[200] p-4 animate-in fade-in">
-                <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border p-8 text-center animate-in zoom-in-95">
-                    <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                        <CheckCircleIcon animate className="w-10 h-10" />
+            <div className="fixed inset-0 bg-background/80 backdrop-blur-3xl flex items-center justify-center z-[200] p-4">
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-card w-full max-w-xl rounded-[4rem] shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] border border-white/5 p-16 text-center relative overflow-hidden"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-tr from-primary/[0.05] via-transparent to-transparent pointer-events-none"></div>
+                    <div className="relative z-10">
+                        <div className="w-32 h-32 bg-emerald-500/10 text-emerald-400 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 shadow-2xl border border-emerald-500/20 ring-1 ring-emerald-500/10">
+                            <CheckCircleIcon className="w-16 h-16" />
+                        </div>
+                        <h2 className="text-4xl font-serif font-black text-white uppercase tracking-tighter mb-4">Node Synced.</h2>
+                        <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.5em] mb-12">
+                            PROTOCOL AUTHENTICATION SUCCESSFUL
+                        </p>
+
+                        <div className="bg-black/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 mb-12 text-left relative group">
+                            <div className="absolute top-4 right-4 text-emerald-400/20 group-hover:text-emerald-400 transition-colors">
+                                <ShieldCheckIcon className="w-6 h-6" />
+                            </div>
+                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-4">Institutional Credential</p>
+                            <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center font-serif italic text-2xl text-white/40 border border-white/5">
+                                    {formData.display_name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h4 className="text-xl font-black text-white leading-none mb-1">{formData.display_name}</h4>
+                                    <p className="text-[10px] text-primary font-mono tracking-widest uppercase">{formData.employee_id}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onClick={onSuccess} className="w-full py-6 bg-primary text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-3">
+                            Authorize Entry Protocol <ChevronRightIcon className="w-4 h-4" />
+                        </button>
                     </div>
-                    <h2 className="text-2xl font-bold text-foreground">Teacher Onboarded!</h2>
-                    <p className="text-muted-foreground mt-2 mb-6">
-                        <strong>{formData.display_name}</strong> has been added successfully. An email with login credentials has been sent.
-                    </p>
-                    <div className="bg-muted p-4 rounded-xl mb-6">
-                        <p className="text-xs font-bold text-muted-foreground uppercase">Current Status</p>
-                        <p className="text-lg font-bold text-amber-600">Pending Verification</p>
-                        <p className="text-[10px] font-mono text-muted-foreground/60 mt-1">ID: {formData.employee_id}</p>
-                    </div>
-                    <button onClick={onSuccess} className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:bg-primary/90 transition-all">
-                        Done
-                    </button>
-                </div>
+                </motion.div>
             </div>
         );
     }
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[150] p-4" onClick={onClose}>
-            <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b border-border bg-muted/10 flex justify-between items-center">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-xl flex items-center justify-center z-[150] p-4" onClick={onClose}>
+            <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                className="bg-card w-full max-w-3xl rounded-[3.5rem] shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] border border-white/5 flex flex-col overflow-hidden relative"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Visual Elements */}
+                <div className="absolute -top-32 -right-32 w-80 h-80 bg-primary/10 rounded-full blur-[120px]"></div>
+                <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-accent-info/5 rounded-full blur-[120px]"></div>
+
+                <div className="p-12 border-b border-white/5 bg-white/[0.01] backdrop-blur-3xl flex justify-between items-center relative z-10">
                     <div>
-                        <h2 className="text-xl font-bold">New Teacher Onboarding</h2>
-                        <p className="text-xs text-muted-foreground mt-1">Step {currentStep + 1}: {STEPS[currentStep]}</p>
+                        <div className="flex items-center gap-3 opacity-30 mb-2">
+                            <div className="w-6 h-[1px] bg-primary"></div>
+                            <span className="text-[9px] font-black uppercase tracking-[0.4em]">Node Provisioning</span>
+                        </div>
+                        <h2 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Faculty Onboarding.</h2>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mt-1">{STEPS[currentStep]} Matrix Handshake</p>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><XIcon className="w-5 h-5"/></button>
+                    <button onClick={onClose} className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 text-white/20 hover:text-white transition-all border border-white/5"><XIcon className="w-5 h-5" /></button>
                 </div>
-                <div className="px-6 pt-4">
+
+                <div className="px-12 pt-8 flex-shrink-0 relative z-10">
                     <Stepper steps={STEPS} currentStep={currentStep} />
                 </div>
-                <div className="p-8 overflow-y-auto flex-grow bg-background">
-                    {renderStepContent()}
+
+                <div className="p-12 overflow-y-auto flex-grow relative z-10 custom-scrollbar max-h-[60vh]">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentStep}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            {renderStepContent()}
+                        </motion.div>
+                    </AnimatePresence>
+                    {errorMsg && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-8 p-5 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4 text-red-500"
+                        >
+                            <AlertTriangleIcon className="w-5 h-5" />
+                            <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">{errorMsg}</p>
+                        </motion.div>
+                    )}
                 </div>
-                <div className="p-6 border-t border-border bg-muted/10 flex justify-between items-center">
-                    <button 
-                        onClick={currentStep === 0 ? onClose : handleBack} 
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-muted-foreground hover:bg-background hover:text-foreground transition-colors border border-transparent hover:border-border text-sm"
+
+                <div className="p-10 border-t border-white/5 bg-white/[0.01] backdrop-blur-3xl flex justify-between items-center relative z-10">
+                    <button
+                        onClick={currentStep === 0 ? onClose : handleBack}
+                        className="flex items-center gap-3 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white hover:bg-white/5 transition-all active:scale-95"
                         disabled={loading}
                     >
-                        {currentStep === 0 ? 'Cancel' : <><ChevronLeftIcon className="w-4 h-4"/> Back</>}
+                        {currentStep === 0 ? 'Abort Signal' : <><ChevronLeftIcon className="w-4 h-4" /> Previous Cycle</>}
                     </button>
-                    
-                    <button 
-                        onClick={currentStep === STEPS.length - 1 ? handleSubmit : handleNext} 
+
+                    <button
+                        onClick={currentStep === STEPS.length - 1 ? handleSubmit : handleNext}
                         disabled={loading || (currentStep === 0 && (!formData.display_name || !formData.email))}
-                        className="flex items-center gap-2 px-8 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold shadow-lg hover:shadow-primary/30 hover:bg-primary/90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+                        className="flex items-center gap-4 px-12 py-5 bg-primary text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed group"
                     >
-                        {loading ? <Spinner size="sm" className="text-white"/> : (
-                            currentStep === STEPS.length - 1 ? 'Create Account' : <>Next <ChevronRightIcon className="w-4 h-4"/></>
+                        {loading ? <Spinner size="sm" className="text-white" /> : (
+                            currentStep === STEPS.length - 1 ? (
+                                <>Commit Protocol <ShieldCheckIcon className="w-4 h-4" /></>
+                            ) : (
+                                <>Verify & Proceed <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
+                            )
                         )}
                     </button>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };
