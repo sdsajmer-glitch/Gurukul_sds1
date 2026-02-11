@@ -181,7 +181,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         <h3 className="text-2xl font-black text-foreground tracking-tight">Structural DNA</h3>
                                         <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1 opacity-60">System configuration for {classData.name}</p>
                                     </div>
-                                    <button className="text-[10px] font-black uppercase tracking-[0.2em] bg-primary/10 hover:bg-primary/20 text-primary px-6 py-3 rounded-xl transition-all border border-primary/20 shadow-lg shadow-primary/5 hover:scale-105 active:scale-95">Edit Config</button>
+                                    <button onClick={() => setIsEditConfigOpen(true)} className="text-[10px] font-black uppercase tracking-[0.2em] bg-primary/10 hover:bg-primary/20 text-primary px-6 py-3 rounded-xl transition-all border border-primary/20 shadow-lg shadow-primary/5 hover:scale-105 active:scale-95">Edit Config</button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-10 text-sm relative z-10">
                                     <div className="space-y-1">
@@ -516,7 +516,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         <span className="px-3 py-1 bg-muted/50 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/5">{subject.code || 'CORE'}</span>
                                     </div>
                                     <div className="relative z-10">
-                                        <h4 className="text-lg font-black text-foreground leading-tight mb-2 group-hover:text-primary transition-colors">{subject.name}</h4>
+                                        <h4 className="text-lg font-black text-foreground leading-tight mb-2 group-hover:text-primary transition-colors">{subject.title}</h4>
                                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider opacity-60">Standard Credit Module</p>
                                     </div>
                                 </motion.div>
