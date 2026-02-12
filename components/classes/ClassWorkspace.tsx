@@ -376,18 +376,32 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                         animate={{ opacity: 1, scale: 1 }}
                         className="space-y-8"
                     >
-                        <div className="flex justify-between items-center bg-card/50 p-6 rounded-[2.5rem] border border-border/60 backdrop-blur-md">
-                            <div>
-                                <h3 className="text-2xl font-black text-foreground tracking-tight">Active Roster ({students.length})</h3>
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-0.5">Enrolled unit details for {classData.name}</p>
+                        {/* Control Header */}
+                        <div className="flex justify-between items-center bg-card border border-border/40 p-6 rounded-[2rem] shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-purple-600"></div>
+                            <div className="pl-6 relative z-10">
+                                <h3 className="text-2xl font-black text-foreground tracking-tighter uppercase italic">Active Roster <span className="text-muted-foreground ml-2">({students.length})</span></h3>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1 opacity-60">Enrolled unit details for {classData.name}</p>
                             </div>
-                            <button onClick={() => alert("Enrollment Deployment Initialized")} className="bg-foreground text-background px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl">
+                            <button
+                                onClick={() => showToast("Enrollment Protocol Initiated...", 'info')}
+                                className="relative z-10 bg-foreground text-background px-8 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] border border-white/10"
+                            >
                                 <PlusIcon className="w-4 h-4" /> Deploy Enrollment
                             </button>
+                            <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-white/[0.03] to-transparent pointer-events-none"></div>
                         </div>
-                        <div className="bg-card border border-border/80 rounded-[2.5rem] overflow-hidden shadow-2xl">
+
+                        {/* Roster Data Grid */}
+                        <div className="bg-card/50 backdrop-blur-xl border border-border/40 rounded-[2.5rem] overflow-hidden shadow-inner min-h-[500px] flex flex-col relative">
+                            {/* Decorative corner accents */}
+                            <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary/20 rounded-tl-2xl m-4 pointer-events-none"></div>
+                            <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary/20 rounded-tr-2xl m-4 pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary/20 rounded-bl-2xl m-4 pointer-events-none"></div>
+                            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary/20 rounded-br-2xl m-4 pointer-events-none"></div>
+
                             <table className="w-full text-left text-sm whitespace-nowrap">
-                                <thead className="bg-muted/10 border-b border-border/60 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                                <thead className="bg-black/20 border-b border-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
                                     <tr>
                                         <th className="p-8 pl-10">Unit Identity</th>
                                         <th className="p-8">System ID</th>
@@ -395,41 +409,56 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         <th className="p-8 text-right pr-10">Control</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-border/20">
-                                    {students.map(student => (
-                                        <tr key={student.id} className="hover:bg-primary/[0.02] transition-colors group">
-                                            <td className="p-8 pl-10">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center font-black group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
+                                <tbody className="divide-y divide-white/5">
+                                    {students.map((student, idx) => (
+                                        <motion.tr
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            key={student.id}
+                                            className="hover:bg-white/[0.02] transition-colors group relative"
+                                        >
+                                            <td className="p-6 pl-10">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.01] flex items-center justify-center font-black text-lg group-hover:text-primary transition-colors border border-white/5 shadow-inner">
                                                         {student.display_name.charAt(0)}
                                                     </div>
-                                                    <span className="font-black text-foreground tracking-tight">{student.display_name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-8 font-mono text-[10px] font-black text-muted-foreground tracking-widest">{student.student_id_number || 'VOID'}</td>
-                                            <td className="p-8">
-                                                <span className="px-3 py-1 bg-muted/30 rounded-lg text-[9px] font-black uppercase tracking-widest border border-border/50">{student.gender || 'N/A'}</span>
-                                            </td>
-                                            <td className="p-8 text-right pr-10">
-                                                <button onClick={() => handleRemoveStudent(student.id)} className="text-[9px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500 hover:text-white px-5 py-2.5 rounded-xl transition-all border border-red-500/20 active:scale-95">De-Roster</button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {students.length === 0 && (
-                                        <tr>
-                                            <td colSpan={4} className="p-20 text-center">
-                                                <div className="flex flex-col items-center justify-center opacity-40 hover:opacity-100 transition-opacity group">
-                                                    <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                                        <UsersIcon className="w-10 h-10 text-muted-foreground" />
+                                                    <div>
+                                                        <span className="font-bold text-base text-foreground tracking-tight block group-hover:text-primary transition-colors">{student.display_name}</span>
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Unit-{idx + 1}</span>
                                                     </div>
-                                                    <p className="font-black uppercase tracking-[0.3em] text-muted-foreground">Zero Units Detected</p>
-                                                    <p className="text-xs text-muted-foreground mt-2">Initialize enrollment via the control panel above.</p>
                                                 </div>
                                             </td>
-                                        </tr>
-                                    )}
+                                            <td className="p-6 font-mono text-[11px] font-bold text-muted-foreground tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
+                                                <span className="bg-black/20 px-2 py-1 rounded-md border border-white/5">{student.student_id_number || 'UNREGISTERED'}</span>
+                                            </td>
+                                            <td className="p-6">
+                                                <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border shadow-lg ${student.gender === 'Male' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : student.gender === 'Female' ? 'bg-pink-500/10 text-pink-500 border-pink-500/20' : 'bg-muted/30 text-muted-foreground border-border/50'}`}>
+                                                    {student.gender || 'Standard'} unit
+                                                </span>
+                                            </td>
+                                            <td className="p-6 text-right pr-10">
+                                                <button onClick={() => handleRemoveStudent(student.id)} className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all active:scale-90 opacity-60 hover:opacity-100">
+                                                    <TrashIcon className="w-5 h-5" />
+                                                </button>
+                                            </td>
+                                        </motion.tr>
+                                    ))}
                                 </tbody>
                             </table>
+
+                            {students.length === 0 && (
+                                <div className="flex-grow flex flex-col items-center justify-center text-center p-20 opacity-60">
+                                    <div className="w-24 h-24 mb-6 relative">
+                                        <div className="absolute inset-0 bg-muted/10 rounded-full animate-ping opacity-20"></div>
+                                        <div className="relative w-full h-full bg-gradient-to-br from-muted/20 to-transparent rounded-3xl flex items-center justify-center border border-white/5 backdrop-blur-sm">
+                                            <UsersIcon className="w-10 h-10 text-muted-foreground/40" />
+                                        </div>
+                                    </div>
+                                    <h4 className="text-xl font-black uppercase tracking-[0.2em] text-foreground/80 mb-2">Zero Units Detected</h4>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 max-w-[200px] leading-relaxed">Initialize enrollment via the control panel above.</p>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 );
