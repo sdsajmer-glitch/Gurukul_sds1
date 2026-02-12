@@ -11,6 +11,7 @@ import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ChevronDownIcon } from '../icons/ChevronDownIcon';
 import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+import { SparklesIcon } from '../icons/SparklesIcon';
 import { LockIcon } from '../icons/LockIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FeeStructure, CurrencyCode } from '../../types';
@@ -38,11 +39,14 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
     const isLocked = !!(editingStructure as any)?.is_version_locked;
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [initializing, setInitializing] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [academicYears, setAcademicYears] = useState<any[]>([]);
+    const [templates, setTemplates] = useState<FeeStructure[]>([]);
 
     const [formData, setFormData] = useState({
         name: '',
-        academicYear: '2025-2026',
+        academicYear: '',
         targetGrade: '1',
         description: '',
         currency: 'INR' as CurrencyCode,
@@ -53,6 +57,42 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
     const [components, setComponents] = useState<{ id?: number; name: string; amount: string; frequency: string; is_mandatory: boolean; category: string }[]>([
         { name: 'TUITION_FEES', amount: '0', frequency: 'Monthly', is_mandatory: true, category: 'Tuition' }
     ]);
+
+    useEffect(() => {
+        const fetchExternalData = async () => {
+            setInitializing(true);
+            try {
+                const bid = branchId !== null ? Number(branchId) : null;
+
+                // Fetch Academic Years
+                const { data: years } = await supabase
+                    .from('academic_years')
+                    .select('*')
+                    .order('start_date', { ascending: false });
+
+                if (years) {
+                    setAcademicYears(years);
+                    if (!isEditMode && years.length > 0) {
+                        setFormData(prev => ({ ...prev, academicYear: years[0].year_name }));
+                    }
+                }
+
+                // Fetch Existing Structures for "Cloning/Template" functionality
+                let query = supabase.from('fee_structures').select('*, components:fee_components(*)');
+                if (bid) query = query.eq('branch_id', bid);
+
+                const { data: existing } = await query.limit(10);
+                if (existing) setTemplates(existing);
+
+            } catch (err) {
+                console.error("Data synchronization failed:", err);
+            } finally {
+                setInitializing(false);
+            }
+        };
+
+        fetchExternalData();
+    }, [branchId, isEditMode]);
 
     useEffect(() => {
         if (editingStructure) {
@@ -107,7 +147,27 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
         }, 0);
     }, [components]);
 
-    const isStep1Valid = formData.name.trim().length >= 3;
+    const handleApplyTemplate = (template: FeeStructure) => {
+        setFormData({
+            ...formData,
+            name: `${template.name} (CLONED)`,
+            currency: template.currency as CurrencyCode,
+            type: (template as any).type || 'Standard',
+            description: (template as any).description || ''
+        });
+
+        if (template.components && template.components.length > 0) {
+            setComponents(template.components.map((c: any) => ({
+                name: c.name,
+                amount: c.amount.toString(),
+                frequency: c.frequency,
+                is_mandatory: c.is_mandatory,
+                category: c.category || 'Tuition'
+            })));
+        }
+    };
+
+    const isStep1Valid = formData.name.trim().length >= 3 && formData.academicYear.length > 0;
     const isStep2Valid = components.every(c => c.name.trim().length > 0 && Number(c.amount) >= 0);
 
     const handleFinalize = async (publish: boolean = false) => {
@@ -252,8 +312,16 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                         </div>
                     )}
 
+                    {/* Loading State */}
+                    {initializing && (
+                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                            <Spinner size="lg" className="text-primary" />
+                            <p className="text-[10px] font-black uppercase text-white/20 tracking-[0.5em]">Synchronizing Registry Nodes...</p>
+                        </div>
+                    )}
+
                     {/* Step 1: Core Registry */}
-                    {step === 1 && (
+                    {step === 1 && !initializing && (
                         <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
                             <div>
                                 <h4 className="text-2xl font-bold text-white mb-2">Core Registry</h4>
@@ -290,29 +358,30 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Currency</label>
-                                        <div className="grid grid-cols-2 gap-2 p-1 bg-[#1A1D25] rounded-xl border border-white/5">
-                                            {['INR', 'USD'].map(curr => (
-                                                <button
-                                                    disabled={isLocked}
-                                                    key={curr}
-                                                    type="button"
-                                                    onClick={() => setFormData({ ...formData, currency: curr as CurrencyCode })}
-                                                    className={`py-2.5 rounded-lg text-xs font-bold transition-all ${formData.currency === curr
-                                                        ? 'bg-primary text-white shadow-lg'
-                                                        : 'text-white/40 hover:text-white/60 hover:bg-white/5'
-                                                        } disabled:opacity-50`}
-                                                >
-                                                    {curr}
-                                                </button>
-                                            ))}
+                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Academic Cycle</label>
+                                        <div className="relative">
+                                            <select
+                                                disabled={isLocked}
+                                                className="w-full bg-[#1A1D25] border border-white/5 rounded-xl px-5 py-3.5 text-white/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 uppercase text-sm font-semibold appearance-none cursor-pointer disabled:opacity-50"
+                                                value={formData.academicYear}
+                                                onChange={e => setFormData({ ...formData, academicYear: e.target.value })}
+                                            >
+                                                {academicYears.length > 0 ? (
+                                                    academicYears.map(y => (
+                                                        <option key={y.id} value={y.year_name}>{y.year_name} {y.is_current ? '(CURRENT)' : ''}</option>
+                                                    ))
+                                                ) : (
+                                                    <option value="2025-2026">2025-2026 (STATIC_FALLBACK)</option>
+                                                )}
+                                            </select>
+                                            <ChevronDownIcon className="w-4 h-4 text-white/30 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Target Academic Grade</label>
+                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Target Grade</label>
                                         <div className="relative">
                                             <select
                                                 disabled={isLocked}
@@ -325,6 +394,26 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                                                 ))}
                                             </select>
                                             <ChevronDownIcon className="w-4 h-4 text-white/30 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Currency Matrix</label>
+                                        <div className="grid grid-cols-2 gap-2 p-1 bg-[#1A1D25] rounded-xl border border-white/5">
+                                            {['INR', 'USD'].map(curr => (
+                                                <button
+                                                    disabled={isLocked}
+                                                    key={curr}
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, currency: curr as CurrencyCode })}
+                                                    className={`py-2 rounded-lg text-[10px] font-black transition-all ${formData.currency === curr
+                                                        ? 'bg-primary text-white shadow-lg ring-1 ring-white/10'
+                                                        : 'text-white/20 hover:text-white/40'
+                                                        } disabled:opacity-50 uppercase tracking-widest`}
+                                                >
+                                                    {curr}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
@@ -348,12 +437,35 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                                         <p className="text-xs text-white/40 mt-1">Automatically assign this structure to new students enrolled in Grade {formData.targetGrade}.</p>
                                     </div>
                                 </div>
+
+                                {/* Template Cloning Zone */}
+                                {!isLocked && !isEditMode && templates.length > 0 && (
+                                    <div className="space-y-4 pt-4 border-t border-white/5">
+                                        <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] block ml-1">Cloning Protocol (Optional)</label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {templates.map(t => (
+                                                <button
+                                                    key={t.id}
+                                                    onClick={() => handleApplyTemplate(t)}
+                                                    className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-primary/5 hover:border-primary/30 transition-all text-left group"
+                                                >
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t.academic_year}</span>
+                                                        <SparklesIcon className="w-3 h-3 text-white/10 group-hover:text-primary transition-colors" />
+                                                    </div>
+                                                    <p className="text-xs font-bold text-white uppercase truncate">{t.name}</p>
+                                                    <p className="text-[9px] text-white/20 mt-1">{t.components?.length || 0} Components Identified</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
 
                     {/* Step 2: Ledger Nodes */}
-                    {step === 2 && (
+                    {step === 2 && !initializing && (
                         <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                                 <div>
