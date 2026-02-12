@@ -164,8 +164,14 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
     };
 
     const fetchTeachers = async () => {
-        const { data } = await supabase.rpc('get_all_teachers_for_admin');
-        if (data) setAvailableTeachers(data);
+        try {
+            const { data, error } = await supabase.rpc('get_all_teachers_for_admin');
+            if (error) throw error;
+            if (data) setAvailableTeachers(data);
+        } catch (err: any) {
+            console.error("Failed to fetch teachers:", err);
+            showToast("Unable to load faculty directory", 'error');
+        }
     };
 
     useEffect(() => {
@@ -312,24 +318,41 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                 <div className="mt-12 pt-10 border-t border-border/60 relative z-10">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-6">Structural Lead (Class Teacher)</p>
                                     {classData.teacher_name ? (
-                                        <div onClick={() => setIsAssignFacultyOpen(true)} className="flex items-center gap-5 p-5 bg-primary/[0.03] rounded-3xl border border-primary/10 group-hover:bg-primary/[0.05] transition-colors cursor-pointer hover:shadow-md">
-                                            <div className="relative">
-                                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-xl shadow-primary/20">
-                                                    {classData.teacher_name.charAt(0)}
+                                        <div onClick={() => setIsAssignFacultyOpen(true)} className="group relative cursor-pointer">
+                                            <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
+                                            <div className="relative flex items-center gap-5 p-5 bg-card border border-primary/20 rounded-3xl hover:border-primary/50 transition-all shadow-sm hover:shadow-primary/10">
+                                                <div className="relative">
+                                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-xl shadow-primary/20 ring-2 ring-white/5">
+                                                        {classData.teacher_name.charAt(0)}
+                                                    </div>
+                                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-4 border-card rounded-full shadow-lg"></div>
                                                 </div>
-                                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-4 border-card rounded-full shadow-lg"></div>
+                                                <div>
+                                                    <p className="text-lg font-black text-foreground tracking-tight group-hover:text-primary transition-colors">{classData.teacher_name}</p>
+                                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                                                        <CheckIcon className="w-3 h-3" /> Authorized Lead
+                                                    </p>
+                                                </div>
+                                                <button className="ml-auto p-3 hover:bg-primary/10 rounded-2xl text-primary transition-all">
+                                                    <EditIcon className="w-5 h-5" />
+                                                </button>
                                             </div>
-                                            <div>
-                                                <p className="text-lg font-black text-foreground tracking-tight">{classData.teacher_name}</p>
-                                                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Authorized Faculty Lead</p>
-                                            </div>
-                                            <button className="ml-auto p-3 hover:bg-primary/[0.08] rounded-2xl text-primary transition-all">
-                                                <EditIcon className="w-5 h-5" />
-                                            </button>
                                         </div>
                                     ) : (
-                                        <div onClick={() => setIsAssignFacultyOpen(true)} className="p-6 bg-amber-500/5 border-2 border-dashed border-amber-500/20 rounded-3xl text-amber-600/90 text-sm flex items-center justify-center gap-3 font-bold italic cursor-pointer hover:bg-amber-500/10 transition-colors">
-                                            <AlertTriangleIcon className="w-5 h-5 animate-bounce" /> No System Lead Assigned. Click to Assign.
+                                        <div onClick={() => setIsAssignFacultyOpen(true)} className="group relative cursor-pointer">
+                                            <div className="absolute inset-0 bg-amber-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
+                                            <div className="relative p-5 bg-card border border-amber-500/20 rounded-3xl flex items-center gap-5 hover:border-amber-500/50 transition-all shadow-sm hover:shadow-amber-500/10 dashed-border">
+                                                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner">
+                                                    <UserPlusIcon className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-black text-foreground text-sm uppercase tracking-wider group-hover:text-amber-500 transition-colors">Unassigned Position</h4>
+                                                    <p className="text-[10px] font-bold text-muted-foreground mt-1">Click to designate a faculty lead</p>
+                                                </div>
+                                                <button className="ml-auto px-4 py-2 bg-amber-500/10 text-amber-600 border border-amber-500/20 font-black text-[10px] uppercase tracking-widest rounded-xl group-hover:bg-amber-500 group-hover:text-white transition-all flex items-center gap-2">
+                                                    Assign <ChevronRightIcon className="w-3 h-3" />
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -900,7 +923,8 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                     {filteredTeachers.length === 0 && (
                                         <div className="text-center py-20 opacity-50 flex flex-col items-center">
                                             <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mb-4 text-muted-foreground"><SearchIcon className="w-8 h-8" /></div>
-                                            <p className="text-sm font-black uppercase tracking-widest">No matching faculty found</p>
+                                            <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">No faculty members found</p>
+                                            <p className="text-[10px] text-muted-foreground/60 mt-2 max-w-[200px]">Ensure staff are registered with 'Teacher' role in the Faculty Matrix.</p>
                                         </div>
                                     )}
                                 </div>

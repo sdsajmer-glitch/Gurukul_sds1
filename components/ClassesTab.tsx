@@ -418,7 +418,15 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
                 student_count: c.student_count,
                 capacity: c.capacity || 30
             }));
+
             setClasses(extended);
+
+            // Sync selected class with updated data
+            setSelectedClass(prev => {
+                if (!prev) return null;
+                const fresh = extended.find(c => c.id === prev.id);
+                return fresh ? fresh : prev;
+            });
 
             const { data: schoolData } = await supabase.from('school_admin_profiles').select('*').limit(1).single();
             if (schoolData) setSchoolProfile(schoolData as SchoolAdminProfileData);
