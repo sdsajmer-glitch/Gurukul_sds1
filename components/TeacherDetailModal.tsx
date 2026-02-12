@@ -11,7 +11,6 @@ import { BriefcaseIcon } from './icons/BriefcaseIcon';
 import { BookIcon } from './icons/BookIcon';
 import { FileTextIcon } from './icons/FileTextIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
-import { XCircleIcon } from './icons/XCircleIcon';
 import { ClockIcon } from './icons/ClockIcon';
 // Fix: Added missing CalendarIcon import to resolve "Cannot find name" errors in InfoRow usage.
 import { CalendarIcon } from './icons/CalendarIcon';
@@ -35,6 +34,8 @@ import { ActivityIcon } from './icons/ActivityIcon';
 import { ShieldAlertIcon } from './icons/ShieldAlertIcon';
 import { KeyIcon } from './icons/KeyIcon';
 import AssignSubjectModal from './teachers/AssignSubjectModal';
+import PersonalMatrix from './TeacherProfile/PersonalMatrix';
+import SecurityCommandNode from './SecurityCommandNode/SecurityCommandNode';
 
 interface TeacherDetailModalProps {
     teacher: TeacherExtended;
@@ -171,12 +172,6 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
     const [mappings, setMappings] = useState<TeacherSubjectMapping[]>([]);
     const [loadingMappings, setLoadingMappings] = useState(false);
 
-    // Mock Security Data
-    const securityLogs = [
-        { id: 1, action: 'Successful Login', location: 'Jaipur, India', device: 'Chrome / Windows', time: '2 hours ago' },
-        { id: 2, action: 'Profile Updated', location: 'Jaipur, India', device: 'Chrome / Windows', time: 'Yesterday' },
-        { id: 3, action: 'Password Changed', location: 'Admin Console', device: 'System Process', time: '3 days ago' },
-    ];
 
     useEffect(() => {
         if (!formData.employee_id) {
@@ -405,161 +400,10 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                             )}
 
                             {activeTab === 'personal' && (
-                                <motion.div
-                                    key="personal"
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.98 }}
-                                    className="max-w-6xl space-y-12 pb-20"
-                                >
-                                    {/* 1. Intelligence Intelligence Layer (Performance & Stewardship) */}
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                        <div className="md:col-span-2 p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] shadow-3xl relative overflow-hidden group hover:border-primary/30 transition-all">
-                                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000"><ChartBarIcon className="w-40 h-40" /></div>
-                                            <div className="flex flex-col h-full justify-between relative z-10">
-                                                <div>
-                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Operational Intelligence</p>
-                                                    <h4 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Teaching Load Matrix</h4>
-                                                </div>
-                                                <div className="mt-8 flex items-center gap-10">
-                                                    <div className="w-32 h-32 relative flex items-center justify-center">
-                                                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                                                            <circle cx="50" cy="50" r="40" fill="transparent" stroke="currentColor" strokeWidth="8" className="text-white/[0.03]" />
-                                                            <motion.circle
-                                                                cx="50" cy="50" r="40" fill="transparent" stroke="currentColor" strokeWidth="8"
-                                                                strokeDasharray="251.2"
-                                                                initial={{ strokeDashoffset: 251.2 }}
-                                                                animate={{ strokeDashoffset: 251.2 - (251.2 * loadPercentage / 100) }}
-                                                                className="text-primary drop-shadow-[0_0_15px_rgba(59,130,246,0.4)]"
-                                                                strokeLinecap="round"
-                                                            />
-                                                        </svg>
-                                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                            <span className="text-3xl font-serif font-black text-white">{Math.round(loadPercentage)}<span className="text-xs text-primary">%</span></span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Active Sections</span>
-                                                            <span className="text-xl font-black text-white">{mappings.length} <span className="text-[10px] opacity-20 font-serif italic">Allocated</span></span>
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Weekly Commitment</span>
-                                                            <span className="text-xl font-black text-white">{workloadHours} <span className="text-[10px] opacity-20 font-serif italic">Institutional Hrs</span></span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] shadow-3xl flex flex-col justify-between group hover:border-emerald-500/30 transition-all">
-                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Governance</p>
-                                            <div className="space-y-2">
-                                                <h5 className="text-5xl font-serif font-black text-white tracking-tighter">98<span className="text-sm opacity-20 ml-1">%</span></h5>
-                                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
-                                                    <ShieldCheckIcon className="w-3.5 h-3.5" /> Attendance Index
-                                                </p>
-                                            </div>
-                                            <div className="mt-8 pt-6 border-t border-white/5">
-                                                <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em]">Risk Status</p>
-                                                <div className="flex items-center gap-2 mt-2">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
-                                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Low Latency Risk</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] shadow-3xl flex flex-col justify-between group hover:border-violet-500/30 transition-all">
-                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Evaluation</p>
-                                            <div className="space-y-2">
-                                                <h5 className="text-5xl font-serif font-black text-white tracking-tighter">4.9<span className="text-sm opacity-20 ml-1">/5</span></h5>
-                                                <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <ActivityIcon className="w-3.5 h-3.5" /> Quality Score
-                                                </p>
-                                            </div>
-                                            <div className="mt-8 pt-6 border-t border-white/5">
-                                                <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em]">Stewardship</p>
-                                                <div className="flex items-center gap-2 mt-2">
-                                                    <div className="px-3 py-1 bg-violet-500/10 border border-violet-500/20 rounded-lg text-[8px] font-black text-violet-400 uppercase tracking-widest">Gold Tier Node</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* 2. Employment & Personnel Dossier Grid */}
-                                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-                                        <div className="xl:col-span-2 space-y-10">
-                                            <div className="p-12 bg-black/40 border border-white/5 rounded-[3.5rem] shadow-3xl relative overflow-hidden group/card backdrop-blur-3xl">
-                                                <SectionTitle title="Identity Layer" icon={<UserIcon className="w-6 h-6" />} />
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
-                                                    <InfoRow label="Full Designation" value={formData.display_name} isEditing={isEditing} required={true} onChange={v => setFormData({ ...formData, display_name: v })} icon={<UserIcon className="w-4 h-4" />} />
-                                                    <InfoRow label="Gender Protocol" value={formData.gender} isEditing={isEditing} onChange={v => setFormData({ ...formData, gender: v })} options={['Male', 'Female', 'Other']} icon={<UserIcon className="w-4 h-4" />} />
-                                                    <InfoRow label="Temporal Birth Node" value={formData.date_of_birth} isEditing={isEditing} onChange={v => setFormData({ ...formData, date_of_birth: v })} type="date" icon={<CalendarIcon className="w-4 h-4" />} />
-                                                    <InfoRow label="Primary Uplink" value={formData.phone} isEditing={isEditing} onChange={v => setFormData({ ...formData, phone: v })} icon={<PhoneIcon className="w-4 h-4" />} />
-                                                    <InfoRow label="Communication Node" value={formData.email} readOnly={true} icon={<MailIcon className="w-4 h-4" />} />
-                                                    <InfoRow label="Credential Archive" value={formData.qualification} isEditing={isEditing} onChange={v => setFormData({ ...formData, qualification: v })} icon={<BookIcon className="w-4 h-4" />} />
-                                                </div>
-                                                <div className="mt-12">
-                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
-                                                        Institutional Biography
-                                                    </p>
-                                                    {isEditing ? (
-                                                        <textarea
-                                                            value={formData.bio}
-                                                            onChange={e => setFormData({ ...formData, bio: e.target.value })}
-                                                            className="w-full p-8 bg-black/60 rounded-[2.5rem] border border-white/5 text-sm font-bold text-white focus:ring-[16px] focus:ring-primary/5 transition-all h-40 resize-none outline-none leading-relaxed shadow-inner"
-                                                            placeholder="Initialize professional introduction..."
-                                                        />
-                                                    ) : (
-                                                        <p className="text-xl font-serif font-black text-white/30 italic leading-relaxed hover:text-white/60 transition-colors cursor-default">
-                                                            {formData.bio || "DATA_GAP: Professional background not yet synchronized with the central repository."}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-8">
-                                            {/* Skills & Specialization Matrix */}
-                                            <div className="p-10 bg-white/[0.01] border border-white/5 rounded-[3rem] shadow-2xl space-y-8 group hover:bg-white/[0.03] transition-all duration-500">
-                                                <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center justify-between">
-                                                    Skill Capability Matrix
-                                                    <motion.div whileHover={{ scale: 1.2 }} className="cursor-pointer text-primary opacity-40 hover:opacity-100"><PlusIcon className="w-4 h-4" /></motion.div>
-                                                </h4>
-                                                <div className="flex flex-wrap gap-3">
-                                                    {['Advanced Pedagogy', 'Neural Networks', 'Academic Governance', 'Curriculum Design', 'Parent Relations'].map(skill => (
-                                                        <span key={skill} className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-white hover:border-primary/40 transition-all cursor-default group/tag">
-                                                            {skill}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Micro-Timeline / Activity Log */}
-                                            <div className="p-10 bg-[#0b0c10] border border-white/5 rounded-[3.5rem] shadow-3xl relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 p-8 opacity-[0.02]"><ActivityIcon className="w-24 h-24" /></div>
-                                                <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-10">Node Activity Stream</h4>
-                                                <div className="space-y-8">
-                                                    {[
-                                                        { action: 'Class Grade 12_A Logged', time: '12m ago', icon: <CheckCircleIcon className="w-3 h-3 text-emerald-500" /> },
-                                                        { action: 'Profile Manifest Updated', time: '2h ago', icon: <InfoIcon className="w-3 h-3 text-primary" /> },
-                                                        { action: 'Performance Review Completed', time: 'Yesterday', icon: <ShieldCheckIcon className="w-3 h-3 text-violet-400" /> },
-                                                    ].map((item, i) => (
-                                                        <div key={i} className="flex items-start gap-4 group/item">
-                                                            <div className="mt-1">{item.icon}</div>
-                                                            <div>
-                                                                <p className="text-[11px] font-black text-white/60 uppercase tracking-tight group-hover/item:text-white transition-colors">{item.action}</p>
-                                                                <p className="text-[9px] font-black text-white/10 uppercase tracking-widest mt-1">{item.time}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <button className="w-full mt-10 py-4 bg-white/5 border border-white/5 rounded-2xl text-[9px] font-black text-white/20 uppercase tracking-[0.3em] hover:text-white hover:bg-white/10 transition-all">View Full Analytics History</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                <PersonalMatrix
+                                    teacher={teacher}
+                                    onUpdate={onUpdate}
+                                />
                             )}
 
                             {activeTab === 'compliance' && (
@@ -948,148 +792,61 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                             )}
 
                             {activeTab === 'security' && (
-                                <motion.div
-                                    key="security"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    className="max-w-6xl space-y-12 pb-20"
-                                >
-                                    <div className="flex flex-col md:flex-row justify-between items-start gap-10">
-                                        <div className="space-y-4">
-                                            <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none">SECURITY <br /><span className="text-white/20 italic font-medium">COMMAND NODE.</span></h3>
-                                            <p className="text-white/40 font-medium font-serif italic text-lg leading-relaxed max-w-xl">Central orchestration of cryptographic access, identity verification, and multi-factor governance protocols.</p>
-                                        </div>
-                                        <div className="flex items-center gap-4 px-8 py-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                                            <ShieldCheckIcon className="w-5 h-5 text-emerald-500 animate-pulse" />
-                                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Protocol Stabile</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-                                        {/* 1. Identity & Auth Matrix */}
-                                        <div className="lg:col-span-3 space-y-8">
-                                            <div className="bg-black/60 border border-white/10 rounded-[4rem] p-12 shadow-[0_80px_160px_-40px_rgba(0,0,0,0.8)] group/sec hover:border-primary/40 transition-all relative overflow-hidden backdrop-blur-3xl">
-                                                <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover/sec:rotate-12 group-hover/sec:scale-110 transition-all duration-[2000ms]"><KeyIcon className="w-48 h-48" /></div>
-                                                <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-primary/5 blur-[100px] rounded-full pointer-events-none"></div>
-
-                                                <div className="relative z-10">
-                                                    <div className="flex items-center gap-4 mb-10">
-                                                        <div className="p-4 bg-primary/10 rounded-2xl text-primary ring-1 ring-primary/20 shadow-inner group-hover/sec:scale-110 transition-transform"><KeyIcon className="w-6 h-6" /></div>
-                                                        <h4 className="font-serif font-black text-3xl text-white uppercase tracking-tighter">Authentication Matrix</h4>
-                                                    </div>
-
-                                                    <p className="text-lg text-white/40 mb-12 leading-relaxed font-serif italic">Modify node accessibility or initiate a mandatory cryptographic reset for this institutional uplink.</p>
-
-                                                    <div className="flex flex-wrap gap-6">
-                                                        <motion.button
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                            onClick={() => setConfirmationAction({ type: 'reset_password', title: 'SECURITY_OVERRIDE_REQUIRED', message: `Proceed with sending a secure password reset link to ${teacher.email}? This action will be logged in the permanent audit.` })}
-                                                            className="px-10 py-5 bg-white/[0.03] hover:bg-white text-white/60 hover:text-black rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] transition-all border border-white/5 shadow-inner flex items-center gap-4 group/reset"
-                                                        >
-                                                            Reset Credentials <div className="w-2 h-2 rounded-full bg-primary animate-pulse group-hover/reset:bg-black"></div>
-                                                        </motion.button>
-
-                                                        <motion.button
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                            onClick={() => setConfirmationAction({ type: 'toggle_active', title: teacher.is_active ? 'REVOKE_NODE_ACCESS' : 'RESTORE_NODE_ACCESS', message: `Are you sure you want to ${teacher.is_active ? 'suspend' : 'reauthorize'} this portal immediately? All active sessions will be terminated.` })}
-                                                            className={`px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl transition-all flex items-center gap-4 ${teacher.is_active ? 'bg-red-600/10 text-red-500 border border-red-500/20 hover:bg-red-600 hover:text-white' : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white'}`}
-                                                        >
-                                                            {teacher.is_active ? <XCircleIcon className="w-5 h-5" /> : <CheckCircleIcon className="w-5 h-5" />}
-                                                            {teacher.is_active ? 'Suspend Gateway' : 'Enable Gateway'}
-                                                        </motion.button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="p-14 bg-red-600/[0.02] border border-red-600/10 rounded-[4rem] relative overflow-hidden group/offboard hover:bg-red-600/[0.04] transition-all">
-                                                <div className="absolute top-0 right-0 p-14 opacity-[0.03] group-hover/offboard:scale-110 transition-transform duration-[2000ms]"><ShieldAlertIcon className="w-56 h-56 text-red-500" /></div>
-                                                <div className="relative z-10">
-                                                    <h4 className="text-red-500 font-serif font-black text-3xl uppercase tracking-tighter flex items-center gap-5 mb-6">
-                                                        <ShieldAlertIcon className="w-8 h-8" /> Institutional Expulsion
-                                                    </h4>
-                                                    <p className="text-lg text-red-900/40 mb-10 max-w-md font-serif italic leading-relaxed">Final resignation protocols and permanent record archival. This process handles automated class and department reassignments.</p>
-                                                    <motion.button
-                                                        whileHover={{ scale: 1.05 }}
-                                                        whileTap={{ scale: 0.95 }}
-                                                        onClick={() => setIsOffboarding(true)}
-                                                        className="px-12 py-5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/20 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] transition-all"
-                                                    >
-                                                        Initiate Formal Offboarding
-                                                    </motion.button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* 2. Neural Activity Audit */}
-                                        <div className="lg:col-span-2">
-                                            <div className="bg-black/40 border border-white/5 rounded-[4rem] p-12 shadow-3xl h-full flex flex-col relative overflow-hidden backdrop-blur-3xl">
-                                                <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent pointer-events-none"></div>
-
-                                                <h4 className="font-black text-[11px] uppercase tracking-[0.5em] text-white/20 mb-14 flex items-center gap-4">
-                                                    <ActivityIcon className="w-6 h-6 text-primary/40" /> Forensic Log Audit
-                                                </h4>
-
-                                                <div className="space-y-12 flex-grow relative z-10 px-4">
-                                                    {securityLogs.map((log, idx) => (
-                                                        <motion.div
-                                                            key={log.id}
-                                                            initial={{ opacity: 0, x: -20 }}
-                                                            whileInView={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: idx * 0.1 }}
-                                                            className="relative pl-12 pb-2"
-                                                        >
-                                                            <div className="absolute left-0 top-1.5 w-3 h-3 rounded-full bg-primary shadow-[0_0_15px_#3b82f6] outline outline-4 outline-primary/10"></div>
-                                                            <div className="absolute left-[5.5px] top-6 w-[1px] h-full bg-white/5"></div>
-
-                                                            <p className="text-sm font-black text-white uppercase tracking-widest leading-none mb-3 group-hover:text-primary transition-colors">{log.action}</p>
-                                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">{log.time} — {log.device}</p>
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-3 h-[1px] bg-white/10"></div>
-                                                                <p className="text-[9px] text-white/10 font-mono tracking-tighter uppercase">{log.location}</p>
-                                                            </div>
-                                                        </motion.div>
-                                                    ))}
-                                                </div>
-
-                                                <motion.button
-                                                    whileHover={{ y: -5 }}
-                                                    className="mt-14 text-[10px] font-black uppercase tracking-[0.4em] text-primary/60 hover:text-primary transition-all flex items-center justify-center gap-4 border border-white/5 py-6 rounded-3xl bg-white/[0.02] hover:bg-primary/10 shadow-inner group/audit"
-                                                >
-                                                    <DownloadIcon className="w-5 h-5 group-hover/audit:translate-y-1 transition-transform" /> Extract Full Identity Manifest
-                                                </motion.button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                <SecurityCommandNode teacher={teacher} />
                             )}
 
                             {/* Neural Handshake / Placeholder States */}
-                            {['response', 'timetable', 'governance'].includes(activeTab) && (
+                            {['response', 'timetable', 'governance', 'compliance', 'portfolio', 'workload'].includes(activeTab) && activeTab !== 'personal' && activeTab !== 'vault' && activeTab !== 'security' && (
                                 <motion.div
                                     key={activeTab}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="h-full flex flex-col items-center justify-center py-32 text-center"
+                                    className="h-full flex flex-col items-center justify-center py-48 text-center relative overflow-hidden"
                                 >
-                                    <div className="w-32 h-32 bg-white/[0.02] rounded-[3rem] flex items-center justify-center mb-10 border-2 border-dashed border-white/5 relative group">
-                                        <div className="absolute inset-0 bg-primary/5 rounded-[3rem] animate-pulse"></div>
-                                        {activeTab === 'vault' ? <FileTextIcon className="w-12 h-12 text-primary opacity-40 group-hover:scale-110 transition-transform duration-700" /> :
-                                            activeTab === 'security' ? <ShieldCheckIcon className="w-12 h-12 text-primary opacity-40 group-hover:rotate-12 transition-transform duration-700" /> :
-                                                <ClockIcon className="w-12 h-12 text-primary opacity-40 group-hover:rotate-180 transition-transform duration-1000" />}
-                                    </div>
-                                    <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Handshake In-Progress</h3>
-                                    <p className="text-[10px] font-black text-white/20 mt-6 max-w-sm uppercase tracking-[0.4em] leading-relaxed">
-                                        SYNCHRONIZING REAL-TIME {activeTab.toUpperCase()} TELEMETRY INTO THE INSTITUTIONAL COMMAND NODE...
-                                    </p>
-                                    <div className="mt-12 flex items-center gap-6">
-                                        <div className="flex -space-x-3">
-                                            {[1, 2, 3].map(i => <div key={i} className="w-8 h-8 rounded-full bg-white/5 border-2 border-[#0d0f14] flex items-center justify-center"><div className="w-1 h-1 rounded-full bg-primary/40"></div></div>)}
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.03)_0%,transparent_70%)] pointer-events-none" />
+
+                                    <div className="relative mb-16">
+                                        <div className="w-48 h-48 bg-white/[0.01] border border-white/5 rounded-[4rem] flex items-center justify-center relative group">
+                                            <div className="absolute inset-0 bg-primary/5 rounded-[4rem] animate-pulse blur-2xl"></div>
+                                            <div className="absolute inset-0 bg-primary/10 rounded-[4rem] animate-ping opacity-20"></div>
+
+                                            <motion.div
+                                                animate={{
+                                                    rotate: [0, 360],
+                                                    scale: [1, 1.1, 1]
+                                                }}
+                                                transition={{
+                                                    duration: 10,
+                                                    repeat: Infinity,
+                                                    ease: "linear"
+                                                }}
+                                                className="absolute inset-2 border-2 border-dashed border-primary/20 rounded-[3.5rem]"
+                                            />
+
+                                            {activeTab === 'timetable' ? <ClockIcon className="w-16 h-16 text-primary shadow-3xl" /> :
+                                                activeTab === 'governance' ? <ShieldCheckIcon className="w-16 h-16 text-primary shadow-3xl" /> :
+                                                    <ActivityIcon className="w-16 h-16 text-primary shadow-3xl" />}
                                         </div>
-                                        <span className="text-[9px] font-black text-primary/40 uppercase tracking-widest">Awaiting Uplink Approval</span>
+                                    </div>
+
+                                    <div className="space-y-4 relative z-10">
+                                        <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter italic">Neural Handshake.</h3>
+                                        <p className="text-[10px] font-black text-white/20 max-w-sm mx-auto uppercase tracking-[0.5em] leading-[2]">
+                                            SYNCHRONIZING REAL-TIME {activeTab.toUpperCase()} TELEMETRY INTO THE INSTITUTIONAL COMMAND NODE...
+                                        </p>
+                                    </div>
+
+                                    <div className="mt-16 flex items-center gap-8 relative z-10">
+                                        <div className="flex -space-x-4">
+                                            {[1, 2, 3, 4].map(i => (
+                                                <div key={i} className="w-10 h-10 rounded-full bg-black border-2 border-white/5 flex items-center justify-center shadow-2xl">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-pulse" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="h-6 w-px bg-white/5" />
+                                        <span className="text-[9px] font-black text-primary/60 uppercase tracking-[0.3em] animate-pulse italic">Awaiting Uplink Approval...</span>
                                     </div>
                                 </motion.div>
                             )}
