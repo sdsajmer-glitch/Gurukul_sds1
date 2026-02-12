@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { TeacherExtended } from '../../types';
-import PersonalSummaryStrip from './PersonalSummaryStrip';
-import BioRegistry from './BioRegistry';
-import ContactMatrix from './ContactMatrix';
-import { ChevronDownIcon } from '../icons/ChevronDownIcon';
-import { ActivityIcon } from '../icons/ActivityIcon';
-import { UserIcon } from '../icons/UserIcon';
-import { EditIcon } from '../icons/EditIcon';
+import PersonalIdentityHeader from './PersonalIdentityHeader';
+import PersonalKPIStrip from './PersonalKPIStrip';
+import BiologicalRegistry from './BiologicalRegistry';
+import LiaisonConnectivity from './LiaisonConnectivity';
+import GovernanceSnapshot from './GovernanceSnapshot';
 
 interface PersonalMatrixProps {
     teacher: TeacherExtended;
@@ -15,99 +13,97 @@ interface PersonalMatrixProps {
 }
 
 const PersonalMatrix: React.FC<PersonalMatrixProps> = ({ teacher, onUpdate }) => {
-    const [isMobileActivityOpen, setIsMobileActivityOpen] = useState(false);
-
     return (
         <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col gap-8 w-full max-w-[1440px] mx-auto pb-32"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="w-full max-w-[1440px] mx-auto space-y-8 pb-32"
         >
-            {/* 🏫 SECTION HEADER LAYER */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 px-2">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-3 opacity-40">
-                        <div className="w-8 h-px bg-primary/40" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Registry Profile</span>
-                    </div>
-                    <h2 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Personal <span className="text-white/20 italic font-medium">Matrix.</span></h2>
-                    <p className="text-[11px] font-bold text-white/30 uppercase tracking-[0.2em]">Validated Biological & Liaison Identification Core</p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] bg-white/[0.02] px-4 py-2 rounded-xl border border-white/5 hidden md:block">Editable by: Registry Office</p>
-                    <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="px-8 py-4 bg-white text-black font-black text-[10px] uppercase tracking-[0.3em] rounded-xl shadow-lg transition-all flex items-center gap-3 group/btn"
-                    >
-                        <EditIcon className="w-4 h-4" /> Edit Attributes
-                    </motion.button>
-                </div>
-            </div>
-
-            {/* 🏫 SUMMARY STRIP (Horizontal) */}
-            <PersonalSummaryStrip
-                age={34} // Calculated from DOB usually
-                experience={12}
-                bloodGroup={teacher.details?.blood_group || 'O+'}
-                gender={teacher.details?.gender || 'Male'}
-                religion={teacher.details?.religion || 'General'}
+            {/* 🌑 LAYER 1: IDENTITY HEADER */}
+            <PersonalIdentityHeader
+                name={teacher.display_name}
+                facultyCode={teacher.employee_id || `FAC-${teacher.id.slice(0, 4)}`}
+                status={teacher.is_active ? 'Active Node' : 'Suspended'}
+                avatarUrl={teacher.details?.profile_picture_url}
             />
 
-            {/* 🏫 MAIN OPERATIONAL GRID (8/4 Split) */}
-            <div className="grid grid-cols-12 gap-8 items-start px-1">
+            {/* 🌑 LAYER 2: KPI INTELLIGENCE STRIP */}
+            <PersonalKPIStrip
+                age={34}
+                tenure={12}
+                role={teacher.details?.subject || 'Lead Faculty'}
+                authority="Admin Master"
+            />
 
-                {/* 8-COLUMN MAIN CONTENT (70% weight approx) */}
+            {/* 🌑 LAYER 3 & 4: MAIN CONTENT GRID (12 Cols) */}
+            <div className="grid grid-cols-12 gap-8 items-start">
+
+                {/* 🏫 MAIN CONTENT (8 Cols - 60% approx) */}
                 <div className="col-span-12 xl:col-span-8 space-y-8">
 
-                    {/* Layer 2: Bio Registry (Identity Core) */}
-                    <div className="transition-all duration-200 hover:translate-y-[-4px]">
-                        <BioRegistry
+                    {/* Biological Registry Card */}
+                    <div className="transition-all duration-300 hover:translate-y-[-4px]">
+                        <BiologicalRegistry
                             firstName={teacher.display_name.split(' ')[0]}
                             lastName={teacher.display_name.split(' ')[1] || ''}
                             dob={teacher.details?.date_of_birth || '1990-01-01'}
                             nationality="Indian"
                             languages="English, Hindi, Sanskrit"
+                            gender={teacher.details?.gender || 'Male'}
+                            bloodGroup={teacher.details?.blood_group || 'O+'}
+                            religion={teacher.details?.religion || 'General'}
                         />
                     </div>
 
-                    {/* Layer 3: Contact Matrix (Liaison Connectivity) */}
-                    <div className="transition-all duration-200 hover:translate-y-[-4px]">
-                        <ContactMatrix
+                    {/* Liaison Connectivity Card */}
+                    <div className="transition-all duration-300 hover:translate-y-[-4px]">
+                        <LiaisonConnectivity
                             email={teacher.email}
                             phone={teacher.details?.phone_number || 'DE-NO-PHONE'}
                             address={teacher.details?.address || 'NO_PHYSICAL_LOCATION_SECURED'}
                             emergencyContact="S. Sharma"
                             emergencyPhone="+91 9988776655"
+                            prefCommunication="Direct Mail"
                         />
                     </div>
                 </div>
 
-                {/* 4-COLUMN AUXILIARY PANEL (30% weight approx) */}
-                <div className="hidden xl:block xl:col-span-4 h-full">
-                    {/* Reuse the Security Timeline or a specialized Activity Log for Profile Changes if needed */}
-                    <div className="sticky top-8 h-[calc(100vh-280px)] min-h-[680px] transition-all duration-200 hover:translate-y-[-4px]">
-                        <div className="bg-[#14161c] border border-white/5 rounded-2xl h-full flex flex-col shadow-sm items-center justify-center p-12 text-center space-y-6">
-                            <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center shadow-inner">
-                                <ActivityIcon className="w-8 h-8 opacity-20" />
-                            </div>
-                            <h4 className="text-[14px] font-bold text-white/40 uppercase tracking-widest">Audit logs loading...</h4>
-                            <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.4em] leading-relaxed">
-                                SECURING IMMUTABLE TRACE OF PROFILE ATTRIBUTE MUTATIONS...
+                {/* 🏫 SECONDARY PANEL (4 Cols - 40% approx) */}
+                <div className="col-span-12 xl:col-span-4 h-full">
+                    <div className="sticky top-8 space-y-8">
+                        <div className="transition-all duration-300 hover:translate-y-[-4px]">
+                            <GovernanceSnapshot
+                                lastModified="Today, 14:20"
+                                complianceStatus="CleanNode"
+                                securityLevel="Tier-1 Alpha"
+                                attendanceTrend="98.5% Stable"
+                            />
+                        </div>
+
+                        {/* Additional Info / Institutional Notes */}
+                        <div className="p-8 bg-primary/[0.02] border border-primary/10 rounded-2xl space-y-4">
+                            <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Institutional Notes</h4>
+                            <p className="text-[11px] font-medium text-white/30 leading-relaxed italic">
+                                "Subject node exhibits exceptional pedagogical stability and consistent institutional contribution across multi-department grids."
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Compliance Footer Metadata */}
-            <div className="flex items-center justify-between px-6 opacity-20 pt-8 border-t border-white/5">
-                <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">Matrix ID: {teacher.id.slice(0, 16).toUpperCase()}</p>
+            {/* 🌑 COMPLIANCE FOOTER */}
+            <div className="flex flex-col md:flex-row items-center justify-between px-6 pt-10 border-t border-white/5 gap-6 opacity-30 group">
+                <div className="flex items-center gap-6">
+                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Global Matrix ID: {teacher.id.split('-')[0].toUpperCase()}-NX-01</p>
+                    <div className="w-px h-4 bg-white/10 hidden md:block" />
+                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Data Policy: GDPR-SEC-ALPHA</p>
+                </div>
                 <div className="flex gap-10">
-                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">DATA PROTECTION: ENABLED</p>
-                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">Node Signature: REGISTRY-SEC-01</p>
+                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Security Signature: {teacher.id.slice(0, 8).toUpperCase()}</p>
+                    <div className="flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                        <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Synchronized</p>
+                    </div>
                 </div>
             </div>
         </motion.div>
