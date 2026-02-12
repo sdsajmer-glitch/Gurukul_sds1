@@ -329,6 +329,10 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                                 <span className={`px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border backdrop-blur-md shadow-2xl ${teacher.details?.employment_status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
                                     {teacher.details?.employment_status || 'PROVISIONAL'}
                                 </span>
+                                <div className="flex items-center gap-2 px-3 py-1 bg-white/[0.02] border border-white/5 rounded-lg">
+                                    <div className="w-1 h-1 rounded-full bg-primary animate-pulse"></div>
+                                    <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">System Sync Active</span>
+                                </div>
                             </div>
                             <p className="text-[11px] font-black text-white/40 uppercase tracking-[0.4em] flex items-center gap-4">
                                 <div className="p-1 px-3 bg-primary/10 rounded-lg text-primary text-[9px] font-black ring-1 ring-primary/20">SENIOR FACULTY</div>
@@ -403,77 +407,156 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                             {activeTab === 'personal' && (
                                 <motion.div
                                     key="personal"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="max-w-4xl space-y-12"
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.98 }}
+                                    className="max-w-6xl space-y-12 pb-20"
                                 >
-                                    {/* Institutional Control Stats */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                                        <div className="p-8 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-[2.5rem] relative overflow-hidden group shadow-2xl">
-                                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 blur-3xl rounded-full group-hover:bg-primary/20 transition-all"></div>
-                                            <p className="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-4">Profile Completion</p>
-                                            <div className="flex items-end gap-3">
-                                                <h5 className="text-4xl font-serif font-black text-white leading-none">88<span className="text-sm font-sans text-primary/40 pb-1 ml-1">%</span></h5>
-                                                <div className="flex-grow h-1.5 bg-white/5 rounded-full overflow-hidden mb-1 relative">
-                                                    <div className="absolute inset-0 bg-primary w-[88%] shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                                    {/* 1. Intelligence Intelligence Layer (Performance & Stewardship) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                        <div className="md:col-span-2 p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] shadow-3xl relative overflow-hidden group hover:border-primary/30 transition-all">
+                                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000"><ChartBarIcon className="w-40 h-40" /></div>
+                                            <div className="flex flex-col h-full justify-between relative z-10">
+                                                <div>
+                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Operational Intelligence</p>
+                                                    <h4 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Teaching Load Matrix</h4>
+                                                </div>
+                                                <div className="mt-8 flex items-center gap-10">
+                                                    <div className="w-32 h-32 relative flex items-center justify-center">
+                                                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                                            <circle cx="50" cy="50" r="40" fill="transparent" stroke="currentColor" strokeWidth="8" className="text-white/[0.03]" />
+                                                            <motion.circle
+                                                                cx="50" cy="50" r="40" fill="transparent" stroke="currentColor" strokeWidth="8"
+                                                                strokeDasharray="251.2"
+                                                                initial={{ strokeDashoffset: 251.2 }}
+                                                                animate={{ strokeDashoffset: 251.2 - (251.2 * loadPercentage / 100) }}
+                                                                className="text-primary drop-shadow-[0_0_15px_rgba(59,130,246,0.4)]"
+                                                                strokeLinecap="round"
+                                                            />
+                                                        </svg>
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                            <span className="text-3xl font-serif font-black text-white">{Math.round(loadPercentage)}<span className="text-xs text-primary">%</span></span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Active Sections</span>
+                                                            <span className="text-xl font-black text-white">{mappings.length} <span className="text-[10px] opacity-20 font-serif italic">Allocated</span></span>
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Weekly Commitment</span>
+                                                            <span className="text-xl font-black text-white">{workloadHours} <span className="text-[10px] opacity-20 font-serif italic">Institutional Hrs</span></span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] relative overflow-hidden group shadow-2xl hover:border-emerald-500/30 transition-all">
-                                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 blur-3xl rounded-full group-hover:bg-emerald-500/20 transition-all"></div>
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Verification Status</p>
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner">
-                                                    <ShieldCheckIcon className="w-6 h-6" />
+
+                                        <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] shadow-3xl flex flex-col justify-between group hover:border-emerald-500/30 transition-all">
+                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Governance</p>
+                                            <div className="space-y-2">
+                                                <h5 className="text-5xl font-serif font-black text-white tracking-tighter">98<span className="text-sm opacity-20 ml-1">%</span></h5>
+                                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                                                    <ShieldCheckIcon className="w-3.5 h-3.5" /> Attendance Index
+                                                </p>
+                                            </div>
+                                            <div className="mt-8 pt-6 border-t border-white/5">
+                                                <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em]">Risk Status</p>
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
+                                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Low Latency Risk</span>
                                                 </div>
-                                                <h5 className="text-xl font-serif font-black text-emerald-500 uppercase tracking-tighter">Verified</h5>
                                             </div>
                                         </div>
-                                        <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] relative overflow-hidden group shadow-2xl hover:border-violet-500/30 transition-all">
-                                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-violet-500/10 blur-3xl rounded-full group-hover:bg-violet-500/20 transition-all"></div>
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Faculty Index (FPI)</p>
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-2xl bg-violet-500/10 flex items-center justify-center text-violet-400 shadow-inner">
-                                                    <ChartBarIcon className="w-6 h-6" />
+
+                                        <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] shadow-3xl flex flex-col justify-between group hover:border-violet-500/30 transition-all">
+                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Evaluation</p>
+                                            <div className="space-y-2">
+                                                <h5 className="text-5xl font-serif font-black text-white tracking-tighter">4.9<span className="text-sm opacity-20 ml-1">/5</span></h5>
+                                                <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
+                                                    <ActivityIcon className="w-3.5 h-3.5" /> Quality Score
+                                                </p>
+                                            </div>
+                                            <div className="mt-8 pt-6 border-t border-white/5">
+                                                <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em]">Stewardship</p>
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <div className="px-3 py-1 bg-violet-500/10 border border-violet-500/20 rounded-lg text-[8px] font-black text-violet-400 uppercase tracking-widest">Gold Tier Node</div>
                                                 </div>
-                                                <h5 className="text-2xl font-serif font-black text-white uppercase tracking-tighter">9.2<span className="text-xs font-sans text-white/20 ml-1">/ 10</span></h5>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <SectionTitle
-                                        title="Personal Information"
-                                        icon={<UserIcon className="w-6 h-6" />}
-                                    />
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
-                                        <InfoRow label="Full Name" value={formData.display_name} isEditing={isEditing} required={true} onChange={v => setFormData({ ...formData, display_name: v })} icon={<UserIcon className="w-4 h-4" />} />
-                                        <InfoRow label="Gender" value={formData.gender} isEditing={isEditing} onChange={v => setFormData({ ...formData, gender: v })} options={['Male', 'Female', 'Other']} icon={<UserIcon className="w-4 h-4" />} />
-                                        <InfoRow label="Date of Birth" value={formData.date_of_birth} isEditing={isEditing} onChange={v => setFormData({ ...formData, date_of_birth: v })} type="date" icon={<CalendarIcon className="w-4 h-4" />} />
-                                        <InfoRow label="Contact Phone" value={formData.phone} isEditing={isEditing} onChange={v => setFormData({ ...formData, phone: v })} icon={<PhoneIcon className="w-4 h-4" />} />
-                                        <InfoRow label="Email Address" value={formData.email} readOnly={true} icon={<MailIcon className="w-4 h-4" />} />
-                                        <InfoRow label="Primary Qualification" value={formData.qualification} isEditing={isEditing} onChange={v => setFormData({ ...formData, qualification: v })} icon={<BookIcon className="w-4 h-4" />} />
-
-                                        <div className="col-span-full pt-12">
-                                            <div className="flex items-center gap-4 mb-6 ml-1">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_#3b82f6]"></div>
-                                                <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em]">Professional Biography</p>
-                                            </div>
-                                            {isEditing ? (
-                                                <textarea
-                                                    value={formData.bio}
-                                                    onChange={e => setFormData({ ...formData, bio: e.target.value })}
-                                                    className="w-full p-8 bg-black/40 rounded-[2.5rem] border border-white/5 text-sm font-bold text-white focus:ring-[16px] focus:ring-primary/5 transition-all h-48 resize-none outline-none leading-relaxed placeholder:text-white/5 shadow-inner"
-                                                    placeholder="Curate faculty introduction..."
-                                                />
-                                            ) : (
-                                                <div className="p-10 bg-[#0d0f14] rounded-[2.5rem] border border-white/5 shadow-2xl text-lg leading-loose text-white/40 font-medium font-serif italic relative overflow-hidden group">
-                                                    <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform duration-1000">
-                                                        <FileTextIcon className="w-32 h-32" />
-                                                    </div>
-                                                    {formData.bio || "DATA_MISSING: Biography has not been archived."}
+                                    {/* 2. Employment & Personnel Dossier Grid */}
+                                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+                                        <div className="xl:col-span-2 space-y-10">
+                                            <div className="p-12 bg-black/40 border border-white/5 rounded-[3.5rem] shadow-3xl relative overflow-hidden group/card backdrop-blur-3xl">
+                                                <SectionTitle title="Identity Layer" icon={<UserIcon className="w-6 h-6" />} />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
+                                                    <InfoRow label="Full Designation" value={formData.display_name} isEditing={isEditing} required={true} onChange={v => setFormData({ ...formData, display_name: v })} icon={<UserIcon className="w-4 h-4" />} />
+                                                    <InfoRow label="Gender Protocol" value={formData.gender} isEditing={isEditing} onChange={v => setFormData({ ...formData, gender: v })} options={['Male', 'Female', 'Other']} icon={<UserIcon className="w-4 h-4" />} />
+                                                    <InfoRow label="Temporal Birth Node" value={formData.date_of_birth} isEditing={isEditing} onChange={v => setFormData({ ...formData, date_of_birth: v })} type="date" icon={<CalendarIcon className="w-4 h-4" />} />
+                                                    <InfoRow label="Primary Uplink" value={formData.phone} isEditing={isEditing} onChange={v => setFormData({ ...formData, phone: v })} icon={<PhoneIcon className="w-4 h-4" />} />
+                                                    <InfoRow label="Communication Node" value={formData.email} readOnly={true} icon={<MailIcon className="w-4 h-4" />} />
+                                                    <InfoRow label="Credential Archive" value={formData.qualification} isEditing={isEditing} onChange={v => setFormData({ ...formData, qualification: v })} icon={<BookIcon className="w-4 h-4" />} />
                                                 </div>
-                                            )}
+                                                <div className="mt-12">
+                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
+                                                        Institutional Biography
+                                                    </p>
+                                                    {isEditing ? (
+                                                        <textarea
+                                                            value={formData.bio}
+                                                            onChange={e => setFormData({ ...formData, bio: e.target.value })}
+                                                            className="w-full p-8 bg-black/60 rounded-[2.5rem] border border-white/5 text-sm font-bold text-white focus:ring-[16px] focus:ring-primary/5 transition-all h-40 resize-none outline-none leading-relaxed shadow-inner"
+                                                            placeholder="Initialize professional introduction..."
+                                                        />
+                                                    ) : (
+                                                        <p className="text-xl font-serif font-black text-white/30 italic leading-relaxed hover:text-white/60 transition-colors cursor-default">
+                                                            {formData.bio || "DATA_GAP: Professional background not yet synchronized with the central repository."}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-8">
+                                            {/* Skills & Specialization Matrix */}
+                                            <div className="p-10 bg-white/[0.01] border border-white/5 rounded-[3rem] shadow-2xl space-y-8 group hover:bg-white/[0.03] transition-all duration-500">
+                                                <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center justify-between">
+                                                    Skill Capability Matrix
+                                                    <motion.div whileHover={{ scale: 1.2 }} className="cursor-pointer text-primary opacity-40 hover:opacity-100"><PlusIcon className="w-4 h-4" /></motion.div>
+                                                </h4>
+                                                <div className="flex flex-wrap gap-3">
+                                                    {['Advanced Pedagogy', 'Neural Networks', 'Academic Governance', 'Curriculum Design', 'Parent Relations'].map(skill => (
+                                                        <span key={skill} className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-white hover:border-primary/40 transition-all cursor-default group/tag">
+                                                            {skill}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Micro-Timeline / Activity Log */}
+                                            <div className="p-10 bg-[#0b0c10] border border-white/5 rounded-[3.5rem] shadow-3xl relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-8 opacity-[0.02]"><ActivityIcon className="w-24 h-24" /></div>
+                                                <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-10">Node Activity Stream</h4>
+                                                <div className="space-y-8">
+                                                    {[
+                                                        { action: 'Class Grade 12_A Logged', time: '12m ago', icon: <CheckCircleIcon className="w-3 h-3 text-emerald-500" /> },
+                                                        { action: 'Profile Manifest Updated', time: '2h ago', icon: <InfoIcon className="w-3 h-3 text-primary" /> },
+                                                        { action: 'Performance Review Completed', time: 'Yesterday', icon: <ShieldCheckIcon className="w-3 h-3 text-violet-400" /> },
+                                                    ].map((item, i) => (
+                                                        <div key={i} className="flex items-start gap-4 group/item">
+                                                            <div className="mt-1">{item.icon}</div>
+                                                            <div>
+                                                                <p className="text-[11px] font-black text-white/60 uppercase tracking-tight group-hover/item:text-white transition-colors">{item.action}</p>
+                                                                <p className="text-[9px] font-black text-white/10 uppercase tracking-widest mt-1">{item.time}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <button className="w-full mt-10 py-4 bg-white/5 border border-white/5 rounded-2xl text-[9px] font-black text-white/20 uppercase tracking-[0.3em] hover:text-white hover:bg-white/10 transition-all">View Full Analytics History</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -482,28 +565,85 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                             {activeTab === 'compliance' && (
                                 <motion.div
                                     key="compliance"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="max-w-4xl space-y-12"
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    className="max-w-6xl space-y-12 pb-20"
                                 >
-                                    <SectionTitle title="Work & Compliance Dossier" icon={<BriefcaseIcon className="w-6 h-6" />} />
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
-                                        <InfoRow label="Institutional ID" value={formData.employee_id} isEditing={false} readOnly={true} icon={<KeyIcon className="w-4 h-4" />} />
-                                        <InfoRow label="Active Faculty Node" value={formData.department} isEditing={isEditing} onChange={v => setFormData({ ...formData, department: v })} icon={<GridIcon className="w-4 h-4" />} />
-                                        <InfoRow label="System Designation" value={formData.designation} isEditing={isEditing} onChange={v => setFormData({ ...formData, designation: v })} icon={<CheckCircleIcon className="w-4 h-4" />} />
-                                        <InfoRow label="Registry Date" value={formData.date_of_joining} isEditing={isEditing} onChange={v => setFormData({ ...formData, date_of_joining: v })} type="date" icon={<CalendarIcon className="w-4 h-4" />} />
-                                        <InfoRow label="Governance Type" value={formData.employment_type} isEditing={isEditing} onChange={v => setFormData({ ...formData, employment_type: v })} options={['Full-time', 'Part-time', 'Contract']} icon={<ClockIcon className="w-4 h-4" />} />
-                                        <InfoRow label="Node Status" value={formData.employment_status} isEditing={isEditing} onChange={v => setFormData({ ...formData, employment_status: v })} options={['Active', 'Pending Verification', 'On Leave', 'Inactive']} icon={<ShieldCheckIcon className="w-4 h-4" />} />
-                                    </div>
-                                    <div className="p-10 bg-primary/[0.02] border border-white/5 rounded-[3rem] flex items-start gap-8 relative overflow-hidden group shadow-2xl">
-                                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:rotate-12 transition-transform duration-1000"><ShieldCheckIcon className="w-24 h-24" /></div>
-                                        <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-2xl relative z-10">
-                                            <InfoIcon className="w-6 h-6" />
+                                    <div className="flex flex-col md:flex-row justify-between items-start gap-10">
+                                        <div className="space-y-4">
+                                            <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none">WORK & <br /><span className="text-white/20 italic font-medium">COMPLIANCE DOSSIER.</span></h3>
+                                            <p className="text-white/40 font-medium font-serif italic text-lg leading-relaxed max-w-xl">Governance layer managing institutional employment contracts, regulatory compliance, and tenure registries.</p>
                                         </div>
-                                        <div className="relative z-10">
-                                            <p className="text-xs font-black text-white/60 uppercase tracking-widest mb-1">Institutional Notice</p>
-                                            <p className="text-sm text-white/30 leading-relaxed max-w-md">Financial data and background check renewals are managed in the HR & Compliance module by authorized personnel only.</p>
+                                        <div className="flex items-center gap-6 p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] shadow-inner group">
+                                            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_#10b981]"></div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Node Integrity Status</p>
+                                                <p className="text-xs font-black text-white uppercase tracking-widest mt-1">COMPLIANCE_BYPASS_STABLE</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                                        <div className="lg:col-span-2 p-14 bg-black/40 border border-white/5 rounded-[4rem] shadow-3xl relative overflow-hidden group/card backdrop-blur-3xl">
+                                            <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.01] to-transparent pointer-events-none"></div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-4">
+                                                <InfoRow label="Institutional Identity" value={formData.employee_id} isEditing={false} readOnly={true} icon={<KeyIcon className="w-4 h-4" />} />
+                                                <InfoRow label="Operational Deployment" value={formData.department} isEditing={isEditing} onChange={v => setFormData({ ...formData, department: v })} icon={<GridIcon className="w-4 h-4" />} />
+                                                <InfoRow label="Structural Designation" value={formData.designation} isEditing={isEditing} onChange={v => setFormData({ ...formData, designation: v })} icon={<CheckCircleIcon className="w-4 h-4" />} />
+                                                <InfoRow label="Registry Timestamp" value={formData.date_of_joining} isEditing={isEditing} onChange={v => setFormData({ ...formData, date_of_joining: v })} type="date" icon={<CalendarIcon className="w-4 h-4" />} />
+                                                <InfoRow label="Engagement Protocol" value={formData.employment_type || 'Full-time'} isEditing={isEditing} onChange={v => setFormData({ ...formData, employment_type: v })} options={['Full-time', 'Part-time', 'Contract']} icon={<ClockIcon className="w-4 h-4" />} />
+                                                <InfoRow label="Security Classification" value={formData.employment_status} isEditing={isEditing} onChange={v => setFormData({ ...formData, employment_status: v })} options={['Active', 'Pending Verification', 'On Leave', 'Inactive']} icon={<ShieldCheckIcon className="w-4 h-4" />} />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-8">
+                                            {/* Tenure Intelligence */}
+                                            <div className="p-10 bg-indigo-500/[0.03] border border-indigo-500/20 rounded-[3.5rem] shadow-2xl space-y-6 group">
+                                                <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
+                                                    <ClockIcon className="w-4 h-4" /> Tenure Registry
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    <h5 className="text-4xl font-serif font-black text-white tracking-tighter">2.4<span className="text-sm font-sans text-indigo-400/40 ml-1 pb-1 italic">Years</span></h5>
+                                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Aggregate Institutional Service</p>
+                                                </div>
+                                                <div className="pt-6 border-t border-white/5">
+                                                    <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest mb-3">
+                                                        <span className="text-white/20">Retention Index</span>
+                                                        <span className="text-indigo-400">92% Alpha</span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden shadow-inner">
+                                                        <div className="h-full bg-indigo-500 w-[92%] shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Compliance Action Panel */}
+                                            <div className="p-10 bg-white/[0.01] border border-white/5 rounded-[3.5rem] shadow-3xl text-center space-y-6 group transition-all">
+                                                <div className="w-16 h-16 bg-white/[0.03] border border-white/10 rounded-3xl flex items-center justify-center mx-auto text-white/10 group-hover:text-primary group-hover:border-primary/30 transition-all duration-700 shadow-inner">
+                                                    <ShieldCheckIcon className="w-8 h-8" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-lg font-serif font-black text-white uppercase tracking-tight">Governance Sync</h4>
+                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mt-2">Force re-evaluation of compliance artifacts.</p>
+                                                </div>
+                                                <button className="w-full py-4 bg-white/5 border border-white/5 rounded-2xl text-[9px] font-black text-white/40 uppercase tracking-[0.3em] hover:text-white hover:bg-white/10 transition-all active:scale-95">Initialize Audit Handshake</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Compliance Notice Module */}
+                                    <div className="p-14 bg-amber-500/[0.02] border border-amber-500/10 rounded-[4.5rem] flex items-start gap-12 relative overflow-hidden group shadow-3xl">
+                                        <div className="absolute top-0 right-0 p-14 opacity-[0.02] group-hover:scale-125 transition-all duration-[2000ms]"><ShieldAlertIcon className="w-64 h-64 text-amber-500" /></div>
+                                        <div className="p-6 bg-amber-500/10 rounded-3xl text-amber-500 shadow-2xl ring-1 ring-amber-500/20 group-hover:rotate-12 transition-all duration-1000">
+                                            <InfoIcon className="w-8 h-8" />
+                                        </div>
+                                        <div className="relative z-10 max-w-2xl space-y-4">
+                                            <p className="text-[11px] font-black text-amber-500 uppercase tracking-[0.5em]">Institutional Compliance Protocol</p>
+                                            <p className="text-xl font-serif font-black text-white tracking-tight leading-relaxed">
+                                                Financial disclosure registries, biometric access logs, and background forensic verification records are managed exclusively within the Central HR Authority Terminal.
+                                            </p>
+                                            <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest font-mono">AUTHORIZED_ACCESS_REQUIRED • REGISTRY_SYNC_V25.0</p>
                                         </div>
                                     </div>
                                 </motion.div>
