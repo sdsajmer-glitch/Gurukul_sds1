@@ -49,16 +49,21 @@ interface ClassWorkspaceProps {
 
 type TabType = 'overview' | 'students' | 'teachers' | 'subjects' | 'timetable' | 'analytics' | 'docs' | 'activity';
 
-const TabButton: React.FC<{ id: TabType, label: string, icon: React.ReactNode, active: boolean, onClick: (id: TabType) => void }> = ({ id, label, icon, active, onClick }) => (
+const TabButton: React.FC<{ id: TabType, label: string, icon: React.ReactNode, active: boolean, onClick: (id: TabType) => void, restricted?: boolean }> = ({ id, label, icon, active, onClick, restricted }) => (
     <motion.button
-        onClick={() => onClick(id)}
-        whileHover={{ x: 5, backgroundColor: "rgba(255, 255, 255, 0.03)" }}
-        whileTap={{ scale: 0.98 }}
+        onClick={() => !restricted && onClick(id)}
+        whileHover={!restricted ? { x: 5, backgroundColor: "rgba(255, 255, 255, 0.03)" } : {}}
+        whileTap={!restricted ? { scale: 0.98 } : {}}
         className={`relative w-full flex items-center gap-4 px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap overflow-hidden group ${active
             ? 'text-primary'
-            : 'text-muted-foreground hover:text-foreground'
+            : restricted ? 'text-muted-foreground/20 cursor-not-allowed' : 'text-muted-foreground hover:text-foreground'
             }`}
     >
+        {restricted && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-40 group-hover:opacity-100 transition-opacity">
+                <ShieldCheckIcon className="w-3 h-3 text-muted-foreground" />
+            </div>
+        )}
         {active && (
             <motion.div
                 layoutId="activeTabIndicator"
@@ -74,6 +79,13 @@ const TabButton: React.FC<{ id: TabType, label: string, icon: React.ReactNode, a
         <span className="relative z-10">{label}</span>
         {active && (
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50" />
+        )}
+        {restricted && (
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-end px-4 pointer-events-none">
+                <div className="bg-background/80 p-1.5 rounded-lg border border-white/10 shadow-xl scale-75">
+                    <ShieldCheckIcon className="w-3 h-3 text-muted-foreground/60" />
+                </div>
+            </div>
         )}
     </motion.button>
 );
@@ -157,6 +169,26 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
         girls: students.filter(s => s.gender === 'Female').length,
         unspecified: students.filter(s => s.gender !== 'Male' && s.gender !== 'Female').length
     }), [students]);
+
+    // Operational Readiness Logic
+    const readiness = useMemo(() => {
+        const hasLead = !!classData.teacher_name;
+        const hasSubjects = subjects.length > 0;
+        const subjectsAssigned = hasSubjects && subjects.every(s => !!s.teacher_name);
+
+        // Progress steps
+        const steps = [
+            { id: 1, label: 'Assign Lead', completed: hasLead, group: 'leadership' },
+            { id: 2, label: 'Map Subjects', completed: hasSubjects, group: 'curriculum' },
+            { id: 3, label: 'Assign Faculty', completed: subjectsAssigned, group: 'instruction' },
+            { id: 4, label: 'Sync Timetable', completed: false, group: 'temporal' } // Future logic
+        ];
+
+        const completedCount = steps.filter(s => s.completed).length;
+        const percentage = Math.round((completedCount / steps.length) * 100);
+
+        return { percentage, steps, hasLead, hasSubjects, subjectsAssigned };
+    }, [classData, subjects]);
 
     // Toast State
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; visible: boolean }>({ message: '', type: 'info', visible: false });
@@ -858,6 +890,38 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-10"
                     >
+                        {/* Operational Readiness Stepper */}
+                        <div className="bg-card/30 backdrop-blur-sm border border-white/5 rounded-[2rem] p-6 mb-8">
+                            <div className="flex justify-between items-center mb-6">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">Operational Readiness Protocol</h4>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">{readiness.percentage}% READY</span>
+                                    <div className="w-32 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${readiness.percentage}%` }}
+                                            className="h-full bg-primary"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-4 gap-4">
+                                {readiness.steps.map((step, idx) => (
+                                    <div key={step.id} className="relative">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${step.completed ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/20 text-muted-foreground border-white/5'}`}>
+                                                {step.completed ? <CheckIcon className="w-4 h-4" /> : step.id}
+                                            </div>
+                                            <div className="flex-grow">
+                                                <p className={`text-[9px] font-black uppercase tracking-widest ${step.completed ? 'text-foreground' : 'text-muted-foreground/40'}`}>{step.label}</p>
+                                                <div className={`h-0.5 mt-2 rounded-full ${step.completed ? 'bg-primary/40' : 'bg-white/5'}`}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Header Area */}
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none"></div>
@@ -866,7 +930,12 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                     <TeacherIcon className="w-8 h-8" />
                                 </div>
                                 <div>
-                                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase italic">Faculty Matrix</h3>
+                                    <div className="flex items-center gap-3">
+                                        <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase italic">Faculty Matrix</h3>
+                                        <span className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-black rounded-lg border border-primary/20 animate-pulse">
+                                            {readiness.percentage}% COMPLETE
+                                        </span>
+                                    </div>
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1 opacity-60">Authorized instructional leadership & pedagogical assignments.</p>
                                 </div>
                             </div>
@@ -895,7 +964,14 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-transparent opacity-30"></div>
                                 <div className="flex justify-between items-center mb-10 relative z-10">
                                     <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">Class Operational Lead</h4>
-                                    {classData.teacher_name && <ShieldCheckIcon className="w-5 h-5 text-emerald-500 shadow-emerald-500/20" />}
+                                    {classData.teacher_name ? (
+                                        <ShieldCheckIcon className="w-5 h-5 text-emerald-500 shadow-emerald-500/20" />
+                                    ) : (
+                                        <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-2 py-1 rounded-lg">
+                                            <SparklesIcon className="w-3 h-3 text-primary animate-pulse" />
+                                            <span className="text-[8px] font-black text-primary uppercase">AI Suggested</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex-grow flex flex-col justify-center items-center relative z-10">
@@ -957,12 +1033,20 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60 mb-2">Subject Faculty Map</h4>
                                         <p className="text-[10px] font-bold text-muted-foreground/40 italic">Instructors assigned via Curriculum Core.</p>
                                     </div>
-                                    <button
-                                        onClick={() => setActiveTab('subjects')}
-                                        className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border border-white/5 text-foreground/80 hover:text-foreground transition-all"
-                                    >
-                                        Manage <ChevronRightIcon className="w-3.5 h-3.5" />
-                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        {!readiness.subjectsAssigned && subjects.length > 0 && (
+                                            <div className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-2 py-1 rounded-lg">
+                                                <SparklesIcon className="w-3 h-3 text-indigo-400" />
+                                                <span className="text-[8px] font-black text-indigo-400 uppercase">AI Load Analysis Ready</span>
+                                            </div>
+                                        )}
+                                        <button
+                                            onClick={() => setActiveTab('subjects')}
+                                            className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border border-white/5 text-foreground/80 hover:text-foreground transition-all"
+                                        >
+                                            Manage <ChevronRightIcon className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="flex-grow flex flex-col relative z-10 transition-all">
@@ -1068,7 +1152,15 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                         <div>
                             <div className="flex items-center gap-4">
                                 <h2 className="text-4xl font-black text-foreground tracking-tighter italic uppercase">{classData.name}</h2>
-                                <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-inner">Operational</span>
+                                <span className={`px-4 py-1.5 border rounded-xl text-[10px] font-black uppercase tracking-widest shadow-inner ${readiness.percentage >= 75 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
+                                    {readiness.percentage >= 75 ? 'Operational' : 'Restricted Ops'}
+                                </span>
+                                <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+                                    <div className="w-20 h-1.5 bg-black/40 rounded-full overflow-hidden">
+                                        <div className="h-full bg-primary" style={{ width: `${readiness.percentage}%` }}></div>
+                                    </div>
+                                    <span className="text-[9px] font-black text-primary">{readiness.percentage}%</span>
+                                </div>
                             </div>
                             <div className="flex items-center gap-5 mt-2 text-xs text-muted-foreground font-black uppercase tracking-widest opacity-60">
                                 <span>Cycle: {classData.academic_year}</span>
@@ -1091,8 +1183,8 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                             <TabButton id="subjects" label="Curriculum Map" icon={<BookIcon className="w-5 h-5" />} active={activeTab === 'subjects'} onClick={setActiveTab} />
                             <div className="h-4"></div>
                             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/30 px-6 mb-4">Intelligence</p>
-                            <TabButton id="timetable" label="Temporal Sync" icon={<ClockIcon className="w-5 h-5" />} active={activeTab === 'timetable'} onClick={setActiveTab} />
-                            <TabButton id="analytics" label="Performance Forensics" icon={<ChartBarIcon className="w-5 h-5" />} active={activeTab === 'analytics'} onClick={setActiveTab} />
+                            <TabButton id="timetable" label="Temporal Sync" icon={<ClockIcon className="w-5 h-5" />} active={activeTab === 'timetable'} onClick={setActiveTab} restricted={!readiness.hasLead || !readiness.hasSubjects} />
+                            <TabButton id="analytics" label="Performance Forensics" icon={<ChartBarIcon className="w-5 h-5" />} active={activeTab === 'analytics'} onClick={setActiveTab} restricted={!readiness.hasLead} />
                             <TabButton id="docs" label="Static Repository" icon={<FileTextIcon className="w-5 h-5" />} active={activeTab === 'docs'} onClick={setActiveTab} />
                             <TabButton id="activity" label="Action Protocol" icon={<ActivityIcon className="w-5 h-5" />} active={activeTab === 'activity'} onClick={setActiveTab} />
                         </nav>
@@ -1164,25 +1256,41 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-lg">{filteredTeachers.length} Matches</span>
                                     </div>
                                     {filteredTeachers.map((teacher, idx) => {
-                                        // Mock status for demo smoothness
-                                        const loadStatus = idx % 3 === 0 ? 'High Load' : (idx % 2 === 0 ? 'Optimal' : 'Available');
+                                        // AI Recommendation Logic (Mocked for Visual Context)
+                                        // Match Score = Qualification + Experience + Availability - Current Load
+                                        const experienceScore = (idx % 5) + 5; // 5-10 years
+                                        const loadScore = (idx % 3) * 2; // 0-4 classes
+                                        const matchPercentage = Math.round(((experienceScore + (10 - loadScore)) / 20) * 100);
+
+                                        const loadStatus = loadScore > 3 ? 'High Load' : (loadScore > 1 ? 'Optimal' : 'Available');
                                         const statusColor = loadStatus === 'High Load' ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' : (loadStatus === 'Available' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-blue-500 bg-blue-500/10 border-blue-500/20');
 
                                         return (
                                             <div key={teacher.id} onClick={() => handleAssignTeacher(teacher.id)} className="group relative overflow-hidden bg-card border border-white/5 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(var(--primary),0.1)] rounded-2xl p-4 cursor-pointer transition-all active:scale-[0.98]">
+                                                {matchPercentage > 85 && (
+                                                    <div className="absolute top-0 left-0 w-1 h-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)] z-20"></div>
+                                                )}
                                                 <div className="flex items-center gap-5 relative z-10">
                                                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-muted to-muted/50 group-hover:from-primary group-hover:to-indigo-600 transition-all flex items-center justify-center text-foreground group-hover:text-white font-black text-xl shadow-inner">
                                                         {teacher.display_name.charAt(0)}
                                                     </div>
                                                     <div className="flex-grow space-y-1">
                                                         <div className="flex items-center justify-between">
-                                                            <h4 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">{teacher.display_name}</h4>
-                                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${statusColor}`}>{loadStatus}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <h4 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">{teacher.display_name}</h4>
+                                                                {matchPercentage > 85 && <SparklesIcon className="w-3 h-3 text-primary animate-pulse" />}
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg border ${statusColor}`}>{loadStatus}</span>
+                                                                <span className="text-[8px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg border border-primary/20">{matchPercentage}% MATCH</span>
+                                                            </div>
                                                         </div>
-                                                        <p className="text-xs text-muted-foreground font-medium flex items-center gap-2">
-                                                            <span>{teacher.email || 'No Email'}</span>
+                                                        <p className="text-xs text-muted-foreground/60 font-medium flex items-center gap-2">
+                                                            <span>{teacher.specialization || 'Standard Faculty'}</span>
                                                             <span className="w-1 h-1 rounded-full bg-muted-foreground/40"></span>
-                                                            <span>{teacher.specialization || 'General Faculty'}</span>
+                                                            <span>{experienceScore}y Exp</span>
+                                                            <span className="w-1 h-1 rounded-full bg-muted-foreground/40"></span>
+                                                            <span className="text-foreground/40 font-bold">{loadScore} Active Sections</span>
                                                         </p>
                                                     </div>
                                                     <div className="p-3 bg-white/5 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
@@ -1190,7 +1298,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                                     </div>
                                                 </div>
                                                 {classData.class_teacher_id === teacher.id && (
-                                                    <div className="absolute top-0 right-0 bg-emerald-500/20 text-emerald-500 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl border-l border-b border-emerald-500/20">
+                                                    <div className="absolute top-0 right-0 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl border-l border-b border-emerald-500/20">
                                                         Currently Assigned
                                                     </div>
                                                 )}
