@@ -188,7 +188,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
     const outstanding = accountData.outstanding_balance || 0;
     const overdue = 0; // Need backend field for overdue, defaulting to 0 or logic could be added
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-[#08090a]"><Spinner label="LOADING FINANCE PROTOCOL" /></div>;
+    if (loading) return <div className="h-screen flex items-center justify-center bg-[#08090a]"><Spinner /></div>;
 
     return (
         <div className="min-h-screen bg-[#08090a] text-foreground font-sans selection:bg-primary/20 pb-32">

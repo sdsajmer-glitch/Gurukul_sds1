@@ -45,6 +45,9 @@ export function ArtifactCard({
 
             <CardBody className="flex items-center justify-center">
                 {/* Placeholder for preview or drag drop area content could go here if extracted */}
+                <div className="w-full h-32 bg-white/5 rounded-xl border border-white/5 flex items-center justify-center text-white/20 text-xs uppercase tracking-widest">
+                    Preview
+                </div>
             </CardBody>
 
             <CardFooter>

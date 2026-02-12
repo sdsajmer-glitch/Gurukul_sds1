@@ -225,8 +225,8 @@ const ProvisionSidebar = ({
                                 key={app.id}
                                 onClick={() => setSelectedAdmission(String(app.id))}
                                 className={`w-full p-3.5 rounded-xl border flex items-center justify-between transition-all duration-200 ${selectedAdmission === String(app.id)
-                                        ? 'bg-primary/10 border-primary/40 shadow-[0_0_15px_-3px_rgba(139,92,246,0.15)]'
-                                        : 'bg-[#0c0d12] border-white/5 hover:border-white/10 opacity-70 hover:opacity-100'
+                                    ? 'bg-primary/10 border-primary/40 shadow-[0_0_15px_-3px_rgba(139,92,246,0.15)]'
+                                    : 'bg-[#0c0d12] border-white/5 hover:border-white/10 opacity-70 hover:opacity-100'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
@@ -254,8 +254,8 @@ const ProvisionSidebar = ({
                                 key={type}
                                 onClick={() => setCodeType(type)}
                                 className={`h-20 px-4 rounded-xl border flex flex-col justify-center gap-2 transition-all duration-200 ${codeType === type
-                                        ? 'bg-primary/10 border-primary/40 relative overflow-hidden'
-                                        : 'bg-[#0c0d12] border-white/5 hover:border-white/10 opacity-60 hover:opacity-100'
+                                    ? 'bg-primary/10 border-primary/40 relative overflow-hidden'
+                                    : 'bg-[#0c0d12] border-white/5 hover:border-white/10 opacity-60 hover:opacity-100'
                                     }`}
                             >
                                 {type === 'Enquiry' ? <Icons.ShieldCheck className={`w-5 h-5 ${codeType === type ? 'text-primary' : 'text-white/30'}`} /> : <Icons.Terminal className={`w-5 h-5 ${codeType === type ? 'text-primary' : 'text-white/30'}`} />}
@@ -270,11 +270,11 @@ const ProvisionSidebar = ({
                     onClick={handleGenerateCode}
                     disabled={!isReadyForAuth}
                     className={`w-full py-4 rounded-xl font-bold text-[10px] uppercase tracking-[0.25em] transition-all flex items-center justify-center gap-2 mt-4 ${isReadyForAuth
-                            ? 'bg-white text-black hover:bg-white/90 shadow-lg'
-                            : 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5'
+                        ? 'bg-white text-black hover:bg-white/90 shadow-lg'
+                        : 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5'
                         }`}
                 >
-                    {generating ? <Spinner size="sm" dark /> : <><Icons.ShieldCheck className="w-4 h-4" /> Authorize & Seal</>}
+                    {generating ? <Spinner size="sm" /> : <><Icons.ShieldCheck className="w-4 h-4" /> Authorize & Seal</>}
                 </button>
             </div>
         </div>

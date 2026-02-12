@@ -62,7 +62,8 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                 targetGrade: editingStructure.target_grade,
                 description: (editingStructure as any).description || '',
                 currency: editingStructure.currency as CurrencyCode,
-                isDefault: (editingStructure as any).is_default || false
+                isDefault: (editingStructure as any).is_default || false,
+                type: (editingStructure as any).type || 'Standard'
             });
 
             if (editingStructure.components && editingStructure.components.length > 0) {

@@ -6,7 +6,7 @@ import DashboardOverview from './admin/DashboardOverview';
 import AdmissionsTab from './AdmissionsTab';
 import EnquiryTab from './EnquiryTab';
 import AttendanceTab from './AttendanceTab';
-import FinanceTab from '../FinanceTab';
+import FinanceTab from './FinanceTab';
 import CommunicationTab from './CommunicationTab';
 import { UserManagementTab } from './UserManagementTab';
 import { ProfileCreationPage } from './ProfileCreationPage';
@@ -143,7 +143,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
             case 'Finance': return <FinanceTab profile={profile} branchId={currentBranchId} branches={branches} />;
             case 'Communication': return <CommunicationTab profile={profile} />;
             case 'User Management': return <UserManagementTab profile={profile} isHeadOfficeAdmin={isHeadOfficeAdmin} />;
-            case 'Analytics': return <AnalyticsTab />;
+            case 'Analytics': return <AnalyticsTab branchId={currentBranchId} />;
             case 'Meetings': return <MeetingsTab />;
             case 'Homework': return <HomeworkTab />;
             case 'Facility Management': return <FacilityManagementTab />;

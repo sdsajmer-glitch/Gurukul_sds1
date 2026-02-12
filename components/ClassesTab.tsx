@@ -162,9 +162,9 @@ const ClassroomAIModal: React.FC<{ classes: ExtendedClass[]; onClose: () => void
         setAiResponse(null);
 
         try {
-            const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+            const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
             if (!apiKey) throw new Error("AI Key Missing");
-            const ai = new GoogleGenAI(apiKey);
+            const ai = new GoogleGenAI({ apiKey });
 
             let prompt = "";
             let dataContext = "";
@@ -198,10 +198,12 @@ const ClassroomAIModal: React.FC<{ classes: ExtendedClass[]; onClose: () => void
                 `;
             }
 
-            const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            setAiResponse(response.text() || "No response generated.");
+            const result = await ai.models.generateContent({
+                model: "gemini-1.5-flash",
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+            setAiResponse(text);
 
         } catch (err: any) {
             setAiResponse("AI Analysis Unavailable: " + (err.message || String(err)));

@@ -181,14 +181,15 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
         setIsAnalyzing(true);
         try {
             // FIX: Correct SDK initialization for @google/genai
-            const genAI = new GoogleGenAI(import.meta.env.VITE_GEMINI_API_KEY || '');
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const genAI = new GoogleGenAI({ apiKey: (import.meta as any).env.VITE_GEMINI_API_KEY || '' });
 
             const prompt = `Act as an institutional CFO. Analyze these stats: Total Assigned: ${financeData.total_assigned}, Collected: ${financeData.total_collected}, Pending: ${financeData.total_pending}, Overdue: ${financeData.total_overdue}, Monthly Collection: ${financeData.monthly_collection}. Provide a 25-word strategic insight on liquidity and collection efficiency.`;
 
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
+            const result = await genAI.models.generateContent({
+                model: "gemini-1.5-flash",
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
             setAiInsight(text || "Synchronizing insights...");
         } catch (e) {

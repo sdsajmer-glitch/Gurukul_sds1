@@ -339,7 +339,6 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
             {viewingEnquiry && (
                 <EnquiryDetailsModal
                     enquiry={viewingEnquiry}
-                    currentBranchId={branchId}
                     onClose={() => setViewingEnquiry(null)}
                     onUpdate={() => {
                         fetchEnquiries(true);
