@@ -2,10 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { TeacherExtended } from '../../types';
 import WorkloadHeader from './WorkloadHeader';
-import WorkloadKPIStrip from './WorkloadKPIStrip';
-import SaturationAnalysis from './SaturationAnalysis';
-import ImpactRegistry from './ImpactRegistry';
-import StrategicCommand from './StrategicCommand';
+import SaturationOverview from './SaturationOverview';
+import WorkloadKPIGrid from './WorkloadKPIGrid';
+import WorkloadTrendAnalysis from './WorkloadTrendAnalysis';
+import InsightsPanel from './InsightsPanel';
 
 interface WorkloadCoreProps {
     teacher: TeacherExtended;
@@ -24,40 +24,40 @@ const WorkloadCore: React.FC<WorkloadCoreProps> = ({
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="w-full max-w-[1440px] mx-auto space-y-8 pb-32"
+            className="w-full max-w-[1440px] mx-auto pb-32 flex flex-col gap-6"
         >
-            {/* 🌑 LAYER 1: WORKLOAD IDENTITY HEADER */}
-            <WorkloadHeader utilization={utilization} />
+            {/* 🌑 LAYER 1: SECTION HEADER */}
+            <WorkloadHeader />
 
-            {/* 🌑 LAYER 2: KPI INTELLIGENCE STRIP */}
-            <WorkloadKPIStrip
-                totalHours={workloadHours}
-                maxCapacity={maxLoad}
-                utilization={utilization}
-                cohortReach={workloadHours * 28}
-            />
+            {/* MAIN OPERATIONAL GRID (12 Cols) */}
+            <div className="grid grid-cols-12 gap-6 items-start">
 
-            {/* 🌑 LAYER 3 & 4: MAIN OPERATIONAL GRID (12 Cols) */}
-            <div className="grid grid-cols-12 gap-8 items-start">
+                {/* 🏫 MAIN WORKLOAD AREA (8 Cols - 70%) */}
+                <div className="col-span-12 xl:col-span-8 flex flex-col gap-6">
 
-                {/* 🏫 MAIN CONTENT (8 Cols - 66% approx) */}
-                <div className="col-span-12 xl:col-span-8 space-y-8">
+                    {/* 🌑 LAYER 2: NODE SATURATION OVERVIEW */}
+                    <SaturationOverview
+                        hours={workloadHours}
+                        max={maxLoad}
+                        units={12}      // Mocked for redesign
+                        sections={4}    // Mocked for redesign
+                    />
 
-                    {/* Layer 3: Saturation Analysis Card */}
-                    <div className="transition-all duration-300 hover:translate-y-[-4px]">
-                        <SaturationAnalysis hours={workloadHours} max={maxLoad} />
-                    </div>
+                    {/* 🌑 LAYER 3: KPI INTELLIGENCE GRID */}
+                    <WorkloadKPIGrid
+                        departments={4}
+                        hours={workloadHours}
+                        utilization={utilization}
+                    />
 
-                    {/* Layer 4: Impact Registry Grid */}
-                    <div className="transition-all duration-300 hover:translate-y-[-4px]">
-                        <ImpactRegistry />
-                    </div>
+                    {/* 🌑 LAYER 4: TREND ANALYSIS */}
+                    <WorkloadTrendAnalysis />
                 </div>
 
-                {/* 🏫 SECONDARY STRATEGIC PANEL (4 Cols - 33% approx) */}
+                {/* 🏫 INSIGHTS PANEL (4 Cols - 30%) */}
                 <div className="col-span-12 xl:col-span-4 h-full">
-                    <div className="sticky top-8">
-                        <StrategicCommand />
+                    <div className="sticky top-[100px]">
+                        <InsightsPanel />
                     </div>
                 </div>
             </div>
