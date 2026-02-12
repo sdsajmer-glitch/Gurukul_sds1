@@ -853,133 +853,144 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                 );
             case 'teachers':
                 return (
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-10"
+                    >
                         {/* Header Area */}
-                        <div className="flex justify-between items-center bg-card/50 p-8 rounded-[2.5rem] border border-border/60 backdrop-blur-md relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -mr-20 -mt-20 group-hover:bg-primary/10 transition-colors duration-700"></div>
-                            <div className="relative z-10">
-                                <h3 className="text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-xl text-primary"><TeacherIcon className="w-6 h-6" /></div>
-                                    Faculty Matrix
-                                </h3>
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 ml-14 opacity-80">Authorized instructional leadership & pedagogical assignments.</p>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-card border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none"></div>
+                            <div className="flex items-center gap-6 relative z-10">
+                                <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
+                                    <TeacherIcon className="w-8 h-8" />
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase italic">Faculty Matrix</h3>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1 opacity-60">Authorized instructional leadership & pedagogical assignments.</p>
+                                </div>
                             </div>
-                            <div className="relative z-10 flex gap-4">
+                            <div className="flex items-center gap-4 relative z-10 mt-6 md:mt-0 w-full md:w-auto">
                                 <button
                                     onClick={() => showToast("Downloading Faculty Report...", 'info')}
-                                    className="p-4 bg-muted hover:bg-white/10 rounded-2xl transition-all shadow-md group/btn border border-white/5"
-                                    title="Export Faculty Report"
+                                    className="p-4 bg-muted/50 hover:bg-white/10 rounded-2xl transition-all border border-white/5 text-muted-foreground hover:text-foreground"
+                                    title="Export Faculty Matrix"
                                 >
-                                    <DownloadIcon className="w-5 h-5 text-muted-foreground group-hover/btn:text-foreground transition-colors" />
+                                    <DownloadIcon className="w-6 h-6" />
                                 </button>
-                                <button
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
                                     onClick={() => setIsAssignFacultyOpen(true)}
-                                    className="bg-foreground text-background px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-primary/20"
+                                    className="flex-1 md:flex-none bg-foreground text-background px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl transition-all"
                                 >
                                     <UserPlusIcon className="w-4 h-4" /> {classData.teacher_name ? 'Reassign Lead' : 'Assign System Lead'}
-                                </button>
+                                </motion.button>
                             </div>
                         </div>
 
-                        {/* Operational Lead Section */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-1 h-full">
-                                <div className="bg-card border border-border/80 rounded-[2.5rem] p-8 h-full shadow-2xl relative overflow-hidden group hover:border-primary/30 transition-colors duration-500 flex flex-col">
-                                    <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-primary/10 to-indigo-600/5 rounded-full blur-[100px] -mr-40 -mt-40 transition-opacity opacity-50 group-hover:opacity-100"></div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                            {/* Class Operational Lead Card */}
+                            <div className="bg-card border border-white/5 rounded-[3rem] p-10 shadow-2xl flex flex-col relative overflow-hidden group min-h-[550px]">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-transparent opacity-30"></div>
+                                <div className="flex justify-between items-center mb-10 relative z-10">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">Class Operational Lead</h4>
+                                    {classData.teacher_name && <ShieldCheckIcon className="w-5 h-5 text-emerald-500 shadow-emerald-500/20" />}
+                                </div>
 
-                                    <div className="flex items-center justify-between mb-8 relative z-10">
-                                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Class Operational Lead</h4>
-                                        {classData.teacher_name && <ShieldCheckIcon className="w-5 h-5 text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
-                                    </div>
-
+                                <div className="flex-grow flex flex-col justify-center items-center relative z-10">
                                     {classData.teacher_name ? (
-                                        <div className="flex flex-col items-center text-center space-y-6 relative z-10 mt-auto mb-auto">
-                                            <div className="relative group/avatar">
-                                                <div className="absolute inset-0 bg-primary rounded-[2.5rem] blur opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-500"></div>
-                                                <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-[#1a1d25] to-[#0f1116] border border-white/10 flex items-center justify-center text-white text-5xl font-black shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] relative z-10 group-hover/avatar:scale-105 transition-transform duration-500">
+                                        <div className="space-y-8 text-center w-full">
+                                            <div className="relative inline-block">
+                                                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse"></div>
+                                                <div className="relative w-36 h-36 rounded-[2.5rem] bg-gradient-to-br from-card to-background border-2 border-white/10 flex items-center justify-center text-white text-5xl font-black shadow-2xl overflow-hidden ring-1 ring-white/5">
                                                     {classData.teacher_name.charAt(0)}
                                                 </div>
-                                                <div className="absolute -bottom-3 -right-3 bg-emerald-500 text-black p-2 rounded-xl border-4 border-[#0c0e12] z-20 shadow-lg">
-                                                    <CheckIcon className="w-4 h-4" />
+                                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 border-4 border-card rounded-xl flex items-center justify-center shadow-lg">
+                                                    <CheckIcon className="w-4 h-4 text-black" />
                                                 </div>
                                             </div>
-
-                                            <div className="space-y-2">
-                                                <h3 className="text-2xl font-black text-foreground tracking-tighter">{classData.teacher_name}</h3>
-                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Primary Class Teacher</p>
+                                            <div>
+                                                <h3 className="text-3xl font-black text-foreground tracking-tighter mb-1">{classData.teacher_name}</h3>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Authorized Section Lead</p>
                                             </div>
-
-                                            <div className="flex gap-2 w-full pt-4 border-t border-white/5">
-                                                <div className="flex-1 bg-white/5 rounded-xl p-3 text-center border border-white/5 hover:bg-white/10 transition-colors">
-                                                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Status</p>
-                                                    <p className="text-xs font-bold text-emerald-400">Active</p>
+                                            <div className="pt-8 grid grid-cols-2 gap-4">
+                                                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center">
+                                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Status</p>
+                                                    <p className="font-bold text-emerald-400">ACTIVE</p>
                                                 </div>
-                                                <div className="flex-1 bg-white/5 rounded-xl p-3 text-center border border-white/5 hover:bg-white/10 transition-colors">
-                                                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Access</p>
-                                                    <p className="text-xs font-bold text-indigo-400">Full</p>
+                                                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center">
+                                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Load</p>
+                                                    <p className="font-bold text-primary">OPTIMAL</p>
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-[2rem] bg-muted/5 group-hover:bg-muted/10 transition-all cursor-pointer h-full relative z-10" onClick={() => setIsAssignFacultyOpen(true)}>
-                                            <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mb-6 text-amber-500 animate-pulse shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-                                                <AlertTriangleIcon className="w-10 h-10" />
+                                        <div className="w-full flex flex-col items-center">
+                                            <div className="w-full max-w-sm aspect-[4/5] rounded-[2.5rem] border-2 border-dashed border-white/10 bg-white/[0.02] flex flex-col items-center justify-center p-10 group-hover:border-amber-500/30 transition-all duration-500">
+                                                <div className="w-20 h-20 bg-amber-500/10 rounded-[1.5rem] flex items-center justify-center mb-8 shadow-2xl shadow-amber-500/5">
+                                                    <AlertTriangleIcon className="w-10 h-10 text-amber-500" />
+                                                </div>
+                                                <h4 className="text-2xl font-black text-foreground tracking-tighter mb-4">Critical Vacancy</h4>
+                                                <p className="text-xs text-muted-foreground/60 leading-relaxed font-medium mb-10 max-w-[220px] mx-auto text-center">
+                                                    This section currently lacks a designated faculty lead. Operational usage is restricted.
+                                                </p>
+                                                <motion.button
+                                                    whileHover={{ scale: 1.05, y: -2 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => setIsAssignFacultyOpen(true)}
+                                                    className="px-10 py-4 bg-amber-500/10 text-amber-500 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-amber-500/20 hover:bg-amber-500 hover:text-black transition-all"
+                                                >
+                                                    Assign Now
+                                                </motion.button>
                                             </div>
-                                            <h4 className="text-xl font-black text-foreground tracking-tight">Critical Vacancy</h4>
-                                            <p className="text-xs text-muted-foreground mt-2 max-w-[200px] leading-relaxed font-medium">This section currently lacks a designated faculty lead. Operational usage is restricted.</p>
-                                            <button className="mt-8 px-6 py-3 bg-amber-500/10 text-amber-500 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-amber-500 hover:text-black transition-all border border-amber-500/20">Assign Now</button>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="lg:col-span-2">
-                                <div className="bg-card border border-border/80 rounded-[2.5rem] p-8 min-h-[500px] shadow-sm relative overflow-hidden flex flex-col">
-                                    <div className="flex items-center justify-between mb-8 relative z-10">
-                                        <div>
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-2">Subject Faculty Map</h4>
-                                            <p className="text-xs font-bold text-muted-foreground/60 italic">Instructors assigned via Curriculum Core.</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setActiveTab('subjects')}
-                                            className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 text-foreground transition-all border border-white/5"
-                                        >
-                                            Manage <ChevronRightIcon className="w-3 h-3" />
-                                        </button>
+                            {/* Subject Faculty Map Card */}
+                            <div className="bg-card border border-white/5 rounded-[3rem] p-10 shadow-2xl flex flex-col relative overflow-hidden group min-h-[550px]">
+                                <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-l from-primary to-transparent opacity-30"></div>
+                                <div className="flex justify-between items-start mb-10 relative z-10">
+                                    <div>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60 mb-2">Subject Faculty Map</h4>
+                                        <p className="text-[10px] font-bold text-muted-foreground/40 italic">Instructors assigned via Curriculum Core.</p>
                                     </div>
+                                    <button
+                                        onClick={() => setActiveTab('subjects')}
+                                        className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border border-white/5 text-foreground/80 hover:text-foreground transition-all"
+                                    >
+                                        Manage <ChevronRightIcon className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
 
+                                <div className="flex-grow flex flex-col relative z-10 transition-all">
                                     {subjects.length > 0 ? (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10 overflow-y-auto pr-2 custom-scrollbar max-h-[420px]">
+                                        <div className="grid grid-cols-1 gap-4 overflow-y-auto pr-2 custom-scrollbar max-h-[400px]">
                                             {subjects.map((subject, idx) => (
                                                 <motion.div
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
+                                                    initial={{ opacity: 0, x: 20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
                                                     transition={{ delay: idx * 0.05 }}
                                                     key={subject.id || idx}
-                                                    className="group/card flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-primary/20 transition-all duration-300"
+                                                    className="flex items-center gap-5 p-5 bg-white/[0.02] border border-white/5 rounded-3xl hover:bg-white/[0.04] hover:border-primary/20 transition-all group/item"
                                                 >
-                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black shadow-inner 
-                                                        ${subject.teacher_name
-                                                            ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-                                                            : 'bg-white/5 text-muted-foreground border border-white/5'
-                                                        }`}>
-                                                        {subject.teacher_name ? subject.teacher_name.charAt(0) : <UserIcon className="w-5 h-5 opacity-40" />}
+                                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black border transition-all ${subject.teacher_name ? 'bg-primary/10 text-primary border-primary/20' : 'bg-muted/10 text-muted-foreground/40 border-white/5'}`}>
+                                                        {subject.teacher_name ? subject.teacher_name.charAt(0) : <UserIcon className="w-6 h-6" />}
                                                     </div>
                                                     <div className="flex-grow min-w-0">
-                                                        <h5 className="font-bold text-sm text-foreground truncate group-hover/card:text-primary transition-colors">{subject.title}</h5>
-                                                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 mt-1 truncate">
-                                                            {subject.code || 'CORE'} • {subject.teacher_name ? 'Assigned' : 'Vacancy'}
+                                                        <h5 className="font-bold text-base text-foreground truncate group-hover/item:text-primary transition-colors">{subject.title}</h5>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 mt-1">
+                                                            {subject.code || 'UNNAMED'} • {subject.teacher_name ? 'Active Instructor' : 'Instructional Vacancy'}
                                                         </p>
                                                     </div>
                                                     {subject.teacher_name ? (
-                                                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" title="Active"></div>
+                                                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                                                     ) : (
                                                         <button
-                                                            className="text-[9px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 hover:underline decoration-amber-500/30 underline-offset-4 transition-all"
-                                                            onClick={() => {
-                                                                showToast(`Assign teacher for ${subject.title} via Subjects tab`, 'info');
-                                                                setActiveTab('subjects');
-                                                            }}
+                                                            onClick={() => setActiveTab('subjects')}
+                                                            className="text-[10px] font-black uppercase text-primary hover:underline underline-offset-4"
                                                         >
                                                             Assign
                                                         </button>
@@ -988,13 +999,20 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="flex-grow flex flex-col items-center justify-center text-center opacity-40 py-10">
-                                            <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mb-4"><BookIcon className="w-8 h-8 text-muted-foreground" /></div>
-                                            <p className="font-black uppercase tracking-[0.2em] text-muted-foreground text-sm">No Subjects Mapped</p>
-                                            <p className="text-[10px] font-bold text-muted-foreground/60 mt-2 max-w-[200px]">Initialize curriculum modules to enable faculty assignment.</p>
+                                        <div className="flex-grow flex flex-col items-center justify-center text-center p-10">
+                                            <div className="relative mb-8">
+                                                <div className="absolute inset-0 bg-muted/5 blur-3xl rounded-full scale-150"></div>
+                                                <div className="relative w-24 h-24 bg-white/[0.02] rounded-[2rem] flex items-center justify-center border-2 border-dashed border-white/10 group-hover:border-primary/20 transition-all duration-500">
+                                                    <BookIcon className="w-10 h-10 text-muted-foreground/30" />
+                                                </div>
+                                            </div>
+                                            <h4 className="text-xl font-black text-foreground tracking-tighter mb-3 uppercase">No Subjects Mapped</h4>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 leading-relaxed max-w-[200px] mb-8">
+                                                Initialize curriculum modules to enable faculty assignment.
+                                            </p>
                                             <button
                                                 onClick={() => setActiveTab('subjects')}
-                                                className="mt-6 text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
+                                                className="text-primary text-[10px] font-black uppercase tracking-[0.3em] hover:text-primary/80 transition-all underline underline-offset-8 decoration-primary/30"
                                             >
                                                 Setup Curriculum
                                             </button>
