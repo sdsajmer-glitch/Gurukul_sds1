@@ -46,6 +46,7 @@ type ClassStatus = 'Active' | 'Pending Setup' | 'Inactive' | 'Draft' | 'Overload
 
 interface ClassesTabProps {
     branchId?: number | null;
+    profile: UserProfile;
 }
 
 // --- Local Components ---
@@ -393,7 +394,7 @@ const ClassCard: React.FC<{
     </motion.div>
 );
 
-const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
+const ClassesTab: React.FC<ClassesTabProps> = ({ branchId, profile }) => {
     const [classes, setClasses] = useState<ExtendedClass[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedClass, setSelectedClass] = useState<ExtendedClass | null>(null);
@@ -758,6 +759,7 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
                 {selectedClass && (
                     <ClassWorkspace
                         key={selectedClass.id}
+                        profile={profile}
                         classData={selectedClass}
                         onClose={() => {
                             setSelectedClass(null);

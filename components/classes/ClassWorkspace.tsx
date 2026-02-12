@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, formatError } from '../../services/supabase';
-import { SchoolClass, StudentForAdmin, Course, SchoolAdminProfileData } from '../../types';
+import { SchoolClass, StudentForAdmin, Course, SchoolAdminProfileData, UserProfile, BuiltInRoles } from '../../types';
 import Spinner from '../common/Spinner';
 import { XIcon } from '../icons/XIcon';
 import { UsersIcon } from '../icons/UsersIcon';
@@ -32,6 +32,7 @@ import StudentProfileModal from '../students/StudentProfileModal';
 import EditStudentDetailsModal from '../students/EditStudentDetailsModal';
 
 interface ClassWorkspaceProps {
+    profile: UserProfile;
     classData: SchoolClass & {
         student_count?: number;
         teacher_name?: string;
@@ -124,11 +125,16 @@ const StatWidget: React.FC<{ title: string, value: string | number, icon: React.
     </motion.div>
 );
 
-const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onUpdate, schoolProfile, initialOpenAssignFaculty = false }) => {
+const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onClose, onUpdate, schoolProfile, initialOpenAssignFaculty = false }) => {
     const [activeTab, setActiveTab] = useState<TabType>('overview');
     const [loading, setLoading] = useState(false);
     const [students, setStudents] = useState<StudentForAdmin[]>([]);
     const [subjects, setSubjects] = useState<Course[]>([]);
+
+    // Permission Analysis
+    const canModifyStructure = useMemo(() => {
+        return profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION || profile.role === BuiltInRoles.BRANCH_ADMIN;
+    }, [profile.role]);
 
     // Mock Data for enhancement visualization
     const [stats] = useState({
@@ -190,25 +196,48 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
         unspecified: students.filter(s => s.gender !== 'Male' && s.gender !== 'Female').length
     }), [students]);
 
-    // Operational Readiness Logic
+    // Enhanced Operational Lifecycle Engine (Enterprise Model)
     const readiness = useMemo(() => {
-        const hasLead = !!classData.teacher_name;
+        const hasLead = !!(classData.class_teacher_id || classData.teacher_name);
         const hasSubjects = subjects.length > 0;
-        const subjectsAssigned = hasSubjects && subjects.every(s => !!s.teacher_name);
+        const hasRoster = students.length > 0;
+        const hasTimetable = false; // Implement future sync logic
 
-        // Progress steps
+        let score = 0;
+        if (hasLead) score += 25;
+        if (hasSubjects) score += 25;
+        if (hasRoster) score += 25;
+        if (hasTimetable) score += 25;
+
+        // Progress Lifecycle Stages
+        let statusLabel = "DRAFT";
+        let statusColor = "bg-neutral-500/10 text-neutral-500 border-neutral-500/20";
+
+        if (score === 100) {
+            statusLabel = "OPERATIONAL";
+            statusColor = "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+        } else if (score >= 25) {
+            statusLabel = "SETUP REQUIRED";
+            statusColor = "bg-amber-500/10 text-amber-500 border-amber-500/20";
+        }
+
         const steps = [
-            { id: 1, label: 'Assign Lead', completed: hasLead, group: 'leadership' },
-            { id: 2, label: 'Map Subjects', completed: hasSubjects, group: 'curriculum' },
-            { id: 3, label: 'Assign Faculty', completed: subjectsAssigned, group: 'instruction' },
-            { id: 4, label: 'Sync Timetable', completed: false, group: 'temporal' } // Future logic
+            { id: 1, label: 'Assign Lead', completed: hasLead, weight: 25 },
+            { id: 2, label: 'Map Subjects', completed: hasSubjects, weight: 25 },
+            { id: 3, label: 'Populate Roster', completed: hasRoster, weight: 25 },
+            { id: 4, label: 'Sync Timetable', completed: hasTimetable, weight: 25 }
         ];
 
-        const completedCount = steps.filter(s => s.completed).length;
-        const percentage = Math.round((completedCount / steps.length) * 100);
-
-        return { percentage, steps, hasLead, hasSubjects, subjectsAssigned };
-    }, [classData, subjects]);
+        return {
+            percentage: score,
+            statusLabel,
+            statusColor,
+            hasLead,
+            hasSubjects,
+            hasRoster,
+            hasTimetable
+        };
+    }, [classData, subjects, students]);
 
     // Toast State
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; visible: boolean }>({ message: '', type: 'info', visible: false });
@@ -427,7 +456,9 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         <h3 className="text-2xl font-black text-foreground tracking-tight">Structural DNA</h3>
                                         <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1 opacity-60">System configuration for {classData.name}</p>
                                     </div>
-                                    <button onClick={() => setIsEditConfigOpen(true)} className="text-[10px] font-black uppercase tracking-[0.2em] bg-primary/10 hover:bg-primary/20 text-primary px-6 py-3 rounded-xl transition-all border border-primary/20 shadow-lg shadow-primary/5 hover:scale-105 active:scale-95">Edit Config</button>
+                                    {canModifyStructure && (
+                                        <button onClick={() => setIsEditConfigOpen(true)} className="text-[10px] font-black uppercase tracking-[0.2em] bg-primary/10 hover:bg-primary/20 text-primary px-6 py-3 rounded-xl transition-all border border-primary/20 shadow-lg shadow-primary/5 hover:scale-105 active:scale-95">Edit Config</button>
+                                    )}
                                 </div>
                                 <div className="grid grid-cols-2 gap-10 text-sm relative z-10">
                                     <div className="space-y-1">
@@ -457,21 +488,25 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                 </div>
                                 <div className="mt-12 pt-10 border-t border-border/60 relative z-10">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-6">Structural Lead (Class Teacher)</p>
-                                    {classData.teacher_name ? (
+                                    {(classData.teacher_name || classData.class_teacher_id) ? (
                                         <div onClick={() => {
+                                            if (!canModifyStructure) {
+                                                showToast("Administrative access required for structural reassignment", 'info');
+                                                return;
+                                            }
                                             setAssignmentTarget({ type: 'lead' });
                                             setIsAssignFacultyOpen(true);
-                                        }} className="group relative cursor-pointer">
+                                        }} className={`group relative ${canModifyStructure ? 'cursor-pointer' : 'cursor-default'}`}>
                                             <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
                                             <div className="relative flex items-center gap-5 p-5 bg-card border border-primary/20 rounded-3xl hover:border-primary/50 transition-all shadow-sm hover:shadow-primary/10">
                                                 <div className="relative">
                                                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-xl shadow-primary/20 ring-2 ring-white/5">
-                                                        {classData.teacher_name.charAt(0)}
+                                                        {(classData.teacher_name || 'U').charAt(0)}
                                                     </div>
                                                     <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-4 border-card rounded-full shadow-lg"></div>
                                                 </div>
                                                 <div>
-                                                    <p className="text-lg font-black text-foreground tracking-tight group-hover:text-primary transition-colors">{classData.teacher_name}</p>
+                                                    <p className="text-lg font-black text-foreground tracking-tight group-hover:text-primary transition-colors">{classData.teacher_name || 'Synchronizing Faculty...'}</p>
                                                     <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
                                                         <CheckIcon className="w-3 h-3" /> Authorized Lead
                                                     </p>
@@ -483,9 +518,13 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         </div>
                                     ) : (
                                         <div onClick={() => {
+                                            if (!canModifyStructure) {
+                                                showToast("Contact School Admin to resolve structural vacancy", 'info');
+                                                return;
+                                            }
                                             setAssignmentTarget({ type: 'lead' });
                                             setIsAssignFacultyOpen(true);
-                                        }} className="group relative cursor-pointer">
+                                        }} className={`group relative ${canModifyStructure ? 'cursor-pointer' : 'cursor-default'}`}>
                                             <div className="absolute inset-0 bg-amber-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
                                             <div className="relative p-5 bg-card border border-amber-500/20 rounded-3xl flex items-center gap-5 hover:border-amber-500/50 transition-all shadow-sm hover:shadow-amber-500/10 dashed-border">
                                                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner">
@@ -1342,8 +1381,8 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                         <div>
                             <div className="flex items-center gap-4">
                                 <h2 className="text-4xl font-black text-foreground tracking-tighter italic uppercase">{classData.name}</h2>
-                                <span className={`px-4 py-1.5 border rounded-xl text-[10px] font-black uppercase tracking-widest shadow-inner ${readiness.percentage >= 75 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
-                                    {readiness.percentage >= 75 ? 'Operational' : 'Restricted Ops'}
+                                <span className={`px-4 py-1.5 border rounded-xl text-[10px] font-black uppercase tracking-widest shadow-inner ${readiness.statusColor}`}>
+                                    {readiness.statusLabel}
                                 </span>
                                 <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-2xl border border-white/5 shadow-inner">
                                     <div className="w-32 h-2.5 bg-white/5 rounded-full overflow-hidden relative">
@@ -1353,7 +1392,9 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                             className="h-full bg-gradient-to-r from-primary to-indigo-500 shadow-[0_0_15px_rgba(var(--primary),0.5)]"
                                         />
                                     </div>
-                                    <span className="text-[10px] font-black text-primary tracking-widest">{readiness.percentage}%</span>
+                                    <span className="text-[10px] font-black text-primary tracking-widest">
+                                        {readiness.percentage < 100 ? `SETUP: ${readiness.percentage}%` : 'FULLY SYNCED'}
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-5 mt-2 text-xs text-muted-foreground font-black uppercase tracking-widest opacity-60">
@@ -1377,7 +1418,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                             <TabButton id="subjects" label="Curriculum Map" icon={<BookIcon className="w-5 h-5" />} active={activeTab === 'subjects'} onClick={setActiveTab} />
                             <div className="h-4"></div>
                             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/30 px-6 mb-4">Intelligence</p>
-                            <TabButton id="timetable" label="Temporal Sync" icon={<ClockIcon className="w-5 h-5" />} active={activeTab === 'timetable'} onClick={setActiveTab} restricted={!readiness.hasLead || !readiness.hasSubjects} badge="0" />
+                            <TabButton id="timetable" label="Temporal Sync" icon={<ClockIcon className="w-5 h-5" />} active={activeTab === 'timetable'} onClick={setActiveTab} restricted={!readiness.hasLead} badge="0" />
                             <TabButton id="analytics" label="Performance Forensics" icon={<ChartBarIcon className="w-5 h-5" />} active={activeTab === 'analytics'} onClick={setActiveTab} restricted={!readiness.hasLead} badge="5" />
                             <TabButton id="docs" label="Static Repository" icon={<FileTextIcon className="w-5 h-5" />} active={activeTab === 'docs'} onClick={setActiveTab} />
                             <TabButton id="activity" label="Action Protocol" icon={<ActivityIcon className="w-5 h-5" />} active={activeTab === 'activity'} onClick={setActiveTab} />

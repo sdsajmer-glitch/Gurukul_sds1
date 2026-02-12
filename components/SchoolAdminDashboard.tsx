@@ -135,7 +135,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
             case 'Code Verification': return <CodeVerificationTab branchId={currentBranchId} onNavigate={setActiveComponent} />;
             case 'Student Management': return <StudentManagementTab branchId={currentBranchId} />;
             case 'Teacher Management': return <TeachersManagementTab profile={profile} branchId={currentBranchId} />;
-            case 'Classes': return <ClassesTab branchId={currentBranchId} />;
+            case 'Classes': return <ClassesTab branchId={currentBranchId} profile={profile} />;
             case 'Courses': return <CoursesTab profile={profile} />;
             // Fix: AttendanceTab is now correctly recognized as a component thanks to the fix in types.ts.
             case 'Attendance': return <AttendanceTab />;
