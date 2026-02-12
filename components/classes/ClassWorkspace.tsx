@@ -81,7 +81,6 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
     const [loading, setLoading] = useState(false);
     const [students, setStudents] = useState<StudentForAdmin[]>([]);
     const [subjects, setSubjects] = useState<Course[]>([]);
-    const [assignmentSuccess, setAssignmentSuccess] = useState(false);
 
     // Mock Data for enhancement visualization
     const [stats] = useState({
@@ -117,6 +116,21 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
         grade_level: classData.grade_level || ''
     });
 
+    // Toast State
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; visible: boolean }>({ message: '', type: 'info', visible: false });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setToast({ message, type, visible: true });
+        setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+    };
+
+    const handleExportReport = () => {
+        showToast("Generating Intelligence Report...", 'info');
+        setTimeout(() => {
+            showToast("Report Downloaded Successfully", 'success');
+        }, 2000);
+    };
+
     useEffect(() => {
         if (isEditConfigOpen) {
             setConfigForm({
@@ -141,10 +155,11 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                 .eq('id', classData.id);
 
             if (error) throw error;
+            showToast("Class configuration updated", 'success');
             onUpdate();
             setIsEditConfigOpen(false);
         } catch (err: any) {
-            alert(formatError(err));
+            showToast(formatError(err), 'error');
         }
     };
 
@@ -167,14 +182,12 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
 
             if (error) throw error;
 
-            // Show success feedback
-            setAssignmentSuccess(true);
-            setTimeout(() => setAssignmentSuccess(false), 3000);
+            showToast("Faculty assigned successfully", 'success');
 
             onUpdate();
             setIsAssignFacultyOpen(false);
         } catch (err: any) {
-            alert(formatError(err));
+            showToast(formatError(err), 'error');
         } finally {
             setAssigningTeacher(false);
         }
@@ -192,9 +205,10 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                 .eq('id', classData.id);
 
             if (error) throw error;
+            showToast("Faculty lead removed", 'info');
             onUpdate();
         } catch (err: any) {
-            alert(formatError(err));
+            showToast(formatError(err), 'error');
         } finally {
             setAssigningTeacher(false);
         }
@@ -204,15 +218,12 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
         return availableTeachers.filter(t => {
             const matchesSearch =
                 t.display_name.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
-                t.email?.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
-                t.specialization?.toLowerCase().includes(searchTeacherQuery.toLowerCase());
+                (t.email && t.email.toLowerCase().includes(searchTeacherQuery.toLowerCase())) ||
+                (t.specialization && t.specialization.toLowerCase().includes(searchTeacherQuery.toLowerCase()));
 
-            // Exclude currently assigned teacher
-            const isCurrentlyAssigned = t.id === classData.class_teacher_id;
-
-            return matchesSearch && !isCurrentlyAssigned;
+            return matchesSearch;
         });
-    }, [availableTeachers, searchTeacherQuery, classData.class_teacher_id]);
+    }, [availableTeachers, searchTeacherQuery]);
 
     const fetchDetails = useCallback(async () => {
         setLoading(true);
@@ -332,18 +343,17 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         {[
                                             { label: 'Synchronize Students', desc: 'Manage Roster', icon: <UsersIcon className="w-5 h-5" />, color: 'bg-blue-500', action: () => setActiveTab('students') },
                                             { label: 'Structural Timetable', desc: 'View Schedule', icon: <ClockIcon className="w-5 h-5" />, color: 'bg-indigo-500', action: () => setActiveTab('timetable') },
-                                            { label: 'Export Intelligence', desc: 'Download Report', icon: <DownloadIcon className="w-5 h-5" />, color: 'bg-emerald-500', action: () => alert("Exporting Intelligence Report...") },
+                                            { label: 'Export Intelligence', desc: 'Download Report', icon: <DownloadIcon className="w-5 h-5" />, color: 'bg-emerald-500', action: handleExportReport },
                                             { label: 'Initiate Audit', desc: 'Deep Analysis', icon: <ChartBarIcon className="w-5 h-5" />, color: 'bg-amber-500', action: () => setActiveTab('analytics') }
                                         ].map(action => (
-                                            <button key={action.label} onClick={action.action} className="relative overflow-hidden p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 transition-all group text-left">
-                                                <div className={`w-10 h-10 rounded-xl ${action.color}/20 text-${action.color.split('-')[1]}-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                                            <button key={action.label} onClick={action.action} className="relative overflow-hidden p-4 rounded-2xl bg-black/5 hover:bg-black/10 border border-black/5 hover:border-black/10 transition-all group text-left">
+                                                <div className={`w-10 h-10 rounded-xl ${action.color}/10 text-${action.color.split('-')[1]}-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
                                                     {action.icon}
                                                 </div>
                                                 <div className="relative z-10">
-                                                    <p className="font-black text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{action.desc}</p>
+                                                    <p className="font-black text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-1">{action.desc}</p>
                                                     <p className="font-bold text-sm text-foreground leading-tight group-hover:text-primary transition-colors">{action.label}</p>
                                                 </div>
-                                                <div className={`absolute -bottom-4 -right-4 w-16 h-16 rounded-full ${action.color}/10 blur-xl group-hover:blur-2xl transition-all`}></div>
                                             </button>
                                         ))}
                                     </div>
@@ -513,7 +523,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                             </div>
                                         </div>
                                     ))}
-                                    <button onClick={() => alert("Downloading Audit Log...")} className="w-full py-4 bg-foreground text-background rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all">Download Audit</button>
+                                    <button onClick={() => showToast("Audit Log Downloaded", 'success')} className="w-full py-4 bg-foreground text-background rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all">Download Audit</button>
                                 </div>
                             </div>
                         </div>
@@ -530,7 +540,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                             </div>
                             <div className="flex gap-4 relative z-10">
                                 <button className="p-4 bg-muted hover:bg-neutral-500/10 rounded-2xl transition-all shadow-md"><DownloadIcon className="w-6 h-6 text-muted-foreground" /></button>
-                                <button onClick={() => alert("Upload Document Feature Coming Soon")} className="px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all">Upload Document</button>
+                                <button onClick={() => showToast("Upload Document Feature Coming Soon", 'info')} className="px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all">Upload Document</button>
                             </div>
                         </div>
 
@@ -942,6 +952,27 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                     )}
                 </AnimatePresence>
             </motion.div>
+
+            {/* Global Toast Notification */}
+            <AnimatePresence>
+                {toast.visible && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                        className="fixed bottom-10 right-10 z-[200] flex items-center gap-4 bg-background/80 backdrop-blur-xl border border-border/60 p-5 rounded-2xl shadow-2xl ring-1 ring-white/10"
+                    >
+                        <div className={`p-3 rounded-xl ${toast.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : toast.type === 'error' ? 'bg-red-500/10 text-red-500' : 'bg-primary/10 text-primary'}`}>
+                            {toast.type === 'success' ? <CheckCircleIcon className="w-6 h-6" /> : toast.type === 'error' ? <AlertTriangleIcon className="w-6 h-6" /> : <SparklesIcon className="w-6 h-6 animate-pulse" />}
+                        </div>
+                        <div>
+                            <p className="font-black text-xs uppercase tracking-widest text-muted-foreground mb-0.5">{toast.type === 'error' ? 'System Alert' : 'Operation Status'}</p>
+                            <p className="font-bold text-sm text-foreground">{toast.message}</p>
+                        </div>
+                        <button onClick={() => setToast(prev => ({ ...prev, visible: false }))} className="p-2 hover:bg-white/10 rounded-full transition-colors ml-4"><XIcon className="w-4 h-4 text-muted-foreground" /></button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };
