@@ -17,6 +17,7 @@ import { LocationIcon } from '../icons/LocationIcon';
 import { StorageService, BUCKETS } from '../../services/storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusIcon } from '../icons/PlusIcon';
+import { UsersIcon } from '../icons/UsersIcon';
 import { RefreshCwIcon } from '../icons/RefreshCwIcon';
 import StudentProfileModal from '../students/StudentProfileModal';
 import { StudentForAdmin } from '../../types';

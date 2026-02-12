@@ -821,19 +821,24 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                 <div className="bg-muted px-8 py-10 rounded-[2.5rem] space-y-8">
                                     <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60">System Insights</h4>
                                     {[
-                                        { title: 'Peak Attendance', value: 'Tuesday', icon: <ActivityIcon className="w-4 h-4" /> },
-                                        { title: 'Low Engagement', value: 'History', icon: <BookIcon className="w-4 h-4" /> },
-                                        { title: 'Predictive Growth', value: '+14%', icon: <ChartBarIcon className="w-4 h-4" /> }
+                                        { title: 'Peak Attendance', value: 'Tuesday', icon: <ActivityIcon className="w-4 h-4" />, extra: '98.4%' },
+                                        { title: 'Low Engagement', value: 'History', icon: <BookIcon className="w-4 h-4" />, extra: 'Critical' },
+                                        { title: 'Predictive Growth', value: '+14%', icon: <ChartBarIcon className="w-4 h-4" />, extra: 'Q3 Forecast' }
                                     ].map(item => (
-                                        <div key={item.title} className="flex items-center gap-4">
-                                            <div className="p-3 bg-white/10 rounded-xl text-foreground/60 shadow-inner">{item.icon}</div>
-                                            <div>
-                                                <p className="text-[8px] font-black uppercase opacity-40 leading-none mb-1">{item.title}</p>
-                                                <p className="text-sm font-black tracking-tight">{item.value}</p>
+                                        <div key={item.title} className="flex items-center gap-4 group/insight">
+                                            <div className="p-3 bg-white/10 rounded-xl text-foreground/60 shadow-inner group-hover/insight:bg-primary/20 group-hover/insight:text-primary transition-all">{item.icon}</div>
+                                            <div className="flex-grow">
+                                                <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">{item.title}</p>
+                                                <div className="flex items-end justify-between">
+                                                    <p className="text-sm font-black text-foreground">{item.value}</p>
+                                                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-md ${item.extra === 'Critical' ? 'bg-red-500/10 text-red-500' : 'bg-primary/10 text-primary'}`}>{item.extra}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
-                                    <button onClick={() => showToast("Audit Log Downloaded", 'success')} className="w-full py-4 bg-foreground text-background rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all">Download Audit</button>
+                                    <div className="pt-6">
+                                        <button onClick={() => showToast("Downloading Intelligence Summary...", 'info')} className="w-full py-4 bg-foreground text-background rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all">Download Audit</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1180,9 +1185,9 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                                 onClick={() => {
                                                     // Quick Seed for Demo
                                                     setSubjects([
-                                                        { id: 'sub-1', title: 'Mathematics & Calculus', code: 'MATH-101', credits: 4, category: 'Core', grade_level: classData.grade_level || 'Grade 1', status: 'active' } as Course,
-                                                        { id: 'sub-2', title: 'Quantum Physics', code: 'PHYS-201', credits: 4, category: 'Core', grade_level: classData.grade_level || 'Grade 1', status: 'active' } as Course,
-                                                        { id: 'sub-3', title: 'Biological Systems', code: 'BIO-301', credits: 3, category: 'Elective', grade_level: classData.grade_level || 'Grade 1', status: 'active' } as Course
+                                                        { id: 101, title: 'Mathematics & Calculus', code: 'MATH-101', credits: 4, category: 'Core', grade_level: classData.grade_level || 'Grade 1', status: 'Active' } as Course,
+                                                        { id: 102, title: 'Quantum Physics', code: 'PHYS-201', credits: 4, category: 'Core', grade_level: classData.grade_level || 'Grade 1', status: 'Active' } as Course,
+                                                        { id: 103, title: 'Biological Systems', code: 'BIO-301', credits: 3, category: 'Elective', grade_level: classData.grade_level || 'Grade 1', status: 'Active' } as Course
                                                     ]);
                                                     showToast("Curriculum DNA Initialized", 'success');
                                                 }}
@@ -1197,20 +1202,94 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                         </div>
                     </motion.div>
                 );
-            case 'timetable':
+            case 'timetable': {
+                const schedule = [
+                    { time: '08:00 AM', subjects: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English'] },
+                    { time: '09:30 AM', subjects: ['Physics', 'Mathematics', 'Biology', 'Chemistry', 'History'] },
+                    { time: '11:00 AM', subjects: ['LUNCH INTERVAL', 'LUNCH INTERVAL', 'LUNCH INTERVAL', 'LUNCH INTERVAL', 'LUNCH INTERVAL'], isBreak: true },
+                    { time: '12:00 PM', subjects: ['Chemistry', 'Biology', 'English', 'Physics', 'Mathematics'] },
+                    { time: '01:30 PM', subjects: ['Biology', 'English', 'History', 'Mathematics', 'Physics'] }
+                ];
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
                 return (
-                    <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="relative mb-10">
-                            <div className="absolute inset-0 bg-primary/20 blur-3xl scale-150 animate-pulse"></div>
-                            <div className="relative w-28 h-28 bg-card rounded-[2.5rem] flex items-center justify-center border-2 border-dashed border-primary/20 shadow-2xl">
-                                <ClockIcon className="w-14 h-14 text-primary/40" />
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-10">
+                        <div className="flex justify-between items-center bg-card/40 backdrop-blur-xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[100px] -mr-40 -mt-40"></div>
+                            <div className="relative z-10 flex items-center gap-8">
+                                <div className="w-20 h-20 rounded-[2rem] bg-card border border-primary/20 flex flex-col items-center justify-center text-primary shadow-inner">
+                                    <ClockIcon className="w-8 h-8" />
+                                    <span className="text-[8px] font-black uppercase tracking-widest mt-1">Local Time</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase italic">Temporal Matrix</h3>
+                                    <p className="text-muted-foreground text-xs font-black uppercase tracking-widest mt-1 opacity-60">Weekly instructional cadence synchronization.</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 relative z-10">
+                                <div className="px-6 py-4 bg-black/40 rounded-2xl border border-white/5 text-center flex flex-col justify-center">
+                                    <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">Current Cycle</p>
+                                    <p className="text-xs font-black text-foreground">WEEK 24 / Q3</p>
+                                </div>
+                                <button onClick={() => showToast("Requesting Protocol Sync...", 'info')} className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+                                    <SparklesIcon className="w-4 h-4" /> Sync with Master
+                                </button>
                             </div>
                         </div>
-                        <h3 className="text-3xl font-black text-foreground tracking-tight italic uppercase">Temporal Matrix</h3>
-                        <p className="text-muted-foreground text-sm mt-3 mb-10 max-w-md mx-auto font-medium">Weekly structural schedules are managed in the global Timetable Core module for cross-institutional alignment.</p>
-                        <button onClick={() => alert("Accessing Nexus Interface...")} className="px-10 py-4 bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all">Access Nexus Interface</button>
-                    </div>
+
+                        <div className="bg-card border border-white/5 rounded-[3rem] shadow-2xl overflow-hidden ring-1 ring-white/5">
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-muted/30 border-b border-white/5">
+                                            <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 border-r border-white/5 w-40">Timeline</th>
+                                            {days.map(day => (
+                                                <th key={day} className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-foreground border-r border-white/5">
+                                                    {day}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {schedule.map((row, rIdx) => (
+                                            <tr key={rIdx} className="group/row">
+                                                <td className="p-8 border-r border-white/5 bg-black/10">
+                                                    <span className="text-base font-black text-muted-foreground/60 tracking-tighter">{row.time}</span>
+                                                </td>
+                                                {row.subjects.map((sub, sIdx) => (
+                                                    <td key={sIdx} className={`p-4 border-r border-white/5 relative group ${row.isBreak ? 'bg-muted/10 italic' : 'hover:bg-primary/[0.02]'}`}>
+                                                        {sub !== 'LUNCH INTERVAL' ? (
+                                                            <motion.div
+                                                                whileHover={{ scale: 1.02 }}
+                                                                className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-sm hover:shadow-xl ${sub === 'Mathematics' ? 'bg-blue-500/5 border-blue-500/10 text-blue-400' :
+                                                                    sub === 'Physics' ? 'bg-indigo-500/5 border-indigo-500/10 text-indigo-400' :
+                                                                        sub === 'Chemistry' ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400' :
+                                                                            sub === 'Biology' ? 'bg-amber-500/5 border-amber-500/10 text-amber-400' :
+                                                                                'bg-purple-500/5 border-purple-500/10 text-purple-400'
+                                                                    }`}
+                                                            >
+                                                                <p className="font-black text-[13px] tracking-tight mb-1">{sub}</p>
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-[9px] font-black uppercase opacity-60">ROOM 402</span>
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-current opacity-40"></div>
+                                                                </div>
+                                                            </motion.div>
+                                                        ) : (
+                                                            <div className="flex items-center justify-center h-20 text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground/20">
+                                                                Lunch Interval
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </motion.div>
                 );
+            }
             default:
                 return <div className="p-20 text-center text-muted-foreground font-black uppercase tracking-[0.5em] opacity-40">System Core Null</div>;
         }

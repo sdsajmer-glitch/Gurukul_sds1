@@ -15,6 +15,7 @@ import { FilePlusIcon } from './icons/FilePlusIcon';
 import { BookIcon } from './icons/BookIcon';
 import Stepper from './common/Stepper';
 import { SparklesIcon } from './icons/SparklesIcon';
+import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 
 interface AddTeacherModalProps {
