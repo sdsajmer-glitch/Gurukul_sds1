@@ -25,7 +25,11 @@ import { EditIcon } from '../icons/EditIcon';
 import { TrashIcon } from '../icons/TrashIcon';
 import { BriefcaseIcon } from '../icons/BriefcaseIcon';
 import { StarIcon } from '../icons/StarIcon';
+import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+
 import { FilterIcon } from '../icons/FilterIcon';
+import StudentProfileModal from '../students/StudentProfileModal';
+import EditStudentDetailsModal from '../students/EditStudentDetailsModal';
 
 interface ClassWorkspaceProps {
     classData: SchoolClass & {
@@ -46,16 +50,32 @@ interface ClassWorkspaceProps {
 type TabType = 'overview' | 'students' | 'teachers' | 'subjects' | 'timetable' | 'analytics' | 'docs' | 'activity';
 
 const TabButton: React.FC<{ id: TabType, label: string, icon: React.ReactNode, active: boolean, onClick: (id: TabType) => void }> = ({ id, label, icon, active, onClick }) => (
-    <button
+    <motion.button
         onClick={() => onClick(id)}
-        className={`flex items-center gap-3 px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] border-l-4 transition-all whitespace-nowrap ${active
-            ? 'border-primary text-primary bg-primary/10 shadow-[inset_4px_0_12px_rgba(var(--primary),0.1)]'
-            : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-white/5'
+        whileHover={{ x: 5, backgroundColor: "rgba(255, 255, 255, 0.03)" }}
+        whileTap={{ scale: 0.98 }}
+        className={`relative w-full flex items-center gap-4 px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap overflow-hidden group ${active
+            ? 'text-primary'
+            : 'text-muted-foreground hover:text-foreground'
             }`}
     >
-        <span className={`${active ? 'scale-110' : 'opacity-60'} transition-transform`}>{icon}</span>
-        {label}
-    </button>
+        {active && (
+            <motion.div
+                layoutId="activeTabIndicator"
+                className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+            />
+        )}
+        <div className={`transition-transform duration-300 ${active ? 'scale-110 text-primary' : 'group-hover:scale-110 group-hover:text-foreground opacity-60'}`}>
+            {icon}
+        </div>
+        <span className="relative z-10">{label}</span>
+        {active && (
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50" />
+        )}
+    </motion.button>
 );
 
 const StatWidget: React.FC<{ title: string, value: string | number, icon: React.ReactNode, color: string, trend?: string }> = ({ title, value, icon, color, trend }) => (
@@ -115,6 +135,28 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
         capacity: classData.capacity || 30,
         grade_level: classData.grade_level || ''
     });
+
+    // Roster Enhancements
+    const [rosterSearchTerm, setRosterSearchTerm] = useState('');
+    const [rosterGenderFilter, setRosterGenderFilter] = useState('All');
+    const [selectedStudentForView, setSelectedStudentForView] = useState<StudentForAdmin | null>(null);
+    const [selectedStudentForEdit, setSelectedStudentForEdit] = useState<StudentForAdmin | null>(null);
+
+    const filteredStudents = useMemo(() => {
+        return students.filter(s => {
+            const matchesSearch = s.display_name.toLowerCase().includes(rosterSearchTerm.toLowerCase()) ||
+                (s.student_id_number && s.student_id_number.toLowerCase().includes(rosterSearchTerm.toLowerCase()));
+            const matchesGender = rosterGenderFilter === 'All' || s.gender === rosterGenderFilter;
+            return matchesSearch && matchesGender;
+        });
+    }, [students, rosterSearchTerm, rosterGenderFilter]);
+
+    const rosterStats = useMemo(() => ({
+        total: students.length,
+        boys: students.filter(s => s.gender === 'Male').length,
+        girls: students.filter(s => s.gender === 'Female').length,
+        unspecified: students.filter(s => s.gender !== 'Male' && s.gender !== 'Female').length
+    }), [students]);
 
     // Toast State
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; visible: boolean }>({ message: '', type: 'info', visible: false });
@@ -399,20 +441,79 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                         animate={{ opacity: 1, scale: 1 }}
                         className="space-y-8"
                     >
-                        {/* Control Header */}
-                        <div className="flex justify-between items-center bg-card border border-border/40 p-6 rounded-[2rem] shadow-2xl relative overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-purple-600"></div>
-                            <div className="pl-6 relative z-10">
-                                <h3 className="text-2xl font-black text-foreground tracking-tighter uppercase italic">Active Roster <span className="text-muted-foreground ml-2">({students.length})</span></h3>
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1 opacity-60">Enrolled unit details for {classData.name}</p>
+                        {/* Control Header with Enhanced Search & Stats */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="md:col-span-2 bg-card border border-border/40 p-6 rounded-[2rem] shadow-2xl relative overflow-hidden group flex items-center justify-between">
+                                <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-primary via-purple-500 to-indigo-600 shadow-[0_0_20px_rgba(var(--primary),0.3)]"></div>
+                                <div className="pl-8 relative z-10 flex flex-col justify-center h-full">
+                                    <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase italic flex items-center gap-3">
+                                        Active Roster
+                                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-bold border border-primary/20 shadow-inner">
+                                            {filteredStudents.length}
+                                        </span>
+                                    </h3>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-2 opacity-70 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        Enrolled unit details for {classData.name}
+                                    </p>
+                                </div>
+                                <div className="flex gap-4 relative z-10 items-center">
+                                    <motion.button
+                                        whileHover={{ scale: 1.05, y: -2 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => showToast("Enrollment Protocol Initiated...", 'info')}
+                                        className="bg-foreground text-background px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-3 hover:shadow-2xl hover:shadow-white/10 transition-all border border-white/10"
+                                    >
+                                        <PlusIcon className="w-4 h-4" /> Create Enrollment Batch
+                                    </motion.button>
+                                </div>
+                                <div className="absolute right-0 top-0 w-96 h-full bg-gradient-to-l from-white/[0.03] via-transparent to-transparent pointer-events-none"></div>
                             </div>
-                            <button
-                                onClick={() => showToast("Enrollment Protocol Initiated...", 'info')}
-                                className="relative z-10 bg-foreground text-background px-8 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] border border-white/10"
-                            >
-                                <PlusIcon className="w-4 h-4" /> Deploy Enrollment
-                            </button>
-                            <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-white/[0.03] to-transparent pointer-events-none"></div>
+
+                            <div className="bg-card border border-border/40 p-6 rounded-[2rem] flex items-center justify-around">
+                                <div className="text-center">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Boys</div>
+                                    <div className="text-xl font-black text-blue-500">{rosterStats.boys}</div>
+                                </div>
+                                <div className="w-px h-10 bg-border/60"></div>
+                                <div className="text-center">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Girls</div>
+                                    <div className="text-xl font-black text-pink-500">{rosterStats.girls}</div>
+                                </div>
+                                <div className="w-px h-10 bg-border/60"></div>
+                                <div className="text-center">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Other</div>
+                                    <div className="text-xl font-black text-amber-500">{rosterStats.unspecified}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Search & Filter Bar */}
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="relative flex-grow group">
+                                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by name or ID..."
+                                    value={rosterSearchTerm}
+                                    onChange={(e) => setRosterSearchTerm(e.target.value)}
+                                    className="w-full pl-12 pr-4 py-4 bg-card/50 border border-border/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold placeholder:text-muted-foreground/50 transition-all"
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                {['All', 'Male', 'Female'].map(g => (
+                                    <button
+                                        key={g}
+                                        onClick={() => setRosterGenderFilter(g)}
+                                        className={`px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${rosterGenderFilter === g
+                                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                                            : 'bg-card border border-border/60 text-muted-foreground hover:text-foreground hover:bg-white/5'
+                                            }`}
+                                    >
+                                        {g}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Roster Data Grid */}
@@ -423,67 +524,130 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                             <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary/20 rounded-bl-2xl m-4 pointer-events-none"></div>
                             <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary/20 rounded-br-2xl m-4 pointer-events-none"></div>
 
-                            <table className="w-full text-left text-sm whitespace-nowrap">
-                                <thead className="bg-black/20 border-b border-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
-                                    <tr>
-                                        <th className="p-8 pl-10">Unit Identity</th>
-                                        <th className="p-8">System ID</th>
-                                        <th className="p-8">Classification</th>
-                                        <th className="p-8 text-right pr-10">Control</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {students.map((student, idx) => (
-                                        <motion.tr
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: idx * 0.05 }}
-                                            key={student.id}
-                                            className="hover:bg-white/[0.02] transition-colors group relative"
-                                        >
-                                            <td className="p-6 pl-10">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.01] flex items-center justify-center font-black text-lg group-hover:text-primary transition-colors border border-white/5 shadow-inner">
-                                                        {student.display_name.charAt(0)}
-                                                    </div>
-                                                    <div>
-                                                        <span className="font-bold text-base text-foreground tracking-tight block group-hover:text-primary transition-colors">{student.display_name}</span>
-                                                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Unit-{idx + 1}</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-6 font-mono text-[11px] font-bold text-muted-foreground tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
-                                                <span className="bg-black/20 px-2 py-1 rounded-md border border-white/5">{student.student_id_number || 'UNREGISTERED'}</span>
-                                            </td>
-                                            <td className="p-6">
-                                                <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border shadow-lg ${student.gender === 'Male' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : student.gender === 'Female' ? 'bg-pink-500/10 text-pink-500 border-pink-500/20' : 'bg-muted/30 text-muted-foreground border-border/50'}`}>
-                                                    {student.gender || 'Standard'} unit
-                                                </span>
-                                            </td>
-                                            <td className="p-6 text-right pr-10">
-                                                <button onClick={() => handleRemoveStudent(student.id)} className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all active:scale-90 opacity-60 hover:opacity-100">
-                                                    <TrashIcon className="w-5 h-5" />
-                                                </button>
-                                            </td>
-                                        </motion.tr>
+                            {loading ? (
+                                <div className="space-y-4 p-8">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <div key={i} className="flex items-center gap-6 animate-pulse">
+                                            <div className="w-12 h-12 rounded-2xl bg-white/5" />
+                                            <div className="flex-1 space-y-2">
+                                                <div className="h-4 w-48 bg-white/5 rounded-lg" />
+                                                <div className="h-3 w-24 bg-white/5 rounded-lg opacity-50" />
+                                            </div>
+                                            <div className="w-24 h-8 bg-white/5 rounded-lg" />
+                                            <div className="w-32 h-8 bg-white/5 rounded-lg opacity-50" />
+                                        </div>
                                     ))}
-                                </tbody>
-                            </table>
-
-                            {students.length === 0 && (
-                                <div className="flex-grow flex flex-col items-center justify-center text-center p-20 opacity-60">
-                                    <div className="w-24 h-24 mb-6 relative">
-                                        <div className="absolute inset-0 bg-muted/10 rounded-full animate-ping opacity-20"></div>
-                                        <div className="relative w-full h-full bg-gradient-to-br from-muted/20 to-transparent rounded-3xl flex items-center justify-center border border-white/5 backdrop-blur-sm">
-                                            <UsersIcon className="w-10 h-10 text-muted-foreground/40" />
+                                </div>
+                            ) : filteredStudents.length > 0 ? (
+                                <table className="w-full text-left text-sm whitespace-nowrap">
+                                    <thead className="bg-black/40 border-b border-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 sticky top-0 z-10 backdrop-blur-md shadow-sm">
+                                        <tr>
+                                            <th className="p-8 pl-10">Unit Identity</th>
+                                            <th className="p-8">System ID</th>
+                                            <th className="p-8">Classification</th>
+                                            <th className="p-8 text-right pr-10">Control Interface</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {filteredStudents.map((student, idx) => (
+                                            <motion.tr
+                                                layout
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                transition={{ delay: idx * 0.05 }}
+                                                key={student.id}
+                                                className="hover:bg-white/[0.02] transition-colors group relative"
+                                            >
+                                                <td className="p-6 pl-10">
+                                                    <div className="flex items-center gap-5 cursor-pointer" onClick={() => setSelectedStudentForView(student)}>
+                                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.01] flex items-center justify-center font-black text-lg group-hover:text-primary transition-colors border border-white/5 shadow-inner overflow-hidden">
+                                                            {student.profile_photo_url ? (
+                                                                <img src={student.profile_photo_url} alt={student.display_name} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                student.display_name.charAt(0)
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <span className="font-bold text-base text-foreground tracking-tight block group-hover:text-primary transition-colors">{student.display_name}</span>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Unit-{idx + 1}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-6 font-mono text-[11px] font-bold text-muted-foreground tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
+                                                    <span className="bg-black/20 px-2 py-1 rounded-md border border-white/5">{student.student_id_number || 'UNREGISTERED'}</span>
+                                                </td>
+                                                <td className="p-6">
+                                                    <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border shadow-lg ${student.gender === 'Male' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : student.gender === 'Female' ? 'bg-pink-500/10 text-pink-500 border-pink-500/20' : 'bg-muted/30 text-muted-foreground border-border/50'}`}>
+                                                        {student.gender || 'Standard'} unit
+                                                    </span>
+                                                </td>
+                                                <td className="p-6 text-right pr-10">
+                                                    <div className="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => setSelectedStudentForView(student)}
+                                                            className="p-2.5 bg-white/5 hover:bg-primary/20 hover:text-primary rounded-xl transition-all"
+                                                            title="View Profile"
+                                                        >
+                                                            <UserIcon className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSelectedStudentForEdit(student)}
+                                                            className="p-2.5 bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-500 rounded-xl transition-all"
+                                                            title="Edit Details"
+                                                        >
+                                                            <EditIcon className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRemoveStudent(student.id)}
+                                                            className="p-2.5 bg-white/5 hover:bg-red-500/20 hover:text-red-500 rounded-xl transition-all"
+                                                            title="De-roster"
+                                                        >
+                                                            <TrashIcon className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </motion.tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="flex-grow flex flex-col items-center justify-center text-center p-20"
+                                >
+                                    <div className="relative mb-8 group cursor-pointer">
+                                        <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full scale-150 opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
+                                        <div className="relative w-28 h-28 bg-gradient-to-br from-card to-background rounded-[2.5rem] flex items-center justify-center border border-white/5 shadow-2xl group-hover:scale-105 transition-transform duration-300 ring-1 ring-white/10 group-hover:ring-primary/30">
+                                            <UsersIcon className="w-10 h-10 text-muted-foreground/40 group-hover:text-primary transition-colors duration-300" />
                                         </div>
                                     </div>
-                                    <h4 className="text-xl font-black uppercase tracking-[0.2em] text-foreground/80 mb-2">Zero Units Detected</h4>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 max-w-[200px] leading-relaxed">Initialize enrollment via the control panel above.</p>
-                                </div>
+                                    <h4 className="text-2xl font-black text-foreground tracking-tighter mb-4">Zero Units Detected</h4>
+                                    <p className="text-muted-foreground/60 text-sm font-medium max-w-[300px] leading-relaxed mb-10">
+                                        {rosterSearchTerm ? 'Search vector yielded no matching identities.' : 'No active enrollment records found in this section\'s directory.'}
+                                        <span className="text-[10px] uppercase tracking-widest opacity-50 mt-3 block border-t border-border/40 pt-3">
+                                            {rosterSearchTerm ? 'Refine Search Parameters' : 'System Ready for Processing'}
+                                        </span>
+                                    </p>
+
+                                    {rosterSearchTerm ? (
+                                        <button onClick={() => setRosterSearchTerm('')} className="text-primary text-xs font-bold uppercase tracking-widest hover:underline hover:text-primary/80 transition-colors">Clear Search Vector</button>
+                                    ) : (
+                                        <motion.button
+                                            whileHover={{ scale: 1.05, y: -2 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => showToast("Enrollment Protocol Initiated...", 'info')}
+                                            className="px-10 py-5 bg-gradient-to-br from-primary to-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.25em] shadow-[0_20px_50px_-10px_rgba(var(--primary),0.4)] hover:shadow-primary/50 transition-all flex items-center gap-4 group"
+                                        >
+                                            <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform"><PlusIcon className="w-3 h-3 text-white" /></span>
+                                            Create Enrollment Batch
+                                        </motion.button>
+                                    )}
+                                </motion.div>
                             )}
                         </div>
-                    </motion.div>
+                    </motion.div >
                 );
             case 'analytics':
                 return (
@@ -689,58 +853,153 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                 );
             case 'teachers':
                 return (
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-10">
-                        <div className="flex justify-between items-center bg-card/50 p-8 rounded-[2.5rem] border border-border/60 backdrop-blur-md">
-                            <div>
-                                <h3 className="text-3xl font-black text-foreground tracking-tight">Faculty Matrix</h3>
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Authorized instructional leadership.</p>
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
+                        {/* Header Area */}
+                        <div className="flex justify-between items-center bg-card/50 p-8 rounded-[2.5rem] border border-border/60 backdrop-blur-md relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -mr-20 -mt-20 group-hover:bg-primary/10 transition-colors duration-700"></div>
+                            <div className="relative z-10">
+                                <h3 className="text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-xl text-primary"><TeacherIcon className="w-6 h-6" /></div>
+                                    Faculty Matrix
+                                </h3>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 ml-14 opacity-80">Authorized instructional leadership & pedagogical assignments.</p>
                             </div>
-                            <button
-                                onClick={() => setIsAssignFacultyOpen(true)}
-                                className="bg-foreground text-background px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl"
-                            >
-                                <UserPlusIcon className="w-4 h-4" /> {classData.teacher_name ? 'Reassign Lead' : 'Assign System Lead'}
-                            </button>
+                            <div className="relative z-10 flex gap-4">
+                                <button
+                                    onClick={() => showToast("Downloading Faculty Report...", 'info')}
+                                    className="p-4 bg-muted hover:bg-white/10 rounded-2xl transition-all shadow-md group/btn border border-white/5"
+                                    title="Export Faculty Report"
+                                >
+                                    <DownloadIcon className="w-5 h-5 text-muted-foreground group-hover/btn:text-foreground transition-colors" />
+                                </button>
+                                <button
+                                    onClick={() => setIsAssignFacultyOpen(true)}
+                                    className="bg-foreground text-background px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-primary/20"
+                                >
+                                    <UserPlusIcon className="w-4 h-4" /> {classData.teacher_name ? 'Reassign Lead' : 'Assign System Lead'}
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-card border border-border/80 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-[120px] -mr-40 -mt-40"></div>
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-8">Class Operational Lead</h4>
+                        {/* Operational Lead Section */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-1 h-full">
+                                <div className="bg-card border border-border/80 rounded-[2.5rem] p-8 h-full shadow-2xl relative overflow-hidden group hover:border-primary/30 transition-colors duration-500 flex flex-col">
+                                    <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-primary/10 to-indigo-600/5 rounded-full blur-[100px] -mr-40 -mt-40 transition-opacity opacity-50 group-hover:opacity-100"></div>
 
-                                {classData.teacher_name ? (
-                                    <div className="flex items-start gap-8 relative z-10">
-                                        <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-[0_20px_40px_rgba(var(--primary),0.3)] ring-4 ring-white/5">
-                                            {classData.teacher_name.charAt(0)}
-                                        </div>
-                                        <div className="space-y-3">
-                                            <h3 className="text-3xl font-black text-foreground tracking-tighter">{classData.teacher_name}</h3>
-                                            <div className="flex items-center gap-3">
-                                                <span className="px-4 py-1.5 bg-primary/10 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/20">Class Teacher</span>
-                                                <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Active</span>
+                                    <div className="flex items-center justify-between mb-8 relative z-10">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Class Operational Lead</h4>
+                                        {classData.teacher_name && <ShieldCheckIcon className="w-5 h-5 text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />}
+                                    </div>
+
+                                    {classData.teacher_name ? (
+                                        <div className="flex flex-col items-center text-center space-y-6 relative z-10 mt-auto mb-auto">
+                                            <div className="relative group/avatar">
+                                                <div className="absolute inset-0 bg-primary rounded-[2.5rem] blur opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-500"></div>
+                                                <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-[#1a1d25] to-[#0f1116] border border-white/10 flex items-center justify-center text-white text-5xl font-black shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] relative z-10 group-hover/avatar:scale-105 transition-transform duration-500">
+                                                    {classData.teacher_name.charAt(0)}
+                                                </div>
+                                                <div className="absolute -bottom-3 -right-3 bg-emerald-500 text-black p-2 rounded-xl border-4 border-[#0c0e12] z-20 shadow-lg">
+                                                    <CheckIcon className="w-4 h-4" />
+                                                </div>
                                             </div>
-                                            <p className="text-xs text-muted-foreground font-bold max-w-xs leading-relaxed mt-2">Authorized to manage roster, attendance, and structural configurations for this section.</p>
+
+                                            <div className="space-y-2">
+                                                <h3 className="text-2xl font-black text-foreground tracking-tighter">{classData.teacher_name}</h3>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Primary Class Teacher</p>
+                                            </div>
+
+                                            <div className="flex gap-2 w-full pt-4 border-t border-white/5">
+                                                <div className="flex-1 bg-white/5 rounded-xl p-3 text-center border border-white/5 hover:bg-white/10 transition-colors">
+                                                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Status</p>
+                                                    <p className="text-xs font-bold text-emerald-400">Active</p>
+                                                </div>
+                                                <div className="flex-1 bg-white/5 rounded-xl p-3 text-center border border-white/5 hover:bg-white/10 transition-colors">
+                                                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Access</p>
+                                                    <p className="text-xs font-bold text-indigo-400">Full</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-border rounded-[2rem] bg-muted/5 group-hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => setIsAssignFacultyOpen(true)}>
-                                        <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mb-4 text-amber-500 animate-pulse">
-                                            <AlertTriangleIcon className="w-8 h-8" />
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-[2rem] bg-muted/5 group-hover:bg-muted/10 transition-all cursor-pointer h-full relative z-10" onClick={() => setIsAssignFacultyOpen(true)}>
+                                            <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mb-6 text-amber-500 animate-pulse shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                                                <AlertTriangleIcon className="w-10 h-10" />
+                                            </div>
+                                            <h4 className="text-xl font-black text-foreground tracking-tight">Critical Vacancy</h4>
+                                            <p className="text-xs text-muted-foreground mt-2 max-w-[200px] leading-relaxed font-medium">This section currently lacks a designated faculty lead. Operational usage is restricted.</p>
+                                            <button className="mt-8 px-6 py-3 bg-amber-500/10 text-amber-500 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-amber-500 hover:text-black transition-all border border-amber-500/20">Assign Now</button>
                                         </div>
-                                        <h4 className="text-lg font-black text-foreground">No Lead Assigned</h4>
-                                        <p className="text-xs text-muted-foreground mt-2 max-w-xs mx-auto">This section currently lacks a designated faculty lead. Operational usage is restricted.</p>
-                                        <button className="mt-6 text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:underline">Assign Now</button>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="bg-card border border-border/80 rounded-[2.5rem] p-10 shadow-sm opacity-60 hover:opacity-100 transition-opacity">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-8">Subject Faculty Map</h4>
-                                <div className="space-y-4">
-                                    <p className="text-sm font-bold text-muted-foreground italic">Subject-specific mappings are managed in the Curriculum Core.</p>
-                                    <button onClick={() => setActiveTab('subjects')} className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 text-foreground hover:text-primary transition-colors">
-                                        View Curriculum <ChevronRightIcon className="w-4 h-4" />
-                                    </button>
+                            <div className="lg:col-span-2">
+                                <div className="bg-card border border-border/80 rounded-[2.5rem] p-8 min-h-[500px] shadow-sm relative overflow-hidden flex flex-col">
+                                    <div className="flex items-center justify-between mb-8 relative z-10">
+                                        <div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-2">Subject Faculty Map</h4>
+                                            <p className="text-xs font-bold text-muted-foreground/60 italic">Instructors assigned via Curriculum Core.</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setActiveTab('subjects')}
+                                            className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 text-foreground transition-all border border-white/5"
+                                        >
+                                            Manage <ChevronRightIcon className="w-3 h-3" />
+                                        </button>
+                                    </div>
+
+                                    {subjects.length > 0 ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10 overflow-y-auto pr-2 custom-scrollbar max-h-[420px]">
+                                            {subjects.map((subject, idx) => (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: idx * 0.05 }}
+                                                    key={subject.id || idx}
+                                                    className="group/card flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-primary/20 transition-all duration-300"
+                                                >
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black shadow-inner 
+                                                        ${subject.teacher_name
+                                                            ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                                                            : 'bg-white/5 text-muted-foreground border border-white/5'
+                                                        }`}>
+                                                        {subject.teacher_name ? subject.teacher_name.charAt(0) : <UserIcon className="w-5 h-5 opacity-40" />}
+                                                    </div>
+                                                    <div className="flex-grow min-w-0">
+                                                        <h5 className="font-bold text-sm text-foreground truncate group-hover/card:text-primary transition-colors">{subject.title}</h5>
+                                                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 mt-1 truncate">
+                                                            {subject.code || 'CORE'} • {subject.teacher_name ? 'Assigned' : 'Vacancy'}
+                                                        </p>
+                                                    </div>
+                                                    {subject.teacher_name ? (
+                                                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" title="Active"></div>
+                                                    ) : (
+                                                        <button
+                                                            className="text-[9px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 hover:underline decoration-amber-500/30 underline-offset-4 transition-all"
+                                                            onClick={() => {
+                                                                showToast(`Assign teacher for ${subject.title} via Subjects tab`, 'info');
+                                                                setActiveTab('subjects');
+                                                            }}
+                                                        >
+                                                            Assign
+                                                        </button>
+                                                    )}
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex-grow flex flex-col items-center justify-center text-center opacity-40 py-10">
+                                            <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mb-4"><BookIcon className="w-8 h-8 text-muted-foreground" /></div>
+                                            <p className="font-black uppercase tracking-[0.2em] text-muted-foreground text-sm">No Subjects Mapped</p>
+                                            <p className="text-[10px] font-bold text-muted-foreground/60 mt-2 max-w-[200px]">Initialize curriculum modules to enable faculty assignment.</p>
+                                            <button
+                                                onClick={() => setActiveTab('subjects')}
+                                                className="mt-6 text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
+                                            >
+                                                Setup Curriculum
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1002,6 +1261,30 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                 </div>
                             </motion.div>
                         </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {selectedStudentForView && (
+                        <StudentProfileModal
+                            student={selectedStudentForView}
+                            onClose={() => setSelectedStudentForView(null)}
+                            onUpdate={fetchDetails}
+                        />
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {selectedStudentForEdit && (
+                        <EditStudentDetailsModal
+                            student={selectedStudentForEdit}
+                            onClose={() => setSelectedStudentForEdit(null)}
+                            onSave={() => {
+                                setSelectedStudentForEdit(null);
+                                fetchDetails();
+                                showToast("Student details updated", 'success');
+                            }}
+                        />
                     )}
                 </AnimatePresence>
             </motion.div>
