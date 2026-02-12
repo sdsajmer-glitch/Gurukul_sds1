@@ -50,9 +50,9 @@ const StatusChip: React.FC<{ status: string }> = ({ status }) => {
     );
 };
 
-export const ExpenseDetailContent: React.FC<{ 
-    expense: Expense; 
-    viewCurrency: CurrencyCode; 
+export const ExpenseDetailContent: React.FC<{
+    expense: Expense;
+    viewCurrency: CurrencyCode;
     onAction: (id: number, status: 'Approved' | 'Rejected') => void;
     onViewLedger: (expense: Expense) => void;
 }> = ({ expense, viewCurrency, onAction, onViewLedger }) => {
@@ -70,13 +70,13 @@ export const ExpenseDetailContent: React.FC<{
     const handleDownloadArtifact = async (e: React.MouseEvent) => {
         e.stopPropagation();
         if (!expense.invoice?.storage_path) return;
-        
+
         setDownloading(true);
         try {
             const { data, error } = await supabase.storage
                 .from(BUCKETS.EXPENSES)
                 .download(expense.invoice.storage_path);
-            
+
             if (error) throw error;
 
             const url = window.URL.createObjectURL(data);
@@ -98,51 +98,55 @@ export const ExpenseDetailContent: React.FC<{
         <div className="p-8 md:p-12 space-y-12 bg-black/40">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                 {/* 1. Magnitude Matrix (Forensic Math) */}
-                <div className="space-y-6">
-                    <h5 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Magnitude Matrix</h5>
-                    <div className="space-y-4 bg-black/60 p-8 rounded-[2rem] border border-white/5 shadow-inner">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-white/40 font-medium font-serif italic">Base Allocation</span>
-                            <span className="font-mono font-black text-white/80 tabular-nums">{formatCurrency(baseAmount, viewCurrency)}</span>
+                <div className="space-y-8">
+                    <h5 className="text-[10px] font-black uppercase text-white/20 tracking-[0.5em] ml-2">Magnitude Matrix</h5>
+                    <div className="space-y-5 bg-white/[0.01] p-10 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden group/matrix">
+                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                        <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-white/30 font-serif italic">Base Allocation</span>
+                            <span className="font-mono font-black text-white/60 tabular-nums uppercase">{formatCurrency(baseAmount, viewCurrency)}</span>
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-white/40 font-medium font-serif italic">Governance Levy (18%)</span>
-                            <span className="font-mono font-black text-white/80 tabular-nums">{formatCurrency(taxAmount, viewCurrency)}</span>
+                        <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-white/30 font-serif italic">Governance Levy (18%)</span>
+                            <span className="font-mono font-black text-white/60 tabular-nums uppercase">{formatCurrency(taxAmount, viewCurrency)}</span>
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-white/40 font-medium font-serif italic">Manual Adjustments</span>
-                            <span className="font-mono font-black text-white/80 tabular-nums">{formatCurrency(adjustments, viewCurrency)}</span>
+                        <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-white/30 font-serif italic">Manual Adjustments</span>
+                            <span className="font-mono font-black text-white/60 tabular-nums uppercase">{formatCurrency(adjustments, viewCurrency)}</span>
                         </div>
-                        <div className="pt-8 border-t border-white/5 flex justify-between items-end">
-                            <span className="text-[10px] font-black uppercase text-primary tracking-[0.2em] pb-1">Ledger Total</span>
-                            <span className="text-3xl font-black text-white tabular-nums tracking-tighter">{formatCurrency(expense.amount, viewCurrency)}</span>
+                        <div className="pt-10 border-t border-white/[0.04] flex justify-between items-end relative">
+                            <div className="space-y-1">
+                                <p className="text-[9px] font-black uppercase text-primary tracking-[0.3em]">Ledger Total</p>
+                                <div className="w-8 h-0.5 bg-primary/30"></div>
+                            </div>
+                            <span className="text-4xl font-serif font-black text-white tabular-nums tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">{formatCurrency(expense.amount, viewCurrency)}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* 2. Counterparty Node */}
-                <div className="space-y-6">
-                    <h5 className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Counterparty Node</h5>
-                    <div className="space-y-8 px-2">
-                        <div className="flex items-start gap-5">
-                            <div className="p-3.5 rounded-2xl bg-white/5 text-white/30 border border-white/10 shadow-xl"><UsersIcon className="w-5 h-5"/></div>
-                            <div>
-                                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Legal Identity</p>
-                                <p className="text-sm font-bold text-white uppercase tracking-tight">{expense.vendor_name || 'INTERNAL_DISBURSEMENT'}</p>
+                <div className="space-y-8">
+                    <h5 className="text-[10px] font-black uppercase text-white/20 tracking-[0.5em] ml-2">Counterparty Node</h5>
+                    <div className="space-y-10 px-4">
+                        <div className="flex items-start gap-6 group/node">
+                            <div className="p-4 rounded-2xl bg-white/[0.02] text-white/20 border border-white/5 shadow-2xl group-hover/node:text-primary transition-colors"><UsersIcon className="w-6 h-6" /></div>
+                            <div className="space-y-1">
+                                <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Legal Identity</p>
+                                <p className="text-sm font-serif font-black text-white uppercase tracking-tight">{expense.vendor_name || 'INTERNAL_DISBURSEMENT'}</p>
                             </div>
                         </div>
-                        <div className="flex items-start gap-5">
-                            <div className="p-3.5 rounded-2xl bg-white/5 text-white/30 border border-white/10 shadow-xl"><ReceiptIcon className="w-5 h-5"/></div>
-                            <div>
-                                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Payment Vector</p>
-                                <p className="text-sm font-bold text-white uppercase tracking-tight">{expense.payment_method || 'Electronic Clearing'}</p>
+                        <div className="flex items-start gap-6 group/vector">
+                            <div className="p-4 rounded-2xl bg-white/[0.02] text-white/20 border border-white/5 shadow-2xl group-hover/vector:text-primary transition-colors"><ReceiptIcon className="w-6 h-6" /></div>
+                            <div className="space-y-1">
+                                <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Payment Vector</p>
+                                <p className="text-sm font-serif font-black text-white uppercase tracking-tight">{expense.payment_method || 'Electronic Clearing'}</p>
                             </div>
                         </div>
-                        <div className="flex items-start gap-5">
-                            <div className="p-3.5 rounded-2xl bg-white/5 text-white/30 border border-white/10 shadow-xl"><ShieldCheckIcon className="w-5 h-5"/></div>
-                            <div>
-                                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Compliance Binding</p>
-                                <p className="text-sm font-bold text-white uppercase tracking-tight">{expense.vendor_account || 'SECURED_LEDGER'}</p>
+                        <div className="flex items-start gap-6 group/compliance">
+                            <div className="p-4 rounded-2xl bg-white/[0.02] text-white/20 border border-white/5 shadow-2xl group-hover/compliance:text-primary transition-colors"><ShieldCheckIcon className="w-6 h-6" /></div>
+                            <div className="space-y-1">
+                                <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Compliance Binding</p>
+                                <p className="text-sm font-serif font-black text-white uppercase tracking-tight">{expense.vendor_account || 'SECURED_LEDGER'}</p>
                             </div>
                         </div>
                     </div>
@@ -170,49 +174,50 @@ export const ExpenseDetailContent: React.FC<{
             </div>
 
             {/* Artifacts & Action Strip */}
-            <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-                <div 
+            <div className="pt-12 border-t border-white/[0.04] flex flex-col md:flex-row justify-between items-center gap-10">
+                <div
                     onClick={handleDownloadArtifact}
-                    className="flex items-center gap-5 group/doc p-5 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:border-primary/20 transition-all cursor-pointer shadow-2xl min-w-[320px]"
+                    className="flex items-center gap-8 group/doc p-6 rounded-[2.5rem] bg-white/[0.01] border border-white/5 hover:border-primary/40 transition-all cursor-pointer shadow-3xl min-w-[360px] relative overflow-hidden"
                 >
-                    <div className="p-3.5 bg-[#1a1d23] rounded-2xl text-white/40 group-hover/doc:text-primary transition-colors border border-white/5 shadow-inner flex-shrink-0">
-                        {downloading ? <Spinner size="sm"/> : <FileTextIcon className="w-7 h-7"/>}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover/doc:opacity-100 transition-opacity"></div>
+                    <div className="p-4 bg-[#1a1d23] rounded-2xl text-white/20 group-hover/doc:text-primary transition-all duration-500 border border-white/5 shadow-inner flex-shrink-0 relative z-10">
+                        {downloading ? <Spinner size="sm" /> : <FileTextIcon className="w-8 h-8" />}
                     </div>
-                    <div className="min-w-0 flex-grow">
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Fiscal Artifact</p>
-                        <p className="text-[11px] font-black text-white/70 uppercase truncate tracking-tight">
+                    <div className="min-w-0 flex-grow relative z-10">
+                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em] mb-1.5">Fiscal Artifact</p>
+                        <p className="text-[11px] font-serif font-black text-white/60 uppercase truncate tracking-tight">
                             {expense.invoice?.file_name || 'MISSING_PAYLOAD_ATTACHMENT'}
                         </p>
                     </div>
-                    <div className="p-2 ml-4 rounded-xl bg-white/5 text-white/20 group-hover/doc:text-white transition-all shadow-sm flex-shrink-0">
-                        <DownloadIcon className="w-5 h-5"/>
+                    <div className="p-3 ml-4 rounded-xl bg-white/5 text-white/10 group-hover/doc:text-white transition-all shadow-sm flex-shrink-0 relative z-10">
+                        <DownloadIcon className="w-5 h-5" />
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 w-full md:w-auto">
+                <div className="flex items-center gap-6 w-full md:w-auto">
                     {expense.status === 'Pending' && (
-                        <div className="flex items-center gap-3">
-                            <button 
+                        <div className="flex items-center gap-4">
+                            <button
                                 onClick={(e) => { e.stopPropagation(); onAction(expense.id, 'Rejected'); }}
-                                className="px-10 py-4 rounded-2xl text-[10px] font-black uppercase text-red-500/60 hover:text-white hover:bg-red-600 transition-all border border-red-500/20 tracking-[0.2em] active:scale-95"
+                                className="px-12 h-16 rounded-[1.2rem] text-[10px] font-black uppercase text-red-500/40 hover:text-white hover:bg-red-600 transition-all border border-red-500/10 tracking-[0.3em] active:scale-95"
                             >
                                 Flag Payload
                             </button>
-                            <button 
+                            <button
                                 onClick={(e) => { e.stopPropagation(); onAction(expense.id, 'Approved'); }}
-                                className="px-12 py-4 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-emerald-500/20 hover:bg-emerald-500 transition-all transform active:scale-95 border border-white/10"
+                                className="px-14 h-16 bg-primary text-white font-black text-[10px] uppercase tracking-[0.4em] rounded-[1.2rem] shadow-[0_24px_48px_-12px_rgba(var(--primary),0.5)] hover:bg-[#8B5CF6] transition-all transform active:scale-95 border border-white/10"
                             >
                                 Authorize Logic
                             </button>
                         </div>
                     )}
                     {expense.status !== 'Pending' && (
-                        <button 
+                        <button
                             onClick={(e) => { e.stopPropagation(); onViewLedger(expense); }}
-                            className="flex-1 md:flex-none px-12 py-4 rounded-[1.5rem] text-[10px] font-black uppercase text-white/40 hover:text-white hover:bg-white/5 border border-white/5 transition-all tracking-[0.3em] shadow-2xl active:scale-95 group"
+                            className="flex-1 md:flex-none h-16 px-14 rounded-[1.5rem] text-[10px] font-black uppercase text-white/20 hover:text-white hover:bg-white/5 border border-white/5 transition-all tracking-[0.4em] shadow-2xl active:scale-95 group/ledger"
                         >
-                            <div className="flex items-center gap-3">
-                                View Ledger Entry <ChevronRightIcon className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all"/>
+                            <div className="flex items-center gap-4">
+                                View Ledger Entry <ChevronRightIcon className="w-4 h-4 opacity-10 group-hover/ledger:opacity-100 group-hover/ledger:translate-x-2 transition-all" />
                             </div>
                         </button>
                     )}
@@ -230,17 +235,17 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, isExpanded, onToggle, 
 
     return (
         <div className={`transition-all duration-700 ${isExpanded ? 'my-12 z-20 scale-[1.01]' : 'z-10'}`}>
-            <div 
+            <div
                 className={`
                     relative flex flex-col rounded-[3rem] border transition-all duration-700 overflow-hidden
-                    ${isExpanded 
-                        ? 'bg-[#0F1217] border-white/20 shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] ring-1 ring-white/5' 
+                    ${isExpanded
+                        ? 'bg-[#0F1217] border-white/20 shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] ring-1 ring-white/5'
                         : 'bg-[#0A0A0C] border-white/5 hover:bg-white/[0.02] hover:border-white/10 hover:shadow-2xl'
                     }
                 `}
             >
                 {/* --- HEADER BLOCK --- */}
-                <div 
+                <div
                     onClick={onToggle}
                     className={`p-7 md:p-12 flex items-center justify-between gap-10 cursor-pointer transition-all ${isExpanded ? 'border-b border-white/[0.04]' : ''}`}
                 >
@@ -267,7 +272,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, isExpanded, onToggle, 
                                 {expense.description}
                             </h4>
                             <div className="flex items-center gap-4 mt-3">
-                                <button 
+                                <button
                                     onClick={handleCopyId}
                                     className="flex items-center gap-2 text-[10px] font-mono text-white/20 hover:text-white/40 transition-colors uppercase tracking-[0.3em]"
                                 >
@@ -286,12 +291,12 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, isExpanded, onToggle, 
                                 {formatCurrency(expense.amount, viewCurrency)}
                             </p>
                         </div>
-                        
+
                         <div className="hidden md:block">
                             <StatusChip status={expense.status} />
                         </div>
 
-                        <motion.div 
+                        <motion.div
                             animate={{ rotate: isExpanded ? 180 : 0 }}
                             transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
                             className={`p-4 rounded-full border transition-all shadow-xl ${isExpanded ? 'bg-primary text-white border-primary shadow-primary/20' : 'bg-white/5 border-white/5 text-white/20'}`}
@@ -311,10 +316,10 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, isExpanded, onToggle, 
                             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                             className="hidden md:block overflow-hidden"
                         >
-                            <ExpenseDetailContent 
-                                expense={expense} 
-                                viewCurrency={viewCurrency} 
-                                onAction={onAction} 
+                            <ExpenseDetailContent
+                                expense={expense}
+                                viewCurrency={viewCurrency}
+                                onAction={onAction}
                                 onViewLedger={onViewLedger}
                             />
                         </motion.div>
@@ -325,7 +330,7 @@ const ExpenseRow: React.FC<ExpenseRowProps> = ({ expense, isExpanded, onToggle, 
     );
 };
 
-const ChevronRightIcon = ({className}:{className?:string}) => (
+const ChevronRightIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 18 15 12 9 6"></polyline></svg>
 );
 

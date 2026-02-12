@@ -271,27 +271,36 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-500/5 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-                {/* Header */}
-                <div className="px-8 py-6 border-b border-white/5 bg-[#0f1016]/80 backdrop-blur-lg flex justify-between items-center relative z-20">
-                    <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-2xl ${isLocked ? 'bg-amber-500/10 text-amber-500' : 'bg-primary/10 text-primary'} border border-white/5`}>
-                            {isLocked ? <LockIcon className="w-6 h-6" /> : <BookIcon className="w-6 h-6" />}
+                {/* Institutional Header Section */}
+                <div className="px-10 py-8 border-b border-white/5 bg-white/[0.01] backdrop-blur-3xl flex justify-between items-center relative z-20 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.03] to-transparent pointer-events-none"></div>
+
+                    <div className="flex items-center gap-6 relative z-10">
+                        <div className={`p-4 rounded-[1.5rem] shadow-2xl ${isLocked ? 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20' : 'bg-primary/10 text-primary ring-1 ring-primary/20'}`}>
+                            {isLocked ? <LockIcon className="w-7 h-7" /> : <SparklesIcon className="w-7 h-7" />}
                         </div>
                         <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="text-[10px] uppercase font-bold tracking-widest text-white/40">Step 0{step} / 03</span>
+                            <div className="flex items-center gap-3 mb-1.5">
+                                <span className="px-3 py-0.5 rounded-lg bg-white/5 text-[9px] font-black uppercase tracking-[0.3em] text-white/40 border border-white/5">Step 0{step} / 03</span>
+                                {isLocked && <span className="px-3 py-0.5 rounded-lg bg-amber-500/10 text-[9px] font-black uppercase tracking-[0.3em] text-amber-500 border border-amber-500/20">System Locked</span>}
                             </div>
-                            <h3 className="text-xl font-bold text-white tracking-tight">
-                                {isLocked ? 'Immutable Fee Structure' : isEditMode ? 'Edit Fee Structure' : 'New Fee Structure'}
+                            <h3 className="text-2xl font-serif font-black text-white tracking-tight uppercase">
+                                {isLocked ? 'Immutable Financial Protocol' : isEditMode ? 'Protocol Configuration' : 'Financial Protocol Architect'}
                             </h3>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2.5 rounded-xl hover:bg-white/5 text-white/40 hover:text-white transition-all"
-                    >
-                        <XIcon className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <div className="hidden md:flex flex-col items-end">
+                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Institutional Authority</p>
+                            <p className="text-[11px] font-bold text-white/60">FINANCE_ADMIN_NODE</p>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-3.5 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all border border-transparent hover:border-white/10 group"
+                        >
+                            <XIcon className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Body */}
@@ -322,35 +331,42 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
 
                     {/* Step 1: Core Registry */}
                     {step === 1 && !initializing && (
-                        <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-                            <div>
-                                <h4 className="text-2xl font-bold text-white mb-2">Core Registry</h4>
-                                <p className="text-white/40 text-sm">Define the primary identification and applicability of this fee structure.</p>
+                        <div className="space-y-12 animate-in slide-in-from-right-4 duration-500 max-w-3xl mx-auto py-4">
+                            <div className="flex items-center gap-6 mb-4">
+                                <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
+                                    <BookIcon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h4 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Registry Architecture</h4>
+                                    <p className="text-white/30 text-xs font-medium tracking-wide">Define the institutional nexus and temporal scope for this financial node.</p>
+                                </div>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Structure Designation</label>
+                            <div className="space-y-8">
+                                <div className="space-y-3 relative group">
+                                    <div className="flex items-center justify-between ml-1">
+                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] block">Protocol Designation</label>
+                                        <span className="text-[9px] font-black text-primary/40 uppercase tracking-widest">Required_Field</span>
+                                    </div>
                                     <input
                                         disabled={isLocked}
                                         type="text"
-                                        placeholder="e.g. GRADE 10 GENERAL 2025"
-                                        className="w-full bg-[#1A1D25] border border-white/5 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all font-semibold uppercase tracking-wide disabled:opacity-50"
+                                        placeholder="E.G. GRADE_10_GLOBAL_STANDARD_2025"
+                                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-5 text-white placeholder:text-white/5 focus:outline-none focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 transition-all font-serif font-black text-lg uppercase tracking-tight disabled:opacity-50 shadow-inner"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
                                     />
-                                    <p className="text-[10px] text-white/30 ml-1">A unique identifier for this fee structure.</p>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Structure Type</label>
-                                    <div className="flex gap-2 p-1 bg-[#1A1D25] rounded-xl border border-white/5">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] block ml-1">Protocol Category</label>
+                                    <div className="flex gap-3 p-1.5 bg-black/40 rounded-2xl border border-white/5 shadow-inner">
                                         {['Standard', 'Package', 'Transport'].map(t => (
                                             <button
                                                 key={t}
                                                 type="button"
                                                 onClick={() => setFormData({ ...formData, type: t })}
-                                                className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${formData.type === t ? 'bg-primary text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
+                                                className={`flex-1 py-3 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === t ? 'bg-primary text-white shadow-2xl ring-1 ring-white/10' : 'text-white/20 hover:text-white/40 hover:bg-white/[0.02]'}`}
                                             >
                                                 {t}
                                             </button>
@@ -358,57 +374,57 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Academic Cycle</label>
-                                        <div className="relative">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] block ml-1">Academic Cycle</label>
+                                        <div className="relative group">
                                             <select
                                                 disabled={isLocked}
-                                                className="w-full bg-[#1A1D25] border border-white/5 rounded-xl px-5 py-3.5 text-white/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 uppercase text-sm font-semibold appearance-none cursor-pointer disabled:opacity-50"
+                                                className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white/80 focus:outline-none focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 uppercase text-[11px] font-black tracking-widest appearance-none cursor-pointer disabled:opacity-50 transition-all shadow-inner"
                                                 value={formData.academicYear}
                                                 onChange={e => setFormData({ ...formData, academicYear: e.target.value })}
                                             >
                                                 {academicYears.length > 0 ? (
                                                     academicYears.map(y => (
-                                                        <option key={y.id} value={y.year_name}>{y.year_name} {y.is_current ? '(CURRENT)' : ''}</option>
+                                                        <option key={y.id} value={y.year_name} className="bg-[#0d0f14]">{y.year_name} {y.is_current ? '(CURRENT)' : ''}</option>
                                                     ))
                                                 ) : (
-                                                    <option value="2025-2026">2025-2026 (STATIC_FALLBACK)</option>
+                                                    <option value="2025-2026" className="bg-[#0d0f14]">2025-2026 (STATIC_FALLBACK)</option>
                                                 )}
                                             </select>
-                                            <ChevronDownIcon className="w-4 h-4 text-white/30 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                            <ChevronDownIcon className="w-4 h-4 text-white/20 absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary transition-colors" />
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Target Grade</label>
-                                        <div className="relative">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] block ml-1">Target Registry</label>
+                                        <div className="relative group">
                                             <select
                                                 disabled={isLocked}
-                                                className="w-full bg-[#1A1D25] border border-white/5 rounded-xl px-5 py-3.5 text-white/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 uppercase text-sm font-semibold appearance-none cursor-pointer disabled:opacity-50"
+                                                className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white/80 focus:outline-none focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 uppercase text-[11px] font-black tracking-widest appearance-none cursor-pointer disabled:opacity-50 transition-all shadow-inner"
                                                 value={formData.targetGrade}
                                                 onChange={e => setFormData({ ...formData, targetGrade: e.target.value })}
                                             >
                                                 {Array.from({ length: 12 }, (_, i) => i + 1).map(g => (
-                                                    <option key={g} value={String(g)}>GRADE {g}</option>
+                                                    <option key={g} value={String(g)} className="bg-[#0d0f14]">GRADE {g}</option>
                                                 ))}
                                             </select>
-                                            <ChevronDownIcon className="w-4 h-4 text-white/30 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                            <ChevronDownIcon className="w-4 h-4 text-white/20 absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary transition-colors" />
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-wider block ml-1">Currency Matrix</label>
-                                        <div className="grid grid-cols-2 gap-2 p-1 bg-[#1A1D25] rounded-xl border border-white/5">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] block ml-1">Currency Matrix</label>
+                                        <div className="grid grid-cols-2 gap-2 p-1.5 bg-black/40 rounded-2xl border border-white/5 shadow-inner">
                                             {['INR', 'USD'].map(curr => (
                                                 <button
                                                     disabled={isLocked}
                                                     key={curr}
                                                     type="button"
                                                     onClick={() => setFormData({ ...formData, currency: curr as CurrencyCode })}
-                                                    className={`py-2 rounded-lg text-[10px] font-black transition-all ${formData.currency === curr
-                                                        ? 'bg-primary text-white shadow-lg ring-1 ring-white/10'
-                                                        : 'text-white/20 hover:text-white/40'
+                                                    className={`py-2.5 rounded-[1.125rem] text-[10px] font-black transition-all ${formData.currency === curr
+                                                        ? 'bg-primary text-white shadow-2xl ring-1 ring-white/10'
+                                                        : 'text-white/20 hover:text-white/40 hover:bg-white/[0.02]'
                                                         } disabled:opacity-50 uppercase tracking-widest`}
                                                 >
                                                     {curr}
@@ -420,41 +436,46 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
 
                                 <div
                                     onClick={() => !isLocked && setFormData(f => ({ ...f, isDefault: !f.isDefault }))}
-                                    className={`group p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${formData.isDefault
-                                        ? 'bg-primary/5 border-primary/30'
-                                        : 'bg-[#1A1D25]/50 border-white/5 hover:border-white/10 hover:bg-[#1A1D25]'
+                                    className={`group p-8 rounded-[2.5rem] border transition-all cursor-pointer flex items-center gap-6 shadow-2xl relative overflow-hidden ${formData.isDefault
+                                        ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20'
+                                        : 'bg-black/40 border-white/5 hover:border-white/20 hover:bg-black/60 shadow-inner'
                                         }`}
                                 >
-                                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${formData.isDefault ? 'bg-primary border-primary' : 'border-white/20 group-hover:border-primary/50'
+                                    {formData.isDefault && <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>}
+                                    <div className={`w-8 h-8 rounded-2xl border flex items-center justify-center transition-all ${formData.isDefault ? 'bg-primary border-primary shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'border-white/10 group-hover:border-primary/50'
                                         }`}>
-                                        {formData.isDefault && <CheckCircleIcon className="w-4 h-4 text-white" />}
+                                        {formData.isDefault && <CheckCircleIcon className="w-5 h-5 text-white" />}
                                     </div>
-                                    <div className="flex-1">
+                                    <div className="flex-1 relative z-10">
                                         <div className="flex items-center justify-between">
-                                            <p className={`text-sm font-bold uppercase tracking-wide ${formData.isDefault ? 'text-white' : 'text-white/70'}`}>Set as Default Structure</p>
-                                            <ShieldCheckIcon className={`w-5 h-5 ${formData.isDefault ? 'text-primary' : 'text-white/10'}`} />
+                                            <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${formData.isDefault ? 'text-white' : 'text-white/40'}`}>Set as Default Protocol</p>
+                                            <ShieldCheckIcon className={`w-6 h-6 transition-colors ${formData.isDefault ? 'text-primary' : 'text-white/10'}`} />
                                         </div>
-                                        <p className="text-xs text-white/40 mt-1">Automatically assign this structure to new students enrolled in Grade {formData.targetGrade}.</p>
+                                        <p className="text-sm text-white/30 mt-1.5 font-medium">Automatically assign this configuration to new students enrolled in Grade {formData.targetGrade}.</p>
                                     </div>
                                 </div>
 
                                 {/* Template Cloning Zone */}
                                 {!isLocked && !isEditMode && templates.length > 0 && (
-                                    <div className="space-y-4 pt-4 border-t border-white/5">
-                                        <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] block ml-1">Cloning Protocol (Optional)</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-6 pt-8 border-t border-white/5">
+                                        <div className="flex items-center gap-4 ml-1">
+                                            <SparklesIcon className="w-4 h-4 text-primary/40" />
+                                            <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] block">Cloning Protocol (Optional)</label>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                             {templates.map(t => (
                                                 <button
                                                     key={t.id}
                                                     onClick={() => handleApplyTemplate(t)}
-                                                    className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-primary/5 hover:border-primary/30 transition-all text-left group"
+                                                    className="p-6 bg-black/40 border border-white/5 rounded-[2.5rem] hover:bg-white/[0.02] hover:border-primary/30 transition-all text-left group shadow-2xl hover:-translate-y-1 active:scale-[0.98] relative overflow-hidden"
                                                 >
-                                                    <div className="flex justify-between items-center mb-2">
-                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t.academic_year}</span>
-                                                        <SparklesIcon className="w-3 h-3 text-white/10 group-hover:text-primary transition-colors" />
+                                                    <div className="absolute top-0 right-0 p-6 opacity-[0.02] group-hover:scale-110 transition-transform duration-1000"><LockIcon className="w-20 h-20" /></div>
+                                                    <div className="flex justify-between items-center mb-3 relative z-10">
+                                                        <span className="px-3 py-1 bg-primary/10 rounded-lg text-[9px] font-black text-primary uppercase tracking-widest ring-1 ring-primary/20">{t.academic_year}</span>
+                                                        <SparklesIcon className="w-4 h-4 text-white/10 group-hover:text-primary transition-colors" />
                                                     </div>
-                                                    <p className="text-xs font-bold text-white uppercase truncate">{t.name}</p>
-                                                    <p className="text-[9px] text-white/20 mt-1">{t.components?.length || 0} Components Identified</p>
+                                                    <p className="text-lg font-serif font-black text-white uppercase tracking-tighter truncate mb-1 relative z-10">{t.name}</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 relative z-10">{t.components?.length || 0} Ledger Nodes Detected</p>
                                                 </button>
                                             ))}
                                         </div>
@@ -466,159 +487,187 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
 
                     {/* Step 2: Ledger Nodes */}
                     {step === 2 && !initializing && (
-                        <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                                <div>
-                                    <h4 className="text-2xl font-bold text-white mb-2">Fee Components</h4>
-                                    <p className="text-white/40 text-sm">Define each line item that makes up the total fee structure.</p>
+                        <div className="space-y-10 animate-in slide-in-from-right-4 duration-500 max-w-3xl mx-auto py-4">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-4">
+                                <div className="flex items-center gap-6">
+                                    <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
+                                        <SparklesIcon className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Financial Ledger Nodes</h4>
+                                        <p className="text-white/30 text-xs font-medium tracking-wide">Define line items for this institutional financial configuration.</p>
+                                    </div>
                                 </div>
                                 {!isLocked && (
                                     <button
                                         onClick={handleAddComponent}
-                                        className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs uppercase tracking-wider rounded-xl border border-white/10 transition-all flex items-center gap-2"
+                                        className="px-6 py-3 bg-primary/10 text-primary font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl border border-primary/20 hover:bg-primary/20 transition-all flex items-center gap-3 transform hover:-translate-y-0.5 active:scale-95 shadow-2xl"
                                     >
-                                        <PlusIcon className="w-4 h-4" /> Add Component
+                                        <PlusIcon className="w-5 h-5" /> Append Node
                                     </button>
                                 )}
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 {components.map((comp, idx) => (
-                                    <div key={idx} className="flex flex-col xl:flex-row gap-4 p-5 bg-[#1A1D25]/40 border border-white/5 rounded-2xl hover:border-white/10 transition-colors group">
-                                        <div className="flex-grow space-y-1.5">
-                                            <div className="flex gap-2">
-                                                <div className="w-1/3">
-                                                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Category</label>
-                                                    <select
-                                                        disabled={isLocked}
-                                                        className="w-full bg-transparent border-b border-white/10 py-2 text-xs font-bold text-white focus:outline-none focus:border-primary uppercase tracking-wide disabled:opacity-50"
-                                                        value={comp.category}
-                                                        onChange={e => updateComponent(idx, 'category', e.target.value)}
+                                    <div key={idx} className="p-8 bg-black/40 border border-white/5 rounded-[2.5rem] hover:border-white/20 transition-all group shadow-2xl relative overflow-hidden">
+                                        <div className="flex flex-col xl:flex-row gap-8 relative z-10">
+                                            <div className="flex-grow space-y-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] pl-1">Registry Category</label>
+                                                        <div className="relative group/select">
+                                                            <select
+                                                                disabled={isLocked}
+                                                                className="w-full bg-white/[0.02] border border-white/5 rounded-2xl px-5 py-3.5 text-[11px] font-black text-white focus:outline-none focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 appearance-none cursor-pointer uppercase tracking-widest disabled:opacity-50 transition-all"
+                                                                value={comp.category}
+                                                                onChange={e => updateComponent(idx, 'category', e.target.value)}
+                                                            >
+                                                                {['Tuition', 'Books', 'Uniform', 'Transport', 'Hostel', 'Exam', 'Misc'].map(c => <option key={c} value={c} className="bg-[#0d0f14]">{c}</option>)}
+                                                            </select>
+                                                            <ChevronDownIcon className="w-4 h-4 text-white/10 absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none group-hover/select:text-primary transition-colors" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] pl-1">Node Identifier</label>
+                                                        <input
+                                                            disabled={isLocked}
+                                                            type="text"
+                                                            placeholder="NODE_NAME"
+                                                            className="w-full bg-white/[0.02] border border-white/5 rounded-2xl px-5 py-3.5 text-[11px] font-mono font-black text-white placeholder:text-white/5 focus:outline-none focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 uppercase tracking-widest disabled:opacity-50 transition-all shadow-inner"
+                                                            value={comp.name}
+                                                            onChange={e => updateComponent(idx, 'name', e.target.value.toUpperCase().replace(/\s/g, '_'))}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-6 w-full xl:w-auto items-end">
+                                                <div className="flex-1 xl:w-48 space-y-2">
+                                                    <label className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] pl-1">Unit Amount</label>
+                                                    <div className="relative group/input">
+                                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-primary font-black text-xs">
+                                                            {formData.currency === 'INR' ? '₹' : '$'}
+                                                        </span>
+                                                        <input
+                                                            disabled={isLocked}
+                                                            type="number"
+                                                            className="w-full bg-white/[0.02] border border-white/5 rounded-2xl py-3.5 pl-10 pr-5 text-right font-serif font-black text-lg text-white focus:outline-none focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 disabled:opacity-50 transition-all shadow-inner"
+                                                            value={comp.amount}
+                                                            onChange={e => updateComponent(idx, 'amount', e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex-1 xl:w-40 space-y-2">
+                                                    <label className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] pl-1">Cycle</label>
+                                                    <div className="relative group/select">
+                                                        <select
+                                                            disabled={isLocked}
+                                                            className="w-full bg-white/[0.02] border border-white/5 rounded-2xl px-5 py-3.5 text-[11px] font-black text-white focus:outline-none focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 appearance-none cursor-pointer disabled:opacity-50 uppercase tracking-widest transition-all"
+                                                            value={comp.frequency}
+                                                            onChange={e => updateComponent(idx, 'frequency', e.target.value)}
+                                                        >
+                                                            {FREQUENCIES.map(f => <option key={f} value={f} className="bg-[#0d0f14]">{f}</option>)}
+                                                        </select>
+                                                        <ChevronDownIcon className="w-3 h-3 text-white/10 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover/select:text-primary transition-colors" />
+                                                    </div>
+                                                </div>
+
+                                                {!isLocked && (
+                                                    <button
+                                                        onClick={() => handleRemoveComponent(idx)}
+                                                        className="p-4 text-white/10 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all border border-transparent hover:border-red-500/20 active:scale-90"
+                                                        title="Sever Node"
                                                     >
-                                                        {['Tuition', 'Books', 'Uniform', 'Transport', 'Hostel', 'Exam', 'Misc'].map(c => <option key={c} value={c} className="bg-black text-white">{c}</option>)}
-                                                    </select>
-                                                </div>
-                                                <div className="w-2/3">
-                                                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Identifier</label>
-                                                    <input
-                                                        disabled={isLocked}
-                                                        type="text"
-                                                        placeholder="TUITION_FEE"
-                                                        className="w-full bg-transparent border-b border-white/10 py-2 text-base font-bold text-white placeholder:text-white/10 focus:outline-none focus:border-primary uppercase tracking-wide disabled:opacity-50 font-mono"
-                                                        value={comp.name}
-                                                        onChange={e => updateComponent(idx, 'name', e.target.value.toUpperCase().replace(/\s/g, '_'))}
-                                                    />
-                                                </div>
+                                                        <TrashIcon className="w-5 h-5" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
-
-                                        <div className="flex gap-4 w-full xl:w-auto">
-                                            <div className="w-1/2 xl:w-48 space-y-1.5">
-                                                <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Amount</label>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-xs font-bold">
-                                                        {formData.currency === 'INR' ? '₹' : '$'}
-                                                    </span>
-                                                    <input
-                                                        disabled={isLocked}
-                                                        type="number"
-                                                        className="w-full bg-[#0f1016] border border-white/10 rounded-lg py-2.5 pl-8 pr-4 text-right font-mono text-sm font-bold text-white focus:outline-none focus:border-primary disabled:opacity-50"
-                                                        value={comp.amount}
-                                                        onChange={e => updateComponent(idx, 'amount', e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="w-1/2 xl:w-40 space-y-1.5">
-                                                <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider pl-1">Frequency</label>
-                                                <div className="relative">
-                                                    <select
-                                                        disabled={isLocked}
-                                                        className="w-full bg-[#0f1016] border border-white/10 rounded-lg py-2.5 px-3 pr-8 text-xs font-bold text-white focus:outline-none focus:border-primary appearance-none cursor-pointer disabled:opacity-50 uppercase"
-                                                        value={comp.frequency}
-                                                        onChange={e => updateComponent(idx, 'frequency', e.target.value)}
-                                                    >
-                                                        {FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
-                                                    </select>
-                                                    <ChevronDownIcon className="w-3 h-3 text-white/30 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {!isLocked && (
-                                            <div className="flex items-end justify-end pb-1.5">
-                                                <button
-                                                    onClick={() => handleRemoveComponent(idx)}
-                                                    className="p-2 text-white/20 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                                                >
-                                                    <TrashIcon className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="p-6 bg-[#1A1D25] rounded-2xl flex items-center justify-between border border-white/5 shadow-inner">
-                                <span className="text-sm font-bold text-white/50 uppercase tracking-wide">Total Annual Projection</span>
-                                <span className="text-3xl font-bold text-primary font-mono tracking-tight">
-                                    {formatCurrency(totalYearlyAmount, formData.currency)}
-                                </span>
+                            <div className="p-10 bg-primary/5 border border-primary/20 rounded-[2.5rem] flex items-center justify-between shadow-2xl relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent pointer-events-none"></div>
+                                <div className="relative z-10">
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-2">Total Annual Projected Yield</p>
+                                    <h5 className="text-sm font-black text-white/40 uppercase tracking-widest">Calculated per instance</h5>
+                                </div>
+                                <div className="relative z-10 text-right">
+                                    <span className="text-4xl font-serif font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                                        {formatCurrency(totalYearlyAmount, formData.currency)}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     )}
 
                     {/* Step 3: Success */}
                     {step === 3 && (
-                        <div className="flex flex-col items-center justify-center py-12 text-center animate-in zoom-in-95 duration-500">
-                            <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
-                                <CheckCircleIcon className="w-10 h-10 text-emerald-500" />
+                        <div className="flex flex-col items-center justify-center py-20 text-center animate-in zoom-in-95 duration-700 max-w-xl mx-auto">
+                            <div className="w-32 h-32 bg-emerald-500/10 rounded-[3rem] flex items-center justify-center mb-10 ring-1 ring-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.2)] relative">
+                                <div className="absolute inset-0 bg-emerald-500/5 rounded-[3rem] animate-ping opacity-20"></div>
+                                <CheckCircleIcon className="w-12 h-12 text-emerald-500 relative z-10" />
                             </div>
-                            <h4 className="text-3xl font-bold text-white mb-3">Ready to Deploy</h4>
-                            <p className="text-white/40 max-w-md leading-relaxed mx-auto">
-                                The fee structure <strong className="text-white">{formData.name}</strong> has been configured successfully.
-                                Review the details before finalizing.
+                            <h4 className="text-4xl font-serif font-black text-white uppercase tracking-tighter mb-4">Protocol Finalization Ready</h4>
+                            <p className="text-white/30 text-sm font-medium leading-loose">
+                                The financial protocol <strong className="text-primary tracking-tight font-black">{formData.name}</strong> has been successfully archived in the institutional registry.
+                                <br />
+                                Verify the downlink parameters before formal deployment.
                             </p>
+
+                            <div className="grid grid-cols-2 gap-6 w-full mt-12">
+                                <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl text-left">
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Target Registry</p>
+                                    <p className="text-lg font-serif font-black text-white">GRADE {formData.targetGrade}</p>
+                                </div>
+                                <div className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl text-left">
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Ledger Nodes</p>
+                                    <p className="text-lg font-serif font-black text-white">{components.length} ACTIVE</p>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="p-6 border-t border-white/5 bg-[#0f1016] flex justify-between items-center relative z-20">
+                {/* Institutional Footer */}
+                <div className="px-10 py-8 border-t border-white/5 bg-white/[0.01] flex justify-between items-center relative z-20">
                     <button
                         onClick={() => step > 1 ? setStep(step - 1) : onClose()}
-                        className="px-6 py-3 text-xs font-bold text-white/40 hover:text-white uppercase tracking-wider transition-colors flex items-center gap-2"
+                        className="px-8 py-4 text-[10px] font-black text-white/30 hover:text-white uppercase tracking-[0.3em] transition-all flex items-center gap-3 group"
                         disabled={loading}
                     >
-                        {step > 1 && <ChevronLeftIcon className="w-4 h-4" />}
-                        {step === 1 ? 'Cancel' : 'Back'}
+                        {step > 1 ? <ChevronLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> : <XIcon className="w-4 h-4" />}
+                        {step === 1 ? 'Terminate Process' : 'Previous Module'}
                     </button>
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-4">
                         {step === 3 ? (
                             <>
                                 <button
                                     onClick={() => handleFinalize(false)}
                                     disabled={loading || isLocked}
-                                    className="px-8 py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all disabled:opacity-50"
+                                    className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl border border-white/5 transition-all disabled:opacity-50"
                                 >
-                                    Save Draft
+                                    Archive as Draft
                                 </button>
                                 <button
                                     onClick={() => handleFinalize(true)}
                                     disabled={loading || isLocked}
-                                    className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-900/20 transition-all disabled:opacity-50 flex items-center gap-2"
+                                    className="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-emerald-900/40 transition-all flex items-center gap-3 transform hover:-translate-y-1 active:scale-95 disabled:opacity-50"
                                 >
-                                    {loading ? <Spinner size="sm" className="text-white" /> : 'Deploy Structure'}
+                                    {loading ? <Spinner size="sm" className="text-white" /> : <><ShieldCheckIcon className="w-5 h-5" /> Deploy Protocol</>}
                                 </button>
                             </>
                         ) : (
                             <button
                                 onClick={() => setStep(step + 1)}
                                 disabled={loading || (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)}
-                                className="px-8 py-3.5 bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                className="px-10 py-4 bg-primary hover:bg-primary/90 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/30 transition-all flex items-center gap-3 transform hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
                             >
-                                Next Step <ChevronRightIcon className="w-4 h-4" />
+                                Synchronize Next <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </button>
                         )}
                     </div>

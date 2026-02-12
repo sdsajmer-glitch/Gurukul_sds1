@@ -41,30 +41,32 @@ const StatCard: React.FC<{
     variant: 'neutral' | 'success' | 'warning' | 'danger';
 }> = ({ title, value, subValue, icon, variant }) => {
     const variants = {
-        neutral: 'bg-[#12141c] border-white/5 text-white',
-        success: 'bg-emerald-500/[0.03] border-emerald-500/20 text-emerald-500',
-        warning: 'bg-amber-500/[0.03] border-amber-500/20 text-amber-500',
-        danger: 'bg-red-500/[0.03] border-red-500/20 text-red-500',
+        neutral: 'bg-white/[0.02] border-white/5 text-white',
+        success: 'bg-emerald-500/[0.03] border-emerald-500/10 text-emerald-400',
+        warning: 'bg-amber-500/[0.03] border-amber-500/10 text-amber-400',
+        danger: 'bg-red-500/[0.03] border-red-500/10 text-red-400',
     };
 
-    const iconBg = {
-        neutral: 'bg-white/5 text-white/40',
-        success: 'bg-emerald-500/10 text-emerald-500',
-        warning: 'bg-amber-500/10 text-amber-500',
-        danger: 'bg-red-500/10 text-red-500',
+    const glows = {
+        neutral: 'group-hover:bg-white/10',
+        success: 'group-hover:bg-emerald-500/10',
+        warning: 'group-hover:bg-amber-500/10',
+        danger: 'group-hover:bg-red-500/10',
     };
 
     return (
-        <div className={`p-6 rounded-3xl border flex flex-col justify-between group hover:scale-[1.02] transition-all duration-300 relative overflow-hidden ${variants[variant]}`}>
-            <div className="absolute top-0 right-0 p-8 opacity-[0.05] group-hover:scale-125 transition-transform duration-700">{icon}</div>
+        <div className={`p-8 rounded-[2.5rem] border flex flex-col justify-between group hover:-translate-y-1 transition-all duration-500 relative overflow-hidden shadow-2xl ${variants[variant]}`}>
+            <div className={`absolute -right-4 -top-4 w-24 h-24 blur-3xl rounded-full transition-all duration-1000 ${glows[variant]}`}></div>
             <div className="relative z-10">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${iconBg[variant]}`}>
-                    {icon}
+                <div className="flex items-center justify-between mb-6">
+                    <div className="p-3.5 bg-white/[0.03] rounded-2xl shadow-inner border border-white/5 group-hover:scale-110 transition-transform duration-500">
+                        {icon}
+                    </div>
+                    {subValue && <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40 px-2.5 py-1 bg-white/[0.03] rounded-lg border border-white/5">{subValue}</span>}
                 </div>
                 <div>
-                    <h3 className="text-2xl font-black font-mono tracking-tighter mb-1">{value}</h3>
-                    <p className="text-[10px] uppercase font-black tracking-[0.2em] opacity-60">{title}</p>
-                    {subValue && <p className="text-[10px] font-bold mt-2 opacity-40">{subValue}</p>}
+                    <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-30 mb-2">{title}</p>
+                    <h3 className="text-3xl font-serif font-black tracking-tighter leading-none">{value}</h3>
                 </div>
             </div>
         </div>
@@ -72,7 +74,6 @@ const StatCard: React.FC<{
 };
 
 const PaymentTrendChart: React.FC<{ ledger: any[] }> = ({ ledger }) => {
-    // Simplified trend visualization using credits
     const monthlyData = useMemo(() => {
         const data = new Array(12).fill(0);
         ledger.forEach(l => {
@@ -88,24 +89,27 @@ const PaymentTrendChart: React.FC<{ ledger: any[] }> = ({ ledger }) => {
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
     return (
-        <div className="h-full flex flex-col justify-end gap-2">
-            <div className="flex justify-between items-end h-32 gap-2 px-2">
+        <div className="h-full flex flex-col justify-end">
+            <div className="flex justify-between items-end h-48 gap-3 px-4">
                 {monthlyData.map((val, i) => (
-                    <div key={i} className="flex-1 flex flex-col justify-end group cursor-pointer">
-                        <div
-                            className="bg-primary/20 hover:bg-primary/60 transition-all rounded-t-sm w-full relative min-h-[4px]"
-                            style={{ height: `${(val / max) * 100}%` }}
+                    <div key={i} className="flex-1 flex flex-col justify-end group cursor-pointer relative">
+                        <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: `${(val / max) * 100}%` }}
+                            transition={{ duration: 1, delay: i * 0.05, ease: 'circOut' }}
+                            className="bg-primary/20 group-hover:bg-primary transition-all rounded-t-lg w-full relative min-h-[4px] shadow-[0_0_20px_rgba(59,130,246,0.1)] group-hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]"
                         >
-                            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-black/90 text-white text-[9px] font-bold px-2 py-1 rounded border border-white/10 whitespace-nowrap z-10">
-                                ${(val / 1000).toFixed(1)}k
-                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-lg"></div>
+                        </motion.div>
+                        <div className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-black border border-white/10 text-[9px] font-black text-white px-3 py-1.5 rounded-xl shadow-2xl z-20 whitespace-nowrap transition-all scale-90 group-hover:scale-100">
+                            {formatCurrency(val)}
                         </div>
                     </div>
                 ))}
             </div>
-            <div className="flex justify-between px-2 border-t border-white/5 pt-2">
+            <div className="flex justify-between px-4 border-t border-white/5 mt-6 pt-4">
                 {months.map((m, i) => (
-                    <span key={i} className="text-[8px] font-black text-white/20 uppercase w-full text-center">{m[0]}</span>
+                    <span key={i} className="text-[8px] font-black text-white/20 uppercase w-full text-center tracking-widest">{m}</span>
                 ))}
             </div>
         </div>
@@ -195,55 +199,61 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
             <div className="max-w-[1600px] mx-auto px-6 md:px-12 pt-8 space-y-10 animate-in fade-in duration-700">
 
                 {/* 1. Identity & Financial Header Layer */}
-                <header className="grid grid-cols-1 xl:grid-cols-12 gap-6 bg-[#0c0d12] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
+                <header className="grid grid-cols-1 xl:grid-cols-12 gap-8 bg-black/40 border border-white/5 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden backdrop-blur-3xl group">
+                    <div className="absolute inset-y-0 left-0 w-1 bg-primary/40"></div>
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:rotate-12 transition-transform duration-1000"><ReceiptIcon className="w-48 h-48" /></div>
+
                     {/* Compact Identity */}
-                    <div className="xl:col-span-4 flex items-center gap-8 relative z-10 border-r border-white/5 pr-8">
-                        <div className="relative group">
-                            <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-50 group-hover:opacity-80 transition-opacity"></div>
+                    <div className="xl:col-span-4 flex items-center gap-10 relative z-10 border-r border-white/5 pr-10">
+                        <div className="relative group/avatar">
+                            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full opacity-50 group-hover/avatar:opacity-80 transition-opacity"></div>
                             <PremiumAvatar
                                 src={accountData.profile_photo_url}
                                 name={accountData.display_name}
                                 size="lg"
-                                className="w-24 h-24 rounded-[2rem] border-2 border-white/10 relative z-10 shadow-xl"
+                                className="w-32 h-32 rounded-[2.5rem] border-2 border-white/10 relative z-10 shadow-2xl transition-transform duration-700 group-hover/avatar:scale-105"
                             />
-                            <div className={`absolute -bottom-2 -right-2 w-6 h-6 rounded-full border-2 border-[#0c0d12] z-20 flex items-center justify-center ${accountData.is_active ? 'bg-emerald-500' : 'bg-red-500'}`}>
-                                <CheckCircleIcon className="w-3 h-3 text-black" />
+                            <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-2xl bg-emerald-500 border-4 border-[#0c0d12] z-20 flex items-center justify-center shadow-xl">
+                                <ShieldCheckIcon className="w-5 h-5 text-white" />
                             </div>
                         </div>
                         <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className="text-[10px] font-black uppercase bg-white/5 border border-white/5 px-3 py-1 rounded-full text-white/40">Grade {accountData.grade}</span>
-                                <span className="text-[10px] font-black uppercase text-white/20">SID: {accountData.student_id ? accountData.student_id.substring(0, 8) : 'N/A'}</span>
+                            <div className="flex items-center gap-3 mb-3">
+                                <span className="text-[9px] font-black uppercase bg-primary/10 border border-primary/20 px-3 py-1 rounded-lg text-primary tracking-[0.2em]">GRADE_{accountData.grade}_CORE</span>
+                                <span className="text-[9px] font-black uppercase text-white/20 tracking-widest">ID: {accountData.student_id ? accountData.student_id.substring(0, 12).toUpperCase() : 'NULL_NODE'}</span>
                             </div>
-                            <h1 className="text-3xl font-serif font-black text-white uppercase tracking-tight leading-none mb-2">{accountData.display_name}</h1>
-                            <p className="text-xs text-white/40 font-medium">Fee Structure: <span className="text-white/80">{assignedStructure?.name || 'Standard Default'}</span></p>
+                            <h1 className="text-4xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-3">{accountData.display_name}</h1>
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em]">PROTOCOL: <span className="text-white/80">{assignedStructure?.name || 'GENERIC_FALLBACK'}</span></p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Financial Snapshot */}
-                    <div className="xl:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="xl:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-6">
                         <StatCard
-                            title="Total Assigned"
+                            title="Total Billed"
                             value={formatCurrency(totalAssigned, viewCurrency)}
                             icon={<ActivityIcon className="w-5 h-5" />}
                             variant="neutral"
                         />
                         <StatCard
-                            title="Total Paid"
+                            title="Total Cleared"
                             value={formatCurrency(totalPaid, viewCurrency)}
                             icon={<CheckCircleIcon className="w-5 h-5" />}
                             variant="success"
                         />
                         <StatCard
-                            title="Outstanding"
+                            title="Institutional Due"
                             value={formatCurrency(outstanding, viewCurrency)}
                             icon={<TrendingUpCustomIcon className="w-5 h-5" />}
                             variant="warning"
                         />
                         <StatCard
-                            title="Overdue"
+                            title="Critical Arrears"
                             value={formatCurrency(overdue, viewCurrency)}
-                            subValue={overdue > 0 ? "Immediate Action" : "Clear"}
+                            subValue={overdue > 0 ? "ACTION_REQ" : "STATUS_OK"}
                             icon={<AlertTriangleIcon className="w-5 h-5" />}
                             variant={overdue > 0 ? "danger" : "success"}
                         />
@@ -251,97 +261,113 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                 </header>
 
                 {/* 2. Visualization & Analytics Layer */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 bg-[#0d0f14] border border-white/5 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden group">
-                        <div className="flex justify-between items-start mb-6">
-                            <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-3">
-                                <TrendingUpCustomIcon className="w-5 h-5 text-primary" /> Payment Trend Analysis
-                            </h3>
-                            <div className="flex gap-2">
-                                <span className="w-2 h-2 rounded-full bg-primary/50"></span>
-                                <span className="text-[9px] font-bold text-white/20 uppercase">Collections</span>
+                <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 bg-black/40 border border-white/5 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden group">
+                        <div className="flex justify-between items-start mb-10">
+                            <div>
+                                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tighter flex items-center gap-4">
+                                    <TrendingUpCustomIcon className="w-6 h-6 text-primary" /> Forensic Trend Analysis
+                                </h3>
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mt-2">Institutional collection velocity per temporal node.</p>
+                            </div>
+                            <div className="flex items-center gap-4 p-2 bg-white/[0.02] rounded-xl border border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Revenue_Protocol</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="h-40 w-full">
+                        <div className="h-56 w-full">
                             <PaymentTrendChart ledger={ledger} />
                         </div>
                     </div>
 
-                    <div className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden flex flex-col justify-center items-center text-center">
-                        <div className="relative w-32 h-32 mb-6">
+                    <div className="bg-primary/5 border border-primary/10 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden flex flex-col justify-center items-center text-center group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+                        <div className="relative w-40 h-40 mb-8">
                             <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                                <circle cx="50" cy="50" r="42" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/5" />
                                 <motion.circle
-                                    cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="8" fill="transparent"
-                                    initial={{ strokeDashoffset: 283 }}
-                                    animate={{ strokeDashoffset: 283 - (283 * (accountData.integrity_score || 100) / 100) }}
-                                    strokeDasharray={283}
-                                    className="text-primary drop-shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                                    cx="50" cy="50" r="42" stroke="currentColor" strokeWidth="6" fill="transparent"
+                                    initial={{ strokeDashoffset: 264 }}
+                                    animate={{ strokeDashoffset: 264 - (264 * (accountData.integrity_score || 100) / 100) }}
+                                    strokeDasharray={264}
+                                    className="text-primary drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]"
                                     strokeLinecap="round"
                                 />
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center flex-col">
-                                <span className="text-3xl font-black text-white">{accountData.integrity_score || 100}%</span>
+                                <span className="text-5xl font-serif font-black text-white">{accountData.integrity_score || 100}</span>
+                                <span className="text-[9px] font-black text-primary/40 uppercase tracking-widest">Index</span>
                             </div>
                         </div>
-                        <h4 className="text-lg font-black text-white uppercase tracking-tight">Financial Health</h4>
-                        <p className="text-[10px] text-white/40 uppercase tracking-widest mt-2">{((accountData.integrity_score || 100) < 70) ? 'Risk Detected' : 'Stable Node'}</p>
+                        <h4 className="text-xl font-serif font-black text-white uppercase tracking-tighter">Institutional Integrity</h4>
+                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] mt-3 bg-white/[0.03] px-5 py-2 rounded-full border border-white/5">
+                            {((accountData.integrity_score || 100) < 70) ? 'DEFICIT_RISK_DETECTED' : 'STABLE_NODE_PROTOCOL'}
+                        </p>
                     </div>
                 </section>
 
                 {/* 3. Controls & Ledger Actions */}
-                <section className="space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-[#0c0d12]/80 backdrop-blur-xl border border-white/5 p-6 rounded-[2rem] sticky top-4 z-40 shadow-2xl">
-                        <div className="w-full md:w-auto flex-grow max-w-2xl flex items-center gap-4">
-                            <div className="relative flex-grow">
-                                <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+                <section className="space-y-8">
+                    <div className="flex flex-col md:flex-row justify-between items-end gap-8 bg-black/60 backdrop-blur-3xl border border-white/5 p-8 rounded-[2.5rem] sticky top-8 z-40 shadow-[0_32px_64px_-16px_rgba(0,0,0,1)] group">
+                        <div className="w-full md:w-auto flex-grow max-w-2xl flex items-center gap-6">
+                            <div className="relative flex-grow group/search">
+                                <SearchIcon className="absolute left-8 top-1/2 -translate-y-1/2 w-6 h-6 text-white/10 group-focus-within/search:text-primary transition-colors" />
                                 <input
                                     type="text"
-                                    placeholder="SEARCH INVOICE ID OR DESCRIPTION..."
+                                    placeholder="SEARCH FORENSIC LEDGER..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-2xl pl-16 pr-6 py-4 text-xs font-black text-white uppercase tracking-widest focus:outline-none focus:border-primary/50 transition-colors"
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-2xl pl-16 pr-8 py-5 text-[11px] font-black text-white uppercase tracking-[0.3em] focus:outline-none focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 transition-all placeholder:text-white/5"
                                 />
                             </div>
-                            <div className="flex bg-black/40 rounded-2xl p-1 border border-white/10">
-                                <button onClick={() => setFilterType('ALL')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterType === 'ALL' ? 'bg-white/10 text-white shadow-lg' : 'text-white/30 hover:text-white'}`}>All</button>
-                                <button onClick={() => setFilterType('PENDING')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterType === 'PENDING' ? 'bg-amber-500/20 text-amber-500 shadow-lg' : 'text-white/30 hover:text-white'}`}>Pending</button>
-                                <button onClick={() => setFilterType('PAID')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterType === 'PAID' ? 'bg-emerald-500/20 text-emerald-500 shadow-lg' : 'text-white/30 hover:text-white'}`}>Paid</button>
+                            <div className="flex bg-white/[0.02] rounded-2xl p-1.5 border border-white/5 shadow-inner">
+                                {['ALL', 'PENDING', 'PAID'].map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setFilterType(t as any)}
+                                        className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${filterType === t ? 'bg-white/10 text-white shadow-2xl ring-1 ring-white/10' : 'text-white/20 hover:text-white'}`}
+                                    >
+                                        {t}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <button className="p-4 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-all">
-                                <MailIcon className="w-5 h-5" />
+                        <div className="flex items-center gap-4">
+                            <button className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all shadow-inner active:scale-95 group/btn" title="Dispatch Statement">
+                                <MailIcon className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
                             </button>
-                            <button className="p-4 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-all">
-                                <PrinterIcon className="w-5 h-5" />
+                            <button className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all shadow-inner active:scale-95 group/btn" title="Extract Hardcopy">
+                                <PrinterIcon className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
                             </button>
-                            <button onClick={() => refreshAccountStatus()} className="p-4 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-all">
-                                <RefreshCwIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                            <button onClick={() => refreshAccountStatus()} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all shadow-inner active:scale-95 group/btn">
+                                <RefreshCwIcon className={`w-6 h-6 group-hover/btn:rotate-180 transition-all duration-700 ${loading ? 'animate-spin' : ''}`} />
                             </button>
                             <button
                                 onClick={() => setIsPaymentModalOpen(true)}
-                                className="px-8 py-4 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-3 active:scale-95"
+                                className="px-10 py-5 bg-primary text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all flex items-center gap-4 transform hover:-translate-y-1 active:scale-95 group/action"
                             >
-                                <ReceiptIcon className="w-5 h-5" /> Record
+                                <ReceiptIcon className="w-6 h-6 group-hover/action:rotate-12 transition-transform" /> Record Transaction
                             </button>
                         </div>
                     </div>
 
                     {/* Enterprise Ledger Table */}
-                    <div className="bg-[#0c0d12] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+                    <div className="bg-black/40 border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl relative group/table">
+                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
                         <div className="overflow-x-auto custom-scrollbar">
                             <table className="w-full text-left border-collapse">
-                                <thead className="bg-[#12141c] text-[9px] font-black uppercase tracking-[0.3em] text-white/30 border-b border-white/5">
+                                <thead className="bg-white/[0.01] text-[10px] font-black uppercase tracking-[0.4em] text-white/20 border-b border-white/5">
                                     <tr>
-                                        <th className="p-8 pl-10">Date / Timestamp</th>
-                                        <th className="p-8">Invoice ID & Description</th>
-                                        <th className="p-8">Payment Mode</th>
-                                        <th className="p-8">Status</th>
-                                        <th className="p-8 text-right">Debit</th>
-                                        <th className="p-8 text-right">Credit</th>
-                                        <th className="p-8 text-right pr-10">Balance</th>
+                                        <th className="p-10 pl-12">Registry Date</th>
+                                        <th className="p-10">Identifier / Narrative</th>
+                                        <th className="p-10">Protocol</th>
+                                        <th className="p-10">Integrity</th>
+                                        <th className="p-10 text-right">Debit</th>
+                                        <th className="p-10 text-right">Credit</th>
+                                        <th className="p-10 text-right pr-12">Balance_Node</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.02]">
@@ -349,47 +375,52 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                         const date = new Date(entry.transaction_date);
                                         const isCredit = Number(entry.credit) > 0;
                                         return (
-                                            <tr key={idx} className="group hover:bg-white/[0.02] transition-colors">
-                                                <td className="p-8 pl-10">
+                                            <tr key={idx} className="group hover:bg-primary/[0.02] transition-colors relative">
+                                                <td className="p-10 pl-12">
                                                     <div className="flex flex-col">
-                                                        <span className="text-xs font-black text-white font-mono tracking-tighter">
-                                                            {date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
+                                                        <span className="text-sm font-black text-white font-serif tracking-tighter uppercase italic">
+                                                            {date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '_')}
                                                         </span>
-                                                        <span className="text-[9px] font-bold text-white/20 mt-1">{date.toLocaleTimeString()}</span>
+                                                        <span className="text-[9px] font-black text-white/20 mt-1 uppercase tracking-widest">{date.toLocaleTimeString()}</span>
                                                     </div>
                                                 </td>
-                                                <td className="p-8">
+                                                <td className="p-10">
                                                     <div className="flex flex-col">
-                                                        <span className="text-xs font-bold text-white/80">{entry.description}</span>
-                                                        <span className="text-[9px] font-mono text-white/30 mt-1 uppercase tracking-wider">{entry.identifier || 'SYS_GEN'}</span>
+                                                        <span className="text-xs font-black text-white/80 uppercase tracking-tight">{entry.description}</span>
+                                                        <span className="text-[9px] font-mono text-white/20 mt-1.5 uppercase tracking-widest bg-white/[0.03] w-max px-2 py-0.5 rounded-lg border border-white/5">{entry.identifier || 'SYS_VOID'}</span>
                                                     </div>
                                                 </td>
-                                                <td className="p-8">
-                                                    <span className="px-3 py-1 bg-white/[0.03] border border-white/5 rounded text-[9px] font-black text-white/40 uppercase tracking-widest">
-                                                        {entry.protocol || (isCredit ? 'CASH/BANK' : 'AUTO_DEBIT')}
+                                                <td className="p-10">
+                                                    <span className="px-4 py-1.5 bg-white/[0.02] border border-white/5 rounded-xl text-[9px] font-black text-white/30 uppercase tracking-[0.2em] shadow-inner">
+                                                        {entry.protocol || (isCredit ? 'SETTLEMENT' : 'AUTOMATION')}
                                                     </span>
                                                 </td>
-                                                <td className="p-8">
-                                                    <span className={`px-3 py-1 rounded text-[9px] font-black uppercase tracking-widest border ${isCredit ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/10' : 'bg-amber-500/10 text-amber-500 border-amber-500/10'
+                                                <td className="p-10">
+                                                    <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border shadow-inner ${isCredit ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                                                         }`}>
-                                                        {isCredit ? 'VERIFIED' : 'PENDING'}
+                                                        {isCredit ? 'ARCHIVED' : 'PENDING'}
                                                     </span>
                                                 </td>
-                                                <td className="p-8 text-right font-mono font-bold text-white/40">
+                                                <td className="p-10 text-right font-serif font-black text-white/40">
                                                     {Number(entry.debit) > 0 ? formatCurrency(entry.debit, viewCurrency) : '-'}
                                                 </td>
-                                                <td className="p-8 text-right font-mono font-bold text-emerald-500">
+                                                <td className="p-10 text-right font-serif font-black text-emerald-500">
                                                     {Number(entry.credit) > 0 ? formatCurrency(entry.credit, viewCurrency) : '-'}
                                                 </td>
-                                                <td className="p-8 pr-10 text-right font-mono font-black text-white tracking-tight text-sm">
+                                                <td className="p-10 pr-12 text-right font-serif font-black text-white tracking-tighter text-xl">
                                                     {formatCurrency(entry.running_balance, viewCurrency)}
                                                 </td>
                                             </tr>
                                         );
                                     }) : (
                                         <tr>
-                                            <td colSpan={7} className="p-32 text-center text-[10px] font-black uppercase tracking-[0.4em] text-white/20">
-                                                No ledger artifacts found matching criteria
+                                            <td colSpan={7} className="p-40 text-center">
+                                                <div className="flex flex-col items-center gap-6">
+                                                    <div className="w-20 h-20 bg-white/[0.02] rounded-[2.5rem] flex items-center justify-center border-2 border-dashed border-white/5">
+                                                        <SearchIcon className="w-8 h-8 opacity-10" />
+                                                    </div>
+                                                    <p className="text-[11px] font-black uppercase tracking-[0.5em] text-white/10">No ledger artifacts detected in this temporal node</p>
+                                                </div>
                                             </td>
                                         </tr>
                                     )}
@@ -399,9 +430,9 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     </div>
                 </section>
 
-                <footer className="pt-12 text-center">
-                    <button onClick={onBack} className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto">
-                        <ChevronLeftIcon className="w-3 h-3" /> Return to Master Registry
+                <footer className="pt-20 text-center pb-12">
+                    <button onClick={onBack} className="group px-10 py-5 bg-white/[0.02] border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.5em] text-white/20 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-4 mx-auto shadow-inner active:scale-95">
+                        <ChevronLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Financial Registry
                     </button>
                 </footer>
             </div>

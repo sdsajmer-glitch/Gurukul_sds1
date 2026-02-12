@@ -22,18 +22,11 @@ const FinanceAuditLog: React.FC<{ branchId: number | null }> = ({ branchId }) =>
         const fetchLogs = async () => {
             setLoading(true);
             try {
-                // Fetch recent 50 logs. 
-                // We might need to filter by branch if the table supports it, 
-                // but for now assuming global or RLS handled.
                 let query = supabase
                     .from('finance_audit_logs')
                     .select('*')
                     .order('created_at', { ascending: false })
                     .limit(50);
-
-                // If branch_id column exists we could filter, but let's stick to simple fetch 
-                // as we don't know exact schema for branch filtering on this table 
-                // (it wasn't in the types extensively).
 
                 const { data, error } = await query;
                 if (error) throw error;
@@ -49,58 +42,85 @@ const FinanceAuditLog: React.FC<{ branchId: number | null }> = ({ branchId }) =>
     }, [branchId]);
 
     if (loading) return (
-        <div className="py-32 flex flex-col items-center gap-6">
-            <Spinner size="lg" className="text-primary" />
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 animate-pulse">Decrypting Audit Trail...</p>
+        <div className="py-48 flex flex-col items-center justify-center space-y-12">
+            <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full animate-pulse"></div>
+                <Spinner size="lg" className="text-primary relative z-10" />
+            </div>
+            <div className="space-y-4 text-center">
+                <h4 className="text-[11px] font-black text-primary/40 uppercase tracking-[0.6em] animate-pulse">Decrypting Audit Trail</h4>
+                <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em]">Synchronizing forensic artifacts from secure storage...</p>
+            </div>
         </div>
     );
 
     if (logs.length === 0) return (
-        <div className="py-32 text-center flex flex-col items-center gap-8 opacity-40">
-            <ShieldCheckIcon className="w-20 h-20 text-white/20" />
-            <p className="text-sm font-black uppercase tracking-[0.3em] text-white/40">No Forensic Artifacts Found</p>
+        <div className="py-48 text-center flex flex-col items-center gap-10 opacity-40 group">
+            <div className="relative">
+                <div className="absolute inset-0 bg-white/5 blur-[80px] rounded-full group-hover:bg-white/10 transition-all duration-1000"></div>
+                <ShieldCheckIcon className="w-24 h-24 text-white/5 relative z-10 group-hover:scale-110 transition-transform duration-700" />
+            </div>
+            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-white/20">No Forensic Artifacts Detected in the Registry</p>
         </div>
     );
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex items-center justify-between px-4">
-                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Forensic Ledger</h3>
-                <span className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-white/40">Latest 50 Entries</span>
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-1000 max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8 px-8">
+                <div className="space-y-2 text-center md:text-left">
+                    <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter leading-none">The Forensic Trail</h3>
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Chronological record of all institutional financial mutations</p>
+                </div>
+                <div className="flex items-center gap-4 px-8 py-4 bg-white/[0.02] border border-white/5 rounded-2xl shadow-inner group">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                    <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white/40 group-hover:text-white transition-colors">Historical Registry Integrity Verified</span>
+                </div>
             </div>
 
-            <div className="bg-[#0c0d12] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl ring-1 ring-white/5 relative group">
-                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+            <div className="bg-white/[0.01] border border-white/5 rounded-[4rem] overflow-hidden shadow-3xl relative group backdrop-blur-3xl">
+                <div className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent top-0 shadow-[0_0_20px_rgba(59,130,246,0.3)]"></div>
                 <div className="divide-y divide-white/[0.04]">
                     {logs.map((log, idx) => (
                         <motion.div
                             key={log.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            className="p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-white/[0.02] transition-colors group/item"
+                            initial={{ opacity: 0, x: -30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: (idx % 10) * 0.05, duration: 0.5 }}
+                            className="p-10 md:p-14 flex flex-col md:flex-row md:items-center justify-between gap-10 hover:bg-white/[0.03] transition-all duration-500 group/item relative overflow-hidden"
                         >
-                            <div className="flex items-start gap-6">
-                                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-white/20 group-hover/item:text-primary group-hover/item:border-primary/20 transition-all shadow-inner">
-                                    <ShieldCheckIcon className="w-6 h-6" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.01] to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity"></div>
+                            <div className="flex items-start gap-10 relative z-10">
+                                <div className="p-5 rounded-[1.8rem] bg-black/40 border border-white/5 text-white/10 group-hover/item:text-primary group-hover/item:border-primary/30 group-hover/item:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-500 shadow-inner group-hover/item:scale-110">
+                                    <ShieldCheckIcon className="w-8 h-8" />
                                 </div>
-                                <div>
-                                    <div className="flex items-center gap-4 mb-2">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">{log.action_type}</span>
-                                        <span className="w-1 h-1 rounded-full bg-white/10"></span>
-                                        <span className="text-[10px] font-mono text-white/20 uppercase tracking-widest">{new Date(log.created_at).toLocaleString()}</span>
+                                <div className="space-y-4">
+                                    <div className="flex flex-wrap items-center gap-6">
+                                        <span className="px-5 py-2 bg-primary/10 border border-primary/20 rounded-xl text-[10px] font-black uppercase tracking-[0.4em] text-primary shadow-2xl">{log.action_type}</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover/item:bg-primary/40 transition-colors"></div>
+                                            <span className="text-[11px] font-mono text-white/20 uppercase tracking-[0.2em] group-hover/item:text-white/40 transition-colors">{new Date(log.created_at).toLocaleString()}</span>
+                                        </div>
                                     </div>
-                                    <p className="text-base text-white/70 font-medium font-serif italic leading-relaxed group-hover/item:text-white transition-colors">
+                                    <p className="text-xl text-white/80 font-serif font-black italic tracking-tight leading-relaxed group-hover/item:text-white transition-colors">
                                         {log.description}
                                     </p>
                                 </div>
                             </div>
-                            <div className="pl-16 md:pl-0 text-right">
-                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20 mb-1">Performed By</p>
-                                <p className="text-xs font-bold text-white uppercase tracking-wider">{log.performed_by_name || 'SYSTEM_NODE'}</p>
+                            <div className="pl-24 md:pl-0 text-right relative z-10">
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black uppercase text-white/10 tracking-[0.5em] group-hover/item:text-white/20 transition-colors">Forensic Source Node</p>
+                                    <div className="inline-flex items-center gap-4 px-6 py-2.5 bg-black/40 border border-white/5 rounded-xl group-hover/item:border-white/10 transition-all">
+                                        <div className="w-2 h-2 rounded-full bg-white/10 group-hover/item:bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0)] group-hover/item:shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-all"></div>
+                                        <p className="text-xs font-black text-white/40 group-hover/item:text-white/80 transition-colors uppercase tracking-[0.2em]">{log.performed_by_name || 'SYSTEM_CORE_NODE'}</p>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     ))}
+                </div>
+                <div className="p-10 bg-white/[0.01] border-t border-white/[0.04] text-center">
+                    <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/10 hover:text-white/20 transition-colors cursor-default">Maximum depth of 50 artifacts reached • Authentication protocol stable</p>
                 </div>
             </div>
         </div>
