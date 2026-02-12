@@ -22,6 +22,10 @@ import { UserPlusIcon } from '../icons/UserPlusIcon';
 import { UserIcon } from '../icons/UserIcon';
 import { CheckIcon } from '../icons/CheckIcon';
 import { EditIcon } from '../icons/EditIcon';
+import { TrashIcon } from '../icons/TrashIcon';
+import { BriefcaseIcon } from '../icons/BriefcaseIcon';
+import { StarIcon } from '../icons/StarIcon';
+import { FilterIcon } from '../icons/FilterIcon';
 
 interface ClassWorkspaceProps {
     classData: SchoolClass & {
@@ -77,6 +81,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
     const [loading, setLoading] = useState(false);
     const [students, setStudents] = useState<StudentForAdmin[]>([]);
     const [subjects, setSubjects] = useState<Course[]>([]);
+    const [assignmentSuccess, setAssignmentSuccess] = useState(false);
 
     // Mock Data for enhancement visualization
     const [stats] = useState({
@@ -91,6 +96,17 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
     const [availableTeachers, setAvailableTeachers] = useState<any[]>([]);
     const [searchTeacherQuery, setSearchTeacherQuery] = useState('');
     const [assigningTeacher, setAssigningTeacher] = useState(false);
+
+    // Enhanced teacher type with additional fields
+    interface TeacherOption {
+        id: string;
+        display_name: string;
+        email: string;
+        phone?: string;
+        specialization?: string;
+        experience?: number;
+        assigned_classes_count?: number;
+    }
 
     // Edit Config State
     const [isEditConfigOpen, setIsEditConfigOpen] = useState(false);
@@ -150,9 +166,33 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                 .eq('id', classData.id);
 
             if (error) throw error;
+            
+            // Show success feedback
+            setAssignmentSuccess(true);
+            setTimeout(() => setAssignmentSuccess(false), 3000);
+            
             onUpdate();
             setIsAssignFacultyOpen(false);
-            // Optimistic update or wait for onUpdate to refresh parent
+        } catch (err: any) {
+            alert(formatError(err));
+        } finally {
+            setAssigningTeacher(false);
+        }
+    };
+
+    const handleRemoveTeacher = async () => {
+        const confirmed = window.confirm('Are you sure you want to remove the current class teacher? This action will unassign them from this class.');
+        if (!confirmed) return;
+        
+        setAssigningTeacher(true);
+        try {
+            const { error } = await supabase
+                .from('school_classes')
+                .update({ class_teacher_id: null })
+                .eq('id', classData.id);
+
+            if (error) throw error;
+            onUpdate();
         } catch (err: any) {
             alert(formatError(err));
         } finally {
@@ -161,11 +201,18 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
     };
 
     const filteredTeachers = useMemo(() => {
-        return availableTeachers.filter(t =>
-            t.display_name.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
-            t.email?.toLowerCase().includes(searchTeacherQuery.toLowerCase())
-        );
-    }, [availableTeachers, searchTeacherQuery]);
+        return availableTeachers.filter(t => {
+            const matchesSearch = 
+                t.display_name.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
+                t.email?.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
+                t.specialization?.toLowerCase().includes(searchTeacherQuery.toLowerCase());
+            
+            // Exclude currently assigned teacher
+            const isCurrentlyAssigned = t.id === classData.class_teacher_id;
+            
+            return matchesSearch && !isCurrentlyAssigned;
+        });
+    }, [availableTeachers, searchTeacherQuery, classData.class_teacher_id]);
 
     const fetchDetails = useCallback(async () => {
         setLoading(true);
