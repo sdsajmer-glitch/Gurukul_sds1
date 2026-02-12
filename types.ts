@@ -367,6 +367,12 @@ export interface TeacherProfileData {
     profile_picture_url?: string;
     gender?: string;
     date_of_birth?: string;
+    blood_group?: string;
+    religion?: string;
+    phone_number?: string;
+    address?: string;
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
     department?: string;
     designation?: string;
     employee_id?: string;

@@ -34,8 +34,15 @@ import { ActivityIcon } from './icons/ActivityIcon';
 import { ShieldAlertIcon } from './icons/ShieldAlertIcon';
 import { KeyIcon } from './icons/KeyIcon';
 import AssignSubjectModal from './teachers/AssignSubjectModal';
-import PersonalMatrix from './TeacherProfile/PersonalMatrix';
+import PersonalMatrix from './PersonalMatrix/PersonalMatrix';
+import ComplianceDossier from './ComplianceDossier/ComplianceDossier';
+import DocumentAssetRegistry from './DocumentAssetRegistry/DocumentAssetRegistry';
+import AcademicPortfolio from './AcademicPortfolio/AcademicPortfolio';
+import StudentResponse from './StudentResponse/StudentResponse';
+import LiveTimetable from './LiveTimetable/LiveTimetable';
+import WorkloadCore from './WorkloadCore/WorkloadCore';
 import SecurityCommandNode from './SecurityCommandNode/SecurityCommandNode';
+import GovernanceAudit from './GovernanceAudit/GovernanceAudit';
 
 interface TeacherDetailModalProps {
     teacher: TeacherExtended;
@@ -315,7 +322,7 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                                 )}
                             </motion.div>
                             <div className={`absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-4 border-[#0d0f14] flex items-center justify-center shadow-2xl z-20 ${teacher.is_active ? 'bg-emerald-500 shadow-[0_0_15px_#10b981]' : 'bg-red-500 shadow-[0_0_15px_#ef4444]'}`}>
-                                {teacher.is_active ? <CheckCircleIcon className="w-5 h-5 text-white" /> : <XCircleIcon className="w-5 h-5 text-white" />}
+                                {teacher.is_active ? <CheckCircleIcon className="w-5 h-5 text-white" /> : <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center"><XIcon className="w-3.5 h-3.5 text-red-500" /></div>}
                             </div>
                         </div>
                         <div>
@@ -377,7 +384,6 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                     {/* Content Viewport */}
                     <div className="flex-grow overflow-y-auto p-12 bg-[#0d0f14] relative custom-scrollbar">
                         <AnimatePresence mode="wait">
-
                             {/* Tab-Specific Editing Controls */}
                             {['personal', 'compliance'].includes(activeTab) && (
                                 <div className="absolute top-10 right-10 z-10 flex items-center gap-6">
@@ -407,448 +413,58 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                             )}
 
                             {activeTab === 'compliance' && (
-                                <motion.div
-                                    key="compliance"
-                                    initial={{ opacity: 0, scale: 0.98 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, y: 20 }}
-                                    className="max-w-6xl space-y-12 pb-20"
-                                >
-                                    <div className="flex flex-col md:flex-row justify-between items-start gap-10">
-                                        <div className="space-y-4">
-                                            <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none">WORK & <br /><span className="text-white/20 italic font-medium">COMPLIANCE DOSSIER.</span></h3>
-                                            <p className="text-white/40 font-medium font-serif italic text-lg leading-relaxed max-w-xl">Governance layer managing institutional employment contracts, regulatory compliance, and tenure registries.</p>
-                                        </div>
-                                        <div className="flex items-center gap-6 p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] shadow-inner group">
-                                            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_#10b981]"></div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Node Integrity Status</p>
-                                                <p className="text-xs font-black text-white uppercase tracking-widest mt-1">COMPLIANCE_BYPASS_STABLE</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                                        <div className="lg:col-span-2 p-14 bg-black/40 border border-white/5 rounded-[4rem] shadow-3xl relative overflow-hidden group/card backdrop-blur-3xl">
-                                            <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.01] to-transparent pointer-events-none"></div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-4">
-                                                <InfoRow label="Institutional Identity" value={formData.employee_id} isEditing={false} readOnly={true} icon={<KeyIcon className="w-4 h-4" />} />
-                                                <InfoRow label="Operational Deployment" value={formData.department} isEditing={isEditing} onChange={v => setFormData({ ...formData, department: v })} icon={<GridIcon className="w-4 h-4" />} />
-                                                <InfoRow label="Structural Designation" value={formData.designation} isEditing={isEditing} onChange={v => setFormData({ ...formData, designation: v })} icon={<CheckCircleIcon className="w-4 h-4" />} />
-                                                <InfoRow label="Registry Timestamp" value={formData.date_of_joining} isEditing={isEditing} onChange={v => setFormData({ ...formData, date_of_joining: v })} type="date" icon={<CalendarIcon className="w-4 h-4" />} />
-                                                <InfoRow label="Engagement Protocol" value={formData.employment_type || 'Full-time'} isEditing={isEditing} onChange={v => setFormData({ ...formData, employment_type: v })} options={['Full-time', 'Part-time', 'Contract']} icon={<ClockIcon className="w-4 h-4" />} />
-                                                <InfoRow label="Security Classification" value={formData.employment_status} isEditing={isEditing} onChange={v => setFormData({ ...formData, employment_status: v })} options={['Active', 'Pending Verification', 'On Leave', 'Inactive']} icon={<ShieldCheckIcon className="w-4 h-4" />} />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-8">
-                                            {/* Tenure Intelligence */}
-                                            <div className="p-10 bg-indigo-500/[0.03] border border-indigo-500/20 rounded-[3.5rem] shadow-2xl space-y-6 group">
-                                                <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3">
-                                                    <ClockIcon className="w-4 h-4" /> Tenure Registry
-                                                </h4>
-                                                <div className="space-y-2">
-                                                    <h5 className="text-4xl font-serif font-black text-white tracking-tighter">2.4<span className="text-sm font-sans text-indigo-400/40 ml-1 pb-1 italic">Years</span></h5>
-                                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Aggregate Institutional Service</p>
-                                                </div>
-                                                <div className="pt-6 border-t border-white/5">
-                                                    <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest mb-3">
-                                                        <span className="text-white/20">Retention Index</span>
-                                                        <span className="text-indigo-400">92% Alpha</span>
-                                                    </div>
-                                                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden shadow-inner">
-                                                        <div className="h-full bg-indigo-500 w-[92%] shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Compliance Action Panel */}
-                                            <div className="p-10 bg-white/[0.01] border border-white/5 rounded-[3.5rem] shadow-3xl text-center space-y-6 group transition-all">
-                                                <div className="w-16 h-16 bg-white/[0.03] border border-white/10 rounded-3xl flex items-center justify-center mx-auto text-white/10 group-hover:text-primary group-hover:border-primary/30 transition-all duration-700 shadow-inner">
-                                                    <ShieldCheckIcon className="w-8 h-8" />
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-lg font-serif font-black text-white uppercase tracking-tight">Governance Sync</h4>
-                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mt-2">Force re-evaluation of compliance artifacts.</p>
-                                                </div>
-                                                <button className="w-full py-4 bg-white/5 border border-white/5 rounded-2xl text-[9px] font-black text-white/40 uppercase tracking-[0.3em] hover:text-white hover:bg-white/10 transition-all active:scale-95">Initialize Audit Handshake</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Compliance Notice Module */}
-                                    <div className="p-14 bg-amber-500/[0.02] border border-amber-500/10 rounded-[4.5rem] flex items-start gap-12 relative overflow-hidden group shadow-3xl">
-                                        <div className="absolute top-0 right-0 p-14 opacity-[0.02] group-hover:scale-125 transition-all duration-[2000ms]"><ShieldAlertIcon className="w-64 h-64 text-amber-500" /></div>
-                                        <div className="p-6 bg-amber-500/10 rounded-3xl text-amber-500 shadow-2xl ring-1 ring-amber-500/20 group-hover:rotate-12 transition-all duration-1000">
-                                            <InfoIcon className="w-8 h-8" />
-                                        </div>
-                                        <div className="relative z-10 max-w-2xl space-y-4">
-                                            <p className="text-[11px] font-black text-amber-500 uppercase tracking-[0.5em]">Institutional Compliance Protocol</p>
-                                            <p className="text-xl font-serif font-black text-white tracking-tight leading-relaxed">
-                                                Financial disclosure registries, biometric access logs, and background forensic verification records are managed exclusively within the Central HR Authority Terminal.
-                                            </p>
-                                            <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest font-mono">AUTHORIZED_ACCESS_REQUIRED • REGISTRY_SYNC_V25.0</p>
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                <ComplianceDossier
+                                    teacher={teacher}
+                                    onUpdate={onUpdate}
+                                />
                             )}
 
                             {activeTab === 'portfolio' && (
-                                <motion.div
-                                    key="portfolio"
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.98 }}
-                                    className="max-w-6xl space-y-12 pb-20"
-                                >
-                                    {/* 1. Stewardship Matrix Summary (Premium Header) */}
-                                    <div className="p-14 bg-[#0d0f14] border border-white/5 rounded-[4rem] shadow-[0_120px_240px_-60px_rgba(0,0,0,0.9)] relative overflow-hidden group/header backdrop-blur-3xl ring-1 ring-white/5">
-                                        <div className="absolute top-0 right-0 p-14 opacity-[0.03] group-hover/header:scale-110 group-hover/header:rotate-6 transition-all duration-[3000ms]"><BookIcon className="w-80 h-80" /></div>
-                                        <div className="absolute -left-20 -top-20 w-[600px] h-[600px] bg-primary/[0.03] blur-[120px] rounded-full pointer-events-none"></div>
+                                <AcademicPortfolio
+                                    teacher={teacher}
+                                    mappings={mappings}
+                                    loadingMappings={loadingMappings}
+                                    onMapRequest={() => setIsAssignModalOpen(true)}
+                                    onUnmapRequest={(id, subjectName, className) => setConfirmationAction({
+                                        type: 'unmap_subject',
+                                        title: 'UNLINK_PROTOCOL_INITIATED',
+                                        message: `Are you sure you want to decouple ${teacher.display_name} from ${subjectName} (${className})? This action will be archived in the governance log.`,
+                                        targetId: id
+                                    })}
+                                />
+                            )}
 
-                                        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-14">
-                                            <div className="space-y-8">
-                                                <div className="flex items-center gap-4 opacity-50">
-                                                    <div className="w-10 h-0.5 bg-primary"></div>
-                                                    <span className="text-[10px] font-black text-white uppercase tracking-[0.5em]">Stewardship Matrix</span>
-                                                </div>
-                                                <div className="space-y-3">
-                                                    <h3 className="text-6xl font-serif font-black text-white uppercase tracking-tighter leading-[0.9]">Academic <br /><span className="text-white/20 italic font-medium tracking-normal">Control.</span></h3>
-                                                    <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.4em] max-w-lg leading-relaxed">Managing teaching loads and specialized assignments across the academic grid.</p>
-                                                </div>
+                            {activeTab === 'response' && (
+                                <StudentResponse teacher={teacher} />
+                            )}
 
-                                                <div className="flex gap-20 pt-4">
-                                                    <div className="space-y-3">
-                                                        <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.4em]">Active Groups</p>
-                                                        <h5 className="text-5xl font-black text-primary drop-shadow-[0_0_20px_rgba(59,130,246,0.3)]">{mappings.length}</h5>
-                                                    </div>
-                                                    <div className="space-y-3">
-                                                        <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.4em]">Weekly Load</p>
-                                                        <div className="flex items-baseline gap-3">
-                                                            <h5 className={`text-5xl font-black ${loadPercentage > 90 ? 'text-red-500' : 'text-white'}`}>{workloadHours}<span className="text-2xl text-white/20 ml-1 font-serif italic tracking-normal">/ {maxLoad}</span></h5>
-                                                            <span className="text-xs text-white/10 font-black uppercase tracking-widest">Hrs</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <motion.button
-                                                whileHover={{ scale: 1.02, y: -5 }}
-                                                whileTap={{ scale: 0.98 }}
-                                                onClick={() => setIsAssignModalOpen(true)}
-                                                className="px-14 py-7 bg-[#7c4dff] text-white font-black text-[12px] uppercase tracking-[0.4em] rounded-[2.5rem] shadow-[0_40px_80px_-20px_rgba(124,77,255,0.4)] hover:shadow-[0_60px_100px_-20px_rgba(124,77,255,0.5)] transition-all flex items-center gap-5 group/btn ring-1 ring-white/10"
-                                            >
-                                                <PlusIcon className="w-6 h-6 group-hover/btn:rotate-90 transition-transform duration-700" /> Map New Subject
-                                            </motion.button>
-                                        </div>
-                                    </div>
-
-                                    {/* 2. Subject Allocation Grid */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        {loadingMappings ? (
-                                            <div className="col-span-full py-48 flex flex-col items-center justify-center space-y-8">
-                                                <Spinner size="lg" className="text-primary" />
-                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] animate-pulse">Decrypting Subject Mappings...</p>
-                                            </div>
-                                        ) : mappings.length === 0 ? (
-                                            <div className="col-span-full p-32 border-2 border-dashed border-white/5 rounded-[4rem] bg-white/[0.01] flex flex-col items-center group/empty hover:bg-white/[0.02] transition-all duration-700 relative overflow-hidden">
-                                                <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent opacity-0 group-hover/empty:opacity-100 transition-opacity"></div>
-                                                <div className="w-32 h-32 bg-white/5 rounded-[3rem] flex items-center justify-center mb-10 shadow-inner ring-1 ring-white/10 group-hover/empty:scale-110 group-hover/empty:rotate-12 transition-all duration-1000">
-                                                    <BookIcon className="w-12 h-12 opacity-10 group-hover/empty:opacity-30 group-hover/empty:text-primary transition-all" />
-                                                </div>
-                                                <h4 className="text-2xl font-serif font-black text-white/40 uppercase tracking-tighter mb-4">No Registries Detected</h4>
-                                                <p className="text-[10px] font-black uppercase tracking-[0.5em] max-w-sm text-center leading-relaxed text-white/20 group-hover/empty:text-white/40 transition-colors">
-                                                    THIS FACULTY NODE HAS NOT BEEN LINKED TO ANY ACTIVE SUBJECT REGISTRIES OR ACADEMIC GROUPS.
-                                                </p>
-                                                <div className="mt-12 flex items-center gap-4 opacity-20">
-                                                    <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                                                    <span className="text-[9px] font-black uppercase tracking-widest">Awaiting Strategic Allocation</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            mappings.map((map, idx) => (
-                                                <motion.div
-                                                    key={map.id}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    whileInView={{ opacity: 1, y: 0 }}
-                                                    viewport={{ once: true }}
-                                                    transition={{ delay: idx * 0.1 }}
-                                                    className="p-10 bg-[#12141c] border border-white/5 rounded-[3.5rem] shadow-3xl hover:border-primary/40 transition-all group overflow-hidden relative backdrop-blur-xl"
-                                                >
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
-                                                    <div className="flex items-center gap-8 relative z-10">
-                                                        <div className="w-20 h-20 rounded-[2rem] bg-primary/10 border border-primary/20 flex flex-col items-center justify-center font-black shadow-inner group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(59,130,246,0.1)] transition-all duration-700 shrink-0">
-                                                            <span className="text-[10px] uppercase opacity-40 font-bold leading-none mb-1 tracking-tighter">GRD</span>
-                                                            <span className="text-3xl font-serif italic text-white leading-none">{map.class_name?.match(/\d+/)?.[0] || '---'}</span>
-                                                        </div>
-
-                                                        <div className="flex-grow min-w-0">
-                                                            <div className="flex justify-between items-start mb-3">
-                                                                <h4 className="font-serif font-black text-white text-2xl tracking-tighter uppercase truncate group-hover:text-primary transition-colors">{map.subject_name}</h4>
-                                                                <span className="text-[9px] font-black uppercase px-3 py-1 rounded-lg bg-white/5 text-white/30 border border-white/5 shrink-0 ml-4 tracking-widest group-hover:text-white/60 transition-colors">{map.category || 'CORE'}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-5">
-                                                                <div className="flex items-center gap-3">
-                                                                    <GridIcon className="w-4 h-4 text-primary/40" />
-                                                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em]">{map.class_name}</p>
-                                                                </div>
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-white/5"></div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <ClockIcon className="w-4 h-4 text-white/20" />
-                                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.25em]">{map.credits || 4} Node_Hrs</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="opacity-0 group-hover:opacity-100 transition-all translate-x-10 group-hover:translate-x-0 ml-4">
-                                                            <motion.button
-                                                                whileHover={{ scale: 1.1, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
-                                                                whileTap={{ scale: 0.9 }}
-                                                                onClick={() => setConfirmationAction({
-                                                                    type: 'unmap_subject',
-                                                                    title: 'UNLINK_PROTOCOL_INITIATED',
-                                                                    message: `Are you sure you want to decouple ${teacher.display_name} from ${map.subject_name} (${map.class_name})? This action will be archived in the governance log.`,
-                                                                    targetId: map.id
-                                                                })}
-                                                                className="p-4 rounded-2xl text-white/10 hover:text-red-500 transition-all border border-transparent hover:border-red-500/20"
-                                                                title="Unmap Subject"
-                                                            >
-                                                                <TrashIcon className="w-6 h-6" />
-                                                            </motion.button>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            ))
-                                        )}
-                                    </div>
-                                </motion.div>
+                            {activeTab === 'timetable' && (
+                                <LiveTimetable teacher={teacher} />
                             )}
 
                             {activeTab === 'workload' && (
-                                <motion.div
-                                    key="workload"
-                                    initial={{ opacity: 0, scale: 0.98 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, y: 20 }}
-                                    className="max-w-6xl space-y-12 pb-20"
-                                >
-                                    <div className="flex flex-col md:flex-row justify-between items-start gap-10">
-                                        <div className="space-y-4">
-                                            <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none">STRATEGIC <br /><span className="text-white/20 italic font-medium">LOAD ANALYSIS.</span></h3>
-                                            <p className="text-white/40 font-medium font-serif italic text-lg leading-relaxed max-w-xl">Deep telemetry of pedagogical commitment, node saturation levels, and student impact reach across the institutional grid.</p>
-                                        </div>
-                                        <div className={`flex items-center gap-6 p-8 rounded-[3rem] shadow-inner border backdrop-blur-3xl transition-all duration-700 ${loadPercentage > 90 ? 'bg-red-500/[0.03] border-red-500/20 shadow-red-500/10' : 'bg-emerald-500/[0.03] border-emerald-500/20 shadow-emerald-500/10'}`}>
-                                            <div className={`w-3 h-3 rounded-full animate-pulse shadow-[0_0_15px_currentColor] ${loadPercentage > 90 ? 'text-red-500' : 'text-emerald-500'}`}></div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Capacity Status</p>
-                                                <p className={`text-xs font-black uppercase tracking-widest mt-1 ${loadPercentage > 90 ? 'text-red-500' : 'text-emerald-500'}`}>{loadPercentage > 90 ? 'CRITICAL_SATURATION' : 'OPTIMAL_STABILITY'}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Workload Progress Engine */}
-                                    <div className="p-14 bg-black/40 border border-white/5 rounded-[4rem] shadow-3xl relative overflow-hidden group/card backdrop-blur-3xl">
-                                        <div className="absolute top-0 right-0 p-14 opacity-[0.02] group-hover/card:scale-110 transition-transform duration-1000"><ChartBarIcon className="w-64 h-64" /></div>
-
-                                        <div className="relative z-10 space-y-12">
-                                            <div className="flex justify-between items-end">
-                                                <div>
-                                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-2">Pedagogical Commitment</p>
-                                                    <h4 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Weekly Node Saturation</h4>
-                                                </div>
-                                                <div className="text-right space-y-1">
-                                                    <h5 className="text-5xl font-serif font-black text-white tracking-tighter">{workloadHours}<span className="text-sm text-white/20 ml-1 font-sans">/ {maxLoad}</span></h5>
-                                                    <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Aggregated Institutional Hours</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="relative pt-4">
-                                                <div className="h-4 w-full bg-white/[0.03] rounded-full overflow-hidden shadow-inner ring-1 ring-white/5 relative">
-                                                    <motion.div
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${loadPercentage}%` }}
-                                                        transition={{ duration: 2, ease: [0.23, 1, 0.32, 1] }}
-                                                        className={`h-full rounded-full relative ${loadPercentage > 90 ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-gradient-to-r from-primary via-indigo-500 to-violet-500'}`}
-                                                    >
-                                                        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.1)_50%,rgba(255,255,255,0.1)_75%,transparent_75%,transparent)] bg-[length:32px_32px] animate-[shine_4s_linear_infinite]"></div>
-                                                        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 bg-white rounded-full shadow-[0_0_20px_#fff] border-4 border-black/40"></div>
-                                                    </motion.div>
-                                                </div>
-                                                <div className="flex justify-between mt-6 text-[10px] font-black text-white/5 uppercase tracking-[0.5em]">
-                                                    <span>Base_Allocation [00h]</span>
-                                                    <span className="text-primary/40 font-serif italic tracking-normal">{loadPercentage.toFixed(1)}% Capacity Utilization</span>
-                                                    <span>Max_Saturation [{maxLoad}h]</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Secondary Impact Grid */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                                        <div className="p-12 bg-white/[0.01] border border-white/5 rounded-[4rem] text-center space-y-6 group hover:bg-white/[0.03] transition-all relative overflow-hidden">
-                                            <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] relative z-10">Department Nodes</p>
-                                            <h5 className="text-7xl font-serif font-black text-white relative z-10 group-hover:text-primary group-hover:scale-110 transition-all duration-700">{mappings.length}</h5>
-                                            <p className="text-[9px] font-black text-white/10 uppercase tracking-widest relative z-10">Active Strategic Assignments</p>
-                                        </div>
-
-                                        <div className="p-12 bg-white/[0.01] border border-white/5 rounded-[4rem] text-center space-y-6 group hover:bg-white/[0.03] transition-all relative overflow-hidden">
-                                            <div className="absolute inset-0 bg-gradient-to-b from-violet-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] relative z-10">Cohort Impact</p>
-                                            <h5 className="text-7xl font-serif font-black text-white relative z-10 group-hover:text-violet-400 group-hover:scale-110 transition-all duration-700">~{mappings.length * 28}</h5>
-                                            <p className="text-[9px] font-black text-white/10 uppercase tracking-widest relative z-10">Total Student Reach Index</p>
-                                        </div>
-
-                                        <div className="p-12 bg-white/[0.01] border border-white/5 rounded-[4rem] text-center space-y-6 group hover:bg-white/[0.03] transition-all relative overflow-hidden">
-                                            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] relative z-10">Efficiency Delta</p>
-                                            <h5 className="text-7xl font-serif font-black text-white relative z-10 group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-700">96<span className="text-3xl text-white/20 ml-1">%</span></h5>
-                                            <p className="text-[9px] font-black text-white/10 uppercase tracking-widest relative z-10">Institutional Output Quality</p>
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                <WorkloadCore
+                                    teacher={teacher}
+                                    workloadHours={workloadHours}
+                                    maxLoad={maxLoad}
+                                />
                             )}
 
                             {activeTab === 'vault' && (
-                                <motion.div
-                                    key="vault"
-                                    initial={{ opacity: 0, scale: 0.98 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, y: 30 }}
-                                    className="max-w-6xl space-y-12 pb-20"
-                                >
-                                    <div className="flex flex-col md:flex-row justify-between items-start gap-10">
-                                        <div className="space-y-4">
-                                            <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none">DOCUMENT <br /><span className="text-white/20 italic font-medium">ASSET REGISTRY.</span></h3>
-                                            <p className="text-white/40 font-medium font-serif italic text-lg leading-relaxed max-w-xl">Encrypted repository of professional credentials, compliance certifications, and institutional record artifacts.</p>
-                                        </div>
-                                        <motion.button
-                                            whileHover={{ scale: 1.05, y: -5 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            className="px-12 py-6 bg-white text-black font-black text-[11px] uppercase tracking-[0.4em] rounded-[2rem] shadow-[0_20px_40px_-10px_rgba(255,255,255,0.1)] hover:shadow-[0_30px_60px_-10px_rgba(255,255,255,0.2)] transition-all flex items-center gap-4 group/btn"
-                                        >
-                                            <PlusIcon className="w-5 h-5 group-hover/btn:rotate-90 transition-transform duration-500" /> Archive New Asset Node
-                                        </motion.button>
-                                    </div>
-
-                                    {loadingDocs ? (
-                                        <div className="py-48 flex flex-col items-center justify-center space-y-8">
-                                            <Spinner size="lg" className="text-primary" />
-                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] animate-pulse">Decrypting Identity Artifacts...</p>
-                                        </div>
-                                    ) : docs.length === 0 ? (
-                                        <div className="p-32 border-2 border-dashed border-white/5 rounded-[4rem] bg-white/[0.01] flex flex-col items-center group/empty hover:bg-white/[0.02] transition-all duration-700 relative overflow-hidden">
-                                            <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent opacity-0 group-hover/empty:opacity-100 transition-opacity"></div>
-                                            <div className="w-32 h-32 bg-white/5 rounded-[3rem] flex items-center justify-center mb-10 shadow-inner ring-1 ring-white/10 group-hover/empty:scale-110 transition-all duration-1000">
-                                                <FileTextIcon className="w-12 h-12 opacity-10 group-hover/empty:opacity-30 group-hover/empty:text-primary transition-all" />
-                                            </div>
-                                            <h4 className="text-2xl font-serif font-black text-white/40 uppercase tracking-tighter mb-4">No Archival Records Found</h4>
-                                            <p className="text-[10px] font-black uppercase tracking-[0.5em] max-w-sm text-center leading-relaxed text-white/20 group-hover/empty:text-white/40 transition-colors">
-                                                THE CENTRAL VAULT CONTAINS NO CRYPTOGRAPHIC ENTRIES FOR THIS FACULTY NODE AT THIS TIMESTAMP.
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                            {docs.map((doc, idx) => (
-                                                <motion.div
-                                                    key={doc.id}
-                                                    initial={{ opacity: 0, y: 20 }}
-                                                    whileInView={{ opacity: 1, y: 0 }}
-                                                    viewport={{ once: true }}
-                                                    transition={{ delay: idx * 0.1 }}
-                                                    className="bg-black/40 border border-white/5 rounded-[3.5rem] p-10 shadow-3xl hover:border-primary/40 transition-all group overflow-hidden relative backdrop-blur-3xl"
-                                                >
-                                                    <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:scale-125 transition-transform duration-1000 rotate-12"><FileTextIcon className="w-48 h-48" /></div>
-
-                                                    <div className="flex justify-between items-start mb-10 relative z-10">
-                                                        <div className="w-16 h-16 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center justify-center text-white/20 group-hover:text-primary group-hover:border-primary/20 transition-all shadow-inner">
-                                                            <FileTextIcon className="w-8 h-8" />
-                                                        </div>
-                                                        <span className={`px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-[0.2em] border backdrop-blur-3xl shadow-2xl ${doc.status === 'Verified' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
-                                                            {doc.status || 'UNVERIFIED'}
-                                                        </span>
-                                                    </div>
-
-                                                    <h4 className="font-serif font-black text-white text-2xl uppercase tracking-tighter truncate mb-2 relative z-10 group-hover:text-primary transition-colors">{doc.document_name}</h4>
-                                                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 relative z-10 mb-10">{doc.document_type} <span className="text-white/5 mx-2">—</span> ARCHIVED_{new Date(doc.uploaded_at).getFullYear()}</p>
-
-                                                    <div className="flex gap-4 relative z-10">
-                                                        <button
-                                                            onClick={() => window.open(supabase.storage.from('teacher-documents').getPublicUrl(doc.file_path).data.publicUrl, '_blank')}
-                                                            className="flex-grow py-5 bg-white/[0.03] border border-white/5 hover:border-primary/40 text-white/40 hover:text-white text-[9px] font-black rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-[0.3em] hover:bg-primary/10"
-                                                        >
-                                                            <InfoIcon className="w-4 h-4" /> Decrypt Asset
-                                                        </button>
-                                                        <button className="p-5 bg-white/[0.03] text-white/20 hover:text-primary rounded-2xl transition-all border border-white/5 hover:border-primary/20 shadow-inner group/dl">
-                                                            <DownloadIcon className="w-5 h-5 group-hover/dl:scale-110 transition-transform" />
-                                                        </button>
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </motion.div>
+                                <DocumentAssetRegistry
+                                    teacher={teacher}
+                                    docs={docs}
+                                    loadingDocs={loadingDocs}
+                                    onArchiveClick={() => alert('Administrative archival protocol initiated.')}
+                                />
                             )}
 
                             {activeTab === 'security' && (
                                 <SecurityCommandNode teacher={teacher} />
                             )}
 
-                            {/* Neural Handshake / Placeholder States */}
-                            {['response', 'timetable', 'governance', 'compliance', 'portfolio', 'workload'].includes(activeTab) && activeTab !== 'personal' && activeTab !== 'vault' && activeTab !== 'security' && (
-                                <motion.div
-                                    key={activeTab}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="h-full flex flex-col items-center justify-center py-48 text-center relative overflow-hidden"
-                                >
-                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.03)_0%,transparent_70%)] pointer-events-none" />
-
-                                    <div className="relative mb-16">
-                                        <div className="w-48 h-48 bg-white/[0.01] border border-white/5 rounded-[4rem] flex items-center justify-center relative group">
-                                            <div className="absolute inset-0 bg-primary/5 rounded-[4rem] animate-pulse blur-2xl"></div>
-                                            <div className="absolute inset-0 bg-primary/10 rounded-[4rem] animate-ping opacity-20"></div>
-
-                                            <motion.div
-                                                animate={{
-                                                    rotate: [0, 360],
-                                                    scale: [1, 1.1, 1]
-                                                }}
-                                                transition={{
-                                                    duration: 10,
-                                                    repeat: Infinity,
-                                                    ease: "linear"
-                                                }}
-                                                className="absolute inset-2 border-2 border-dashed border-primary/20 rounded-[3.5rem]"
-                                            />
-
-                                            {activeTab === 'timetable' ? <ClockIcon className="w-16 h-16 text-primary shadow-3xl" /> :
-                                                activeTab === 'governance' ? <ShieldCheckIcon className="w-16 h-16 text-primary shadow-3xl" /> :
-                                                    <ActivityIcon className="w-16 h-16 text-primary shadow-3xl" />}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4 relative z-10">
-                                        <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter italic">Neural Handshake.</h3>
-                                        <p className="text-[10px] font-black text-white/20 max-w-sm mx-auto uppercase tracking-[0.5em] leading-[2]">
-                                            SYNCHRONIZING REAL-TIME {activeTab.toUpperCase()} TELEMETRY INTO THE INSTITUTIONAL COMMAND NODE...
-                                        </p>
-                                    </div>
-
-                                    <div className="mt-16 flex items-center gap-8 relative z-10">
-                                        <div className="flex -space-x-4">
-                                            {[1, 2, 3, 4].map(i => (
-                                                <div key={i} className="w-10 h-10 rounded-full bg-black border-2 border-white/5 flex items-center justify-center shadow-2xl">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-pulse" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="h-6 w-px bg-white/5" />
-                                        <span className="text-[9px] font-black text-primary/60 uppercase tracking-[0.3em] animate-pulse italic">Awaiting Uplink Approval...</span>
-                                    </div>
-                                </motion.div>
+                            {activeTab === 'governance' && (
+                                <GovernanceAudit teacher={teacher} />
                             )}
 
                         </AnimatePresence>

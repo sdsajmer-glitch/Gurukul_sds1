@@ -13,127 +13,123 @@ interface SecurityCommandNodeProps {
     teacher: TeacherExtended;
 }
 
-const SecurityModuleWrapper: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, icon, children, defaultOpen = true }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-
-    return (
-        <div className="bg-white/[0.01] border border-white/5 rounded-[3.5rem] overflow-hidden transition-all duration-500 hover:border-white/10">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full p-10 flex items-center justify-between group md:hidden"
-            >
-                <div className="flex items-center gap-6">
-                    <div className="p-3 rounded-xl bg-white/[0.03] text-white/20 group-hover:text-primary transition-all">
-                        {icon}
-                    </div>
-                    <h4 className="text-xl font-serif font-black text-white uppercase tracking-tighter italic">{title}</h4>
-                </div>
-                <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
-                    <ChevronDownIcon className="w-6 h-6 text-white/20" />
-                </motion.div>
-            </button>
-            <div className="hidden md:block">
-                {children}
-            </div>
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="md:hidden"
-                    >
-                        <div className="p-2 pt-0">
-                            {children}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-};
-
 const SecurityCommandNode: React.FC<SecurityCommandNodeProps> = ({ teacher }) => {
-    const [isTimelineVisible, setIsTimelineVisible] = useState(true);
+    const [isMobileTimelineOpen, setIsMobileTimelineOpen] = useState(false);
 
     return (
         <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col gap-12 pb-24"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col gap-8 w-full max-w-[1440px] mx-auto pb-32"
         >
-            {/* Layer 1: Security Summary Header */}
+            {/* 🏫 SECTION HEADER LAYER */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 px-2">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-3 opacity-40">
+                        <div className="w-8 h-px bg-primary/40" />
+                        <span className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Governance Protocol</span>
+                    </div>
+                    <h2 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Security <span className="text-white/20 italic font-medium">Protocol.</span></h2>
+                    <p className="text-[11px] font-bold text-white/30 uppercase tracking-[0.2em]">Command-Level Access Management & Handshake Intelligence</p>
+                </div>
+
+                <div className="flex items-center gap-4 bg-white/[0.02] border border-white/5 rounded-xl px-5 py-3 shadow-inner">
+                    <div className="flex flex-col text-right">
+                        <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">Procedural Status</span>
+                        <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">Compliance_Verified</span>
+                    </div>
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                        <ActivityIcon className="w-4 h-4" />
+                    </div>
+                </div>
+            </div>
+
+            {/* 🏫 SUMMARY STRIP (Horizontal) */}
             <SecuritySummaryHeader
                 status="Active"
                 mfaEnabled={true}
                 riskScore="Low"
                 activeSessions={3}
                 lastLogin="Alpha Sector / 2h ago"
+                deviceCount={4}
             />
 
-            {/* Main Operational Grid */}
-            <div className={`grid grid-cols-1 ${isTimelineVisible ? 'xl:grid-cols-3' : 'xl:grid-cols-1'} gap-12 px-2 transition-all duration-700`}>
+            {/* 🏫 MAIN OPERATIONAL GRID (7/3 Split) */}
+            <div className="grid grid-cols-12 gap-8 items-start px-1">
 
-                {/* Left Columns - Prime Operations */}
-                <div className={`${isTimelineVisible ? 'xl:col-span-2' : 'xl:col-span-1'} space-y-12`}>
+                {/* 8-COLUMN MAIN CONTENT (70% weight approx) */}
+                <div className="col-span-12 xl:col-span-8 space-y-8">
 
-                    {/* Layer 2: Authentication Matrix */}
-                    <SecurityModuleWrapper title="Cred Registry" icon={<ActivityIcon className="w-5 h-5" />}>
+                    {/* Layer 2: Active Sessions (Data-grid style) */}
+                    <div className="transition-all duration-200 hover:translate-y-[-4px]">
+                        <SessionControlPanel />
+                    </div>
+
+                    {/* Layer 3: Authentication Constraints */}
+                    <div className="transition-all duration-200 hover:translate-y-[-4px]">
                         <AuthenticationMatrix
                             lastPasswordChange="Jan 12, 2024"
                             failedAttempts={0}
-                            onResetCredentials={() => alert('Credential reset protocol initiated.')}
-                            onSuspendGateway={() => alert('Gateway suspension protocol pending confirmation.')}
+                            onResetCredentials={() => alert('Administrative rotation handshake initiated.')}
+                            onSuspendGateway={() => alert('Institutional gateway suspension protocol authorized.')}
                         />
-                    </SecurityModuleWrapper>
+                    </div>
 
-                    {/* Layer 3: Session & Device Control */}
-                    <SecurityModuleWrapper title="Live Handshakes" icon={<ActivityIcon className="w-5 h-5" />}>
-                        <SessionControlPanel />
-                    </SecurityModuleWrapper>
-
-                    {/* Layer 4: Governance Actions Panel */}
-                    <SecurityModuleWrapper title="Revocation Protocol" icon={<ActivityIcon className="w-5 h-5" />}>
+                    {/* Layer 4: Access Control Actions (Restrained Danger Zone) */}
+                    <div className="transition-all duration-200 hover:translate-y-[-4px]">
                         <GovernanceActions />
-                    </SecurityModuleWrapper>
-                </div>
-
-                {/* Right Column - Audit & Intelligence */}
-                <div className={`h-full ${isTimelineVisible ? 'block' : 'hidden'}`}>
-                    {/* Layer 5: Activity Timeline Intelligence */}
-                    <div className="sticky top-12 h-[calc(100vh-150px)] min-h-[600px]">
-                        <div className="h-full relative">
-                            {/* Collapse Button for Timeline on Desktop */}
-                            <button
-                                onClick={() => setIsTimelineVisible(false)}
-                                className="absolute -left-16 top-10 p-3 bg-white/5 border border-white/10 rounded-xl text-white/20 hover:text-white hover:bg-white/10 transition-all hidden xl:flex"
-                            >
-                                <ChevronDownIcon className="w-5 h-5 rotate-90" />
-                            </button>
-                            <SecurityTimeline />
-                        </div>
                     </div>
                 </div>
 
-                {/* Re-open timeline toggle if hidden */}
-                {!isTimelineVisible && (
-                    <button
-                        onClick={() => setIsTimelineVisible(true)}
-                        className="fixed right-10 bottom-10 p-6 bg-primary text-white rounded-full shadow-3xl z-50 animate-bounce"
-                    >
-                        <ActivityIcon className="w-6 h-6" />
-                    </button>
-                )}
+                {/* 4-COLUMN AUXILIARY PANEL (30% weight approx) */}
+                <div className="hidden xl:block xl:col-span-4 h-full">
+                    <div className="sticky top-8 h-[calc(100vh-280px)] min-h-[680px] transition-all duration-200 hover:translate-y-[-4px]">
+                        <SecurityTimeline />
+                    </div>
+                </div>
 
-                {/* Mobile Tablet Timeline Trigger (if collapsed) */}
-                <div className="xl:hidden">
-                    <button
-                        onClick={() => setIsTimelineVisible(!isTimelineVisible)}
-                        className="w-full py-6 bg-white/[0.02] border border-white/5 rounded-3xl text-[10px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center justify-center gap-4"
-                    >
-                        <ActivityIcon className="w-5 h-5" /> {isTimelineVisible ? 'Hide Forensic Log' : 'Show Forensic Log'}
-                    </button>
-                    {isTimelineVisible && <div className="mt-12 h-[600px]"><SecurityTimeline /></div>}
+                {/* Mobile Tablet Accordion (Single Column Stacking) */}
+                <div className="col-span-12 xl:hidden">
+                    <div className="bg-[#14161c] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+                        <button
+                            onClick={() => setIsMobileTimelineOpen(!isMobileTimelineOpen)}
+                            className="w-full p-6 flex items-center justify-between group bg-white/[0.01]"
+                        >
+                            <div className="flex items-center gap-4">
+                                <ActivityIcon className="w-4 h-4 text-white/20 group-hover:text-primary transition-colors" />
+                                <h4 className="text-[13px] font-bold text-white uppercase tracking-wider">Forensic Log Audit</h4>
+                            </div>
+                            <motion.div
+                                animate={{ rotate: isMobileTimelineOpen ? 180 : 0 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            >
+                                <ChevronDownIcon className="w-4 h-4 text-white/20" />
+                            </motion.div>
+                        </button>
+                        <AnimatePresence initial={false}>
+                            {isMobileTimelineOpen && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 620, opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                                    className="border-t border-white/5"
+                                >
+                                    <SecurityTimeline />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+            </div>
+
+            {/* Compliance Footer Metadata */}
+            <div className="flex items-center justify-between px-6 opacity-20 pt-8 border-t border-white/5">
+                <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">Node Cluster: AS-WEST-882 / VER: 9.099</p>
+                <div className="flex gap-10">
+                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">GDPR / NIST COMPLIANT</p>
+                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">Audit Signature: {teacher.id.slice(0, 12).toUpperCase()}</p>
                 </div>
             </div>
         </motion.div>
