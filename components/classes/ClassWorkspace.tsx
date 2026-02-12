@@ -166,11 +166,11 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                 .eq('id', classData.id);
 
             if (error) throw error;
-            
+
             // Show success feedback
             setAssignmentSuccess(true);
             setTimeout(() => setAssignmentSuccess(false), 3000);
-            
+
             onUpdate();
             setIsAssignFacultyOpen(false);
         } catch (err: any) {
@@ -183,7 +183,7 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
     const handleRemoveTeacher = async () => {
         const confirmed = window.confirm('Are you sure you want to remove the current class teacher? This action will unassign them from this class.');
         if (!confirmed) return;
-        
+
         setAssigningTeacher(true);
         try {
             const { error } = await supabase
@@ -202,14 +202,14 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
 
     const filteredTeachers = useMemo(() => {
         return availableTeachers.filter(t => {
-            const matchesSearch = 
+            const matchesSearch =
                 t.display_name.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
                 t.email?.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
                 t.specialization?.toLowerCase().includes(searchTeacherQuery.toLowerCase());
-            
+
             // Exclude currently assigned teacher
             const isCurrentlyAssigned = t.id === classData.class_teacher_id;
-            
+
             return matchesSearch && !isCurrentlyAssigned;
         });
     }, [availableTeachers, searchTeacherQuery, classData.class_teacher_id]);
@@ -328,16 +328,22 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                 <div className="bg-foreground text-background rounded-[2rem] p-8 shadow-2xl space-y-6 relative overflow-hidden ring-1 ring-white/10">
                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-indigo-500"></div>
                                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">System Controls</h3>
-                                    <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-4">
                                         {[
-                                            { label: 'Synchronize Students', icon: <UsersIcon className="w-4 h-4" />, color: 'hover:bg-blue-500', action: () => setActiveTab('students') },
-                                            { label: 'Structural Timetable', icon: <ClockIcon className="w-4 h-4" />, color: 'hover:bg-indigo-500', action: () => setActiveTab('timetable') },
-                                            { label: 'Export Intelligence', icon: <DownloadIcon className="w-4 h-4" />, color: 'hover:bg-emerald-500', action: () => alert("Exporting Intelligence Report...") },
-                                            { label: 'Initiate Audit', icon: <ChartBarIcon className="w-4 h-4" />, color: 'hover:bg-amber-500', action: () => setActiveTab('analytics') }
+                                            { label: 'Synchronize Students', desc: 'Manage Roster', icon: <UsersIcon className="w-5 h-5" />, color: 'bg-blue-500', action: () => setActiveTab('students') },
+                                            { label: 'Structural Timetable', desc: 'View Schedule', icon: <ClockIcon className="w-5 h-5" />, color: 'bg-indigo-500', action: () => setActiveTab('timetable') },
+                                            { label: 'Export Intelligence', desc: 'Download Report', icon: <DownloadIcon className="w-5 h-5" />, color: 'bg-emerald-500', action: () => alert("Exporting Intelligence Report...") },
+                                            { label: 'Initiate Audit', desc: 'Deep Analysis', icon: <ChartBarIcon className="w-5 h-5" />, color: 'bg-amber-500', action: () => setActiveTab('analytics') }
                                         ].map(action => (
-                                            <button key={action.label} onClick={action.action} className={`w-full py-4 px-5 rounded-2xl bg-white/10 hover:shadow-xl font-black text-[10px] uppercase tracking-widest text-left flex items-center justify-between transition-all group/btn ${action.color}`}>
-                                                <span className="flex items-center gap-4">{action.icon} {action.label}</span>
-                                                <ChevronRightIcon className="w-4 h-4 opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all" />
+                                            <button key={action.label} onClick={action.action} className="relative overflow-hidden p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 transition-all group text-left">
+                                                <div className={`w-10 h-10 rounded-xl ${action.color}/20 text-${action.color.split('-')[1]}-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                                                    {action.icon}
+                                                </div>
+                                                <div className="relative z-10">
+                                                    <p className="font-black text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{action.desc}</p>
+                                                    <p className="font-bold text-sm text-foreground leading-tight group-hover:text-primary transition-colors">{action.label}</p>
+                                                </div>
+                                                <div className={`absolute -bottom-4 -right-4 w-16 h-16 rounded-full ${action.color}/10 blur-xl group-hover:blur-2xl transition-all`}></div>
                                             </button>
                                         ))}
                                     </div>
@@ -813,25 +819,49 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ classData, onClose, onU
                                         />
                                     </div>
                                 </div>
-                                <div className="overflow-y-auto custom-scrollbar p-4 space-y-2 flex-grow">
-                                    {filteredTeachers.map((teacher) => (
-                                        <div key={teacher.id} onClick={() => handleAssignTeacher(teacher.id)} className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-primary/5 border border-transparent hover:border-primary/20 cursor-pointer transition-all">
-                                            <div className="w-12 h-12 rounded-xl bg-muted group-hover:bg-primary group-hover:text-white transition-colors flex items-center justify-center text-lg font-black">
-                                                {teacher.display_name.charAt(0)}
+                                <div className="overflow-y-auto custom-scrollbar p-6 space-y-3 flex-grow bg-black/20">
+                                    <div className="flex justify-between items-end px-2 mb-2">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Available Faculty</h4>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-lg">{filteredTeachers.length} Matches</span>
+                                    </div>
+                                    {filteredTeachers.map((teacher, idx) => {
+                                        // Mock status for demo smoothness
+                                        const loadStatus = idx % 3 === 0 ? 'High Load' : (idx % 2 === 0 ? 'Optimal' : 'Available');
+                                        const statusColor = loadStatus === 'High Load' ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' : (loadStatus === 'Available' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-blue-500 bg-blue-500/10 border-blue-500/20');
+
+                                        return (
+                                            <div key={teacher.id} onClick={() => handleAssignTeacher(teacher.id)} className="group relative overflow-hidden bg-card border border-white/5 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(var(--primary),0.1)] rounded-2xl p-4 cursor-pointer transition-all active:scale-[0.98]">
+                                                <div className="flex items-center gap-5 relative z-10">
+                                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-muted to-muted/50 group-hover:from-primary group-hover:to-indigo-600 transition-all flex items-center justify-center text-foreground group-hover:text-white font-black text-xl shadow-inner">
+                                                        {teacher.display_name.charAt(0)}
+                                                    </div>
+                                                    <div className="flex-grow space-y-1">
+                                                        <div className="flex items-center justify-between">
+                                                            <h4 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">{teacher.display_name}</h4>
+                                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border ${statusColor}`}>{loadStatus}</span>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground font-medium flex items-center gap-2">
+                                                            <span>{teacher.email || 'No Email'}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-muted-foreground/40"></span>
+                                                            <span>{teacher.specialization || 'General Faculty'}</span>
+                                                        </p>
+                                                    </div>
+                                                    <div className="p-3 bg-white/5 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+                                                        {assigningTeacher ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <CheckIcon className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                                    </div>
+                                                </div>
+                                                {classData.class_teacher_id === teacher.id && (
+                                                    <div className="absolute top-0 right-0 bg-emerald-500/20 text-emerald-500 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl border-l border-b border-emerald-500/20">
+                                                        Currently Assigned
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="flex-grow">
-                                                <p className="font-bold text-base text-foreground group-hover:text-primary transition-colors">{teacher.display_name}</p>
-                                                <p className="text-xs text-muted-foreground font-medium">{teacher.email}</p>
-                                            </div>
-                                            {classData.class_teacher_id === teacher.id && (
-                                                <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Current Lead</div>
-                                            )}
-                                            <ChevronRightIcon className="w-5 h-5 text-muted-foreground group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                     {filteredTeachers.length === 0 && (
-                                        <div className="text-center py-10 opacity-50">
-                                            <p className="text-sm font-bold">No matching faculty found.</p>
+                                        <div className="text-center py-20 opacity-50 flex flex-col items-center">
+                                            <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mb-4 text-muted-foreground"><SearchIcon className="w-8 h-8" /></div>
+                                            <p className="text-sm font-black uppercase tracking-widest">No matching faculty found</p>
                                         </div>
                                     )}
                                 </div>

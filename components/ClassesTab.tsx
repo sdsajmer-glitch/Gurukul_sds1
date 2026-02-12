@@ -319,6 +319,78 @@ const ClassroomAIModal: React.FC<{ classes: ExtendedClass[]; onClose: () => void
     );
 };
 
+const ClassCard: React.FC<{
+    cls: ExtendedClass;
+    status: string;
+    onClick: () => void;
+    onAssign: (e: React.MouseEvent) => void;
+}> = ({ cls, status, onClick, onAssign }) => (
+    <motion.div
+        layout
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        whileHover={{ y: -8, scale: 1.02 }}
+        onClick={onClick}
+        className="bg-card border border-border/60 rounded-[2rem] p-6 shadow-sm hover:shadow-2xl transition-all group cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[320px]"
+    >
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+
+        <div className="space-y-6 relative z-10">
+            <div className="flex justify-between items-start">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-600/10 text-blue-600 flex items-center justify-center font-black text-2xl border border-blue-500/10 shadow-inner group-hover:scale-110 transition-transform">
+                    {cls.grade_level}
+                </div>
+                <StatusBadge status={status} />
+            </div>
+
+            <div>
+                <h3 className="text-xl font-black text-foreground tracking-tight group-hover:text-primary transition-colors">{cls.name}</h3>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-1">{cls.academic_year} Cycle</p>
+            </div>
+
+            <div className="space-y-3">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    <span>Capacity</span>
+                    <span>{Math.round(((cls.student_count || 0) / (cls.capacity || 30)) * 100)}% Full</span>
+                </div>
+                <div className="h-2 w-full bg-muted/40 rounded-full overflow-hidden p-0.5 ring-1 ring-black/5">
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(((cls.student_count || 0) / (cls.capacity || 30)) * 100, 100)}%` }}
+                        className={`h-full rounded-full shadow-sm ${((cls.student_count || 0) > (cls.capacity || 30)) ? 'bg-gradient-to-r from-red-500 to-rose-600' : 'bg-gradient-to-r from-emerald-500 to-teal-400'}`}
+                    />
+                </div>
+                <div className="flex justify-between text-[10px] font-bold text-muted-foreground/60">
+                    <span>{cls.student_count || 0} Students</span>
+                    <span>{cls.capacity || 30} Max</span>
+                </div>
+            </div>
+        </div>
+
+        <div className="pt-6 mt-6 border-t border-border/40 relative z-10">
+            {cls.teacher_name ? (
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 flex items-center justify-center text-indigo-600 text-xs font-black">
+                        {cls.teacher_name.charAt(0)}
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Faculty Lead</p>
+                        <p className="font-bold text-sm text-foreground">{cls.teacher_name}</p>
+                    </div>
+                </div>
+            ) : (
+                <button
+                    onClick={onAssign}
+                    className="w-full py-3 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-amber-500 hover:text-white transition-all shadow-sm active:scale-95"
+                >
+                    <AlertTriangleIcon className="w-4 h-4" /> Assign Faculty
+                </button>
+            )}
+        </div>
+    </motion.div>
+);
+
 const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
     const [classes, setClasses] = useState<ExtendedClass[]>([]);
     const [loading, setLoading] = useState(true);
@@ -330,6 +402,7 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [quickFilter, setQuickFilter] = useState<QuickFilterType>('All');
     const [sortConfig, setSortConfig] = useState<{ key: keyof ExtendedClass; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
     const [initialOpenAssignFaculty, setInitialOpenAssignFaculty] = useState(false);
@@ -491,24 +564,31 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide w-full md:w-auto p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-border/40">
-                        {(['All', 'No Teacher', 'No Students', 'Overloaded', 'New'] as QuickFilterType[]).map(f => (
-                            <button
-                                key={f}
-                                onClick={() => setQuickFilter(f)}
-                                className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${quickFilter === f ? 'bg-card text-primary shadow-xl ring-1 ring-primary/20' : 'bg-transparent text-muted-foreground hover:text-foreground'}`}
-                            >
-                                {f}
+                    <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto scrollbar-hide">
+                        <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-border/40">
+                            {(['All', 'No Teacher', 'No Students', 'Overloaded', 'New'] as QuickFilterType[]).map(f => (
+                                <button
+                                    key={f}
+                                    onClick={() => setQuickFilter(f)}
+                                    className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${quickFilter === f ? 'bg-card text-primary shadow-xl ring-1 ring-primary/20' : 'bg-transparent text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    {f}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-border/40">
+                            <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-card text-primary shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
                             </button>
-                        ))}
-                        <div className="w-px h-6 bg-border mx-1"></div>
-                        <button className="p-2.5 bg-card border border-border rounded-xl text-muted-foreground hover:text-primary transition-all shadow-md group">
-                            <FilterIcon className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                        </button>
+                            <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-card text-primary shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" /></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex-grow overflow-x-auto custom-scrollbar">
+                <div className="flex-grow overflow-x-auto custom-scrollbar p-6">
                     {loading ? (
                         <div className="flex flex-col justify-center items-center h-[500px] space-y-6">
                             <div className="relative">
@@ -540,6 +620,27 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId }) => {
                                 Reset Context
                             </motion.button>
                         </motion.div>
+                    ) : viewMode === 'grid' ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+                            <AnimatePresence mode="popLayout">
+                                {filteredClasses.map((cls, idx) => (
+                                    <ClassCard
+                                        key={cls.id}
+                                        cls={cls}
+                                        status={getStatus(cls)}
+                                        onClick={() => {
+                                            setInitialOpenAssignFaculty(false);
+                                            setSelectedClass(cls);
+                                        }}
+                                        onAssign={(e) => {
+                                            e.stopPropagation();
+                                            setInitialOpenAssignFaculty(true);
+                                            setSelectedClass(cls);
+                                        }}
+                                    />
+                                ))}
+                            </AnimatePresence>
+                        </div>
                     ) : (
                         <table className="w-full text-left text-sm whitespace-nowrap">
                             <thead className="bg-muted/30 border-b border-border text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] sticky top-0 z-10 backdrop-blur-3xl shadow-sm">
