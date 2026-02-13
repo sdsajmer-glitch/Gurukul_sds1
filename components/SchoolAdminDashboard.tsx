@@ -24,6 +24,7 @@ import Spinner from './common/Spinner';
 import AnalyticsTab from './AnalyticsTab';
 import TeachersManagementTab from './TeachersManagementTab';
 import ClassesTab from './ClassesTab';
+import ExamsTab from './ExamsTab';
 import { getAdminMenu } from './admin/AdminMenuConfig';
 import { XIcon } from './icons/XIcon';
 
@@ -140,6 +141,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({ profile, on
             // Fix: AttendanceTab is now correctly recognized as a component thanks to the fix in types.ts.
             case 'Attendance': return <AttendanceTab />;
             case 'Timetable': return <TimetableTab />;
+            case 'Exams': return <ExamsTab profile={profile} branchId={currentBranchId} />;
             case 'Finance': return <FinanceTab profile={profile} branchId={currentBranchId} branches={branches} />;
             case 'Communication': return <CommunicationTab profile={profile} />;
             case 'User Management': return <UserManagementTab profile={profile} isHeadOfficeAdmin={isHeadOfficeAdmin} />;

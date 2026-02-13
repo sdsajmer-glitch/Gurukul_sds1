@@ -33,10 +33,10 @@ export interface MenuGroup {
 
 const PERMISSIONS: Record<string, Set<string>> = {
     [BuiltInRoles.SCHOOL_ADMINISTRATION]: new Set(['all']),
-    [BuiltInRoles.BRANCH_ADMIN]: new Set(['Dashboard', 'Analytics', 'User Management', 'Student Management', 'Teacher Management', 'Code Verification', 'Enquiries', 'Admissions', 'Classes', 'Courses', 'Attendance', 'Timetable', 'Homework', 'Finance', 'Facility Management', 'Meetings', 'Communication', 'Report Card Parser', 'Task Orchestrator']),
-    [BuiltInRoles.PRINCIPAL]: new Set(['Dashboard', 'Analytics', 'Teacher Management', 'Student Management', 'Classes', 'Courses', 'Attendance', 'Timetable', 'Homework', 'Communication', 'Task Orchestrator']),
+    [BuiltInRoles.BRANCH_ADMIN]: new Set(['Dashboard', 'Analytics', 'User Management', 'Student Management', 'Teacher Management', 'Code Verification', 'Enquiries', 'Admissions', 'Classes', 'Courses', 'Attendance', 'Timetable', 'Homework', 'Exams', 'Finance', 'Facility Management', 'Meetings', 'Communication', 'Report Card Parser', 'Task Orchestrator']),
+    [BuiltInRoles.PRINCIPAL]: new Set(['Dashboard', 'Analytics', 'Teacher Management', 'Student Management', 'Classes', 'Courses', 'Attendance', 'Timetable', 'Homework', 'Exams', 'Communication', 'Task Orchestrator']),
     [BuiltInRoles.HR_MANAGER]: new Set(['Dashboard', 'User Management', 'Teacher Management', 'Attendance', 'Meetings', 'Task Orchestrator']),
-    [BuiltInRoles.ACADEMIC_COORDINATOR]: new Set(['Dashboard', 'Student Management', 'Teacher Management', 'Classes', 'Courses', 'Timetable', 'Homework', 'Analytics', 'Task Orchestrator']),
+    [BuiltInRoles.ACADEMIC_COORDINATOR]: new Set(['Dashboard', 'Student Management', 'Teacher Management', 'Classes', 'Courses', 'Timetable', 'Homework', 'Exams', 'Analytics', 'Task Orchestrator']),
     [BuiltInRoles.ACCOUNTANT]: new Set(['Dashboard', 'Finance', 'Student Management', 'Admissions', 'Task Orchestrator']),
 };
 
@@ -85,6 +85,7 @@ export const getAdminMenu = (isHeadOfficeAdmin: boolean, userRole: Role): MenuGr
                 { id: 'Courses', label: 'Curriculum Master', icon: <CoursesIcon className="w-5 h-5" /> },
                 { id: 'Attendance', label: 'Attendance Monitor', icon: <ChecklistIcon className="w-5 h-5" /> },
                 { id: 'Timetable', label: 'Master Schedule', icon: <TimetableIcon className="w-5 h-5" /> },
+                { id: 'Exams', label: 'Exams & Grading', icon: <ChartBarIcon className="w-5 h-5" /> },
                 { id: 'Homework', label: 'Assignments', icon: <BookIcon className="w-5 h-5" /> },
             ]
         },
