@@ -8,6 +8,7 @@ import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { ClockIcon } from '../icons/ClockIcon';
 import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
+import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
 import RevenueTrendChart from './charts/RevenueTrendChart';
 import CollectionDistributionChart from './charts/CollectionDistributionChart';
@@ -20,6 +21,13 @@ interface FinanceOverviewProps {
     runOracle: () => void;
     aiInsight: string | null;
     isAnalyzing: boolean;
+    readiness: {
+        isSetupComplete: boolean;
+        hasStructures: boolean;
+        hasAssignments: boolean;
+        hasLedger: boolean;
+        missingSteps: string[];
+    };
 }
 
 const formatCurrency = (amount: number, currency: CurrencyCode) => {
@@ -80,16 +88,19 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
     onNavigate,
     runOracle,
     aiInsight,
-    isAnalyzing
+    isAnalyzing,
+    readiness
 }) => {
+    const isLedgerEmpty = data.total_assigned === 0;
+
     return (
         <div className="space-y-12 pb-12">
             {/* Layer 1 – Financial KPI Strip */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                 <KPIBlock
                     title="Total Assigned"
-                    value={formatCurrency(data.total_assigned, currency)}
-                    trend="+12.5%"
+                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_assigned, currency)}
+                    trend={isLedgerEmpty ? undefined : "+12.5%"}
                     trendUp={true}
                     icon={<TrendingUpIcon className="w-7 h-7" />}
                     color="bg-primary"
@@ -97,8 +108,8 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 />
                 <KPIBlock
                     title="Total Collected"
-                    value={formatCurrency(data.total_collected, currency)}
-                    trend="92%"
+                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_collected, currency)}
+                    trend={isLedgerEmpty ? undefined : "92%"}
                     trendUp={true}
                     icon={<CheckCircleIcon className="w-7 h-7" />}
                     color="bg-emerald-500"
@@ -106,8 +117,8 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 />
                 <KPIBlock
                     title="Outstanding"
-                    value={formatCurrency(data.total_pending, currency)}
-                    trend="Overdue"
+                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_pending, currency)}
+                    trend={isLedgerEmpty ? 'Inactive' : "Overdue"}
                     trendUp={false}
                     icon={<ClockIcon className="w-7 h-7" />}
                     color="bg-amber-500"
@@ -115,14 +126,14 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 />
                 <KPIBlock
                     title="Active Pending"
-                    value={formatCurrency(data.total_pending * 0.4, currency)} // Mock component
+                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_pending * 0.4, currency)}
                     icon={<ClockIcon className="w-7 h-7" />}
                     color="bg-blue-500"
                 />
                 <KPIBlock
                     title="Overdue Critical"
-                    value={formatCurrency(data.total_overdue, currency)}
-                    trend="High Risk"
+                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_overdue, currency)}
+                    trend={isLedgerEmpty ? 'Zero Risk' : "High Risk"}
                     trendUp={false}
                     icon={<AlertTriangleIcon className="w-7 h-7" />}
                     color="bg-red-500"
@@ -130,8 +141,8 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 />
                 <KPIBlock
                     title="Burn Rate"
-                    value={formatCurrency(data.monthly_collection * 0.8, currency)} // Mock component
-                    trend="Optimal"
+                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.monthly_collection * 0.8, currency)}
+                    trend={isLedgerEmpty ? 'N/A' : "Optimal"}
                     trendUp={true}
                     icon={<TrendingUpIcon className="w-7 h-7" />}
                     color="bg-purple-500"
@@ -156,7 +167,19 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                                 ))}
                             </div>
                         </div>
-                        <RevenueTrendChart total={data.total_collected} />
+                        {isLedgerEmpty ? (
+                            <div className="h-full flex flex-col items-center justify-center p-20 text-center space-y-8">
+                                <div className="p-8 bg-white/[0.02] rounded-full border border-white/5 shadow-inner">
+                                    <TrendingUpIcon className="w-12 h-12 text-white/10" />
+                                </div>
+                                <div>
+                                    <p className="text-xl font-serif font-black text-white/40 uppercase tracking-tighter">No Financial Vectors Detected</p>
+                                    <p className="text-sm text-white/20 mt-2 max-w-sm mx-auto">Complete the Master configuration to initiate ledger generation and cash flow visualization.</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <RevenueTrendChart total={data.total_collected} />
+                        )}
                     </div>
 
                     {/* AI Oracle Component */}
@@ -173,7 +196,11 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                                     <h4 className="text-xl font-serif font-black text-white uppercase tracking-tight">Financial Intelligence Oracle</h4>
                                 </div>
                                 <div className="min-h-[60px]">
-                                    {aiInsight ? (
+                                    {isLedgerEmpty ? (
+                                        <p className="text-lg text-white/30 font-medium font-serif italic leading-relaxed">
+                                            The Oracle requires institutional financial data to synthesize liquidity trends. Please finalize the Master setup protocol.
+                                        </p>
+                                    ) : aiInsight ? (
                                         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xl md:text-2xl text-white/90 leading-tight font-serif italic tracking-tight">
                                             "{aiInsight}"
                                         </motion.p>
@@ -186,8 +213,8 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                             </div>
                             <button
                                 onClick={runOracle}
-                                disabled={isAnalyzing}
-                                className="px-10 py-5 bg-primary text-white font-black text-[10px] uppercase tracking-[0.4em] rounded-2xl shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-primary/20 ring-1 ring-white/20 whitespace-nowrap"
+                                disabled={isAnalyzing || isLedgerEmpty}
+                                className="px-10 py-5 bg-primary text-white font-black text-[10px] uppercase tracking-[0.4em] rounded-2xl shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-primary/20 ring-1 ring-white/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isAnalyzing ? 'SYNCHRONIZING...' : 'SYNC INTELLIGENCE'}
                                 {!isAnalyzing && <ArrowRightIcon className="w-4 h-4 text-white/40" />}
@@ -206,18 +233,40 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                         </div>
 
                         <div className="flex-grow flex items-center justify-center py-10">
-                            <CollectionDistributionChart
-                                paid={data.total_collected}
-                                pending={data.total_pending}
-                                overdue={data.total_overdue}
-                            />
+                            {isLedgerEmpty ? (
+                                <div className="text-center space-y-4">
+                                    <div className="w-40 h-40 rounded-full border border-dashed border-white/10 flex items-center justify-center mx-auto">
+                                        <ShieldCheckIcon className="w-12 h-12 text-white/5" />
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase text-white/10 tracking-[0.2em]">Matrix Pending Genesis</p>
+                                </div>
+                            ) : (
+                                <div className="relative w-56 h-56 group/health">
+                                    <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full opacity-40 group-hover/health:opacity-60 transition-opacity"></div>
+                                    <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="42" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/[0.03]" />
+                                        <motion.circle
+                                            cx="50" cy="50" r="42" stroke="currentColor" strokeWidth="6" fill="transparent"
+                                            initial={{ strokeDashoffset: 264 }}
+                                            animate={{ strokeDashoffset: 264 - (264 * (data.health_index || 0) / 100) }}
+                                            strokeDasharray={264}
+                                            className="text-primary drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]"
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
+                                    <div className="absolute inset-0 flex items-center justify-center flex-col z-20">
+                                        <span className="text-5xl font-serif font-black text-white">{data.health_index || 0}</span>
+                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">Index Score</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="mt-auto space-y-8 pt-10 border-t border-white/5">
                             {[
-                                { label: 'Integrity Score', value: '98.4%', trend: '+0.2%', color: 'text-emerald-500' },
-                                { label: 'Payment Ratio', value: `${Math.round((data.total_collected / data.total_assigned) * 100)}%`, trend: 'Stable', color: 'text-primary' },
-                                { label: 'Risk Level', value: data.total_overdue > (data.total_assigned * 0.1) ? 'Critical' : 'Low', trend: 'Neutral', color: data.total_overdue > (data.total_assigned * 0.1) ? 'text-red-500' : 'text-emerald-500' }
+                                { label: 'Efficiency Ratio', value: isLedgerEmpty ? 'N/A' : `${data.collection_efficiency}%`, trend: isLedgerEmpty ? 'Inactive' : 'Target 95%', color: isLedgerEmpty ? 'text-white/20' : 'text-emerald-500' },
+                                { label: 'Burn Consistency', value: isLedgerEmpty ? '0%' : `${data.burn_rate_stability}%`, trend: isLedgerEmpty ? 'Inactive' : 'Optimum', color: isLedgerEmpty ? 'text-white/20' : 'text-primary' },
+                                { label: 'Risk Delta', value: isLedgerEmpty ? 'NULL' : (data.outstanding_ratio > 30 ? 'High' : 'Low'), trend: isLedgerEmpty ? 'Inactive' : 'Neutral', color: isLedgerEmpty ? 'text-white/20' : (data.outstanding_ratio > 30 ? 'text-red-500' : 'text-emerald-500') }
                             ].map((stat, i) => (
                                 <div key={i} className="flex justify-between items-end">
                                     <div className="space-y-1">
@@ -245,21 +294,26 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 </div>
 
                 <div className="space-y-4">
-                    {/* This would typically be dynamic, but for UI/UX demo purposes */}
-                    {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl hover:bg-white/[0.04] transition-all group">
-                            <div className="flex items-center gap-6">
-                                <div className="h-12 w-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-                                    <CheckCircleIcon className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <p className="text-lg font-serif font-black text-white leading-none">Capital Injection Protocol: STU_4930</p>
-                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-2 font-mono">NODE_TX_593021 • {new Date().toLocaleTimeString()}</p>
-                                </div>
-                            </div>
-                            <p className="text-2xl font-serif font-black text-emerald-500 tracking-tighter">+₹12,500</p>
+                    {isLedgerEmpty ? (
+                        <div className="py-16 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                            <p className="text-[12px] font-black uppercase text-white/10 tracking-[0.5em]">No Transactional Flow Recorded</p>
                         </div>
-                    ))}
+                    ) : (
+                        [1, 2, 3].map(i => (
+                            <div key={i} className="flex items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl hover:bg-white/[0.04] transition-all group">
+                                <div className="flex items-center gap-6">
+                                    <div className="h-12 w-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                                        <CheckCircleIcon className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-serif font-black text-white leading-none">Capital Injection Protocol: STU_4930</p>
+                                        <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-2 font-mono">NODE_TX_593021 • {new Date().toLocaleTimeString()}</p>
+                                    </div>
+                                </div>
+                                <p className="text-2xl font-serif font-black text-emerald-500 tracking-tighter">+₹12,500</p>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </div>

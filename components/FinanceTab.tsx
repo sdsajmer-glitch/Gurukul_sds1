@@ -34,11 +34,15 @@ import FinanceAuditLog from './finance/FinanceAuditLog';
 import FinanceOverview from './finance/FinanceOverview';
 import FinanceAccounts from './finance/FinanceAccounts';
 import FinanceMaster from './finance/FinanceMaster';
+import FeeMasterWizard from './finance/FeeMasterWizard';
+import PaymentProtocolModal from './finance/PaymentProtocolModal';
+import AdjustmentRuleModal from './finance/AdjustmentRuleModal';
 import FinanceAudit from './finance/FinanceAudit';
+import FinanceExpense from './finance/FinanceExpense';
 import { StatsSkeleton, Skeleton } from './common/Skeleton';
 import StudentFinanceDetailView from './finance/StudentFinanceDetailView';
 import PremiumAvatar from './common/PremiumAvatar';
-import FeeMasterWizard from './finance/FeeMasterWizard';
+
 
 const formatCurrency = (amount: number, currency: CurrencyCode = 'INR') => {
     return new Intl.NumberFormat('en-IN', {
@@ -74,7 +78,7 @@ const TabButton: React.FC<{
 
 
 const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, branches: SchoolBranch[] }> = ({ profile, branchId, branches }) => {
-    const [activeView, setActiveView] = useState<'overview' | 'accounts' | 'master' | 'audit'>('overview');
+    const [activeView, setActiveView] = useState<'overview' | 'accounts' | 'master' | 'audit' | 'expenditure'>('overview');
     const [financeData, setFinanceData] = useState<FinanceData | null>(null);
     const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
     const [studentLedgers, setStudentLedgers] = useState<StudentFeeSummary[]>([]);
@@ -83,10 +87,15 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
     const [loading, setLoading] = useState(true);
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [editingStructure, setEditingStructure] = useState<FeeStructure | null>(null);
+    const [isProtocolModalOpen, setIsProtocolModalOpen] = useState(false);
+    const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
     const [accountSearch, setAccountSearch] = useState('');
     const [riskOnly, setRiskOnly] = useState(false);
     const [accountViewFilter, setAccountViewFilter] = useState<string | undefined>(undefined);
     const [error, setError] = useState<string | null>(null);
+    const [paymentProtocols, setPaymentProtocols] = useState<any[]>([]);
+    const [adjustmentRules, setAdjustmentRules] = useState<any[]>([]);
+    const [institutionalReadiness, setInstitutionalReadiness] = useState<any>(null);
 
     const [aiInsight, setAiInsight] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -108,22 +117,35 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 structQuery = structQuery.eq('branch_id', bid);
             }
 
-            const [finRes, structRes, ledgerRes, gradeRes] = await Promise.all([
+            const [finRes, structRes, ledgerRes, gradeRes, healthRes, protocolRes, ruleRes, readinessRes] = await Promise.all([
                 supabase.rpc('get_finance_overview_stats_v2', { p_branch_id: bid }),
                 structQuery,
                 supabase.rpc('get_student_fee_summary_all', { p_branch_id: bid }),
-                supabase.rpc('get_grade_wise_collection_stats', { p_branch_id: bid })
+                supabase.rpc('get_grade_wise_collection_stats', { p_branch_id: bid }),
+                supabase.rpc('get_institutional_health_index', { p_branch_id: bid }),
+                supabase.from('finance_payment_protocols').select('*').eq('branch_id', bid),
+                supabase.from('finance_adjustment_rules').select('*').eq('branch_id', bid),
+                supabase.rpc('fn_calculate_finance_readiness', { p_branch_id: bid })
             ]);
 
             if (finRes.error) throw finRes.error;
             if (structRes.error) throw structRes.error;
             if (ledgerRes.error) throw ledgerRes.error;
-            // gradeRes might be empty, check error only
 
-            setFinanceData(finRes.data || { total_assigned: 0, total_collected: 0, total_pending: 0, total_overdue: 0, monthly_collection: 0, today_collection: 0, currency: 'INR' });
+            const baseData = finRes.data || { total_assigned: 0, total_collected: 0, total_pending: 0, total_overdue: 0, monthly_collection: 0, today_collection: 0, currency: 'INR' };
+            setFinanceData({
+                ...baseData,
+                health_index: healthRes.data?.health_index || 0,
+                collection_efficiency: healthRes.data?.collection_efficiency || 0,
+                outstanding_ratio: healthRes.data?.outstanding_ratio || 0,
+                burn_rate_stability: healthRes.data?.burn_rate_stability || 0
+            });
             setFeeStructures(structRes.data || []);
             setStudentLedgers(Array.isArray(ledgerRes.data) ? ledgerRes.data : []);
             setGradeStats(Array.isArray(gradeRes.data) ? gradeRes.data : []);
+            setPaymentProtocols(protocolRes.data || []);
+            setAdjustmentRules(ruleRes.data || []);
+            setInstitutionalReadiness(readinessRes.data);
 
         } catch (err: any) {
             console.error("Finance Registry Sync Failure:", err);
@@ -132,6 +154,24 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
             if (!isSilent) setLoading(false);
         }
     }, [branchId]);
+
+    const readiness = useMemo(() => {
+        const hasActiveStructures = feeStructures.some(s => s.status === 'Active');
+        const hasStudentsWithFees = studentLedgers.length > 0;
+        const totalBilled = financeData?.total_assigned || 0;
+
+        return {
+            isSetupComplete: hasActiveStructures && hasStudentsWithFees && totalBilled > 0,
+            hasStructures: hasActiveStructures,
+            hasAssignments: hasStudentsWithFees,
+            hasLedger: totalBilled > 0,
+            missingSteps: [
+                !hasActiveStructures && "Create Active Fee Protocol",
+                !hasStudentsWithFees && "Link Students to Fee Nodes",
+                totalBilled === 0 && hasStudentsWithFees && "Generate Operational Ledger"
+            ].filter(Boolean) as string[]
+        };
+    }, [feeStructures, studentLedgers, financeData]);
 
     useEffect(() => { fetchAllData(); }, [fetchAllData]);
 
@@ -253,10 +293,48 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 <div className="flex bg-[#12141c]/60 p-1.5 rounded-full border border-white/5 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] ring-1 ring-white/5">
                     <TabButton id="overview" label="Overview" icon={<ChartBarIcon className="w-4 h-4" />} isActive={activeView === 'overview'} onClick={setActiveView} />
                     <TabButton id="accounts" label="Accounts" icon={<UsersIcon className="w-4 h-4" />} isActive={activeView === 'accounts'} onClick={setActiveView} />
+                    <TabButton id="expenditure" label="Expenditure" icon={<TrendingUpCustomIcon className="w-4 h-4 rotate-180" />} isActive={activeView === 'expenditure'} onClick={setActiveView} />
                     <TabButton id="master" label="Master" icon={<BookIcon className="w-4 h-4" />} isActive={activeView === 'master'} onClick={setActiveView} />
                     <TabButton id="audit" label="Audit" icon={<ShieldCheckIcon className="w-4 h-4" />} isActive={activeView === 'audit'} onClick={setActiveView} />
                 </div>
             </div>
+
+            {/* Governance Protocol Banner - Readiness Layer */}
+            {!readiness.isSetupComplete && !loading && !error && (
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="relative p-8 rounded-[2.5rem] bg-gradient-to-r from-amber-500/10 via-amber-500/[0.05] to-transparent border border-amber-500/20 shadow-2xl overflow-hidden group"
+                >
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 p-12 opacity-[0.05] group-hover:scale-110 transition-transform duration-1000">
+                        <ShieldCheckIcon className="w-32 h-32 text-amber-500" />
+                    </div>
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
+                        <div className="flex items-center gap-6">
+                            <div className="p-4 bg-amber-500/20 rounded-2xl border border-amber-500/20 animate-pulse">
+                                <AlertTriangleIcon className="w-6 h-6 text-amber-500" />
+                            </div>
+                            <div>
+                                <h4 className="text-xl font-serif font-black text-amber-500 uppercase tracking-tight">Institutional Finance Setup Required</h4>
+                                <div className="flex flex-wrap gap-4 mt-2">
+                                    {readiness.missingSteps.map((step, i) => (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500/40"></div>
+                                            <span className="text-[10px] font-black uppercase text-amber-500/60 tracking-widest">{step}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setActiveView('master')}
+                            className="px-8 py-3.5 bg-amber-500 text-black font-black text-[10px] uppercase tracking-[0.3em] rounded-xl hover:bg-amber-400 transition-all flex items-center gap-3 active:scale-95 shadow-xl shadow-amber-900/20"
+                        >
+                            Initialize Master Setup <ArrowRightIcon className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </motion.div>
+            )}
 
             <div className="w-full h-px bg-white/5 rounded-full" />
 
@@ -289,6 +367,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                 runOracle={runFinancialOracle}
                                 aiInsight={aiInsight}
                                 isAnalyzing={isAnalyzing}
+                                readiness={readiness}
                             />
                         </motion.div>
                     )}
@@ -313,12 +392,17 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
                             <FinanceMaster
                                 feeStructures={feeStructures}
+                                paymentProtocols={paymentProtocols}
+                                adjustmentRules={adjustmentRules}
                                 onNewStructure={() => setIsWizardOpen(true)}
                                 onEditStructure={(fs) => {
                                     setEditingStructure(fs);
                                     setIsWizardOpen(true);
                                 }}
+                                onNewProtocol={() => setIsProtocolModalOpen(true)}
+                                onNewRule={() => setIsRuleModalOpen(true)}
                                 currency={viewCurrency}
+                                readiness={institutionalReadiness || readiness}
                             />
                         </motion.div>
                     )}
@@ -326,6 +410,12 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     {activeView === 'audit' && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <FinanceAudit branchId={branchId || null} />
+                        </motion.div>
+                    )}
+
+                    {activeView === 'expenditure' && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                            <FinanceExpense branchId={branchId || null} currency={viewCurrency} />
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -342,6 +432,29 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     onSuccess={() => {
                         setIsWizardOpen(false);
                         setEditingStructure(null);
+                        fetchAllData();
+                    }}
+                />
+            )}
+            {isProtocolModalOpen && (
+                <PaymentProtocolModal
+                    isOpen={isProtocolModalOpen}
+                    onClose={() => setIsProtocolModalOpen(false)}
+                    branchId={branchId || null}
+                    onSuccess={() => {
+                        setIsProtocolModalOpen(false);
+                        fetchAllData();
+                    }}
+                />
+            )}
+
+            {isRuleModalOpen && (
+                <AdjustmentRuleModal
+                    isOpen={isRuleModalOpen}
+                    onClose={() => setIsRuleModalOpen(false)}
+                    branchId={branchId || null}
+                    onSuccess={() => {
+                        setIsRuleModalOpen(false);
                         fetchAllData();
                     }}
                 />

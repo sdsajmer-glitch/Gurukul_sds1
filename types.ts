@@ -204,7 +204,14 @@ export interface FinanceData {
     monthly_collection: number;
     today_collection: number;
     currency: CurrencyCode;
-    // Legacy mapping (optional support for old components)
+    // Enterprise Health Metrics
+    health_index?: number;
+    collection_efficiency?: number;
+    outstanding_ratio?: number;
+    burn_rate_stability?: number;
+    total_revenue_30d?: number;
+    total_expense_30d?: number;
+    // Legacy mapping
     revenue_ytd?: number;
     collections_this_month?: number;
     pending_dues?: number;
