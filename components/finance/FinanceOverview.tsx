@@ -12,13 +12,22 @@ import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
 import RevenueTrendChart from './charts/RevenueTrendChart';
 import CollectionDistributionChart from './charts/CollectionDistributionChart';
-import { CurrencyCode, FinanceData } from '../../types';
+import { CurrencyCode, FinanceData, GradeCollectionStats } from '../../types';
 
 interface FinanceOverviewProps {
     data: FinanceData;
+    gradeStats?: GradeCollectionStats[];
     currency: CurrencyCode;
     onNavigate: (view: 'overview' | 'accounts' | 'master' | 'audit', filter?: any) => void;
     runOracle: () => void;
+    projections?: {
+        total_expected_yield: number;
+        actual_yield: number;
+        outstanding_liability: number;
+        collection_velocity: number;
+        confidence_index: number;
+        projections: Array<{ node: string; amount: number; confidence: number }>;
+    } | null;
     aiInsight: string | null;
     isAnalyzing: boolean;
     readiness: {
@@ -84,8 +93,10 @@ const KPIBlock: React.FC<{
 
 const FinanceOverview: React.FC<FinanceOverviewProps> = ({
     data,
+    gradeStats = [],
     currency,
     onNavigate,
+    projections = null,
     runOracle,
     aiInsight,
     isAnalyzing,
@@ -316,6 +327,116 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                     )}
                 </div>
             </div>
+
+            {/* Layer 5 – Structural Collection Matrix */}
+            <div className="bg-[#12141c] border border-white/5 rounded-[3.5rem] p-10 shadow-3xl relative overflow-hidden ring-1 ring-white/5">
+                <div className="flex justify-between items-center mb-10">
+                    <div>
+                        <h4 className="text-xl font-serif font-black text-white uppercase tracking-tight">Structural Collection Matrix</h4>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Performance benchmarking across institutional grades</p>
+                    </div>
+                    <button className="px-6 py-2.5 bg-white/5 border border-white/5 rounded-xl text-[9px] font-black text-white/40 uppercase tracking-widest hover:text-white transition-all">Export Matrix</button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                    {gradeStats.map((stat, idx) => {
+                        const totalBilled = Number(stat.total_billed) || 0;
+                        const totalCollected = Number(stat.total_collected) || 0;
+                        const collectionPercent = totalBilled > 0 ? (totalCollected / totalBilled) * 100 : 0;
+
+                        return (
+                            <div key={idx} className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] space-y-6 hover:border-primary/20 transition-all group">
+                                <div className="flex justify-between items-start">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">{stat.grade}</p>
+                                        <h5 className="text-xl font-serif font-black text-white uppercase tracking-tight">GRADE_{stat.grade}</h5>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className={`text-[10px] font-black px-3 py-1 rounded-lg border ${collectionPercent > 80 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                            }`}>
+                                            {Math.round(collectionPercent)}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${collectionPercent}%` }}
+                                        className={`h-full ${collectionPercent > 80 ? 'bg-emerald-500' : 'bg-primary'
+                                            } shadow-[0_0_10px_rgba(59,130,246,0.3)]`}
+                                    />
+                                </div>
+
+                                <div className="flex justify-between items-end pt-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[8px] font-black text-white/10 uppercase tracking-widest">Outstanding</p>
+                                        <p className="text-lg font-mono font-black text-red-500/80 tracking-tighter">{formatCurrency(stat.total_pending || 0, currency)}</p>
+                                    </div>
+                                    <div className="text-right space-y-1">
+                                        <p className="text-[8px] font-black text-white/10 uppercase tracking-widest">Inventory</p>
+                                        <p className="text-lg font-mono font-black text-white/40 tracking-tighter">{stat.total_students || 0} Nodes</p>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Layer 6 – Financial Command Node (Projections) */}
+            {projections && (
+                <div className="bg-[#12141c] border border-white/5 rounded-[3.5rem] p-10 shadow-3xl relative overflow-hidden ring-1 ring-white/5">
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.02] -rotate-12">
+                        <TrendingUpIcon className="w-48 h-48 text-primary" />
+                    </div>
+
+                    <div className="flex flex-col xl:flex-row gap-12 items-center">
+                        <div className="xl:w-1/3 space-y-8">
+                            <div>
+                                <h4 className="text-xl font-serif font-black text-white uppercase tracking-tight">Revenue Projections</h4>
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Fiscal Forecasting & Confidence Matrix</p>
+                            </div>
+
+                            <div className="p-8 bg-white/[0.03] border border-white/5 rounded-3xl space-y-4">
+                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-white/40">
+                                    <span>Confidence Index</span>
+                                    <span className="text-primary">{projections.confidence_index}%</span>
+                                </div>
+                                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${projections.confidence_index}%` }}
+                                        className="h-full bg-primary shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                                    />
+                                </div>
+                                <p className="text-[9px] text-white/20 leading-relaxed">Based on historical payment velocity and current billing saturation.</p>
+                            </div>
+                        </div>
+
+                        <div className="xl:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                            {projections.projections.map((node, idx) => (
+                                <div key={idx} className="p-6 bg-white/[0.01] border border-white/5 rounded-2xl flex justify-between items-center group hover:bg-white/[0.03] transition-all">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">{node.node.replace('_', ' ')}</p>
+                                        <p className="text-2xl font-serif font-black text-white/80 tracking-tighter group-hover:text-white transition-colors">
+                                            {formatCurrency(node.amount, currency)}
+                                        </p>
+                                    </div>
+                                    <div className="text-right space-y-1">
+                                        <p className="text-[8px] font-black text-white/10 uppercase tracking-widest">Confidence</p>
+                                        <p className={`text-[12px] font-mono font-black ${node.confidence > 0.8 ? 'text-emerald-500' :
+                                                node.confidence > 0.6 ? 'text-amber-500' : 'text-red-500'
+                                            }`}>
+                                            {Math.round(node.confidence * 100)}%
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

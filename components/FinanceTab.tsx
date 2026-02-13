@@ -96,6 +96,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
     const [paymentProtocols, setPaymentProtocols] = useState<any[]>([]);
     const [adjustmentRules, setAdjustmentRules] = useState<any[]>([]);
     const [institutionalReadiness, setInstitutionalReadiness] = useState<any>(null);
+    const [projections, setProjections] = useState<any>(null);
 
     const [aiInsight, setAiInsight] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -117,7 +118,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 structQuery = structQuery.eq('branch_id', bid);
             }
 
-            const [finRes, structRes, ledgerRes, gradeRes, healthRes, protocolRes, ruleRes, readinessRes] = await Promise.all([
+            const [finRes, structRes, ledgerRes, gradeRes, healthRes, protocolRes, ruleRes, readinessRes, projectionRes] = await Promise.all([
                 supabase.rpc('get_finance_overview_stats_v2', { p_branch_id: bid }),
                 structQuery,
                 supabase.rpc('get_student_fee_summary_all', { p_branch_id: bid }),
@@ -125,7 +126,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 supabase.rpc('get_institutional_health_index', { p_branch_id: bid }),
                 supabase.from('finance_payment_protocols').select('*').eq('branch_id', bid),
                 supabase.from('finance_adjustment_rules').select('*').eq('branch_id', bid),
-                supabase.rpc('fn_calculate_finance_readiness', { p_branch_id: bid })
+                supabase.rpc('fn_calculate_finance_readiness', { p_branch_id: bid }),
+                supabase.rpc('get_financial_projection_matrix', { p_branch_id: bid })
             ]);
 
             if (finRes.error) throw finRes.error;
@@ -146,6 +148,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
             setPaymentProtocols(protocolRes.data || []);
             setAdjustmentRules(ruleRes.data || []);
             setInstitutionalReadiness(readinessRes.data);
+            setProjections(projectionRes.data);
 
         } catch (err: any) {
             console.error("Finance Registry Sync Failure:", err);
@@ -294,8 +297,13 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     <TabButton id="overview" label="Overview" icon={<ChartBarIcon className="w-4 h-4" />} isActive={activeView === 'overview'} onClick={setActiveView} />
                     <TabButton id="accounts" label="Accounts" icon={<UsersIcon className="w-4 h-4" />} isActive={activeView === 'accounts'} onClick={setActiveView} />
                     <TabButton id="expenditure" label="Expenditure" icon={<TrendingUpCustomIcon className="w-4 h-4 rotate-180" />} isActive={activeView === 'expenditure'} onClick={setActiveView} />
-                    <TabButton id="master" label="Master" icon={<BookIcon className="w-4 h-4" />} isActive={activeView === 'master'} onClick={setActiveView} />
-                    <TabButton id="audit" label="Audit" icon={<ShieldCheckIcon className="w-4 h-4" />} isActive={activeView === 'audit'} onClick={setActiveView} />
+
+                    {(profile.role === 'super_admin' || profile.role === 'school_admin' || profile.role === 'accountant') && (
+                        <>
+                            <TabButton id="master" label="Master" icon={<BookIcon className="w-4 h-4" />} isActive={activeView === 'master'} onClick={setActiveView} />
+                            <TabButton id="audit" label="Audit" icon={<ShieldCheckIcon className="w-4 h-4" />} isActive={activeView === 'audit'} onClick={setActiveView} />
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -358,6 +366,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                             <FinanceOverview
                                 data={financeData}
+                                gradeStats={gradeStats}
+                                projections={projections}
                                 currency={viewCurrency}
                                 onNavigate={(v, filter) => {
                                     setActiveView(v);
@@ -374,17 +384,30 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
 
                     {activeView === 'accounts' && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                            <FinanceAccounts
-                                accountsHost={studentLedgers}
-                                currency={viewCurrency}
-                                search={accountSearch}
-                                onSearchChange={setAccountSearch}
-                                riskOnly={riskOnly}
-                                onRiskToggle={() => setRiskOnly(!riskOnly)}
-                                onExport={handleExportRegistry}
-                                onSelectAccount={(acc) => setSelectedStudent(acc)}
-                                viewFilter={accountViewFilter}
-                            />
+                            {selectedStudent ? (
+                                <StudentFinanceDetailView
+                                    student={selectedStudent}
+                                    viewCurrency={viewCurrency}
+                                    onBack={() => setSelectedStudent(null)}
+                                    onUpdate={() => fetchAllData(true)}
+                                    onNavigateToMaster={() => {
+                                        setSelectedStudent(null);
+                                        setActiveView('master');
+                                    }}
+                                />
+                            ) : (
+                                <FinanceAccounts
+                                    accountsHost={studentLedgers}
+                                    currency={viewCurrency}
+                                    search={accountSearch}
+                                    onSearchChange={setAccountSearch}
+                                    riskOnly={riskOnly}
+                                    onRiskToggle={() => setRiskOnly(!riskOnly)}
+                                    onExport={() => { }}
+                                    onSelectAccount={(acc) => setSelectedStudent(acc)}
+                                    viewFilter={accountViewFilter}
+                                />
+                            )}
                         </motion.div>
                     )}
 

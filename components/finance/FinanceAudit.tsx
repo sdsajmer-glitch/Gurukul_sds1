@@ -12,12 +12,17 @@ import { supabase } from '../../services/supabase';
 import Spinner from '../common/Spinner';
 
 interface AuditLog {
-    id: number;
-    action_type: string;
+    id: string;
+    module: string;
+    action: string;
     description: string;
-    created_at: string;
+    entity_type: string;
+    entity_id: string;
+    old_value: any;
+    new_value: any;
     performed_by_name: string;
-    severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    created_at: string;
 }
 
 const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
@@ -29,22 +34,17 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
         const fetchLogs = async () => {
             setLoading(true);
             try {
-                let query = supabase
-                    .from('finance_audit_logs')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(50);
+                // Determine branch context
+                const bid = (branchId === null || branchId === undefined) ? null : branchId;
 
-                const { data, error } = await query;
+                // CALL: Forensic Oversight Bridge
+                const { data, error } = await supabase.rpc('get_forensic_audit_logs', {
+                    p_branch_id: typeof bid === 'string' ? bid : null, // Handle both UUID and nullable branch
+                    p_limit: 50
+                });
+
                 if (error) throw error;
-
-                // Add mock severity for UI demo
-                const enriched = (data || []).map(l => ({
-                    ...l,
-                    severity: l.action_type.includes('DELETE') ? 'HIGH' : l.action_type.includes('UPDATE') ? 'MEDIUM' : 'LOW'
-                })) as AuditLog[];
-
-                setLogs(enriched);
+                setLogs(data || []);
             } catch (err) {
                 console.error("Forensic Sync Failure:", err);
             } finally {
@@ -128,7 +128,7 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
                                         <div className="space-y-3">
                                             <div className="flex items-center gap-6">
                                                 <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${log.severity === 'HIGH' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-primary/10 text-primary border-primary/20'
-                                                    }`}>{log.action_type}</span>
+                                                    }`}>{log.action}</span>
                                                 <span className="text-[10px] font-mono text-white/10 uppercase tracking-widest">{new Date(log.created_at).toLocaleString()}</span>
                                             </div>
                                             <p className="text-xl font-serif font-black text-white/80 group-hover/item:text-white transition-colors">{log.description}</p>
