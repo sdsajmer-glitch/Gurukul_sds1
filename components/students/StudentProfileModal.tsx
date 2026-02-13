@@ -854,7 +854,7 @@ const GuardianEditModal: React.FC<{
                             onClick={onClose}
                             className="px-8 py-4 text-[10px] font-black text-white/30 hover:text-white hover:bg-white/5 rounded-2xl transition-all uppercase tracking-[0.3em]"
                         >
-                            Abrot
+                            Cancel
                         </button>
                         <button
                             type="submit"
@@ -1343,58 +1343,62 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
     return (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[150] flex items-center justify-center p-0 md:p-6 overflow-hidden">
-            <div className="bg-[#08090a] w-full max-w-[1400px] h-full md:h-[92vh] md:rounded-[3rem] shadow-2xl border border-white/10 flex flex-col overflow-hidden relative ring-1 ring-white/5 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+            <div className="bg-[#08090a] w-full max-w-[1400px] h-full md:h-[94vh] md:rounded-[2rem] shadow-2xl border border-white/10 flex flex-col overflow-hidden relative ring-1 ring-white/5 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
 
-                <div className="px-8 py-6 border-b border-white/5 bg-gradient-to-r from-[#0a0b0f] via-[#0f1115] to-[#0a0b0f] flex justify-between items-center shrink-0 z-20 backdrop-blur-xl relative">
-                    <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                    <div className="flex items-center gap-6">
-                        {/* Profile Photo */}
-                        <div className="relative group/photo">
-                            <div className="absolute -inset-1 bg-gradient-to-br from-indigo-500/30 to-indigo-600/20 rounded-2xl opacity-60 group-hover/photo:opacity-100 blur-sm transition-opacity duration-300"></div>
+                {/* --- 1. PROFILE HEADER (Layer 1) --- */}
+                <div className="px-8 py-8 border-b border-white/5 bg-[#0c0e12] flex flex-col md:flex-row justify-between items-start md:items-center shrink-0 z-20 relative">
+                    <div className="flex items-center gap-8">
+                        {/* Avatar Node */}
+                        <div className="relative group/photo shrink-0">
+                            <div className="absolute -inset-2 bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 rounded-full opacity-0 group-hover/photo:opacity-100 blur-md transition-opacity duration-500"></div>
                             <PremiumAvatar
                                 src={syncedStudent.profile_photo_url}
                                 name={syncedStudent.display_name}
-                                size="lg"
-                                className="relative shadow-xl border-2 border-white/10 rounded-2xl"
+                                size="xl"
+                                className="relative shadow-2xl border-4 border-[#0c0e12] ring-1 ring-white/10 rounded-full h-24 w-24 md:h-28 md:w-28"
                             />
+                            <div className="absolute bottom-0 right-0 bg-[#0c0e12] p-1 rounded-full border border-white/10">
+                                <div className={`w-3.5 h-3.5 rounded-full ${syncedStudent.enrollment_status === 'Active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500'} ring-2 ring-[#0c0e12]`}></div>
+                            </div>
                         </div>
 
-                        {/* Student Info */}
-                        <div>
-                            <h1 className="text-3xl font-bold text-white tracking-tight leading-none mb-2.5">
+                        {/* Identity Block */}
+                        <div className="space-y-1.5">
+                            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none">
                                 {syncedStudent.display_name}
                             </h1>
-                            <div className="flex items-center gap-3">
-                                {/* Student ID */}
-                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider font-mono px-2.5 py-1 bg-white/5 rounded-lg border border-white/5">
+                            <div className="flex flex-wrap items-center gap-4">
+                                <span className="px-3 py-1 bg-white/5 rounded-lg border border-white/10 text-[10px] font-bold text-white/50 uppercase tracking-widest font-mono">
                                     ID: <span className="text-white">{syncedStudent.student_id_number || 'PENDING'}</span>
                                 </span>
-
                                 <div className="w-1 h-1 rounded-full bg-white/20"></div>
-
-                                {/* Status Badge */}
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${syncedStudent.enrollment_status === 'Active' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : (syncedStudent.enrollment_status === 'Inactive' || syncedStudent.enrollment_status === 'Withdrawn' ? 'bg-red-400' : 'bg-amber-400')} animate-pulse`}></div>
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${syncedStudent.enrollment_status === 'Active' ? 'text-emerald-400/90' : (syncedStudent.enrollment_status === 'Inactive' || syncedStudent.enrollment_status === 'Withdrawn' ? 'text-red-400/90' : 'text-amber-400/90')}`}>
-                                        {syncedStudent.enrollment_status || (syncedStudent.is_active ? 'Active' : 'Inactive')}
-                                    </span>
-                                </div>
+                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                                    Last Synced: <span className="text-white/60 font-mono">{new Date().toLocaleDateString()}</span>
+                                </span>
+                                {syncedStudent.grade && (
+                                    <>
+                                        <div className="w-1 h-1 rounded-full bg-white/20"></div>
+                                        <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                                            {syncedStudent.grade}
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-3">
+                    {/* Action Hub */}
+                    <div className="flex items-center gap-4 mt-6 md:mt-0 w-full md:w-auto">
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="hidden md:flex items-center gap-2.5 px-6 py-3 bg-white text-black hover:bg-white/90 font-bold text-xs rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 uppercase tracking-wide"
+                            className="flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-3.5 bg-white text-black hover:bg-white/90 font-black text-[10px] rounded-xl transition-all shadow-[0_10px_20px_-5px_rgba(255,255,255,0.1)] hover:-translate-y-0.5 active:scale-95 uppercase tracking-[0.2em]"
                         >
                             <EditIcon className="w-4 h-4" />
                             {isSchoolAdmin ? 'Record Maintenance' : 'Edit Profile'}
                         </button>
                         <button
                             onClick={onClose}
-                            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all border border-white/5"
+                            className="p-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 hover:border-white/20 active:scale-95"
                             aria-label="Close"
                         >
                             <XIcon className="w-5 h-5" />
@@ -1402,35 +1406,34 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
-                    {/* Sidebar Nav */}
-                    <div className="w-full md:w-72 bg-[#0a0b0f] border-r border-white/5 flex-shrink-0 flex flex-col relative z-10">
-                        <div className="p-6 space-y-1.5 overflow-y-auto custom-scrollbar flex-grow">
+                <div className="flex flex-col lg:flex-row flex-grow overflow-hidden">
+                    {/* Sidebar Nav (2 cols equivalent) */}
+                    <div className="w-full lg:w-[280px] bg-[#0a0b0f] border-r border-white/5 flex-shrink-0 flex flex-col relative z-10">
+                        <div className="p-6 space-y-2 overflow-y-auto custom-scrollbar flex-grow">
                             {/* Core Registry Section */}
-                            <p className="px-6 text-[9px] font-black text-indigo-400/80 uppercase tracking-[0.2em] mb-4 pb-2 border-b border-indigo-500/10 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-indigo-500 rounded-full"></span>
-                                Game Registry
+                            <p className="px-6 text-[9px] font-black text-white/30 uppercase tracking-[0.25em] mb-4 mt-2">
+                                Registry Modules
                             </p>
-                            <div className="space-y-1.5 px-2">
-                                <TabButton id="overview" label="Overview" icon={<ActivityIcon className="w-5 h-5" />} active={activeTab === 'overview'} onClick={setActiveTab} />
-                                <TabButton id="parents" label="Guardians" icon={<UsersIcon className="w-5 h-5" />} active={activeTab === 'parents'} onClick={setActiveTab} />
-                                <TabButton id="academic" label="Academics" icon={<GraduationCapIcon className="w-5 h-5" />} active={activeTab === 'academic'} onClick={setActiveTab} />
+                            <div className="space-y-1.5">
+                                <TabButton id="overview" label="Overview" icon={<ActivityIcon className="w-4 h-4" />} active={activeTab === 'overview'} onClick={setActiveTab} />
+                                <TabButton id="parents" label="Guardians" icon={<UsersIcon className="w-4 h-4" />} active={activeTab === 'parents'} onClick={setActiveTab} />
+                                <TabButton id="academic" label="Academics" icon={<GraduationCapIcon className="w-4 h-4" />} active={activeTab === 'academic'} onClick={setActiveTab} />
                             </div>
 
                             {/* Administration Section */}
-                            <p className="px-4 text-[9px] font-bold text-white/25 uppercase tracking-[0.2em] mt-8 mb-4 pb-2 border-b border-white/5">
-                                Administration
+                            <p className="px-6 text-[9px] font-black text-white/30 uppercase tracking-[0.25em] mt-8 mb-4">
+                                Administrative
                             </p>
-                            <div className="space-y-1">
-                                <TabButton id="documents" label="Documents" icon={<FileTextIcon className="w-5 h-5" />} active={activeTab === 'documents'} onClick={setActiveTab} />
-                                <TabButton id="fees" label="Financials" icon={<CreditCardIcon className="w-5 h-5" />} active={activeTab === 'fees'} onClick={setActiveTab} />
-                                <TabButton id="history" label="Audit Log" icon={<ClockIcon className="w-5 h-5" />} active={activeTab === 'history'} onClick={setActiveTab} />
+                            <div className="space-y-1.5">
+                                <TabButton id="documents" label="Documents" icon={<FileTextIcon className="w-4 h-4" />} active={activeTab === 'documents'} onClick={setActiveTab} />
+                                <TabButton id="fees" label="Financials" icon={<CreditCardIcon className="w-4 h-4" />} active={activeTab === 'fees'} onClick={setActiveTab} />
+                                <TabButton id="history" label="Audit Log" icon={<ClockIcon className="w-4 h-4" />} active={activeTab === 'history'} onClick={setActiveTab} />
                             </div>
                         </div>
                     </div>
 
-                    {/* Content Area */}
-                    <div className="flex-grow bg-[#08090a] overflow-y-auto custom-scrollbar p-8 md:p-12 relative">
+                    {/* Content Area (10 cols equivalent) */}
+                    <div className="flex-grow bg-[#08090a] overflow-y-auto custom-scrollbar p-6 md:p-10 relative">
                         {loading ? (
                             <div className="h-full flex items-center justify-center">
                                 <Spinner size="lg" className="text-primary" />
@@ -1438,101 +1441,125 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         ) : (
                             <>
                                 {activeTab === 'overview' && (
-                                    <div className="space-y-12 max-w-5xl animate-in fade-in slide-in-from-right-4 duration-700">
-                                        {/* Quick Stats Grid */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                    <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-700 max-w-7xl mx-auto">
+
+                                        {/* --- 2. ACADEMIC SNAPSHOT (Layer 2) --- */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                                             {/* Placement Card */}
-                                            <div className="p-8 rounded-[2rem] bg-[#0c0e12] border border-white/5 flex flex-col justify-between h-48 group hover:border-indigo-500/30 transition-all duration-500 shadow-xl shadow-black/20 hover:shadow-indigo-500/10 hover:-translate-y-1 relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-[50px] group-hover:bg-indigo-500/10 transition-colors"></div>
+                                            <div className="bg-[#0c0e12] border border-white/5 rounded-[1.5rem] p-6 flex flex-col justify-between h-40 group hover:border-indigo-500/30 transition-all shadow-xl hover:-translate-y-1 relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-colors"></div>
                                                 <div className="flex justify-between items-start relative z-10">
-                                                    <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border border-indigo-500/20">
-                                                        <SchoolIcon className="w-6 h-6" />
+                                                    <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20 group-hover:scale-110 transition-transform">
+                                                        <SchoolIcon className="w-5 h-5" />
                                                     </div>
-                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] group-hover:text-indigo-400/50 transition-colors">Placement</span>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Placement</span>
                                                 </div>
-                                                <div className="flex flex-col gap-1">
+                                                <div className="relative z-10">
                                                     {syncedStudent.assigned_class_name ? (
-                                                        <p className="text-2xl font-black text-white uppercase tracking-tight leading-none group-hover:text-indigo-100 transition-colors">
+                                                        <p className="text-xl font-black text-white uppercase tracking-tight leading-none truncate" title={syncedStudent.assigned_class_name}>
                                                             {syncedStudent.assigned_class_name}
                                                         </p>
                                                     ) : (
-                                                        <button
-                                                            onClick={() => setActiveTab('academic')}
-                                                            className="flex items-center gap-2 text-sm font-black text-amber-500 hover:text-amber-400 uppercase tracking-wider transition-all hover:translate-x-1"
-                                                        >
-                                                            Assign Class <ArrowRightIcon className="w-4 h-4" />
+                                                        <button onClick={() => setActiveTab('academic')} className="text-sm font-black text-amber-500 hover:text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                                                            Assign <ArrowRightIcon className="w-3 h-3" />
                                                         </button>
                                                     )}
-                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em]">Current Class</p>
+                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mt-1">Current Class</p>
                                                 </div>
                                             </div>
 
                                             {/* Attendance Card */}
-                                            <div className="p-8 rounded-[2rem] bg-[#0c0e12] border border-white/5 flex flex-col justify-between h-48 group hover:border-emerald-500/30 transition-all duration-500 shadow-xl shadow-black/20 hover:shadow-emerald-500/10 hover:-translate-y-1 relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-[50px] group-hover:bg-emerald-500/10 transition-colors"></div>
+                                            <div className="bg-[#0c0e12] border border-white/5 rounded-[1.5rem] p-6 flex flex-col justify-between h-40 group hover:border-emerald-500/30 transition-all shadow-xl hover:-translate-y-1 relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors"></div>
                                                 <div className="flex justify-between items-start relative z-10">
-                                                    <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border border-emerald-500/20">
-                                                        <CheckCircleIcon className="w-6 h-6" />
+                                                    <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400 border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                                                        <CheckCircleIcon className="w-5 h-5" />
                                                     </div>
-                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] group-hover:text-emerald-400/50 transition-colors">Attendance</span>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Attendance</span>
                                                 </div>
                                                 <div className="relative z-10">
-                                                    <p className="text-2xl font-black text-white tracking-tight leading-none mb-2 group-hover:text-emerald-100 transition-colors">
-                                                        94% <span className="text-sm font-black text-emerald-500/50 uppercase tracking-widest ml-1">Avg</span>
+                                                    <p className="text-xl font-black text-white tracking-tight leading-none group-hover:text-emerald-400 transition-colors">
+                                                        94% <span className="text-xs text-emerald-500/50 ml-0.5">AVG</span>
                                                     </p>
-                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em]">Participation</p>
+                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mt-1">Participation</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Performance Card */}
+                                            <div className="bg-[#0c0e12] border border-white/5 rounded-[1.5rem] p-6 flex flex-col justify-between h-40 group hover:border-purple-500/30 transition-all shadow-xl hover:-translate-y-1 relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 transition-colors"></div>
+                                                <div className="flex justify-between items-start relative z-10">
+                                                    <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-400 border border-purple-500/20 group-hover:scale-110 transition-transform">
+                                                        <ChartBarIcon className="w-5 h-5" />
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Performance</span>
+                                                </div>
+                                                <div className="relative z-10">
+                                                    <p className="text-xl font-black text-white tracking-tight leading-none group-hover:text-purple-400 transition-colors">
+                                                        Good
+                                                    </p>
+                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mt-1">Academic Standing</p>
                                                 </div>
                                             </div>
 
                                             {/* Balance Card */}
-                                            <div className="p-8 rounded-[2rem] bg-[#0c0e12] border border-white/5 flex flex-col justify-between h-48 group hover:border-amber-500/30 transition-all duration-500 shadow-xl shadow-black/20 hover:shadow-amber-500/10 hover:-translate-y-1 relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-[50px] group-hover:bg-amber-500/10 transition-colors"></div>
+                                            <div className="bg-[#0c0e12] border border-white/5 rounded-[1.5rem] p-6 flex flex-col justify-between h-40 group hover:border-amber-500/30 transition-all shadow-xl hover:-translate-y-1 relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-colors"></div>
                                                 <div className="flex justify-between items-start relative z-10">
-                                                    <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 border border-amber-500/20">
-                                                        <DollarSignIcon className="w-6 h-6" />
+                                                    <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/20 group-hover:scale-110 transition-transform">
+                                                        <DollarSignIcon className="w-5 h-5" />
                                                     </div>
-                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] group-hover:text-amber-500/50 transition-colors">Balance</span>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Financials</span>
                                                 </div>
                                                 <div className="relative z-10">
-                                                    <p className={`text-2xl font-black tracking-tight leading-none mb-2 ${feesSummary?.outstanding_balance > 0 ? 'text-amber-500' : 'text-emerald-400'}`}>
+                                                    <p className={`text-xl font-black tracking-tight leading-none ${feesSummary?.outstanding_balance > 0 ? 'text-amber-500' : 'text-emerald-400'}`}>
                                                         {formatCurrency(feesSummary?.outstanding_balance || 0)}
                                                     </p>
-                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em]">Outstanding Dues</p>
+                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-[0.2em] mt-1">Outstanding</p>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                                            <div className="space-y-8">
-                                                <div className="pb-4">
-                                                    <h3 className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center gap-4">
-                                                        Personal Details <div className="h-px bg-white/5 flex-grow"></div>
-                                                    </h3>
+                                        {/* --- 3. PERSONAL & CONTACT GRID (Layer 3) --- */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+
+                                            {/* Left Column: Personal Info (6 cols) */}
+                                            <div className="lg:col-span-6 space-y-6">
+                                                <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                                                    <div className="p-1.5 bg-white/5 rounded-lg text-white/40"><UserIcon className="w-4 h-4" /></div>
+                                                    <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Personal Information</h3>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <InfoRow label="Legal Name" value={syncedStudent.display_name} icon={<UserIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Student ID" value={syncedStudent.student_id_number || 'Pending Generation'} icon={<UserIcon className="w-5 h-5" />} />
-                                                    <InfoRow label="Gender" value={syncedStudent.gender} icon={<UserIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Date of Birth" value={syncedStudent.date_of_birth ? new Date(syncedStudent.date_of_birth).toLocaleDateString() : null} icon={<CalendarIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Blood Group" value={(syncedStudent as any).blood_group || (admissionRecord as any)?.blood_group || 'Not Recorded'} icon={<ActivityIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Nationality" value={(syncedStudent as any).nationality || (admissionRecord as any)?.nationality || 'Indian'} icon={<GlobeIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Religion" value={(syncedStudent as any).religion || (admissionRecord as any)?.religion || 'Not Specified'} icon={<InfoIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Category" value={(syncedStudent as any).category || (admissionRecord as any)?.category || 'General'} icon={<InfoIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+
+                                                <div className="space-y-1">
+                                                    <InfoRow label="Legal Name" value={syncedStudent.display_name} icon={<UserIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Student ID" value={syncedStudent.student_id_number || 'Pending Generation'} icon={<UserIcon className="w-4 h-4" />} />
+                                                    <InfoRow label="Gender" value={syncedStudent.gender} icon={<UserIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Date of Birth" value={syncedStudent.date_of_birth ? new Date(syncedStudent.date_of_birth).toLocaleDateString() : null} icon={<CalendarIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Blood Group" value={(syncedStudent as any).blood_group || (admissionRecord as any)?.blood_group || 'Not Recorded'} icon={<ActivityIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Nationality" value={(syncedStudent as any).nationality || (admissionRecord as any)?.nationality || 'Indian'} icon={<GlobeIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
                                                 </div>
                                             </div>
-                                            <div className="space-y-8">
-                                                <div className="pb-4">
-                                                    <h3 className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em] flex items-center gap-4">
-                                                        Contact & Address Details <div className="h-px bg-white/5 flex-grow"></div>
-                                                    </h3>
+
+                                            {/* Right Column: Contact Info (6 cols) */}
+                                            <div className="lg:col-span-6 space-y-6">
+                                                <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                                                    <div className="p-1.5 bg-white/5 rounded-lg text-white/40"><LocationIcon className="w-4 h-4" /></div>
+                                                    <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Contact & Address</h3>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <InfoRow label="Primary Email" value={syncedStudent.email} icon={<MailIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Student Phone" value={syncedStudent.phone} icon={<PhoneIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Residential Address" value={syncedStudent.address} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="City" value={(syncedStudent as any).city || (admissionRecord as any)?.city || (enquiryRecord as any)?.city || (parentData as any)?.city || 'Not Recorded'} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="State" value={(syncedStudent as any).state || (admissionRecord as any)?.state || (parentData as any)?.state || 'Not Recorded'} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
-                                                    <InfoRow label="Pincode" value={(syncedStudent as any).pin_code || (syncedStudent as any).pincode || (admissionRecord as any)?.pin_code || (parentData as any)?.pin_code || 'Not Recorded'} icon={<LocationIcon className="w-5 h-5" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+
+                                                <div className="space-y-1">
+                                                    <InfoRow label="Primary Email" value={syncedStudent.email} icon={<MailIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                    <InfoRow label="Student Phone" value={syncedStudent.phone} icon={<PhoneIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+
+                                                    {/* Address Group */}
+                                                    <div className="pt-2">
+                                                        <InfoRow label="Residential Address" value={syncedStudent.address} icon={<LocationIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                        <InfoRow label="City" value={(syncedStudent as any).city || (admissionRecord as any)?.city || (enquiryRecord as any)?.city || (parentData as any)?.city || 'Not Recorded'} icon={<LocationIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <InfoRow label="State" value={(syncedStudent as any).state || (admissionRecord as any)?.state || (parentData as any)?.state || 'Not Recorded'} icon={<LocationIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                            <InfoRow label="Pincode" value={(syncedStudent as any).pin_code || (syncedStudent as any).pincode || (admissionRecord as any)?.pin_code || (parentData as any)?.pin_code || 'Not Recorded'} icon={<LocationIcon className="w-4 h-4" />} onEdit={isSchoolAdmin ? undefined : () => setIsEditing(true)} />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
