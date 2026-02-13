@@ -131,10 +131,11 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
     const [students, setStudents] = useState<StudentForAdmin[]>([]);
     const [subjects, setSubjects] = useState<Course[]>([]);
 
-    // Permission Analysis
+    // Permission Analysis (Null-Safe)
     const canModifyStructure = useMemo(() => {
-        return profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION || profile.role === BuiltInRoles.BRANCH_ADMIN;
-    }, [profile.role]);
+        const role = profile?.role || 'Guest';
+        return role === BuiltInRoles.SCHOOL_ADMINISTRATION || role === BuiltInRoles.BRANCH_ADMIN;
+    }, [profile?.role]);
 
     // Mock Data for enhancement visualization
     const [stats] = useState({
@@ -1360,15 +1361,15 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 backdrop-blur-2xl z-[100] flex items-center justify-center p-4 lg:p-10 pointer-events-auto"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex justify-end pointer-events-auto"
             onClick={onClose}
         >
             <motion.div
-                initial={{ y: 50, scale: 0.95, opacity: 0 }}
-                animate={{ y: 0, scale: 1, opacity: 1 }}
-                exit={{ y: 50, scale: 0.95, opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="bg-background w-full max-w-[1440px] h-full rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/[0.08] flex flex-col overflow-hidden ring-1 ring-white/10"
+                initial={{ x: '100%', opacity: 0.5 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: '100%', opacity: 0.5 }}
+                transition={{ type: "spring", damping: 32, stiffness: 300, mass: 1 }}
+                className="bg-background w-full md:w-[90%] lg:w-[85%] max-w-[1400px] h-full shadow-[ -20px_0_50px_rgba(0,0,0,0.5)] border-l border-white/[0.08] flex flex-col overflow-hidden relative"
                 onClick={e => e.stopPropagation()}
             >
 

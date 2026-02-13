@@ -1,0 +1,269 @@
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import {
+    TrendingUpCustomIcon as TrendingUpIcon,
+} from '../icons/TrendingUpIcon';
+import { CheckCircleIcon } from '../icons/CheckCircleIcon';
+import { ClockIcon } from '../icons/ClockIcon';
+import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
+import { ArrowRightIcon } from '../icons/ArrowRightIcon';
+import { SparklesIcon } from '../icons/SparklesIcon';
+import RevenueTrendChart from './charts/RevenueTrendChart';
+import CollectionDistributionChart from './charts/CollectionDistributionChart';
+import { CurrencyCode, FinanceData } from '../../types';
+
+interface FinanceOverviewProps {
+    data: FinanceData;
+    currency: CurrencyCode;
+    onNavigate: (view: 'overview' | 'accounts' | 'master' | 'audit', filter?: any) => void;
+    runOracle: () => void;
+    aiInsight: string | null;
+    isAnalyzing: boolean;
+}
+
+const formatCurrency = (amount: number, currency: CurrencyCode) => {
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount || 0);
+};
+
+const KPIBlock: React.FC<{
+    title: string;
+    value: string;
+    trend?: string;
+    trendUp?: boolean;
+    icon: React.ReactNode;
+    color: string;
+    onClick?: () => void;
+}> = ({ title, value, icon, trend, trendUp, color, onClick }) => (
+    <motion.div
+        whileHover={{ y: -5 }}
+        onClick={onClick}
+        className="relative overflow-hidden bg-[#12141c] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl group cursor-pointer hover:border-primary/30 transition-all duration-500"
+    >
+        <div className={`absolute top-0 right-0 w-32 h-32 ${color} opacity-[0.03] rounded-bl-full group-hover:scale-110 transition-transform duration-1000`}></div>
+        <div className="relative z-10">
+            <div className="flex justify-between items-start mb-10">
+                <div className="p-4 rounded-2xl bg-white/[0.03] text-white/30 border border-white/5 group-hover:text-primary transition-colors">
+                    {icon}
+                </div>
+                {trend && (
+                    <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border ${trendUp ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'
+                        }`}>
+                        {trendUp ? '↑' : '↓'} {trend}
+                    </div>
+                )}
+            </div>
+            <div>
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-3">{title}</p>
+                <div className="flex items-baseline gap-3">
+                    <h3 className="text-4xl font-serif font-black text-white tracking-tighter leading-none">{value}</h3>
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse" />
+                </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-[9px] font-black text-primary uppercase tracking-widest">View Analytics</span>
+                <ArrowRightIcon className="w-4 h-4 text-primary" />
+            </div>
+        </div>
+    </motion.div>
+);
+
+const FinanceOverview: React.FC<FinanceOverviewProps> = ({
+    data,
+    currency,
+    onNavigate,
+    runOracle,
+    aiInsight,
+    isAnalyzing
+}) => {
+    return (
+        <div className="space-y-12 pb-12">
+            {/* Layer 1 – Financial KPI Strip */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                <KPIBlock
+                    title="Total Assigned"
+                    value={formatCurrency(data.total_assigned, currency)}
+                    trend="+12.5%"
+                    trendUp={true}
+                    icon={<TrendingUpIcon className="w-7 h-7" />}
+                    color="bg-primary"
+                    onClick={() => onNavigate('accounts')}
+                />
+                <KPIBlock
+                    title="Total Collected"
+                    value={formatCurrency(data.total_collected, currency)}
+                    trend="92%"
+                    trendUp={true}
+                    icon={<CheckCircleIcon className="w-7 h-7" />}
+                    color="bg-emerald-500"
+                    onClick={() => onNavigate('accounts', { filter: 'paid' })}
+                />
+                <KPIBlock
+                    title="Outstanding"
+                    value={formatCurrency(data.total_pending, currency)}
+                    trend="Overdue"
+                    trendUp={false}
+                    icon={<ClockIcon className="w-7 h-7" />}
+                    color="bg-amber-500"
+                    onClick={() => onNavigate('accounts', { filter: 'pending' })}
+                />
+                <KPIBlock
+                    title="Active Pending"
+                    value={formatCurrency(data.total_pending * 0.4, currency)} // Mock component
+                    icon={<ClockIcon className="w-7 h-7" />}
+                    color="bg-blue-500"
+                />
+                <KPIBlock
+                    title="Overdue Critical"
+                    value={formatCurrency(data.total_overdue, currency)}
+                    trend="High Risk"
+                    trendUp={false}
+                    icon={<AlertTriangleIcon className="w-7 h-7" />}
+                    color="bg-red-500"
+                    onClick={() => onNavigate('accounts', { filter: 'overdue' })}
+                />
+                <KPIBlock
+                    title="Burn Rate"
+                    value={formatCurrency(data.monthly_collection * 0.8, currency)} // Mock component
+                    trend="Optimal"
+                    trendUp={true}
+                    icon={<TrendingUpIcon className="w-7 h-7" />}
+                    color="bg-purple-500"
+                />
+            </div>
+
+            {/* Layer 2 & 3 – Cash Flow Analysis & Financial Health Ring */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
+                <div className="lg:col-span-8 flex flex-col gap-10">
+                    <div className="bg-[#12141c] border border-white/5 rounded-[3.5rem] p-10 shadow-3xl relative overflow-hidden h-[500px] ring-1 ring-white/5 group">
+                        <div className="flex justify-between items-center mb-10 relative z-10">
+                            <div>
+                                <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Institutional Cash Flow</h4>
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Historical Inflow vs Projection Matrix</p>
+                            </div>
+                            <div className="flex gap-2">
+                                {['Weekly', 'Monthly', 'Quarterly'].map(t => (
+                                    <button key={t} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${t === 'Monthly' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10'
+                                        }`}>
+                                        {t}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <RevenueTrendChart total={data.total_collected} />
+                    </div>
+
+                    {/* AI Oracle Component */}
+                    <div className="bg-primary/[0.03] border border-primary/20 rounded-[3rem] p-10 relative overflow-hidden group shadow-2xl backdrop-blur-3xl ring-1 ring-primary/10">
+                        <div className="absolute top-0 right-0 p-16 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000 rotate-12"><SparklesIcon className="w-64 h-64 text-primary" /></div>
+                        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-[120px] opacity-20 pointer-events-none" />
+
+                        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+                            <div className="space-y-6 max-w-3xl">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20">
+                                        <SparklesIcon className="w-6 h-6 text-primary" />
+                                    </div>
+                                    <h4 className="text-xl font-serif font-black text-white uppercase tracking-tight">Financial Intelligence Oracle</h4>
+                                </div>
+                                <div className="min-h-[60px]">
+                                    {aiInsight ? (
+                                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xl md:text-2xl text-white/90 leading-tight font-serif italic tracking-tight">
+                                            "{aiInsight}"
+                                        </motion.p>
+                                    ) : (
+                                        <p className="text-lg text-white/30 font-medium font-serif italic leading-relaxed">
+                                            Consult the institutional core to synthesize liquidity trends and collection risk matrices across the current branch cluster.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                onClick={runOracle}
+                                disabled={isAnalyzing}
+                                className="px-10 py-5 bg-primary text-white font-black text-[10px] uppercase tracking-[0.4em] rounded-2xl shadow-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-primary/20 ring-1 ring-white/20 whitespace-nowrap"
+                            >
+                                {isAnalyzing ? 'SYNCHRONIZING...' : 'SYNC INTELLIGENCE'}
+                                {!isAnalyzing && <ArrowRightIcon className="w-4 h-4 text-white/40" />}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="lg:col-span-4 bg-[#12141c] border border-white/5 rounded-[3.5rem] p-12 shadow-3xl flex flex-col relative overflow-hidden h-full ring-1 ring-white/5 group">
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.01] group-hover:opacity-[0.03] transition-opacity duration-1000"><TrendingUpIcon className="w-80 h-80 text-primary -rotate-12" /></div>
+
+                    <div className="relative z-10 h-full flex flex-col">
+                        <div className="flex items-center gap-4 mb-12">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Financial Health Matrix</h4>
+                        </div>
+
+                        <div className="flex-grow flex items-center justify-center py-10">
+                            <CollectionDistributionChart
+                                paid={data.total_collected}
+                                pending={data.total_pending}
+                                overdue={data.total_overdue}
+                            />
+                        </div>
+
+                        <div className="mt-auto space-y-8 pt-10 border-t border-white/5">
+                            {[
+                                { label: 'Integrity Score', value: '98.4%', trend: '+0.2%', color: 'text-emerald-500' },
+                                { label: 'Payment Ratio', value: `${Math.round((data.total_collected / data.total_assigned) * 100)}%`, trend: 'Stable', color: 'text-primary' },
+                                { label: 'Risk Level', value: data.total_overdue > (data.total_assigned * 0.1) ? 'Critical' : 'Low', trend: 'Neutral', color: data.total_overdue > (data.total_assigned * 0.1) ? 'text-red-500' : 'text-emerald-500' }
+                            ].map((stat, i) => (
+                                <div key={i} className="flex justify-between items-end">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">{stat.label}</p>
+                                        <p className={`text-2xl font-serif font-black ${stat.color} tracking-tight`}>{stat.value}</p>
+                                    </div>
+                                    <span className="text-[9px] font-black text-white/10 uppercase tracking-widest bg-white/[0.03] px-2 py-1 rounded border border-white/5">{stat.trend}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Layer 4 – Recent Transactions Activity Feed */}
+            <div className="bg-[#12141c] border border-white/5 rounded-[3.5rem] p-10 shadow-3xl relative overflow-hidden ring-1 ring-white/5">
+                <div className="flex justify-between items-center mb-10">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white/[0.03] rounded-2xl border border-white/5">
+                            <CheckCircleIcon className="w-5 h-5 text-white/20" />
+                        </div>
+                        <h4 className="text-xl font-serif font-black text-white uppercase tracking-tight">Real-time Transaction Stream</h4>
+                    </div>
+                    <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-8 transition-all">View All Activity</button>
+                </div>
+
+                <div className="space-y-4">
+                    {/* This would typically be dynamic, but for UI/UX demo purposes */}
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl hover:bg-white/[0.04] transition-all group">
+                            <div className="flex items-center gap-6">
+                                <div className="h-12 w-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                                    <CheckCircleIcon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-lg font-serif font-black text-white leading-none">Capital Injection Protocol: STU_4930</p>
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-2 font-mono">NODE_TX_593021 • {new Date().toLocaleTimeString()}</p>
+                                </div>
+                            </div>
+                            <p className="text-2xl font-serif font-black text-emerald-500 tracking-tighter">+₹12,500</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default FinanceOverview;

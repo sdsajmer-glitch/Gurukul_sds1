@@ -49,7 +49,99 @@ interface ClassesTabProps {
     profile: UserProfile;
 }
 
-// --- Local Components ---
+// --- Grade Sorting Logic (Enhanced) ---
+
+/**
+ * Parse class name to extract numeric grade and section
+ * @example "1-A" → { gradeNumber: 1, section: "A" }
+ */
+const parseClassName = (name: string): { gradeNumber: number; section: string } => {
+    // Extract the first sequence of digits as the grade number
+    // Handles "Grade 10", "10-A", "Class 2", "Grade 1-B"
+    const gradeMatch = name.match(/(\d+)/);
+    const gradeNum = gradeMatch ? parseInt(gradeMatch[1], 10) : 0;
+
+    // Extract section: Look for characters after a hyphen or at the end of the string
+    // e.g., "10-A" -> "A", "Grade 1-B" -> "B"
+    const sectionMatch = name.match(/[- ]([A-Z\d]+)$/i);
+    const section = sectionMatch ? sectionMatch[1] : 'A';
+
+    return { gradeNumber: gradeNum, section };
+};
+
+/**
+ * Sort classes by numeric grade (1-12), then by section alphabetically
+ */
+const sortByGradeNumber = (a: ExtendedClass, b: ExtendedClass): number => {
+    const aInfo = parseClassName(a.name);
+    const bInfo = parseClassName(b.name);
+
+    // Primary sort: by grade number
+    if (aInfo.gradeNumber !== bInfo.gradeNumber) {
+        return aInfo.gradeNumber - bInfo.gradeNumber;
+    }
+
+    // Secondary sort: by section alphabetically
+    return aInfo.section.localeCompare(bInfo.section);
+};
+
+// --- Error Boundary Component ---
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode; onReset: () => void }, { hasError: boolean; error: Error | null }> {
+    constructor(props: any) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error("Grades Module Error:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="fixed inset-0 z-[300] bg-background/80 backdrop-blur-xl flex items-center justify-center p-6"
+                >
+                    <div className="bg-card border border-red-500/20 rounded-[2.5rem] p-12 max-w-md w-full text-center shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-rose-600"></div>
+                        <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+                            <AlertTriangleIcon className="w-10 h-10 text-red-500" />
+                        </div>
+                        <h2 className="text-2xl font-black text-foreground tracking-tight mb-4">Something Went Wrong</h2>
+                        <p className="text-muted-foreground text-sm font-medium leading-relaxed mb-10">
+                            We encountered an unexpected issue while loading this class environment. The operation has been suspended to protect data integrity.
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => {
+                                    this.setState({ hasError: false, error: null });
+                                    this.props.onReset();
+                                }}
+                                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            >
+                                Retry Workspace
+                            </button>
+                            <button
+                                onClick={() => this.props.onReset()}
+                                className="w-full py-4 bg-card border border-border text-foreground rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/5 transition-all"
+                            >
+                                Back to Grades
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 const SortIcon: React.FC<{ direction: 'ascending' | 'descending' | null }> = ({ direction }) => (
     <svg className={`w-3 h-3 ml-1 transition-transform duration-300 ${direction === 'descending' ? 'rotate-180' : ''} ${direction ? 'opacity-100' : 'opacity-30'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -115,28 +207,28 @@ const KPICard: React.FC<{
 
 const StatusBadge: React.FC<{ status: ClassStatus | string }> = ({ status }) => {
     const styles: Record<string, string> = {
-        'Active': 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400 dark:bg-emerald-500/5',
-        'Pending Setup': 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400 dark:bg-amber-500/5',
-        'Inactive': 'bg-red-500/10 text-red-700 border-red-500/20 dark:text-red-400 dark:bg-red-500/5',
-        'Draft': 'bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400 dark:bg-purple-500/5',
-        'Overloaded': 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-400 dark:bg-indigo-500/5',
+        'Active': 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10 dark:text-emerald-400/80 dark:bg-emerald-500/[0.03]',
+        'Pending Setup': 'bg-indigo-500/5 text-indigo-600 border-indigo-500/10 dark:text-indigo-400/80 dark:bg-indigo-500/[0.03]',
+        'Inactive': 'bg-zinc-500/5 text-zinc-600 border-zinc-500/10 dark:text-zinc-400/80 dark:bg-zinc-500/[0.03]',
+        'Draft': 'bg-purple-500/5 text-purple-600 border-purple-500/10 dark:text-purple-400/80 dark:bg-purple-500/[0.03]',
+        'Overloaded': 'bg-rose-500/5 text-rose-600 border-rose-500/10 dark:text-rose-400/80 dark:bg-rose-500/[0.03]',
     };
     const dotColors: Record<string, string> = {
         'Active': 'bg-emerald-500',
-        'Pending Setup': 'bg-amber-500',
-        'Inactive': 'bg-red-500',
+        'Pending Setup': 'bg-indigo-500',
+        'Inactive': 'bg-zinc-500',
         'Draft': 'bg-purple-500',
-        'Overloaded': 'bg-indigo-500',
+        'Overloaded': 'bg-rose-500',
     };
     let normalizedStatus = status;
     if (status === 'Pending') normalizedStatus = 'Pending Setup';
     if (status === 'Full') normalizedStatus = 'Active';
 
     return (
-        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all hover:scale-105 cursor-default ${styles[normalizedStatus] || styles['Draft']}`}>
-            <span className={`relative flex h-2 w-2 mr-2`}>
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${styles[normalizedStatus] || styles['Draft']}`}>
+            <span className={`relative flex h-1.5 w-1.5 mr-2`}>
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-40 ${dotColors[normalizedStatus] || 'bg-gray-400'}`}></span>
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${dotColors[normalizedStatus] || 'bg-gray-400'}`}></span>
+                <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${dotColors[normalizedStatus] || 'bg-gray-400'}`}></span>
             </span>
             {normalizedStatus}
         </span>
@@ -330,66 +422,81 @@ const ClassCard: React.FC<{
 }> = ({ cls, status, onClick, onAssign }) => (
     <motion.div
         layout
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        whileHover={{ y: -8, scale: 1.02 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
         onClick={onClick}
-        className="bg-card border border-border/60 rounded-[2rem] p-6 shadow-sm hover:shadow-2xl transition-all group cursor-pointer relative overflow-hidden flex flex-col justify-between min-h-[320px]"
+        className="bg-card border border-border/80 rounded-[2rem] p-6 shadow-sm hover:shadow-2xl hover:border-primary/30 transition-all group cursor-pointer relative overflow-hidden flex flex-col h-full min-h-[360px]"
     >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150"></div>
+        {/* Subtle Hover Glow */}
+        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-        <div className="space-y-6 relative z-10">
-            <div className="flex justify-between items-start">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-600/10 text-blue-600 flex items-center justify-center font-black text-2xl border border-blue-500/10 shadow-inner group-hover:scale-110 transition-transform">
-                    {cls.grade_level}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
+
+        <div className="flex flex-col h-full relative z-10">
+            <div className="flex justify-between items-start mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-primary/5 text-primary flex items-center justify-center font-black text-2xl border border-primary/10 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                    {parseClassName(cls.name).gradeNumber || cls.grade_level}
                 </div>
                 <StatusBadge status={status} />
             </div>
 
-            <div>
-                <h3 className="text-xl font-black text-foreground tracking-tight group-hover:text-primary transition-colors">{cls.name}</h3>
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-1">{cls.academic_year} Cycle</p>
+            <div className="mb-6">
+                <h3 className="text-xl font-black text-foreground tracking-tight group-hover:text-primary transition-colors leading-tight">{cls.name}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 mt-1.5 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                    {cls.academic_year || 'Current Cycle'}
+                </p>
             </div>
 
-            <div className="space-y-3">
-                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    <span>Capacity</span>
-                    <span>{Math.round(((cls.student_count || 0) / (cls.capacity || 30)) * 100)}% Full</span>
+            <div className="space-y-4 flex-grow">
+                <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.1em] text-muted-foreground">
+                        <span>Cohort Capacity</span>
+                        <span className="text-foreground">{cls.student_count || 0} / {cls.capacity || 30}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden p-0 ring-1 ring-border/50">
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(((cls.student_count || 0) / (cls.capacity || 30)) * 100, 100)}%` }}
+                            className={`h-full rounded-full ${((cls.student_count || 0) > (cls.capacity || 30)) ? 'bg-rose-500' : 'bg-primary'}`}
+                        />
+                    </div>
                 </div>
-                <div className="h-2 w-full bg-muted/40 rounded-full overflow-hidden p-0.5 ring-1 ring-black/5">
-                    <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(((cls.student_count || 0) / (cls.capacity || 30)) * 100, 100)}%` }}
-                        className={`h-full rounded-full shadow-sm ${((cls.student_count || 0) > (cls.capacity || 30)) ? 'bg-gradient-to-r from-red-500 to-rose-600' : 'bg-gradient-to-r from-emerald-500 to-teal-400'}`}
-                    />
-                </div>
-                <div className="flex justify-between text-[10px] font-bold text-muted-foreground/60">
-                    <span>{cls.student_count || 0} Students</span>
-                    <span>{cls.capacity || 30} Max</span>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-border/40">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Students</p>
+                        <p className="text-sm font-bold text-foreground">{cls.student_count || 0}</p>
+                    </div>
+                    <div className="bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-border/40">
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Status</p>
+                        <p className="text-sm font-bold text-foreground truncate">{status}</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div className="pt-6 mt-6 border-t border-border/40 relative z-10">
-            {cls.teacher_name ? (
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 flex items-center justify-center text-indigo-600 text-xs font-black">
-                        {cls.teacher_name.charAt(0)}
+            <div className="pt-6 mt-6 border-t border-border/60">
+                {cls.teacher_name ? (
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-xs font-black ring-1 ring-primary/20">
+                            {cls.teacher_name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50 mb-0.5">Faculty Lead</p>
+                            <p className="font-bold text-sm text-foreground truncate pr-2">{cls.teacher_name}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Faculty Lead</p>
-                        <p className="font-bold text-sm text-foreground">{cls.teacher_name}</p>
-                    </div>
-                </div>
-            ) : (
-                <button
-                    onClick={onAssign}
-                    className="w-full py-3 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-amber-500 hover:text-white transition-all shadow-sm active:scale-95"
-                >
-                    <AlertTriangleIcon className="w-4 h-4" /> Assign Faculty
-                </button>
-            )}
+                ) : (
+                    <button
+                        onClick={onAssign}
+                        className="w-full py-3.5 rounded-xl bg-amber-500/5 text-amber-600 border border-amber-500/20 font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-amber-500 hover:text-white transition-all shadow-sm active:scale-95 group/btn"
+                    >
+                        <AlertTriangleIcon className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Assign Lead
+                    </button>
+                )}
+            </div>
         </div>
     </motion.div>
 );
@@ -452,22 +559,55 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId, profile }) => {
         return 'Active';
     };
 
+    const [facultyFilter, setFacultyFilter] = useState('All');
+
+    const uniqueTeachers = useMemo(() => {
+        const set = new Set(classes.map(c => c.teacher_name).filter(Boolean));
+        return Array.from(set).sort();
+    }, [classes]);
+
     const filteredClasses = useMemo(() => {
-        return classes.filter(cls => {
-            const matchesSearch = cls.name.toLowerCase().includes(searchTerm.toLowerCase()) || (cls.teacher_name || '').toLowerCase().includes(searchTerm.toLowerCase());
-            let matchesFilter = true;
-            if (quickFilter === 'No Teacher') matchesFilter = !cls.class_teacher_id;
-            if (quickFilter === 'No Students') matchesFilter = (cls.student_count || 0) === 0;
-            if (quickFilter === 'Overloaded') matchesFilter = (cls.student_count || 0) > (cls.capacity || 30);
-            if (quickFilter === 'Full') matchesFilter = (cls.student_count || 0) === (cls.capacity || 30);
-            return matchesSearch && matchesFilter;
-        }).sort((a, b) => {
-            const aVal = (a[sortConfig.key] || '').toString();
-            const bVal = (b[sortConfig.key] || '').toString();
-            if (aVal < bVal) return sortConfig.direction === 'ascending' ? -1 : 1;
-            if (aVal > bVal) return sortConfig.direction === 'ascending' ? 1 : -1;
-            return 0;
+        let filtered = classes.filter(cls => {
+            const searchLower = searchTerm.toLowerCase();
+            const matchesSearch = cls.name.toLowerCase().includes(searchLower) ||
+                (cls.teacher_name || '').toLowerCase().includes(searchLower) ||
+                (parseClassName(cls.name).gradeNumber.toString() === searchLower);
+
+            let matchesQuickFilter = true;
+            if (quickFilter === 'No Teacher') matchesQuickFilter = !cls.class_teacher_id;
+            if (quickFilter === 'No Students') matchesQuickFilter = (cls.student_count || 0) === 0;
+            if (quickFilter === 'Overloaded') matchesQuickFilter = (cls.student_count || 0) > (cls.capacity || 30);
+            if (quickFilter === 'Full') matchesQuickFilter = (cls.student_count || 0) === (cls.capacity || 30);
+            if (quickFilter === 'New') {
+                const createdAt = cls.created_at ? new Date(cls.created_at) : new Date();
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                matchesQuickFilter = createdAt > weekAgo;
+            }
+
+            let matchesFaculty = true;
+            if (facultyFilter !== 'All') matchesFaculty = cls.teacher_name === facultyFilter;
+
+            return matchesSearch && matchesQuickFilter && matchesFaculty;
         });
+
+        // Use numeric grade sorting by default (Grade 1 → 12, then A, B, C...)
+        if (sortConfig.key === 'name') {
+            filtered.sort(sortByGradeNumber);
+            if (sortConfig.direction === 'descending') {
+                filtered.reverse();
+            }
+        } else {
+            filtered.sort((a, b) => {
+                const aVal = (a[sortConfig.key] || '').toString();
+                const bVal = (b[sortConfig.key] || '').toString();
+                if (aVal < bVal) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (aVal > bVal) return sortConfig.direction === 'ascending' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        return filtered;
     }, [classes, searchTerm, quickFilter, sortConfig]);
 
     const stats = useMemo(() => ({
@@ -559,47 +699,65 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId, profile }) => {
             </AnimatePresence>
 
             <div className="bg-card border border-border/60 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col min-h-[600px] ring-1 ring-black/5 relative">
-                <div className="p-6 border-b border-border bg-muted/20 backdrop-blur-3xl flex flex-col md:flex-row gap-6 justify-between items-center sticky top-0 z-20">
-                    <div className="relative w-full md:max-w-md group">
-                        <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-300" />
-                        <input
-                            type="text"
-                            placeholder="Filter classes, faculty..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-14 pr-6 py-4 rounded-2xl border border-border/80 bg-background/50 text-sm font-bold placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner"
-                        />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-40">
-                            <span className="text-[10px] font-black border border-border px-1.5 py-0.5 rounded-md">CMD</span>
-                            <span className="text-[10px] font-black border border-border px-1.5 py-0.5 rounded-md">K</span>
+                <div className="p-6 border-b border-border bg-card/60 backdrop-blur-3xl flex flex-col gap-6 sticky top-0 z-30 shadow-sm">
+                    <div className="flex flex-col xl:flex-row gap-6 justify-between items-center">
+                        <div className="relative w-full xl:max-w-md group">
+                            <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-300" />
+                            <input
+                                type="text"
+                                placeholder="Filter grades, faculty, or ID..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="w-full pl-14 pr-6 py-4 rounded-2xl border border-border/80 bg-background/50 text-sm font-bold placeholder:text-muted-foreground/40 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-inner"
+                            />
                         </div>
-                    </div>
 
-                    <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto scrollbar-hide">
-                        <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-border/40">
-                            {(['All', 'No Teacher', 'No Students', 'Overloaded', 'New'] as QuickFilterType[]).map(f => (
-                                <button
-                                    key={f}
-                                    onClick={() => setQuickFilter(f)}
-                                    className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${quickFilter === f ? 'bg-card text-primary shadow-xl ring-1 ring-primary/20' : 'bg-transparent text-muted-foreground hover:text-foreground'}`}
-                                >
-                                    {f}
+                        <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
+                            <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-border/40">
+                                {(['All', 'No Teacher', 'No Students', 'Overloaded'] as QuickFilterType[]).map(f => (
+                                    <button
+                                        key={f}
+                                        onClick={() => setQuickFilter(f)}
+                                        className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${quickFilter === f ? 'bg-card text-primary shadow-lg ring-1 ring-primary/10' : 'bg-transparent text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        {f}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <select
+                                value={facultyFilter}
+                                onChange={(e) => setFacultyFilter(e.target.value)}
+                                className="bg-black/5 dark:bg-white/5 border border-border/40 rounded-2xl px-5 py-3.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none min-w-[160px] cursor-pointer"
+                            >
+                                <option value="All">All Faculty</option>
+                                {uniqueTeachers.map(name => (
+                                    <option key={name} value={name}>{name}</option>
+                                ))}
+                            </select>
+
+                            <button
+                                onClick={() => handleSort('name')}
+                                className="p-3.5 bg-black/5 dark:bg-white/5 border border-border/40 rounded-2xl hover:bg-primary/10 hover:text-primary transition-all flex items-center gap-2 group"
+                                title="Toggle Sort Direction"
+                            >
+                                <SortIcon direction={sortConfig.key === 'name' ? sortConfig.direction : null} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">{sortConfig.direction === 'ascending' ? 'ASC' : 'DESC'}</span>
+                            </button>
+
+                            <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-border/40 ml-auto">
+                                <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-card text-primary shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
                                 </button>
-                            ))}
-                        </div>
-
-                        <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-border/40">
-                            <button onClick={() => setViewMode('grid')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-card text-primary shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
-                            </button>
-                            <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-card text-primary shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" /></svg>
-                            </button>
+                                <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-card text-primary shadow-md' : 'text-muted-foreground hover:text-foreground'}`}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" /><path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" /></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex-grow overflow-x-auto custom-scrollbar p-6">
+                <div className="flex-grow p-6">
                     {loading ? (
                         <div className="flex flex-col justify-center items-center h-[500px] space-y-6">
                             <div className="relative">
@@ -632,7 +790,7 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId, profile }) => {
                             </motion.button>
                         </motion.div>
                     ) : viewMode === 'grid' ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4">
                             <AnimatePresence mode="popLayout">
                                 {filteredClasses.map((cls, idx) => (
                                     <ClassCard
@@ -757,18 +915,20 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId, profile }) => {
 
             <AnimatePresence>
                 {selectedClass && (
-                    <ClassWorkspace
-                        key={selectedClass.id}
-                        profile={profile}
-                        classData={selectedClass}
-                        onClose={() => {
-                            setSelectedClass(null);
-                            setInitialOpenAssignFaculty(false);
-                        }}
-                        onUpdate={fetchClasses}
-                        schoolProfile={schoolProfile}
-                        initialOpenAssignFaculty={initialOpenAssignFaculty}
-                    />
+                    <ErrorBoundary onReset={() => setSelectedClass(null)}>
+                        <ClassWorkspace
+                            key={selectedClass.id}
+                            profile={profile || { role: 'Guest' } as any}
+                            classData={selectedClass}
+                            onClose={() => {
+                                setSelectedClass(null);
+                                setInitialOpenAssignFaculty(false);
+                            }}
+                            onUpdate={fetchClasses}
+                            schoolProfile={schoolProfile}
+                            initialOpenAssignFaculty={initialOpenAssignFaculty}
+                        />
+                    </ErrorBoundary>
                 )}
 
                 {isCreateModalOpen && (
