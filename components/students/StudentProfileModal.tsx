@@ -70,8 +70,8 @@ const TabButton: React.FC<{
     <button
         onClick={() => onClick(id)}
         className={`
-            w-full flex items-center gap-4 px-6 py-4 rounded-xl 
-            transition-all duration-500 group relative overflow-hidden ring-1 inset
+            w-auto lg:w-full flex-shrink-0 lg:flex-shrink flex items-center gap-3 lg:gap-4 px-4 py-3 lg:px-6 lg:py-4 rounded-xl 
+            transition-all duration-500 group relative overflow-hidden ring-1 inset whitespace-nowrap
             ${active
                 ? 'bg-indigo-500/10 text-white ring-indigo-500/30 shadow-[0_0_20px_-5px_rgba(99,102,241,0.3)]'
                 : 'text-white/40 ring-transparent hover:text-white/90 hover:bg-white/5 hover:ring-white/10'
@@ -81,7 +81,8 @@ const TabButton: React.FC<{
         {/* Active Indicator & Glow */}
         {active && (
             <>
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-indigo-500 rounded-r-lg shadow-[0_0_15px_rgba(99,102,241,0.8)]"></div>
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-indigo-500 rounded-r-lg shadow-[0_0_15px_rgba(99,102,241,0.8)] hidden lg:block"></div>
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-500 rounded-t-lg shadow-[0_0_15px_rgba(99,102,241,0.8)] block lg:hidden"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-transparent to-transparent pointer-events-none" />
             </>
         )}
@@ -1346,8 +1347,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             <div className="bg-[#08090a] w-full max-w-[1400px] h-full md:h-[94vh] md:rounded-[2rem] shadow-2xl border border-white/10 flex flex-col overflow-hidden relative ring-1 ring-white/5 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
 
                 {/* --- 1. PROFILE HEADER (Layer 1) --- */}
-                <div className="px-8 py-8 border-b border-white/5 bg-[#0c0e12] flex flex-col md:flex-row justify-between items-start md:items-center shrink-0 z-20 relative">
-                    <div className="flex items-center gap-8">
+                <div className="px-5 py-6 md:px-8 md:py-8 border-b border-white/5 bg-[#0c0e12] flex flex-col md:flex-row justify-between items-start md:items-center shrink-0 z-20 relative">
+                    <div className="flex items-center gap-5 md:gap-8">
                         {/* Avatar Node */}
                         <div className="relative group/photo shrink-0">
                             <div className="absolute -inset-2 bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 rounded-full opacity-0 group-hover/photo:opacity-100 blur-md transition-opacity duration-500"></div>
@@ -1355,30 +1356,30 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                 src={syncedStudent.profile_photo_url}
                                 name={syncedStudent.display_name}
                                 size="xl"
-                                className="relative shadow-2xl border-4 border-[#0c0e12] ring-1 ring-white/10 rounded-full h-24 w-24 md:h-28 md:w-28"
+                                className="relative shadow-2xl border-4 border-[#0c0e12] ring-1 ring-white/10 rounded-full h-20 w-20 md:h-28 md:w-28"
                             />
                             <div className="absolute bottom-0 right-0 bg-[#0c0e12] p-1 rounded-full border border-white/10">
-                                <div className={`w-3.5 h-3.5 rounded-full ${syncedStudent.enrollment_status === 'Active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500'} ring-2 ring-[#0c0e12]`}></div>
+                                <div className={`w-3 h-3 md:w-3.5 md:h-3.5 rounded-full ${syncedStudent.enrollment_status === 'Active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500'} ring-2 ring-[#0c0e12]`}></div>
                             </div>
                         </div>
 
                         {/* Identity Block */}
-                        <div className="space-y-1.5">
-                            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none">
+                        <div className="space-y-1 md:space-y-1.5 flex-1 min-w-0">
+                            <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight leading-none truncate pr-2">
                                 {syncedStudent.display_name}
                             </h1>
-                            <div className="flex flex-wrap items-center gap-4">
-                                <span className="px-3 py-1 bg-white/5 rounded-lg border border-white/10 text-[10px] font-bold text-white/50 uppercase tracking-widest font-mono">
+                            <div className="flex flex-wrap items-center gap-3 md:gap-4 text-[9px] md:text-[10px]">
+                                <span className="bg-white/5 rounded-lg border border-white/10 font-bold text-white/50 uppercase tracking-widest font-mono px-2 py-0.5 md:px-3 md:py-1">
                                     ID: <span className="text-white">{syncedStudent.student_id_number || 'PENDING'}</span>
                                 </span>
-                                <div className="w-1 h-1 rounded-full bg-white/20"></div>
-                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                                <div className="hidden md:block w-1 h-1 rounded-full bg-white/20"></div>
+                                <span className="font-bold text-white/40 uppercase tracking-widest hidden sm:flex items-center gap-2">
                                     Last Synced: <span className="text-white/60 font-mono">{new Date().toLocaleDateString()}</span>
                                 </span>
                                 {syncedStudent.grade && (
                                     <>
                                         <div className="w-1 h-1 rounded-full bg-white/20"></div>
-                                        <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                                        <span className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg font-black text-indigo-400 uppercase tracking-widest px-2 py-0.5 md:px-3 md:py-1">
                                             {syncedStudent.grade}
                                         </span>
                                     </>
@@ -1388,17 +1389,17 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                     </div>
 
                     {/* Action Hub */}
-                    <div className="flex items-center gap-4 mt-6 md:mt-0 w-full md:w-auto">
+                    <div className="flex items-center gap-3 md:gap-4 mt-6 md:mt-0 w-full md:w-auto">
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-3.5 bg-white text-black hover:bg-white/90 font-black text-[10px] rounded-xl transition-all shadow-[0_10px_20px_-5px_rgba(255,255,255,0.1)] hover:-translate-y-0.5 active:scale-95 uppercase tracking-[0.2em]"
+                            className="flex-1 md:flex-none flex items-center justify-center gap-3 px-6 md:px-8 py-3 bg-white text-black hover:bg-white/90 font-black text-[10px] rounded-xl transition-all shadow-[0_10px_20px_-5px_rgba(255,255,255,0.1)] hover:-translate-y-0.5 active:scale-95 uppercase tracking-[0.2em]"
                         >
                             <EditIcon className="w-4 h-4" />
                             {isSchoolAdmin ? 'Record Maintenance' : 'Edit Profile'}
                         </button>
                         <button
                             onClick={onClose}
-                            className="p-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 hover:border-white/20 active:scale-95"
+                            className="p-3 md:p-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 hover:border-white/20 active:scale-95"
                             aria-label="Close"
                         >
                             <XIcon className="w-5 h-5" />
@@ -1407,33 +1408,32 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 </div>
 
                 <div className="flex flex-col lg:flex-row flex-grow overflow-hidden">
-                    {/* Sidebar Nav (2 cols equivalent) */}
-                    <div className="w-full lg:w-[280px] bg-[#0a0b0f] border-r border-white/5 flex-shrink-0 flex flex-col relative z-10">
-                        <div className="p-6 space-y-2 overflow-y-auto custom-scrollbar flex-grow">
-                            {/* Core Registry Section */}
-                            <p className="px-6 text-[9px] font-black text-white/30 uppercase tracking-[0.25em] mb-4 mt-2">
-                                Registry Modules
-                            </p>
-                            <div className="space-y-1.5">
-                                <TabButton id="overview" label="Overview" icon={<ActivityIcon className="w-4 h-4" />} active={activeTab === 'overview'} onClick={setActiveTab} />
-                                <TabButton id="parents" label="Guardians" icon={<UsersIcon className="w-4 h-4" />} active={activeTab === 'parents'} onClick={setActiveTab} />
-                                <TabButton id="academic" label="Academics" icon={<GraduationCapIcon className="w-4 h-4" />} active={activeTab === 'academic'} onClick={setActiveTab} />
-                            </div>
+                    {/* Sidebar Nav (Responsive Strategy: Vertical on Desktop / Horizontal Scroll on Mobile) */}
+                    <div className="w-full lg:w-[280px] bg-[#0a0b0f] border-b lg:border-b-0 lg:border-r border-white/5 flex-shrink-0 flex flex-row lg:flex-col overflow-x-auto lg:overflow-y-auto custom-scrollbar lg:custom-scrollbar relative z-10 p-4 lg:p-6 gap-2 lg:gap-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
 
-                            {/* Administration Section */}
-                            <p className="px-6 text-[9px] font-black text-white/30 uppercase tracking-[0.25em] mt-8 mb-4">
-                                Administrative
-                            </p>
-                            <div className="space-y-1.5">
-                                <TabButton id="documents" label="Documents" icon={<FileTextIcon className="w-4 h-4" />} active={activeTab === 'documents'} onClick={setActiveTab} />
-                                <TabButton id="fees" label="Financials" icon={<CreditCardIcon className="w-4 h-4" />} active={activeTab === 'fees'} onClick={setActiveTab} />
-                                <TabButton id="history" label="Audit Log" icon={<ClockIcon className="w-4 h-4" />} active={activeTab === 'history'} onClick={setActiveTab} />
-                            </div>
+                        {/* Core Registry Section */}
+                        <p className="hidden lg:block px-6 text-[9px] font-black text-white/30 uppercase tracking-[0.25em] mb-4 mt-2">
+                            Registry Modules
+                        </p>
+                        <div className="flex flex-row lg:flex-col gap-1.5 min-w-max">
+                            <TabButton id="overview" label="Overview" icon={<ActivityIcon className="w-4 h-4" />} active={activeTab === 'overview'} onClick={setActiveTab} />
+                            <TabButton id="parents" label="Guardians" icon={<UsersIcon className="w-4 h-4" />} active={activeTab === 'parents'} onClick={setActiveTab} />
+                            <TabButton id="academic" label="Academics" icon={<GraduationCapIcon className="w-4 h-4" />} active={activeTab === 'academic'} onClick={setActiveTab} />
+                        </div>
+
+                        {/* Administration Section */}
+                        <p className="hidden lg:block px-6 text-[9px] font-black text-white/30 uppercase tracking-[0.25em] mt-8 mb-4">
+                            Administrative
+                        </p>
+                        <div className="flex flex-row lg:flex-col gap-1.5 min-w-max lg:mt-0 ml-1.5 lg:ml-0 border-l lg:border-l-0 border-white/5 pl-3 lg:pl-0">
+                            <TabButton id="documents" label="Documents" icon={<FileTextIcon className="w-4 h-4" />} active={activeTab === 'documents'} onClick={setActiveTab} />
+                            <TabButton id="fees" label="Financials" icon={<CreditCardIcon className="w-4 h-4" />} active={activeTab === 'fees'} onClick={setActiveTab} />
+                            <TabButton id="history" label="Audit Log" icon={<ClockIcon className="w-4 h-4" />} active={activeTab === 'history'} onClick={setActiveTab} />
                         </div>
                     </div>
 
                     {/* Content Area (10 cols equivalent) */}
-                    <div className="flex-grow bg-[#08090a] overflow-y-auto custom-scrollbar p-6 md:p-10 relative">
+                    <div className="flex-grow bg-[#08090a] overflow-y-auto custom-scrollbar p-5 md:p-10 relative">
                         {loading ? (
                             <div className="h-full flex items-center justify-center">
                                 <Spinner size="lg" className="text-primary" />
