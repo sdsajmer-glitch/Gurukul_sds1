@@ -42,6 +42,7 @@ import FinanceExpense from './finance/FinanceExpense';
 import { StatsSkeleton, Skeleton } from './common/Skeleton';
 import StudentFinanceDetailView from './finance/StudentFinanceDetailView';
 import PremiumAvatar from './common/PremiumAvatar';
+import FinanceProcessGuide from './finance/FinanceProcessGuide';
 
 
 const formatCurrency = (amount: number, currency: CurrencyCode = 'INR') => {
@@ -101,6 +102,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
     const [aiInsight, setAiInsight] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isReconciling, setIsReconciling] = useState(false);
+    const [isProcessGuideOpen, setIsProcessGuideOpen] = useState(false);
 
     const viewCurrency = useMemo(() => profile.base_currency || 'INR', [profile]);
 
@@ -284,6 +286,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                 <span>Reconcile Matrix</span>
                             </button>
                             <button
+                                onClick={() => setIsProcessGuideOpen(true)}
                                 className="px-5 py-2.5 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-primary/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-primary transition-all flex items-center gap-3 active:scale-95 shadow-2xl backdrop-blur-md"
                             >
                                 <WorkflowIcon className="w-4 h-4 opacity-40 group-hover:opacity-100" />
@@ -482,6 +485,12 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     }}
                 />
             )}
+
+            <AnimatePresence>
+                {isProcessGuideOpen && (
+                    <FinanceProcessGuide onClose={() => setIsProcessGuideOpen(false)} />
+                )}
+            </AnimatePresence>
         </div>
     );
 };

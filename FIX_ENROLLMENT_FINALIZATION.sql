@@ -71,7 +71,7 @@ BEGIN
             AND status != 'Cancelled'
         ) THEN
             INSERT INTO public.fee_invoices (
-                student_id, amount, due_date, description, status, created_at
+                student_id, total_amount, due_date, description, status, created_at
             ) VALUES (
                 p_student_id, v_component.amount, NOW() + INTERVAL '15 days',
                 v_component.name || ' (INITIAL_SYNC)', 'Pending', NOW()

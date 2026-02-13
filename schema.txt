@@ -21,6 +21,7 @@ DROP FUNCTION IF EXISTS public.admin_reconcile_student_account(UUID);
 DROP FUNCTION IF EXISTS public.get_student_running_ledger(UUID);
 DROP FUNCTION IF EXISTS public.get_student_financial_node(UUID);
 DROP FUNCTION IF EXISTS public.get_student_financial_nodes(BIGINT);
+DROP FUNCTION IF EXISTS public.reconcile_finance_registry(BIGINT);
 
 -- 2. ENHANCED RECONCILIATION ENGINE
 -- Rebuilds the student's financial summary node from raw transaction data.
@@ -33,7 +34,7 @@ DECLARE
     v_integrity INT;
 BEGIN
     -- Calculate Total Liability (Excluding cancelled invoices)
-    SELECT COALESCE(SUM(amount), 0) INTO v_total_billed 
+    SELECT COALESCE(SUM(total_amount), 0) INTO v_total_billed 
     FROM public.fee_invoices 
     WHERE student_id = p_student_id AND status != 'Cancelled';
 
@@ -110,7 +111,7 @@ BEGIN
             AND status != 'Cancelled'
         ) THEN
             INSERT INTO public.fee_invoices (
-                student_id, amount, due_date, description, status, created_at
+                student_id, total_amount, due_date, description, status, created_at
             ) VALUES (
                 p_student_id, v_component.amount, NOW() + INTERVAL '15 days',
                 v_component.name || ' (INITIAL_SYNC)', 'Pending', NOW()
@@ -186,7 +187,7 @@ BEGIN
                 AND status != 'Cancelled'
             ) THEN
                 INSERT INTO public.fee_invoices (
-                    student_id, amount, due_date, description, status
+                    student_id, total_amount, due_date, description, status
                 ) VALUES (
                     v_student.user_id, v_component.amount, p_due_date,
                     v_component.name || ' (' || p_billing_month || ' ' || p_billing_year || ')', 'Pending'
@@ -221,7 +222,7 @@ BEGIN
             fi.created_at as t_date,
             'INV-' || fi.id::TEXT as idnt,
             fi.description as descr,
-            fi.amount as dbt,
+            fi.total_amount as dbt,
             0::NUMERIC as crdt,
             CASE 
                 WHEN fi.description ILIKE '%SYSTEM_AUTO_SYNC%' THEN 'SYSTEM_SYNC'
@@ -340,6 +341,30 @@ BEGIN
     LEFT JOIN public.school_classes sc ON sp.assigned_class_id = sc.id
     LEFT JOIN public.student_fee_accounts sfa ON p.id = sfa.student_id
     WHERE p.id = p_student_id;
+END;
+$$;
+
+-- 10. INSTITUTIONAL RECONCILLATION ORCHESTRATOR
+-- Purpose: Bulk execution of reconciliation logic across an entire branch node.
+CREATE OR REPLACE FUNCTION public.reconcile_finance_registry(p_branch_id BIGINT)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_student_id UUID;
+    v_count INTEGER := 0;
+BEGIN
+    FOR v_student_id IN 
+        SELECT user_id FROM public.student_profiles 
+        WHERE (p_branch_id IS NULL OR branch_id = p_branch_id)
+    LOOP
+        PERFORM public.admin_reconcile_student_account(v_student_id);
+        v_count := v_count + 1;
+    END LOOP;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'nodes_reconciled', v_count,
+        'timestamp', NOW()
+    );
 END;
 $$;
 
