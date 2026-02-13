@@ -190,7 +190,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
             if (error) throw error;
             await fetchAllData(true);
         } catch (err: any) {
-            alert("Protocol Failure: " + formatError(err));
+            setError("Reconciliation Protocol Failure: " + formatError(err));
         } finally {
             setTimeout(() => setIsReconciling(false), 800);
         }
