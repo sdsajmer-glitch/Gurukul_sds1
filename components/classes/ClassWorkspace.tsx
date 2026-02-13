@@ -229,6 +229,8 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
             { id: 4, label: 'Sync Timetable', completed: hasTimetable, weight: 25 }
         ];
 
+        const subjectsAssigned = subjects.length > 0 && subjects.every(s => !!(s as any).teacher_name);
+
         return {
             percentage: score,
             statusLabel,
@@ -236,7 +238,9 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
             hasLead,
             hasSubjects,
             hasRoster,
-            hasTimetable
+            hasTimetable,
+            steps,
+            subjectsAssigned
         };
     }, [classData, subjects, students]);
 
@@ -354,8 +358,15 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                 showToast("Section Operational Lead defined", 'success');
             } else {
                 // Handle Subject Faculty Assignment
-                // This would normally update class_subjects or subject_assignments
-                // For demo/UI flow, we'll update the local state to show it works
+                const { error } = await supabase
+                    .from('class_subjects')
+                    .update({ teacher_id: teacherId })
+                    .eq('class_id', classData.id)
+                    .eq('subject_id', assignmentTarget.id);
+
+                if (error) throw error;
+
+                // Update local state for immediate feedback
                 setSubjects(prev => prev.map(s => s.id.toString() === assignmentTarget.id?.toString() ? { ...s, teacher_name: availableTeachers.find(t => t.id === teacherId)?.display_name } : s));
                 showToast(`Faculty assigned to ${assignmentTarget.name}`, 'success');
             }
@@ -408,11 +419,14 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
             if (rosterData) setStudents(rosterData);
 
             const { data: subjectData } = await supabase.from('class_subjects')
-                .select('subject_id, courses(*)')
+                .select('subject_id, teacher_id, profiles(display_name), courses(*)')
                 .eq('class_id', classData.id);
 
             if (subjectData) {
-                const mappedSubjects = subjectData.map((item: any) => item.courses);
+                const mappedSubjects = subjectData.map((item: any) => ({
+                    ...item.courses,
+                    teacher_name: item.profiles?.display_name
+                }));
                 setSubjects(mappedSubjects.filter(Boolean));
             }
         } finally {
@@ -586,37 +600,37 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                         transition={{ duration: 0.4 }}
                         className="space-y-8"
                     >
-                        {/* Roster Premium Header */}
+                        {/* Roster Premium Header - Enhanced */}
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                            <div className="lg:col-span-3 h-full">
-                                <div className="bg-gradient-to-br from-card to-background border border-white/10 rounded-[2.5rem] p-10 flex items-center justify-between relative overflow-hidden group shadow-2xl min-h-[160px]">
-                                    <div className="absolute top-0 left-0 w-2 h-full bg-primary opacity-40 group-hover:opacity-100 transition-opacity"></div>
-                                    <div className="absolute right-0 top-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -mr-32 -mt-32"></div>
+                            <div className="lg:col-span-3">
+                                <div className="bg-card/40 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 flex flex-col md:flex-row items-center justify-between relative overflow-hidden group shadow-2xl min-h-[180px] transition-all duration-500 hover:border-primary/20 hover:shadow-primary/5">
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-indigo-500 to-transparent opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                                    <div className="absolute right-0 top-0 w-80 h-80 bg-primary/5 rounded-full blur-[100px] -mr-40 -mt-40 pointer-events-none"></div>
 
-                                    <div className="relative z-10 flex flex-col justify-center">
-                                        <div className="flex items-center gap-4 mb-2">
-                                            <h3 className="text-4xl font-black text-foreground tracking-tighter uppercase italic group-hover:scale-[1.02] transition-transform origin-left">
+                                    <div className="relative z-10 space-y-3 md:space-y-4 text-center md:text-left mb-6 md:mb-0">
+                                        <div className="flex flex-col md:flex-row items-center gap-4">
+                                            <h3 className="text-4xl font-black text-foreground tracking-tighter uppercase italic group-hover:scale-[1.01] transition-transform origin-left">
                                                 Active Roster
                                             </h3>
-                                            <div className="bg-primary/20 text-primary px-3 py-1 rounded-xl font-black text-sm border border-primary/30 shadow-lg">
+                                            <div className="bg-primary/20 text-primary px-4 py-1.5 rounded-2xl font-black text-lg border border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.2)]">
                                                 {students.length}
                                             </div>
                                         </div>
-                                        <div className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em] flex items-center gap-3">
-                                            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-                                            Enrolled unit details for {classData.name}
+                                        <div className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] flex items-center justify-center md:justify-start gap-3">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse"></span>
+                                            Enrolled Unit Details for {classData.name}
                                         </div>
                                     </div>
 
-                                    <div className="relative z-10">
+                                    <div className="relative z-10 w-full md:w-auto">
                                         <motion.button
-                                            whileHover={{ scale: 1.05, y: -2 }}
-                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.02, y: -2 }}
+                                            whileTap={{ scale: 0.98 }}
                                             onClick={() => showToast("Enrollment Protocol Initiated...", 'info')}
-                                            className="bg-white text-black px-8 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-4 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)] hover:shadow-white/20 transition-all border border-white/20 group/btn"
+                                            className="w-full md:w-auto bg-foreground text-background px-10 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.3em] flex items-center justify-center gap-6 shadow-2xl hover:shadow-white/10 transition-all border border-white/10 group/btn"
                                         >
-                                            <div className="w-6 h-6 rounded-full bg-black/10 flex items-center justify-center group-hover/btn:rotate-90 transition-transform">
-                                                <PlusIcon className="w-3.5 h-3.5" />
+                                            <div className="w-8 h-8 rounded-2xl bg-black/5 flex items-center justify-center group-hover/btn:rotate-90 transition-transform shadow-inner border border-black/5">
+                                                <PlusIcon className="w-4 h-4 text-background" />
                                             </div>
                                             Create Enrollment Batch
                                         </motion.button>
@@ -624,43 +638,45 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                                 </div>
                             </div>
 
-                            <div className="bg-card border border-white/5 p-10 rounded-[2.5rem] grid grid-cols-3 gap-8 shadow-2xl relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
-                                <div className="text-center relative z-10 space-y-2">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">Boys</p>
-                                    <p className="text-3xl font-black text-blue-500 tracking-tighter">{rosterStats.boys}</p>
+                            <div className="bg-card/40 backdrop-blur-md border border-white/5 p-10 rounded-[3rem] grid grid-cols-3 gap-6 shadow-2xl relative overflow-hidden group transition-all duration-500 hover:border-primary/20">
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.01] to-transparent pointer-events-none"></div>
+                                <div className="text-center relative z-10 flex flex-col items-center justify-center space-y-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">Boys</p>
+                                    <p className="text-4xl font-black text-blue-400 tracking-tighter drop-shadow-[0_0_15px_rgba(96,165,250,0.3)]">{rosterStats.boys}</p>
                                 </div>
-                                <div className="text-center relative z-10 space-y-2 border-x border-white/5">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">Girls</p>
-                                    <p className="text-3xl font-black text-pink-500 tracking-tighter">{rosterStats.girls}</p>
+                                <div className="text-center relative z-10 flex flex-col items-center justify-center space-y-3 border-x border-white/5">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">Girls</p>
+                                    <p className="text-4xl font-black text-pink-400 tracking-tighter drop-shadow-[0_0_15px_rgba(244,114,182,0.3)]">{rosterStats.girls}</p>
                                 </div>
-                                <div className="text-center relative z-10 space-y-2">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">Other</p>
-                                    <p className="text-3xl font-black text-amber-500 tracking-tighter">{rosterStats.unspecified}</p>
+                                <div className="text-center relative z-10 flex flex-col items-center justify-center space-y-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">Other</p>
+                                    <p className="text-4xl font-black text-amber-400 tracking-tighter drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">{rosterStats.unspecified}</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Search & Filter Bar */}
-                        <div className="flex flex-col md:flex-row gap-4">
+                        {/* Search & Filter Bar - Enhanced */}
+                        <div className="flex flex-col md:flex-row gap-6">
                             <div className="relative flex-grow group">
-                                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
+                                    <SearchIcon className="w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                </div>
                                 <input
                                     type="text"
                                     placeholder="Search by name or ID..."
                                     value={rosterSearchTerm}
                                     onChange={(e) => setRosterSearchTerm(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-4 bg-card/50 border border-border/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold placeholder:text-muted-foreground/50 transition-all"
+                                    className="w-full pl-16 pr-6 py-5 bg-card/30 backdrop-blur-md border border-white/5 rounded-[2rem] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 text-sm font-bold placeholder:text-muted-foreground/30 transition-all shadow-inner"
                                 />
                             </div>
-                            <div className="flex gap-3">
+                            <div className="flex items-center gap-3 p-2 bg-card/30 backdrop-blur-md border border-white/5 rounded-[2rem] shadow-inner">
                                 {['All', 'Male', 'Female'].map(g => (
                                     <button
                                         key={g}
                                         onClick={() => setRosterGenderFilter(g)}
-                                        className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border ${rosterGenderFilter === g
-                                            ? 'bg-primary text-white border-primary shadow-[0_15px_30px_-5px_rgba(var(--primary),0.4)]'
-                                            : 'bg-card border-white/5 text-muted-foreground hover:text-foreground hover:bg-white/5'
+                                        className={`px-10 py-3.5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.3em] transition-all ${rosterGenderFilter === g
+                                            ? 'bg-primary text-white shadow-[0_10px_20px_rgba(var(--primary),0.3)] ring-1 ring-white/10'
+                                            : 'text-muted-foreground/60 hover:text-foreground hover:bg-white/5'
                                             }`}
                                     >
                                         {g}
@@ -766,34 +782,51 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                                 </table>
                             ) : (
                                 <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    initial={{ opacity: 0, scale: 0.98 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="flex-grow flex flex-col items-center justify-center text-center p-20"
+                                    className="flex-grow flex flex-col items-center justify-center text-center p-24 md:p-32"
                                 >
-                                    <div className="relative mb-8 group cursor-pointer">
-                                        <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full scale-150 opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
-                                        <div className="relative w-28 h-28 bg-gradient-to-br from-card to-background rounded-[2.5rem] flex items-center justify-center border border-white/5 shadow-2xl group-hover:scale-105 transition-transform duration-300 ring-1 ring-white/10 group-hover:ring-primary/30">
-                                            <UsersIcon className="w-10 h-10 text-muted-foreground/40 group-hover:text-primary transition-colors duration-300" />
+                                    <div className="relative mb-12 group cursor-pointer">
+                                        <motion.div
+                                            animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+                                            transition={{ duration: 5, repeat: Infinity }}
+                                            className="absolute inset-0 bg-primary blur-[80px] rounded-full scale-150 pointer-events-none"
+                                        ></motion.div>
+                                        <div className="relative w-32 h-32 bg-card border border-white/10 rounded-[3rem] flex items-center justify-center shadow-2xl group-hover:scale-105 transition-transform duration-500 ring-1 ring-white/5">
+                                            <UsersIcon className="w-12 h-12 text-muted-foreground/20 group-hover:text-primary transition-colors duration-500" />
+                                        </div>
+                                        <div className="absolute -top-4 -right-4 w-10 h-10 bg-black border border-white/5 rounded-2xl flex items-center justify-center shadow-2xl">
+                                            <span className="text-[10px] font-black text-primary animate-pulse">!</span>
                                         </div>
                                     </div>
-                                    <h4 className="text-2xl font-black text-foreground tracking-tighter mb-4">Zero Units Detected</h4>
-                                    <p className="text-muted-foreground/60 text-sm font-medium max-w-[300px] leading-relaxed mb-10">
-                                        {rosterSearchTerm ? 'Search vector yielded no matching identities.' : 'No active enrollment records found in this section\'s directory.'}
-                                        <span className="text-[10px] uppercase tracking-widest opacity-50 mt-3 block border-t border-border/40 pt-3">
+
+                                    <h4 className="text-4xl font-black text-foreground tracking-tighter mb-6 uppercase italic">Zero Units Detected</h4>
+
+                                    <div className="space-y-4 max-w-[360px] mx-auto mb-16">
+                                        <p className="text-muted-foreground/40 text-sm font-black uppercase tracking-[0.2em] leading-relaxed">
+                                            {rosterSearchTerm ? 'Search vector yielded no matching identities.' : 'No active enrollment records found in this section\'s directory.'}
+                                        </p>
+                                        <div className="h-px w-20 bg-gradient-to-r from-transparent via-white/10 to-transparent mx-auto"></div>
+                                        <p className="text-[10px] font-black text-primary/40 uppercase tracking-[0.4em]">
                                             {rosterSearchTerm ? 'Refine Search Parameters' : 'System Ready for Processing'}
-                                        </span>
-                                    </p>
+                                        </p>
+                                    </div>
 
                                     {rosterSearchTerm ? (
-                                        <button onClick={() => setRosterSearchTerm('')} className="text-primary text-xs font-bold uppercase tracking-widest hover:underline hover:text-primary/80 transition-colors">Clear Search Vector</button>
+                                        <button
+                                            onClick={() => setRosterSearchTerm('')}
+                                            className="px-10 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] transition-all border border-white/5"
+                                        >
+                                            Clear Search Vector
+                                        </button>
                                     ) : (
                                         <motion.button
                                             whileHover={{ scale: 1.05, y: -2 }}
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => showToast("Enrollment Protocol Initiated...", 'info')}
-                                            className="px-14 py-6 bg-primary text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-[0_30px_60px_-15px_rgba(var(--primary),0.5)] hover:shadow-primary/60 transition-all flex items-center gap-5 group/enroll"
+                                            className="px-16 py-7 bg-primary text-white rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.4em] shadow-[0_30px_60px_-15px_rgba(var(--primary),0.5)] hover:shadow-primary/70 transition-all flex items-center gap-6 group/enroll border border-white/10"
                                         >
-                                            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover/enroll:rotate-90 transition-transform">
+                                            <div className="w-8 h-8 rounded-2xl bg-white/10 flex items-center justify-center group-hover/enroll:rotate-90 transition-transform shadow-inner">
                                                 <PlusIcon className="w-4 h-4 text-white" />
                                             </div>
                                             Create Enrollment Batch
@@ -976,39 +1009,155 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                 );
             case 'subjects':
                 return (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                        <div className="flex justify-between items-center bg-card/50 p-8 rounded-[2rem] border border-border/60 backdrop-blur-md">
-                            <div>
-                                <h3 className="text-2xl font-black text-foreground tracking-tight">Curriculum Map</h3>
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Academic subject distribution for {classData.name}.</p>
-                            </div>
-                            <div className="px-4 py-2 bg-primary/10 text-primary rounded-xl text-xs font-black uppercase tracking-widest border border-primary/20">
-                                {subjects.length} Modules Active
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {subjects.map((subject, i) => (
-                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} key={subject.id || i} className="bg-card border border-border/80 p-6 rounded-[2rem] hover:shadow-xl hover:scale-[1.02] transition-all group relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[50px] -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors"></div>
-                                    <div className="flex items-start justify-between mb-6 relative z-10">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/10 to-indigo-500/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-inner">
-                                            <BookIcon className="w-6 h-6" />
-                                        </div>
-                                        <span className="px-3 py-1 bg-muted/50 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/5">{subject.code || 'CORE'}</span>
-                                    </div>
-                                    <div className="relative z-10">
-                                        <h4 className="text-lg font-black text-foreground leading-tight mb-2 group-hover:text-primary transition-colors">{subject.title}</h4>
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider opacity-60">Standard Credit Module</p>
-                                    </div>
-                                </motion.div>
-                            ))}
-                            {subjects.length === 0 && (
-                                <div className="col-span-full py-20 text-center flex flex-col items-center opacity-50">
-                                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"><BookIcon className="w-8 h-8 text-muted-foreground" /></div>
-                                    <p className="font-black uppercase tracking-widest text-muted-foreground">No Curriculum Mapped</p>
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-10"
+                    >
+                        {/* Premium Curriculum Header */}
+                        <div className="bg-card/40 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 flex flex-col md:flex-row items-center justify-between relative overflow-hidden group shadow-2xl min-h-[160px] transition-all duration-500 hover:border-primary/20 hover:shadow-primary/5">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-indigo-500 to-transparent opacity-20"></div>
+                            <div className="absolute right-0 top-0 w-80 h-80 bg-primary/5 rounded-full blur-[100px] -mr-40 -mt-40 pointer-events-none"></div>
+
+                            <div className="relative z-10 space-y-3 text-center md:text-left mb-6 md:mb-0">
+                                <h3 className="text-4xl font-black text-foreground tracking-tighter uppercase italic group-hover:scale-[1.01] transition-transform origin-left mb-1">
+                                    Curriculum Map
+                                </h3>
+                                <div className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] flex items-center justify-center md:justify-start gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-pulse"></div>
+                                    Academic Subject Distribution for {classData.name}
                                 </div>
-                            )}
+                            </div>
+
+                            <div className="relative z-10 flex items-center gap-6">
+                                <div className="bg-primary/20 text-primary px-5 py-2.5 rounded-2xl font-black text-xs border border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.1)] uppercase tracking-[0.2em]">
+                                    {subjects.length} Modules Active
+                                </div>
+                                <motion.button
+                                    whileHover={{ scale: 1.05, y: -2 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => showToast("Curriculum Management Protocol Coming Soon", 'info')}
+                                    className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl text-foreground transition-all border border-white/10 shadow-lg"
+                                >
+                                    <PlusIcon className="w-5 h-5" />
+                                </motion.button>
+                            </div>
                         </div>
+
+                        {subjects.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                                {subjects.map((subject, i) => (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.05 }}
+                                        key={subject.id || i}
+                                        className="bg-card/30 backdrop-blur-sm border border-white/5 p-8 rounded-[2.5rem] hover:shadow-2xl hover:border-primary/30 transition-all group relative overflow-hidden flex flex-col justify-between min-h-[220px]"
+                                    >
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[50px] -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors pointer-events-none"></div>
+
+                                        <div className="flex items-start justify-between relative z-10 mb-8">
+                                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-inner group-hover:shadow-[0_0_20px_rgba(var(--primary),0.2)] group-hover:border-primary/20">
+                                                <BookIcon className="w-7 h-7" />
+                                            </div>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <span className="px-3 py-1 bg-black/40 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/5 text-muted-foreground/60">
+                                                    {subject.code || 'CORE-MAP'}
+                                                </span>
+                                                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg text-[8px] font-black uppercase tracking-widest border border-emerald-500/20">
+                                                    {subject.category || 'Standard'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="relative z-10 mt-auto">
+                                            <h4 className="text-xl font-black text-foreground leading-tight mb-2 group-hover:text-primary transition-colors tracking-tight uppercase italic">{subject.title}</h4>
+                                            <div className="flex items-center gap-4 mt-4">
+                                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+                                                    <div className="w-1 h-1 rounded-full bg-muted-foreground/40"></div>
+                                                    {subject.credits || 4} Credits
+                                                </div>
+                                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+                                                    <div className="w-1 h-1 rounded-full bg-muted-foreground/40"></div>
+                                                    Term: Integrated
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button className="p-2 bg-white/5 hover:bg-primary hover:text-white rounded-lg transition-all border border-white/10">
+                                                <ChevronRightIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+
+                                {/* Add Subject Suggestion Card */}
+                                <motion.div
+                                    whileHover={{ scale: 1.02 }}
+                                    className="border-2 border-dashed border-white/5 rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-primary/20 hover:bg-primary/[0.02] transition-all min-h-[220px]"
+                                    onClick={() => showToast("Opening Syllabus Management Node...", 'info')}
+                                >
+                                    <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-6 group-hover:bg-primary/20 group-hover:scale-110 transition-all border border-white/5">
+                                        <PlusIcon className="w-6 h-6 text-muted-foreground group-hover:text-primary" />
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground group-hover:text-primary transition-colors">Expand Curriculum Map</p>
+                                </motion.div>
+                            </div>
+                        ) : (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex-grow flex flex-col items-center justify-center text-center p-24 md:p-32 bg-card/10 border border-white/5 rounded-[3rem] shadow-inner"
+                            >
+                                <div className="relative mb-12 group cursor-pointer">
+                                    <motion.div
+                                        animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }}
+                                        transition={{ duration: 6, repeat: Infinity }}
+                                        className="absolute inset-0 bg-primary blur-[80px] rounded-full scale-150 pointer-events-none"
+                                    ></motion.div>
+                                    <div className="relative w-32 h-32 bg-card border border-white/10 rounded-[3rem] flex items-center justify-center shadow-2xl group-hover:scale-105 transition-transform duration-500 ring-1 ring-white/5">
+                                        <BookIcon className="w-12 h-12 text-muted-foreground/20 group-hover:text-primary transition-colors duration-500" />
+                                    </div>
+                                    <div className="absolute -bottom-4 -right-4 w-10 h-10 bg-black border border-white/5 rounded-2xl flex items-center justify-center shadow-2xl">
+                                        <SparklesIcon className="w-5 h-5 text-primary/40 animate-pulse" />
+                                    </div>
+                                </div>
+
+                                <h4 className="text-4xl font-black text-foreground tracking-tighter mb-6 uppercase italic">No Curriculum Mapped</h4>
+
+                                <div className="space-y-4 max-w-[400px] mx-auto mb-16">
+                                    <p className="text-muted-foreground/40 text-sm font-black uppercase tracking-[0.2em] leading-relaxed">
+                                        The academic pedagogical dataset for this section is currently empty.
+                                    </p>
+                                    <div className="h-px w-20 bg-gradient-to-r from-transparent via-white/10 to-transparent mx-auto"></div>
+                                    <p className="text-[10px] font-black text-primary/40 uppercase tracking-[0.4em]">
+                                        Initialize Syllabus to Begin Academic Delivery
+                                    </p>
+                                </div>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.05, y: -2 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => {
+                                        // Quick Seed for Demo
+                                        setSubjects([
+                                            { id: 101, title: 'Mathematics & Calculus', code: 'MATH-101', credits: 4, category: 'CORE', grade_level: classData.grade_level || 'Grade 1', status: 'Active' } as Course,
+                                            { id: 102, title: 'Quantum Physics', code: 'PHYS-201', credits: 4, category: 'CORE', grade_level: classData.grade_level || 'Grade 1', status: 'Active' } as Course,
+                                            { id: 103, title: 'Biological Systems', code: 'BIO-301', credits: 3, category: 'ELECTIVE', grade_level: classData.grade_level || 'Grade 1', status: 'Active' } as Course
+                                        ]);
+                                        showToast("Curriculum DNA Sequenced Successfully", 'success');
+                                    }}
+                                    className="px-16 py-7 bg-primary text-white rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.4em] shadow-[0_30px_60px_-15px_rgba(var(--primary),0.5)] hover:shadow-primary/70 transition-all flex items-center gap-6 group/curriculum border border-white/10"
+                                >
+                                    <div className="w-8 h-8 rounded-2xl bg-white/10 flex items-center justify-center group-hover/curriculum:rotate-90 transition-transform shadow-inner">
+                                        <PlusIcon className="w-4 h-4 text-white" />
+                                    </div>
+                                    Initialize Core DNA
+                                </motion.button>
+                            </motion.div>
+                        )}
                     </motion.div>
                 );
             case 'teachers':
@@ -1018,35 +1167,57 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-10"
                     >
-                        {/* Operational Readiness Stepper */}
-                        <div className="bg-card/30 backdrop-blur-sm border border-white/5 rounded-[2rem] p-6 mb-8">
-                            <div className="flex justify-between items-center mb-6">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">Operational Readiness Protocol</h4>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">{readiness.percentage}% READY</span>
-                                    <div className="w-32 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        {/* Operational Readiness Protocol - Enhanced */}
+                        <div className="bg-card/30 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 mb-10 relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent pointer-events-none"></div>
+                            <div className="flex justify-between items-end mb-12 relative z-10">
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground/40 mb-2">Section Deployment Status</h4>
+                                    <h3 className="text-2xl font-black text-foreground tracking-tight italic uppercase">Operational Readiness Protocol</h3>
+                                </div>
+                                <div className="text-right">
+                                    <div className="flex items-center gap-3 mb-2 justify-end">
+                                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${readiness.percentage === 100 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'bg-primary/10 text-primary border-primary/20 animate-pulse'}`}>
+                                            {readiness.percentage}% QUANTUM SYNC
+                                        </span>
+                                    </div>
+                                    <div className="w-64 h-1.5 bg-white/5 rounded-full overflow-hidden shadow-inner">
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${readiness.percentage}%` }}
-                                            className="h-full bg-primary"
+                                            className="h-full bg-gradient-to-r from-primary to-indigo-500 shadow-[0_0_15px_rgba(var(--primary),0.5)]"
                                         />
                                     </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-4 gap-4">
-                                {readiness.steps.map((step, idx) => (
-                                    <div key={step.id} className="relative">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${step.completed ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/20 text-muted-foreground border-white/5'}`}>
-                                                {step.completed ? <CheckIcon className="w-4 h-4" /> : step.id}
+                            <div className="relative">
+                                {/* Connecting Line */}
+                                <div className="absolute top-6 left-6 right-6 h-px bg-gradient-to-r from-primary/40 via-white/5 to-white/5 z-0 hidden md:block"></div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
+                                    {readiness.steps.map((step, idx) => (
+                                        <motion.div
+                                            key={step.id}
+                                            whileHover={{ y: -5 }}
+                                            className="relative flex flex-col items-center md:items-start text-center md:text-left group/item"
+                                        >
+                                            <div className={`w-12 h-12 rounded-[1.2rem] flex items-center justify-center text-sm font-black border-2 transition-all duration-500 shadow-2xl ${step.completed
+                                                ? 'bg-primary border-primary text-white scale-110 shadow-primary/30'
+                                                : 'bg-card border-white/10 text-muted-foreground/30 group-hover/item:border-primary/40'
+                                                }`}>
+                                                {step.completed ? <CheckIcon className="w-6 h-6" /> : <span className="opacity-40">{step.id}</span>}
                                             </div>
-                                            <div className="flex-grow">
-                                                <p className={`text-[9px] font-black uppercase tracking-widest ${step.completed ? 'text-foreground' : 'text-muted-foreground/40'}`}>{step.label}</p>
-                                                <div className={`h-0.5 mt-2 rounded-full ${step.completed ? 'bg-primary/40' : 'bg-white/5'}`}></div>
+                                            <div className="mt-6 space-y-1">
+                                                <p className={`text-[11px] font-black uppercase tracking-[0.2em] transition-colors ${step.completed ? 'text-primary' : 'text-muted-foreground/40 group-hover/item:text-muted-foreground/60'}`}>
+                                                    {step.label}
+                                                </p>
+                                                <p className="text-[9px] font-bold text-muted-foreground/30 uppercase tracking-widest">
+                                                    {step.completed ? 'PROTOCOL VERIFIED' : 'PENDING ACTION'}
+                                                </p>
                                             </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                        </motion.div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
@@ -1091,56 +1262,76 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                             {/* Class Operational Lead Card */}
-                            <div className="bg-card border border-white/5 rounded-[3rem] p-10 shadow-2xl flex flex-col relative overflow-hidden group min-h-[550px]">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-transparent opacity-30"></div>
+                            <div className="bg-card border border-white/5 rounded-[3rem] p-10 shadow-2xl flex flex-col relative overflow-hidden group min-h-[600px] transition-all duration-500 hover:border-primary/20 hover:shadow-primary/5">
+                                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-indigo-500 to-transparent opacity-40"></div>
                                 <div className="flex justify-between items-center mb-10 relative z-10">
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">Class Operational Lead</h4>
+                                    <div>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60 mb-1">Structural Lead</h4>
+                                        <p className="text-[9px] font-bold text-muted-foreground/30 uppercase">Authorized Section Command</p>
+                                    </div>
                                     {classData.teacher_name ? (
-                                        <ShieldCheckIcon className="w-5 h-5 text-emerald-500 shadow-emerald-500/20" />
+                                        <div className="flex items-center gap-3 bg-emerald-500/5 px-4 py-2 rounded-xl border border-emerald-500/10">
+                                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Post Occupied</span>
+                                            <ShieldCheckIcon className="w-4 h-4 text-emerald-500" />
+                                        </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-2 py-1 rounded-lg">
-                                            <SparklesIcon className="w-3 h-3 text-primary animate-pulse" />
-                                            <span className="text-[8px] font-black text-primary uppercase">AI Suggested</span>
+                                        <div className="flex items-center gap-3 bg-primary/10 border border-primary/20 px-4 py-2 rounded-xl shadow-inner">
+                                            <SparklesIcon className="w-4 h-4 text-primary animate-pulse" />
+                                            <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">Cortex Analysis Suggested</span>
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="flex-grow flex flex-col justify-center items-center relative z-10">
                                     {classData.teacher_name ? (
-                                        <div className="space-y-8 text-center w-full">
+                                        <div className="space-y-10 text-center w-full">
                                             <div className="relative inline-block">
-                                                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse"></div>
-                                                <div className="relative w-36 h-36 rounded-[2.5rem] bg-gradient-to-br from-card to-background border-2 border-white/10 flex items-center justify-center text-white text-5xl font-black shadow-2xl overflow-hidden ring-1 ring-white/5">
+                                                <motion.div
+                                                    animate={{ rotate: 360 }}
+                                                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                                                    className="absolute -inset-8 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/10 rounded-full blur-2xl"
+                                                ></motion.div>
+                                                <div className="relative w-44 h-44 rounded-[3rem] bg-gradient-to-br from-card to-background border-2 border-white/10 flex items-center justify-center text-white text-6xl font-black shadow-2xl overflow-hidden ring-1 ring-white/5 group-hover:scale-105 transition-transform duration-500">
                                                     {classData.teacher_name.charAt(0)}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                                                 </div>
-                                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 border-4 border-card rounded-xl flex items-center justify-center shadow-lg">
-                                                    <CheckIcon className="w-4 h-4 text-black" />
-                                                </div>
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    className="absolute -bottom-4 -right-4 w-12 h-12 bg-emerald-500 border-4 border-card rounded-2xl flex items-center justify-center shadow-2xl shadow-emerald-500/40"
+                                                >
+                                                    <CheckIcon className="w-6 h-6 text-black" />
+                                                </motion.div>
                                             </div>
-                                            <div>
-                                                <h3 className="text-3xl font-black text-foreground tracking-tighter mb-1">{classData.teacher_name}</h3>
-                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Authorized Section Lead</p>
+                                            <div className="space-y-2">
+                                                <h3 className="text-4xl font-black text-foreground tracking-tighter mb-1 uppercase italic">{classData.teacher_name}</h3>
+                                                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-primary bg-primary/5 inline-block px-6 py-2 rounded-full border border-primary/10">Authorized Section Lead</p>
                                             </div>
-                                            <div className="pt-8 grid grid-cols-2 gap-4">
-                                                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center">
-                                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Status</p>
-                                                    <p className="font-bold text-emerald-400">ACTIVE</p>
+                                            <div className="grid grid-cols-2 gap-6 w-full max-w-sm mx-auto">
+                                                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-[2rem] text-center shadow-inner group/stat hover:bg-white/[0.05] transition-all">
+                                                    <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest mb-2">Lead Factor</p>
+                                                    <p className="text-xl font-black text-emerald-400">98.4%</p>
                                                 </div>
-                                                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center">
-                                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Load</p>
-                                                    <p className="font-bold text-primary">OPTIMAL</p>
+                                                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-[2rem] text-center shadow-inner group/stat hover:bg-white/[0.05] transition-all">
+                                                    <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest mb-2">Workload</p>
+                                                    <p className="text-xl font-black text-primary uppercase">Optimal</p>
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="w-full flex flex-col items-center">
-                                            <div className="w-full max-w-sm aspect-[4/5] rounded-[2.5rem] border-2 border-dashed border-white/10 bg-white/[0.02] flex flex-col items-center justify-center p-10 group-hover:border-amber-500/30 transition-all duration-500">
-                                                <div className="w-20 h-20 bg-amber-500/10 rounded-[1.5rem] flex items-center justify-center mb-8 shadow-2xl shadow-amber-500/5">
-                                                    <AlertTriangleIcon className="w-10 h-10 text-amber-500" />
+                                            <div className="w-full max-w-sm aspect-[4/5] rounded-[3rem] border-2 border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center p-12 group-hover:border-amber-500/40 group-hover:bg-amber-500/[0.02] transition-all duration-700 relative overflow-hidden">
+                                                <motion.div
+                                                    animate={{ opacity: [0.1, 0.3, 0.1] }}
+                                                    transition={{ duration: 4, repeat: Infinity }}
+                                                    className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none"
+                                                ></motion.div>
+                                                <div className="w-24 h-24 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-10 shadow-[0_20px_40px_rgba(245,158,11,0.1)] relative z-10 border border-amber-500/20">
+                                                    <AlertTriangleIcon className="w-12 h-12 text-amber-500" />
                                                 </div>
-                                                <h4 className="text-2xl font-black text-foreground tracking-tighter mb-4">Critical Vacancy</h4>
-                                                <p className="text-xs text-muted-foreground/60 leading-relaxed font-medium mb-10 max-w-[220px] mx-auto text-center">
-                                                    This section currently lacks a designated faculty lead. Operational usage is restricted.
+                                                <h4 className="text-3xl font-black text-foreground tracking-tighter mb-4 relative z-10 italic uppercase">Critical Vacancy</h4>
+                                                <p className="text-[11px] text-muted-foreground/40 leading-relaxed font-black uppercase tracking-widest mb-12 max-w-[240px] mx-auto text-center relative z-10">
+                                                    Structural hierarchy incomplete. Operational metrics are currently restricted.
                                                 </p>
                                                 <motion.button
                                                     whileHover={{ scale: 1.05, y: -2 }}
@@ -1149,9 +1340,9 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                                                         setAssignmentTarget({ type: 'lead' });
                                                         setIsAssignFacultyOpen(true);
                                                     }}
-                                                    className="px-10 py-4 bg-amber-500/10 text-amber-500 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border border-amber-500/20 hover:bg-amber-500 hover:text-black transition-all"
+                                                    className="px-12 py-5 bg-amber-500 text-black rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(245,158,11,0.2)] hover:shadow-amber-500/40 transition-all relative z-10"
                                                 >
-                                                    Assign Now
+                                                    Assign Command
                                                 </motion.button>
                                             </div>
                                         </div>
@@ -1160,87 +1351,84 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                             </div>
 
                             {/* Subject Faculty Map Card */}
-                            <div className="bg-card border border-white/5 rounded-[3rem] p-10 shadow-2xl flex flex-col relative overflow-hidden group min-h-[550px]">
-                                <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-l from-primary to-transparent opacity-30"></div>
+                            <div className="bg-card border border-white/5 rounded-[3rem] p-10 shadow-2xl flex flex-col relative overflow-hidden group min-h-[600px] transition-all duration-500 hover:border-primary/20 hover:shadow-primary/5">
+                                <div className="absolute top-0 right-0 w-full h-1.5 bg-gradient-to-l from-primary via-indigo-500 to-transparent opacity-40"></div>
                                 <div className="flex justify-between items-start mb-10 relative z-10">
                                     <div>
-                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60 mb-2">Subject Faculty Map</h4>
-                                        <p className="text-[10px] font-bold text-muted-foreground/40 italic">Instructors assigned via Curriculum Core.</p>
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60 mb-1">Subject Faculty Map</h4>
+                                        <p className="text-[9px] font-bold text-muted-foreground/30 uppercase">Pedagogical Resource Distribution</p>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         {!readiness.subjectsAssigned && subjects.length > 0 && (
-                                            <div className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-2 py-1 rounded-lg">
-                                                <SparklesIcon className="w-3 h-3 text-indigo-400" />
-                                                <span className="text-[8px] font-black text-indigo-400 uppercase">AI Load Analysis Ready</span>
+                                            <div className="hidden xl:flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-4 py-2 rounded-xl">
+                                                <SparklesIcon className="w-3.5 h-3.5 text-indigo-400" />
+                                                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Load Analysis Available</span>
                                             </div>
                                         )}
                                         <button
                                             onClick={() => setActiveTab('subjects')}
-                                            className="px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border border-white/5 text-foreground/80 hover:text-foreground transition-all"
+                                            className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 border border-white/5 text-foreground/80 hover:text-primary transition-all shadow-inner"
                                         >
-                                            Manage <ChevronRightIcon className="w-3.5 h-3.5" />
+                                            Curriculum <ChevronRightIcon className="w-4 h-4" />
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="flex-grow flex flex-col relative z-10 transition-all">
+                                <div className="flex-grow flex flex-col relative z-10 transition-all scroll-smooth">
                                     {subjects.length > 0 ? (
-                                        <div className="grid grid-cols-1 gap-4 overflow-y-auto pr-2 custom-scrollbar max-h-[400px]">
+                                        <div className="grid grid-cols-1 gap-4 overflow-y-auto pr-2 custom-scrollbar max-h-[440px]">
                                             {subjects.map((subject, idx) => (
                                                 <motion.div
-                                                    initial={{ opacity: 0, x: 20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
                                                     transition={{ delay: idx * 0.05 }}
                                                     key={subject.id || idx}
-                                                    className="flex items-center gap-5 p-5 bg-white/[0.02] border border-white/5 rounded-3xl hover:bg-white/[0.04] hover:border-primary/20 transition-all group/item"
+                                                    className="flex items-center gap-6 p-6 bg-white/[0.01] border border-white/5 rounded-[2.5rem] hover:bg-white/[0.03] hover:border-primary/30 transition-all group/item shadow-inner"
                                                 >
-                                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black border transition-all ${subject.teacher_name ? 'bg-primary/10 text-primary border-primary/20' : 'bg-muted/10 text-muted-foreground/40 border-white/5'}`}>
-                                                        {subject.teacher_name ? subject.teacher_name.charAt(0) : <UserIcon className="w-6 h-6" />}
+                                                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black border-2 transition-all duration-500 shadow-xl ${subject.teacher_name
+                                                        ? 'bg-primary/5 text-primary border-primary/20 group-hover/item:bg-primary group-hover/item:text-white'
+                                                        : 'bg-white/[0.02] text-muted-foreground/20 border-dashed border-white/10 group-hover/item:border-amber-500/30'
+                                                        }`}>
+                                                        {subject.teacher_name ? subject.teacher_name.charAt(0) : <UserIcon className="w-8 h-8" />}
                                                     </div>
-                                                    <div className="flex-grow min-w-0">
-                                                        <h5 className="font-bold text-base text-foreground truncate group-hover/item:text-primary transition-colors">{subject.title}</h5>
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 mt-1">
-                                                            {subject.code || 'UNNAMED'} • {subject.teacher_name ? 'Active Instructor' : 'Instructional Vacancy'}
+                                                    <div className="flex-grow min-w-0 space-y-1">
+                                                        <h5 className="font-black text-lg text-foreground tracking-tight truncate group-hover/item:text-primary transition-colors uppercase italic">{subject.title}</h5>
+                                                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${subject.teacher_name ? 'text-emerald-500/60' : 'text-amber-500/60'}`}>
+                                                            {subject.code || 'UNNAMED'} • {subject.teacher_name ? 'SYNCED INSTRUCTOR' : 'Hiring Required'}
                                                         </p>
                                                     </div>
-                                                    {subject.teacher_name ? (
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                                                            <button
-                                                                onClick={() => {
-                                                                    setAssignmentTarget({ type: 'subject', id: subject.id, name: subject.title });
-                                                                    setIsAssignFacultyOpen(true);
-                                                                }}
-                                                                className="opacity-0 group-hover/item:opacity-100 transition-opacity text-[10px] font-black uppercase text-primary hover:underline underline-offset-4"
-                                                            >
-                                                                Swap
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => {
-                                                                setAssignmentTarget({ type: 'subject', id: subject.id, name: subject.title });
-                                                                setIsAssignFacultyOpen(true);
-                                                            }}
-                                                            className="text-[10px] font-black uppercase text-primary hover:underline underline-offset-4 bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 hover:bg-primary/20 transition-all"
-                                                        >
-                                                            Assign Faculty
-                                                        </button>
-                                                    )}
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.1 }}
+                                                        whileTap={{ scale: 0.9 }}
+                                                        onClick={() => {
+                                                            setAssignmentTarget({ type: 'subject', id: subject.id, name: subject.title });
+                                                            setIsAssignFacultyOpen(true);
+                                                        }}
+                                                        className={`p-4 rounded-xl transition-all border ${subject.teacher_name
+                                                            ? 'bg-white/5 border-white/10 text-muted-foreground hover:bg-primary hover:text-white hover:border-primary'
+                                                            : 'bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-black'
+                                                            }`}
+                                                    >
+                                                        {subject.teacher_name ? <UsersIcon className="w-4 h-4" /> : <PlusIcon className="w-4 h-4" />}
+                                                    </motion.button>
                                                 </motion.div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="flex-grow flex flex-col items-center justify-center text-center p-10">
-                                            <div className="relative mb-8">
-                                                <div className="absolute inset-0 bg-muted/5 blur-3xl rounded-full scale-150"></div>
-                                                <div className="relative w-24 h-24 bg-white/[0.02] rounded-[2rem] flex items-center justify-center border-2 border-dashed border-white/10 group-hover:border-primary/20 transition-all duration-500">
-                                                    <BookIcon className="w-10 h-10 text-muted-foreground/30" />
+                                        <div className="flex-grow flex flex-col items-center justify-center text-center p-12">
+                                            <div className="relative mb-10 group/null">
+                                                <motion.div
+                                                    animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+                                                    transition={{ duration: 4, repeat: Infinity }}
+                                                    className="absolute inset-0 bg-primary/20 blur-3xl rounded-full"
+                                                ></motion.div>
+                                                <div className="relative w-28 h-28 bg-white/[0.01] rounded-[2.5rem] flex items-center justify-center border-2 border-dashed border-white/10 group-hover/null:border-primary/40 transition-all duration-700 shadow-inner">
+                                                    <BookIcon className="w-12 h-12 text-muted-foreground/20" />
                                                 </div>
                                             </div>
-                                            <h4 className="text-xl font-black text-foreground tracking-tighter mb-3 uppercase">No Subjects Mapped</h4>
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 leading-relaxed max-w-[200px] mb-8">
-                                                Initialize curriculum modules to enable faculty assignment.
+                                            <h4 className="text-2xl font-black text-foreground tracking-tighter mb-4 uppercase italic">No Curriculum Mapped</h4>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/30 leading-relaxed max-w-[240px] mb-12">
+                                                Pedagogical dataset empty. Initialize curriculum modules to enable instructional assignments.
                                             </p>
                                             <button
                                                 onClick={() => {
@@ -1250,11 +1438,11 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                                                         { id: 102, title: 'Quantum Physics', code: 'PHYS-201', credits: 4, category: 'Core', grade_level: classData.grade_level || 'Grade 1', status: 'Active' } as Course,
                                                         { id: 103, title: 'Biological Systems', code: 'BIO-301', credits: 3, category: 'Elective', grade_level: classData.grade_level || 'Grade 1', status: 'Active' } as Course
                                                     ]);
-                                                    showToast("Curriculum DNA Initialized", 'success');
+                                                    showToast("Curriculum DNA Sequenced Successfully", 'success');
                                                 }}
-                                                className="text-primary text-[10px] font-black uppercase tracking-[0.3em] hover:text-primary/80 transition-all underline underline-offset-8 decoration-primary/30"
+                                                className="text-primary text-[11px] font-black uppercase tracking-[0.4em] hover:text-white transition-all py-3 px-8 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary shadow-lg shadow-primary/10"
                                             >
-                                                Initialize Curriculum
+                                                Initialize Core DNA
                                             </button>
                                         </div>
                                     )}
