@@ -434,6 +434,9 @@ export interface SchoolClass {
     class_teacher_id?: string | null;
     branch_id?: number | null;
     capacity?: number;
+    teacher_name?: string;
+    student_count?: number;
+    branch_name?: string;
 }
 
 export interface StudentRosterItem {

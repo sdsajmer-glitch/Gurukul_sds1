@@ -319,25 +319,14 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
 
                 setAvailableTeachers(teachersWithCounts);
             } else {
-                // FALLBACK: Inject AI-Generated Faculty Directory for non-initialized systems
-                const mockFaculty = [
-                    { id: 'f1', display_name: 'Dr. Sarah Mitchell', email: 's.mitchell@academy.com', specializations: 'Mathematics & Logic', experience_years: 12, assigned_classes_count: 2 },
-                    { id: 'f2', display_name: 'Prof. Robert Chen', email: 'r.chen@academy.com', specializations: 'Physics & Quantum Theory', experience_years: 8, assigned_classes_count: 4 },
-                    { id: 'f3', display_name: 'Elena Rodriguez', email: 'e.rodriguez@academy.com', specializations: 'Cognitive Science', experience_years: 5, assigned_classes_count: 1 },
-                    { id: 'f4', display_name: 'Marcus Thorne', email: 'm.thorne@academy.com', specializations: 'Physical Education', experience_years: 15, assigned_classes_count: 3 },
-                    { id: 'f5', display_name: 'Dr. Anya Volkov', email: 'a.volkov@academy.com', specializations: 'Language & Rhetoric', experience_years: 10, assigned_classes_count: 0 }
-                ];
-                setAvailableTeachers(mockFaculty);
+                // No teachers registered in the system
+                setAvailableTeachers([]);
+                showToast("No faculty members found. Please register teachers first via the Faculty Directory.", 'info');
             }
         } catch (err: any) {
             console.error("Failed to fetch teachers:", err);
-            // Even on error, provide mock data to keep the system operational for the user
-            const mockFaculty = [
-                { id: 'f1', display_name: 'Dr. Sarah Mitchell', email: 's.mitchell@academy.com', specializations: 'Mathematics & Logic', experience_years: 12, assigned_classes_count: 2 },
-                { id: 'f2', display_name: 'Prof. Robert Chen', email: 'r.chen@academy.com', specializations: 'Physics', experience_years: 8, assigned_classes_count: 1 }
-            ];
-            setAvailableTeachers(mockFaculty);
-            showToast("System Lead Directory Synchronized (Local Fallback)", 'info');
+            setAvailableTeachers([]);
+            showToast("Failed to load faculty directory. Please try again.", 'error');
         }
     };
 
@@ -403,10 +392,13 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
 
     const filteredTeachers = useMemo(() => {
         return availableTeachers.filter(t => {
+            const query = searchTeacherQuery.toLowerCase();
             const matchesSearch =
-                t.display_name.toLowerCase().includes(searchTeacherQuery.toLowerCase()) ||
-                (t.email && t.email.toLowerCase().includes(searchTeacherQuery.toLowerCase())) ||
-                (t.specialization && t.specialization.toLowerCase().includes(searchTeacherQuery.toLowerCase()));
+                t.display_name.toLowerCase().includes(query) ||
+                (t.email && t.email.toLowerCase().includes(query)) ||
+                (t.specializations && t.specializations.toLowerCase().includes(query)) ||
+                (t.subject && t.subject.toLowerCase().includes(query)) ||
+                (t.department && t.department.toLowerCase().includes(query));
 
             return matchesSearch;
         });
@@ -415,12 +407,20 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
     const fetchDetails = useCallback(async () => {
         setLoading(true);
         try {
-            const { data: rosterData } = await supabase.rpc('get_class_roster_for_admin', { p_class_id: classData.id });
+            const { data: rosterData, error: rosterError } = await supabase.rpc('get_class_roster_for_admin', { p_class_id: classData.id });
+            if (rosterError) {
+                console.error('Roster fetch error:', rosterError);
+                showToast('Failed to load student roster', 'error');
+            }
             if (rosterData) setStudents(rosterData);
 
-            const { data: subjectData } = await supabase.from('class_subjects')
+            const { data: subjectData, error: subjectError } = await supabase.from('class_subjects')
                 .select('subject_id, teacher_id, profiles(display_name), courses(*)')
                 .eq('class_id', classData.id);
+
+            if (subjectError) {
+                console.error('Subject fetch error:', subjectError);
+            }
 
             if (subjectData) {
                 const mappedSubjects = subjectData.map((item: any) => ({
@@ -429,6 +429,9 @@ const ClassWorkspace: React.FC<ClassWorkspaceProps> = ({ profile, classData, onC
                 }));
                 setSubjects(mappedSubjects.filter(Boolean));
             }
+        } catch (err: any) {
+            console.error('fetchDetails error:', err);
+            showToast('Error loading class details', 'error');
         } finally {
             setLoading(false);
         }

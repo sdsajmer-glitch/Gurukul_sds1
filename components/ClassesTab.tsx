@@ -425,7 +425,7 @@ const ClassCard: React.FC<{
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        whileHover={{ y: -4, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+        whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
         onClick={onClick}
         className="bg-card border border-border/80 rounded-[2rem] p-6 shadow-sm hover:shadow-2xl hover:border-primary/30 transition-all group cursor-pointer relative overflow-hidden flex flex-col h-full min-h-[360px]"
     >
@@ -608,7 +608,7 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId, profile }) => {
         }
 
         return filtered;
-    }, [classes, searchTerm, quickFilter, sortConfig]);
+    }, [classes, searchTerm, quickFilter, sortConfig, facultyFilter]);
 
     const stats = useMemo(() => ({
         total: classes.length,
