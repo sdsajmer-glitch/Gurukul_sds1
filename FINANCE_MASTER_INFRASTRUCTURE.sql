@@ -151,4 +151,71 @@ BEGIN
 END;
 $$;
 
+-- [7] ADMINISTRATIVE UPDATE FUNCTIONS
+-- Purpose: Direct mutation points for Master Control UI.
+
+CREATE OR REPLACE FUNCTION public.update_finance_global_settings(
+    p_branch_id BIGINT,
+    p_is_tax_enabled BOOLEAN,
+    p_approval_enabled BOOLEAN,
+    p_late_fee_enabled BOOLEAN,
+    p_version_control BOOLEAN
+)
+RETURNS VOID 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+AS $$
+BEGIN
+    INSERT INTO public.finance_global_settings (
+        branch_id, 
+        is_tax_enabled, 
+        approval_hierarchy_enabled, 
+        auto_late_fee_enabled,
+        version_control_active,
+        updated_at
+    )
+    VALUES (
+        p_branch_id,
+        p_is_tax_enabled,
+        p_approval_enabled,
+        p_late_fee_enabled,
+        p_version_control,
+        NOW()
+    )
+    ON CONFLICT (branch_id) DO UPDATE SET
+        is_tax_enabled = EXCLUDED.is_tax_enabled,
+        approval_hierarchy_enabled = EXCLUDED.approval_hierarchy_enabled,
+        auto_late_fee_enabled = EXCLUDED.auto_late_fee_enabled,
+        version_control_active = EXCLUDED.version_control_active,
+        updated_at = NOW();
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.upsert_finance_tax_node(
+    p_branch_id BIGINT,
+    p_tax_name TEXT,
+    p_tax_code TEXT,
+    p_tax_rate NUMERIC,
+    p_id UUID DEFAULT NULL
+)
+RETURNS UUID 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_id UUID;
+BEGIN
+    IF p_id IS NOT NULL THEN
+        UPDATE public.finance_tax_matrix 
+        SET tax_name = p_tax_name, tax_code = p_tax_code, tax_rate = p_tax_rate
+        WHERE id = p_id RETURNING id INTO v_id;
+    ELSE
+        INSERT INTO public.finance_tax_matrix (branch_id, tax_name, tax_code, tax_rate)
+        VALUES (p_branch_id, p_tax_name, p_tax_code, p_tax_rate)
+        RETURNING id INTO v_id;
+    END IF;
+    RETURN v_id;
+END;
+$$;
+
 COMMIT;

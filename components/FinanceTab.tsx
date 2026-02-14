@@ -104,6 +104,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
     const [paymentProtocols, setPaymentProtocols] = useState<any[]>([]);
     const [adjustmentRules, setAdjustmentRules] = useState<any[]>([]);
     const [institutionalReadiness, setInstitutionalReadiness] = useState<any>(null);
+    const [masterState, setMasterState] = useState<any>(null);
     const [projections, setProjections] = useState<any>(null);
 
     const [aiInsight, setAiInsight] = useState<string | null>(null);
@@ -127,7 +128,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 structQuery = structQuery.eq('branch_id', bid);
             }
 
-            const [finRes, structRes, ledgerRes, gradeRes, healthRes, protocolRes, ruleRes, readinessRes, projectionRes] = await Promise.all([
+            const [finRes, structRes, ledgerRes, gradeRes, healthRes, protocolRes, ruleRes, readinessRes, projectionRes, masterRes] = await Promise.all([
                 supabase.rpc('get_finance_overview_stats_v2', { p_branch_id: bid }),
                 structQuery,
                 supabase.rpc('get_student_fee_summary_all', { p_branch_id: bid }),
@@ -136,7 +137,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 supabase.from('finance_payment_protocols').select('*').eq('branch_id', bid),
                 supabase.from('finance_adjustment_rules').select('*').eq('branch_id', bid),
                 supabase.rpc('fn_calculate_finance_readiness', { p_branch_id: bid }),
-                supabase.rpc('get_financial_projection_matrix', { p_branch_id: bid })
+                supabase.rpc('get_financial_projection_matrix', { p_branch_id: bid }),
+                supabase.rpc('get_finance_master_state', { p_branch_id: bid })
             ]);
 
             if (finRes.error) throw finRes.error;
@@ -158,6 +160,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
             setAdjustmentRules(ruleRes.data || []);
             setInstitutionalReadiness(readinessRes.data);
             setProjections(projectionRes.data);
+            setMasterState(masterRes.data);
 
         } catch (err: any) {
             console.error("Finance Registry Sync Failure:", err);
@@ -437,7 +440,10 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                 onNewProtocol={() => setIsProtocolModalOpen(true)}
                                 onNewRule={() => setIsRuleModalOpen(true)}
                                 currency={viewCurrency}
+                                branchId={branchId}
+                                onUpdate={() => fetchAllData(true)}
                                 readiness={institutionalReadiness || readiness}
+                                masterState={masterState}
                             />
                         </motion.div>
                     )}

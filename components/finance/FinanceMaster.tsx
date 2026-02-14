@@ -26,12 +26,14 @@ interface FinanceMasterProps {
     onNewProtocol?: () => void;
     onNewRule?: () => void;
     currency: CurrencyCode;
-    readiness?: {
-        hasStructures: boolean;
-        hasAssignments: boolean;
-        hasLedger: boolean;
-        isSetupComplete: boolean;
-        missingSteps: string[];
+    branchId?: number | null;
+    onUpdate?: () => void;
+    readiness?: any;
+    masterState?: {
+        settings: any;
+        taxes: any[];
+        approvals: any[];
+        readiness: any;
     };
 }
 
@@ -83,13 +85,48 @@ const ConfigCard: React.FC<{
     </div>
 );
 
-const MasterControlCenter: React.FC<{ currency: string }> = ({ currency }) => {
-    const [globalToggles, setGlobalToggles] = useState({
-        taxInvoicing: true,
-        approvalMatrix: true,
-        lateFeeAutomation: true,
-        versionControl: true
-    });
+const MasterControlCenter: React.FC<{
+    currency: string;
+    settings: any;
+    branchId: any;
+    onUpdate?: () => void
+}> = ({ currency, settings, branchId, onUpdate }) => {
+    const [loading, setLoading] = useState(false);
+
+    const handleToggle = async (key: string, currentValue: boolean) => {
+        if (!branchId || loading) return;
+        setLoading(true);
+        try {
+            const newSettings = {
+                is_tax_enabled: key === 'is_tax_enabled' ? !currentValue : settings.is_tax_enabled,
+                approval_enabled: key === 'approval_hierarchy_enabled' ? !currentValue : settings.approval_hierarchy_enabled,
+                late_fee_enabled: key === 'auto_late_fee_enabled' ? !currentValue : settings.auto_late_fee_enabled,
+                version_control: key === 'version_control_active' ? !currentValue : (settings.version_control_active ?? true)
+            };
+
+            const { error } = await supabase.rpc('update_finance_global_settings', {
+                p_branch_id: branchId,
+                p_is_tax_enabled: newSettings.is_tax_enabled,
+                p_approval_enabled: newSettings.approval_enabled,
+                p_late_fee_enabled: newSettings.late_fee_enabled,
+                p_version_control: newSettings.version_control
+            });
+
+            if (error) throw error;
+            if (onUpdate) onUpdate();
+        } catch (err) {
+            console.error("Master Sync Failure:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggles = [
+        { key: 'is_tax_enabled', label: 'Fiscal Tax Matrix', desc: 'GST/VAT Compliance', icon: <SecurityIcon className="w-5 h-5" />, active: settings?.is_tax_enabled },
+        { key: 'approval_hierarchy_enabled', label: 'Approval Hierarchy', desc: 'Authoritative Tiers', icon: <UsersIcon className="w-5 h-5" />, active: settings?.approval_hierarchy_enabled },
+        { key: 'auto_late_fee_enabled', label: 'Late Fee Engine', desc: 'Penalty Protocols', icon: <ClockIcon className="w-5 h-5" />, active: settings?.auto_late_fee_enabled },
+        { key: 'version_control_active', label: 'State Versioning', desc: 'Audit Persistence', icon: <VersionIcon className="w-5 h-5" />, active: settings?.version_control_active ?? true }
+    ];
 
     return (
         <div className="bg-[#0c0d12] border border-white/5 rounded-[4rem] p-12 mb-16 shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] relative overflow-hidden group">
@@ -124,23 +161,18 @@ const MasterControlCenter: React.FC<{ currency: string }> = ({ currency }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { key: 'taxInvoicing', label: 'Fiscal Tax Matrix', desc: 'GST/VAT Compliance', icon: <SecurityIcon className="w-5 h-5" /> },
-                    { key: 'approvalMatrix', label: 'Approval Hierarchy', desc: 'Authoritative Tiers', icon: <UsersIcon className="w-5 h-5" /> },
-                    { key: 'lateFeeAutomation', label: 'Late Fee Engine', desc: 'Penalty Protocols', icon: <ClockIcon className="w-5 h-5" /> },
-                    { key: 'versionControl', label: 'State Versioning', desc: 'Audit Persistence', icon: <VersionIcon className="w-5 h-5" /> }
-                ].map((toggle) => (
+                {toggles.map((toggle) => (
                     <div
                         key={toggle.key}
-                        onClick={() => setGlobalToggles(prev => ({ ...prev, [toggle.key]: !prev[toggle.key as keyof typeof prev] }))}
-                        className={`p-8 rounded-[2.5rem] border transition-all cursor-pointer flex flex-col gap-6 group/toggle ${globalToggles[toggle.key as keyof typeof globalToggles] ? 'bg-primary/5 border-primary/20' : 'bg-white/[0.02] border-white/5'}`}
+                        onClick={() => handleToggle(toggle.key, !!toggle.active)}
+                        className={`p-8 rounded-[2.5rem] border transition-all cursor-pointer flex flex-col gap-6 group/toggle ${toggle.active ? 'bg-primary/5 border-primary/20' : 'bg-white/[0.02] border-white/5'} ${loading ? 'opacity-50 cursor-wait' : ''}`}
                     >
                         <div className="flex justify-between items-center">
-                            <div className={`p-4 rounded-2xl border transition-all ${globalToggles[toggle.key as keyof typeof globalToggles] ? 'bg-primary text-black border-primary' : 'bg-white/5 text-white/10 border-white/10'}`}>
+                            <div className={`p-4 rounded-2xl border transition-all ${toggle.active ? 'bg-primary text-black border-primary' : 'bg-white/5 text-white/10 border-white/10'}`}>
                                 {toggle.icon}
                             </div>
-                            <div className={`w-12 h-6 rounded-full relative transition-all ${globalToggles[toggle.key as keyof typeof globalToggles] ? 'bg-primary' : 'bg-white/10'}`}>
-                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${globalToggles[toggle.key as keyof typeof globalToggles] ? 'right-1' : 'left-1'}`}></div>
+                            <div className={`w-12 h-6 rounded-full relative transition-all ${toggle.active ? 'bg-primary' : 'bg-white/10'}`}>
+                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${toggle.active ? 'right-1' : 'left-1'}`}></div>
                             </div>
                         </div>
                         <div>
@@ -158,9 +190,6 @@ const MasterControlCenter: React.FC<{ currency: string }> = ({ currency }) => {
                         <p className="text-xs font-black text-emerald-500 uppercase tracking-[0.3em] flex items-center gap-4">
                             Operational <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         </p>
-                    </div>
-                    <div className="space-y-1 border-l border-white/5 pl-12 font-serif italic text-white/40 text-sm">
-                        Total System Yield: $1.2M <span className="text-[10px] uppercase font-black tracking-widest ml-3 not-italic">Institutional Health Index</span>
                     </div>
                 </div>
                 <button className="flex items-center gap-4 px-10 py-5 bg-white/5 hover:bg-white/[0.08] text-white/40 hover:text-white rounded-2xl border border-white/10 transition-all text-[11px] font-black uppercase tracking-[0.4em] group/log">
@@ -180,7 +209,10 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
     onNewProtocol,
     onNewRule,
     currency,
-    readiness
+    branchId,
+    onUpdate,
+    readiness,
+    masterState
 }) => {
     const [expandedCard, setExpandedCard] = useState<string | null>('fee_structures');
 
@@ -191,10 +223,15 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
     return (
         <div className="space-y-12 pb-32 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
             {/* 1. MASTER CONTROL CENTER */}
-            <MasterControlCenter currency={currency} />
+            <MasterControlCenter
+                currency={currency}
+                settings={masterState?.settings || {}}
+                branchId={branchId}
+                onUpdate={onUpdate}
+            />
 
             <div className="grid grid-cols-1 gap-12">
-                {/* 2. Foundation Governance: Chart of Accounts & Policies */}
+                {/* 2. Foundation Governance */}
                 <ConfigCard
                     title="Foundation Governance"
                     description="Institutional authority hierarchy & fiscal settlement policies"
@@ -256,7 +293,7 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                                 <WorkflowIcon className="w-48 h-48 -rotate-12" />
                             </div>
                             <div className="w-24 h-24 bg-primary/20 rounded-[2.5rem] flex items-center justify-center text-primary shadow-2xl relative z-10">
-                                <ShieldCheckIcon className="w-12 h-12" />
+                                <SecurityIcon className="w-12 h-12" />
                             </div>
                             <div className="space-y-4 relative z-10">
                                 <h3 className="text-3xl font-serif font-black text-white tracking-tighter uppercase">Governance Protocol</h3>
@@ -289,10 +326,10 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-3">
                                             <span className="px-3 py-1 bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest rounded-lg border border-primary/20">{fs.academic_year}</span>
-                                            <span className="text-[10px] text-white/20 font-black uppercase tracking-widest">v25.0</span>
+                                            <span className="text-[10px] text-white/20 font-black uppercase tracking-widest">{fs.version_label || 'v1.0'}</span>
                                         </div>
                                         <h4 className="text-3xl font-serif font-black text-white uppercase tracking-tighter group-hover/item:text-primary transition-colors leading-[0.95]">{fs.name}</h4>
-                                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.5em]">Target: Grade_{fs.target_grade}</p>
+                                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.5em]">LIFECYCLE: {fs.state || 'DRAFT'}</p>
                                     </div>
                                     <button
                                         onClick={() => onEditStructure(fs)}
@@ -304,9 +341,13 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
 
                                 <div className="grid grid-cols-2 gap-6 mb-10 pb-10 border-b border-white/5">
                                     <div className="space-y-3">
-                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">Status Node</p>
-                                        <span className={`inline-flex px-4 py-2 rounded-xl text-[9px] font-black tracking-[0.2em] uppercase border ${fs.status === 'Active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
-                                            {fs.status}
+                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">Authority Node</p>
+                                        <span className={`inline-flex px-4 py-2 rounded-xl text-[9px] font-black tracking-[0.2em] uppercase border ${fs.state === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' :
+                                            fs.state === 'VALIDATED' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                                                fs.state === 'LOCKED' ? 'bg-primary/10 text-primary border-primary/20' :
+                                                    'bg-white/5 text-white/20 border-white/10'
+                                            }`}>
+                                            {fs.state || fs.status}
                                         </span>
                                     </div>
                                     <div className="text-right space-y-3">
@@ -323,11 +364,23 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em] mb-2">Total Node Value</p>
+                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em] mb-2">Projected Revenue</p>
                                         <span className="text-2xl font-black text-white font-mono tracking-tighter">
-                                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: fs.currency as CurrencyCode, minimumFractionDigits: 0 }).format(fs.components?.reduce((a, c) => a + Number(c.amount), 0) || 0)}
+                                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: (fs.currency || 'INR') as CurrencyCode, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(fs.projected_revenue || fs.components?.reduce((a: any, c: any) => a + Number(c.amount), 0) || 0)}
                                         </span>
                                     </div>
+                                </div>
+
+                                <div className="mt-8 pt-8 border-t border-white/[0.03] flex justify-between gap-4">
+                                    <button className="flex-1 py-3 bg-white/[0.02] hover:bg-white/5 rounded-xl text-[8px] font-black text-white/20 hover:text-primary uppercase tracking-widest border border-white/5 transition-all">
+                                        Impact Map
+                                    </button>
+                                    <button className="flex-1 py-3 bg-white/[0.02] hover:bg-white/5 rounded-xl text-[8px] font-black text-white/20 hover:text-amber-500 uppercase tracking-widest border border-white/5 transition-all">
+                                        Simulation
+                                    </button>
+                                    <button className="flex-1 py-3 bg-white/5 hover:bg-primary hover:text-black rounded-xl text-[8px] font-black text-white/40 uppercase tracking-widest border border-white/5 transition-all">
+                                        {fs.state === 'DRAFT' ? 'Validate' : 'Re-Version'}
+                                    </button>
                                 </div>
                             </motion.div>
                         ))}
@@ -397,7 +450,7 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                                     <div key={r.id} className="bg-white/[0.02] border border-white/5 p-8 rounded-[2.5rem] flex items-center justify-between group/rule hover:border-emerald-500/30 transition-all">
                                         <div className="flex items-center gap-6">
                                             <div className="w-14 h-14 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center border border-emerald-500/20">
-                                                <ShieldCheckIcon className="w-6 h-6" />
+                                                <SecurityIcon className="w-6 h-6" />
                                             </div>
                                             <div>
                                                 <h4 className="text-lg font-black text-white uppercase tracking-tight leading-none mb-2">{r.rule_name}</h4>
@@ -430,24 +483,25 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                     badge="Compliance Node"
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 pt-6">
-                        {[
-                            { name: 'Core Service Tax', rate: '18', code: 'GST-18', desc: 'Educational Services Protocol' },
-                            { name: 'Secondary Cess', rate: '2', code: 'CESS-2', desc: 'Regional Development Node' }
-                        ].map((t, i) => (
-                            <div key={i} className="bg-black/60 border border-white/5 p-10 rounded-[3rem] space-y-8 hover:border-primary/40 transition-all group/tax shadow-2xl overflow-hidden relative">
+                        {(masterState?.taxes || []).length > 0 ? masterState.taxes.map((t, i) => (
+                            <div key={t.id} className="bg-black/60 border border-white/5 p-10 rounded-[3rem] space-y-8 hover:border-primary/40 transition-all group/tax shadow-2xl overflow-hidden relative">
                                 <div className="absolute top-0 right-0 p-8 opacity-[0.05] group-hover/tax:opacity-20 transition-opacity">
                                     <WorkflowIcon className="w-32 h-32 text-primary" />
                                 </div>
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p className="text-6xl font-serif font-black text-white tracking-widest italic">{t.rate}<span className="text-2xl text-primary font-black not-italic ml-2">%</span></p>
-                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mt-3">{t.name}</p>
+                                        <p className="text-6xl font-serif font-black text-white tracking-widest italic">{t.tax_rate}<span className="text-2xl text-primary font-black not-italic ml-2">%</span></p>
+                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mt-3">{t.tax_name}</p>
                                     </div>
-                                    <span className="px-4 py-2 bg-primary/10 text-primary text-[10px] font-black rounded-xl border border-primary/20">{t.code}</span>
+                                    <span className="px-4 py-2 bg-primary/10 text-primary text-[10px] font-black rounded-xl border border-primary/20">{t.tax_code}</span>
                                 </div>
-                                <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest leading-relaxed border-t border-white/5 pt-6">{t.desc}</p>
+                                <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest leading-relaxed border-t border-white/5 pt-6">Institutional Compliance Node</p>
                             </div>
-                        ))}
+                        )) : (
+                            <div className="col-span-full py-20 flex flex-col items-center justify-center opacity-20 border-2 border-dashed border-white/5 rounded-[3rem]">
+                                <p className="text-[10px] font-black uppercase tracking-[0.5em]">No Fiscal Nodes Defined</p>
+                            </div>
+                        )}
                         <button className="bg-white/[0.01] border-2 border-dashed border-white/5 rounded-[3rem] p-10 flex flex-col items-center justify-center gap-6 hover:bg-primary/[0.03] hover:border-primary/20 transition-all opacity-40 hover:opacity-100 min-h-[300px]">
                             <PlusIcon className="w-8 h-8 text-white/10 group-hover:text-primary transition-all" />
                             <p className="text-[11px] font-black uppercase text-white/40 tracking-widest">Append Tax Matrix Node</p>

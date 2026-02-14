@@ -14,10 +14,12 @@ import { MailIcon } from '../icons/MailIcon';
 import { PrinterIcon } from '../icons/PrinterIcon';
 import { TrendingUpCustomIcon } from '../icons/TrendingUpIcon';
 import { SearchIcon } from '../icons/SearchIcon';
-import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+import { ShieldCheckIcon, ShieldCheckIcon as SecurityIcon } from '../icons/ShieldCheckIcon';
 import { CreditCardIcon } from '../icons/CreditCardIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
+import { BookIcon } from '../icons/BookIcon';
+import { WorkflowIcon } from '../icons/WorkflowIcon';
 import PremiumAvatar from '../common/PremiumAvatar';
 import { motion } from 'framer-motion';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -132,6 +134,8 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'ALL' | 'PAID' | 'PENDING'>('ALL');
     const [aiInsight, setAiInsight] = useState<string | null>(null);
+    const [mappingInProgress, setMappingInProgress] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const isMounted = useRef(true);
 
@@ -202,9 +206,41 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
             console.error("Registry Desync:", err);
             setError(formatError(err));
         } finally {
-            if (isMounted.current) setLoading(false);
+            if (isMounted.current) {
+                setLoading(false);
+                setIsSyncing(false);
+            }
         }
     }, [initialStudent.student_id]);
+
+    const handleMapGenesisProtocol = async () => {
+        setMappingInProgress(true);
+        setError(null);
+        try {
+            const { data, error: rpcError } = await supabase.rpc('admin_sync_student_billing', {
+                p_student_id: initialStudent.student_id
+            });
+            if (rpcError) throw rpcError;
+
+            if (data?.success) {
+                // Flash success state then refresh
+                await refreshAccountStatus(true);
+                if (onUpdate) onUpdate();
+            } else {
+                throw new Error(data?.message || 'Failed to synchronize GENESIS_PROTOCOL');
+            }
+        } catch (err: any) {
+            console.error("Mapping failure:", err);
+            setError(formatError(err));
+        } finally {
+            setMappingInProgress(false);
+        }
+    };
+
+    const handleManualSync = async () => {
+        setIsSyncing(true);
+        await refreshAccountStatus(true);
+    };
 
     useEffect(() => {
         isMounted.current = true;
@@ -317,6 +353,13 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         </div>
 
                         <div className="flex gap-4">
+                            <button
+                                onClick={handleManualSync}
+                                disabled={isSyncing}
+                                className="p-5 bg-white/5 border border-white/5 hover:bg-white/10 rounded-3xl text-white/40 hover:text-white transition-all group/sync disabled:opacity-50"
+                            >
+                                <RefreshCwIcon className={`w-6 h-6 group-hover/sync:rotate-180 transition-transform duration-700 ${isSyncing ? 'animate-spin' : ''}`} />
+                            </button>
                             <button className="px-10 py-5 bg-white text-black hover:bg-primary hover:text-white transition-all rounded-3xl font-black text-[11px] uppercase tracking-widest shadow-2xl active:scale-95">Statement_PDF</button>
                             <button className="p-5 bg-white/5 border border-white/5 hover:bg-white/10 rounded-3xl text-white/40 hover:text-white transition-all group/mail">
                                 <MailIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
@@ -357,7 +400,157 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     />
                 </div>
 
-                {/* Layer 3 – Intelligence & Integrity Matrix */}
+                {/* Layer 3 – Institutional Fee Protocol & Flow Map */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
+                    {/* Assigned Protocol Card */}
+                    <div className="xl:col-span-2 bg-[#12141c]/60 border border-white/5 rounded-[4rem] p-12 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-16 opacity-[0.02] group-hover:scale-110 transition-transform">
+                            <BookIcon className="w-64 h-64 text-primary" />
+                        </div>
+
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-16 relative z-10">
+                            <div>
+                                <div className="flex items-center gap-4 mb-3">
+                                    <span className="px-3 py-1 bg-primary/10 text-primary text-[9px] font-black uppercase tracking-[0.2em] rounded-lg border border-primary/20">Protocol Node</span>
+                                    <span className="text-[10px] text-white/20 font-black uppercase tracking-widest italic">{assignedStructure?.academic_year || 'v25.0 Deployment'}</span>
+                                </div>
+                                <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter group-hover:text-primary transition-colors">
+                                    {assignedStructure?.name || 'GENESIS_PROTOCOL'}
+                                </h3>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Node Valuation</p>
+                                <p className="text-4xl font-serif font-black text-white italic tracking-tighter">
+                                    {formatCurrency(assignedStructure?.components?.reduce((a: any, c: any) => a + Number(c.amount), 0) || totalAssigned, viewCurrency)}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+                            {assignedStructure ? (
+                                (assignedStructure.components || []).map((comp: any, i: number) => (
+                                    <div key={i} className="bg-white/[0.03] border border-white/5 p-8 rounded-[2.5rem] flex flex-col gap-6 hover:bg-white/[0.05] transition-all group/node">
+                                        <div className="flex justify-between items-center">
+                                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover/node:bg-primary group-hover/node:text-black transition-all">
+                                                <WorkflowIcon className="w-5 h-5" />
+                                            </div>
+                                            <div className={`w-2 h-2 rounded-full ${totalPaid >= comp.amount ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-amber-500/40'}`}></div>
+                                        </div>
+                                        <div>
+                                            <p className="text-xl font-serif font-black text-white tracking-tighter uppercase mb-1">{comp.name}</p>
+                                            <p className="text-sm font-mono font-black text-white/40">{formatCurrency(comp.amount, viewCurrency)}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="col-span-1 md:col-span-2 lg:col-span-3 py-16 text-center bg-white/[0.01] border border-dashed border-white/10 rounded-[3rem] group/init overflow-hidden relative">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover/init:opacity-100 transition-opacity"></div>
+                                    <div className="relative z-10 flex flex-col items-center gap-8">
+                                        <div className="p-6 bg-white/5 rounded-[2rem] border border-white/10 shadow-inner group-hover/init:scale-110 transition-transform duration-700">
+                                            <WorkflowIcon className="w-12 h-12 text-white/20 group-hover/init:text-primary transition-colors" />
+                                        </div>
+                                        <div className="space-y-4">
+                                            <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Node Unmapped</h4>
+                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] max-w-md mx-auto leading-loose">
+                                                This student node is currently in standby. Initialize the GENESIS_PROTOCOL to map institutional fees based on their current grade profile.
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={handleMapGenesisProtocol}
+                                            disabled={mappingInProgress}
+                                            className="px-12 py-5 bg-primary text-white hover:bg-white hover:text-black transition-all rounded-[2rem] font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl relative overflow-hidden group/btn disabled:opacity-50"
+                                        >
+                                            {mappingInProgress ? (
+                                                <span className="flex items-center gap-4">
+                                                    <RefreshCwIcon className="w-4 h-4 animate-spin" /> SYNCHRONIZING_MATRIX...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-4">
+                                                    MAP GENESIS_PROTOCOL <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                                                </span>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-12 pt-12 border-t border-white/5 flex justify-between items-center relative z-10">
+                            <div className="flex gap-10">
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black text-white/10 uppercase tracking-widest">Protocol Integrity</p>
+                                    <p className="text-xs font-black text-emerald-500 uppercase tracking-[0.3em]">SYNCHRONIZED</p>
+                                </div>
+                                {assignedStructure && (
+                                    <button
+                                        onClick={handleMapGenesisProtocol}
+                                        disabled={mappingInProgress}
+                                        className="flex items-center gap-3 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group/remap disabled:opacity-50"
+                                    >
+                                        <RefreshCwIcon className={`w-3.5 h-3.5 text-white/40 group-hover/remap:text-primary transition-colors ${mappingInProgress ? 'animate-spin' : ''}`} />
+                                        <span className="text-[9px] font-black text-white/40 group-hover/remap:text-white uppercase tracking-widest">Remap Matrix</span>
+                                    </button>
+                                )}
+                            </div>
+                            <button className="flex items-center gap-3 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-[0.4em] transition-all underline underline-offset-8 decoration-primary/40">
+                                View Full Protocol Matrix <ArrowRightIcon className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Financial Velocity Flow Map */}
+                    <div className="bg-primary/5 border border-primary/20 rounded-[4rem] p-12 relative overflow-hidden group shadow-3xl">
+                        <div className="absolute -right-20 -bottom-20 opacity-[0.03] group-hover:scale-125 transition-transform duration-[4000ms]">
+                            <ActivityIcon className="w-96 h-96 text-primary" />
+                        </div>
+
+                        <div className="relative z-10 h-full flex flex-col">
+                            <div className="mb-12">
+                                <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Financial Velocity Flow</h4>
+                                <p className="text-[10px] font-black text-primary/40 uppercase tracking-[0.4em] mt-3">Active Reconciliation Trajectory</p>
+                            </div>
+
+                            <div className="flex-1 space-y-10 relative">
+                                <div className="absolute left-6 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary via-emerald-500/40 to-white/5"></div>
+
+                                {[
+                                    { step: 'Billing Initiated', status: 'COMPLETED', date: 'Cycle Start', icon: <ReceiptIcon className="w-4 h-4" />, color: 'bg-primary' },
+                                    { step: 'Payment Received', status: totalPaid > 0 ? 'ACTIVE' : 'PENDING', date: totalPaid > 0 ? 'Last Tx: 2 Days Ago' : 'Awaiting Settlement', icon: <CreditCardIcon className="w-4 h-4" />, color: totalPaid > 0 ? 'bg-emerald-500' : 'bg-white/10' },
+                                    { step: 'Ledger Reconciled', status: totalPaid >= totalAssigned ? 'VERIFIED' : 'WAITING', date: totalPaid >= totalAssigned ? 'Fully Settled' : 'Pending Fulfillment', icon: <ShieldCheckIcon className="w-4 h-4" />, color: totalPaid >= totalAssigned ? 'bg-emerald-500' : 'bg-white/5' },
+                                    { step: 'Integrity Locked', status: accountData.integrity_score > 90 ? 'LOCKED' : 'OPEN', date: 'Registry Immutable', icon: <WorkflowIcon className="w-4 h-4" />, color: accountData.integrity_score > 90 ? 'bg-emerald-500' : 'bg-white/5' }
+                                ].map((node, i) => (
+                                    <div key={i} className="flex gap-10 items-start relative z-10 group/flow">
+                                        <div className={`w-12 h-12 rounded-[1.25rem] ${node.color} flex items-center justify-center text-black shadow-2xl transition-all duration-500 group-hover/flow:scale-110`}>
+                                            {node.icon}
+                                        </div>
+                                        <div>
+                                            <p className="text-[13px] font-black text-white uppercase tracking-tighter leading-none mb-2">{node.step}</p>
+                                            <p className={`text-[9px] font-black uppercase tracking-widest ${node.status === 'COMPLETED' || node.status === 'ACTIVE' || node.status === 'VERIFIED' ? 'text-emerald-500' : 'text-white/20'}`}>{node.status}</p>
+                                            <p className="text-[8px] font-medium text-white/20 uppercase mt-2 tracking-[0.2em] italic">{node.date}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-12 p-6 bg-white/[0.03] border border-white/5 rounded-3xl">
+                                <div className="flex justify-between items-center mb-4">
+                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Collection Velocity</p>
+                                    <p className="text-xl font-serif font-black text-emerald-500 italic">{(recoveryRate).toFixed(1)}%</p>
+                                </div>
+                                <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${recoveryRate}%` }}
+                                        transition={{ duration: 1.5, ease: 'circOut' }}
+                                        className="h-full bg-gradient-to-r from-primary to-emerald-500"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Layer 4 – Intelligence & Integrity Matrix */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     <div className="bg-primary/10 border border-primary/20 rounded-[4rem] p-12 relative overflow-hidden group shadow-3xl">
                         <div className="absolute top-0 right-0 p-16 opacity-[0.05] group-hover:scale-125 transition-transform duration-[3000ms]">
@@ -378,7 +571,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
 
                     <div className="bg-[#12141c]/60 border border-white/5 rounded-[4rem] p-12 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
                         <div className="absolute -bottom-10 -right-10 opacity-[0.02] group-hover:scale-110 transition-transform duration-1000">
-                            <ShieldCheckIcon className="w-80 h-80 text-emerald-500" />
+                            <SecurityIcon className="w-80 h-80 text-emerald-500" />
                         </div>
                         <div className="relative z-10 flex flex-col h-full justify-between">
                             <div className="flex items-center justify-between mb-10">
