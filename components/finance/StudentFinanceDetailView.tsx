@@ -136,6 +136,9 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
     const [aiInsight, setAiInsight] = useState<string | null>(null);
     const [mappingInProgress, setMappingInProgress] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [availableCycles, setAvailableCycles] = useState<any[]>([]);
+    const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
+    const [showCycleSelector, setShowCycleSelector] = useState(false);
 
     const isMounted = useRef(true);
 
@@ -146,14 +149,20 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
         try {
             // 1. Fetch Core Financial Node
             const { data: nodeData, error: nodeError } = await supabase.rpc('get_student_financial_node', {
-                p_student_id: initialStudent.student_id
+                p_student_id: initialStudent.student_id,
+                p_cycle_id: selectedCycleId
             });
             if (nodeError) throw nodeError;
-            if (nodeData && nodeData[0]) setAccountData(nodeData[0]);
+            if (nodeData && nodeData[0]) {
+                const node = nodeData[0];
+                setAccountData(node);
+                if (selectedCycleId === null) setSelectedCycleId(node.academic_cycle_id);
+            }
 
             // 2. Fetch Forensic Ledger
             const { data: ledgerData, error: ledgerError } = await supabase.rpc('get_student_running_ledger', {
-                p_student_id: initialStudent.student_id
+                p_student_id: initialStudent.student_id,
+                p_cycle_id: selectedCycleId || nodeData?.[0]?.academic_cycle_id
             });
             if (ledgerError) throw ledgerError;
             setLedger(ledgerData || []);
@@ -166,6 +175,14 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                 .maybeSingle();
 
             setAssignedStructure(structData?.fee_structures || null);
+
+            // Fetch Available Cycles if not yet loaded
+            if (availableCycles.length === 0 && nodeData?.[0]?.branch_id) {
+                const { data: cycles } = await supabase.rpc('get_branch_academic_cycles', {
+                    p_branch_id: nodeData[0].branch_id
+                });
+                setAvailableCycles(cycles || []);
+            }
 
             // 4. Fetch Governance Artifacts
             const { data: auditData } = await supabase
@@ -246,7 +263,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
         isMounted.current = true;
         refreshAccountStatus();
         return () => { isMounted.current = false; };
-    }, [refreshAccountStatus]);
+    }, [refreshAccountStatus, selectedCycleId]);
 
     const filteredLedger = useMemo(() => {
         return ledger.filter(item => {
@@ -278,13 +295,51 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
     );
 
     if (error) return (
-        <div className="min-h-screen bg-black flex items-center justify-center p-10">
-            <div className="bg-red-500/10 border border-red-500/20 p-12 rounded-[3rem] text-center max-w-2xl">
-                <AlertTriangleIcon className="w-16 h-16 text-red-500 mx-auto mb-8" />
-                <h2 className="text-2xl font-serif font-black text-white uppercase mb-4">Registry Error</h2>
-                <p className="text-white/40 mb-10 leading-relaxed font-medium">{error}</p>
-                <button onClick={() => window.location.reload()} className="px-10 py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-widest">Retry Handshake</button>
+        <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center p-12 overflow-hidden relative">
+            {/* Background Glows */}
+            <div className="absolute top-0 left-0 w-full h-full">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-500/5 blur-[120px] rounded-full"></div>
             </div>
+
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-[#12141c]/60 border border-red-500/20 p-16 lg:p-24 rounded-[4rem] text-center max-w-3xl backdrop-blur-3xl shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative z-10"
+            >
+                <div className="inline-flex items-center justify-center w-24 h-24 bg-red-500/10 rounded-[2.5rem] border border-red-500/20 mb-12 shadow-inner group">
+                    <AlertTriangleIcon className="w-10 h-10 text-red-500 animate-pulse" />
+                </div>
+
+                <h2 className="text-[10px] font-black text-red-500 uppercase tracking-[0.8em] mb-6">Critical System Desync</h2>
+                <h3 className="text-4xl lg:text-6xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-10">Registry Error</h3>
+
+                <div className="bg-black/40 border border-white/5 rounded-[2rem] p-10 mb-16 text-left relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-6 opacity-[0.03]">
+                        <SecurityIcon className="w-24 h-24" />
+                    </div>
+                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] mb-4 italic">Diagnostic Trace:</p>
+                    <p className="text-lg font-mono font-medium text-white/60 leading-relaxed">
+                        {error.includes('ambiguous')
+                            ? "CONFLICT_DETECTED: Multiple node identifiers resolved in the global registry. The structural identity of the student node cannot be determined."
+                            : error}
+                    </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="w-full sm:w-auto px-12 py-5 bg-white text-black hover:bg-red-500 hover:text-white transition-all rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95"
+                    >
+                        Retry Protocol
+                    </button>
+                    <button
+                        onClick={onBack}
+                        className="w-full sm:w-auto px-12 py-5 bg-white/5 border border-white/5 text-white/40 hover:text-white transition-all rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.4em]"
+                    >
+                        Abort Handshake
+                    </button>
+                </div>
+            </motion.div>
         </div>
     );
 
@@ -297,8 +352,8 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
             className="min-h-screen bg-[#0a0a0c] text-white p-6 lg:p-12 font-sans selection:bg-primary selection:text-white"
         >
             <div className="max-w-[1600px] mx-auto space-y-12">
-                {/* Layer 0 – Identity Navigation */}
-                <div className="flex items-center justify-between">
+                {/* Layer 0 – Identity Navigation & Cycle Selector */}
+                <div className="flex items-center justify-between relative z-50">
                     <button
                         onClick={onBack}
                         className="flex items-center gap-4 text-white/30 hover:text-white transition-all group"
@@ -306,15 +361,40 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:bg-white/10 group-hover:border-white/20 transition-all">
                             <ArrowRightIcon className="w-5 h-5 rotate-180" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em]">Node Directory</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em]">Registry Exit</span>
                     </button>
-                    <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                        <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">Live Node Access</span>
+
+                    <div className="flex items-center gap-6 relative">
+                        <div className="text-right hidden sm:block">
+                            <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">Observation Plane</p>
+                            <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">{accountData.cycle_name || 'LOADING_CYCLE...'}</p>
+                        </div>
+                        <button
+                            onClick={() => setShowCycleSelector(!showCycleSelector)}
+                            className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-2xl border border-white/5 hover:border-primary/40 transition-all"
+                        >
+                            <div className={`w-2 h-2 rounded-full ${accountData.is_active ? 'bg-emerald-500' : 'bg-amber-500'} shadow-[0_0_10px_rgba(16,185,129,0.5)]`}></div>
+                            <span className="text-[9px] font-black text-white uppercase tracking-widest">{accountData.cycle_name || 'SELECT_CYCLE'}</span>
+                            <ChevronLeftIcon className="w-4 h-4 -rotate-90 text-white/20" />
+                        </button>
+
+                        {showCycleSelector && (
+                            <div className="absolute top-full mt-4 right-0 w-64 bg-[#12141c] border border-white/10 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] p-4 space-y-2 overflow-hidden backdrop-blur-3xl">
+                                {availableCycles.map((c) => (
+                                    <button
+                                        key={c.id}
+                                        onClick={() => { setSelectedCycleId(c.id); setShowCycleSelector(false); }}
+                                        className={`w-full text-left px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedCycleId === c.id ? 'bg-primary text-white' : 'text-white/40 hover:bg-white/5'}`}
+                                    >
+                                        {c.year_name} {c.is_current && "(Active)"}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Layer 1 – Institutional Student Header */}
+                {/* Layer 1 – Institutional Student Header (BLOCK 1) */}
                 <div className="bg-white/[0.02] border border-white/5 rounded-[4rem] p-12 lg:p-20 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-24 opacity-[0.03] group-hover:scale-110 transition-transform duration-[3000ms] -rotate-12">
                         <TrendingUpCustomIcon className="w-96 h-96 text-primary" />
@@ -329,9 +409,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                 size="lg"
                                 className="w-48 h-48 rounded-[3.5rem] border-2 border-white/10 ring-8 ring-white/5 shadow-3xl"
                             />
-                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-black px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-2xl">
-                                Active Profile
-                            </div>
+                            <StatusBadge status={accountData.ledger_status} className="absolute -bottom-4 left-1/2 -translate-x-1/2" />
                         </div>
 
                         <div className="flex-1 text-center lg:text-left">
@@ -341,14 +419,14 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-10 gap-y-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-2 h-2 rounded-full bg-primary/40"></div>
-                                    <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Protocol: <span className="text-white/80">{assignedStructure?.name || 'NODE_GENESIS'}</span></p>
+                                    <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Protocol: <span className="text-white/80">{assignedStructure?.name || 'GENESIS_PROTOCOL'}</span></p>
                                 </div>
                                 <div className="w-1.5 h-1.5 rounded-full bg-white/10"></div>
                                 <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Section: <span className="text-white/80">{accountData.class_name || 'UNASSIGNED'}</span></p>
                                 <div className="w-1.5 h-1.5 rounded-full bg-white/10"></div>
                                 <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Grade: <span className="text-white/80">{accountData.grade || 'N/A'}</span></p>
                                 <div className="w-1.5 h-1.5 rounded-full bg-white/10"></div>
-                                <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Cycle: <span className="text-white/80">2023-24</span></p>
+                                <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Health: <span className={accountData.integrity_score > 80 ? "text-emerald-400" : "text-amber-400"}>{accountData.integrity_score}%</span></p>
                             </div>
                         </div>
 
@@ -360,10 +438,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                             >
                                 <RefreshCwIcon className={`w-6 h-6 group-hover/sync:rotate-180 transition-transform duration-700 ${isSyncing ? 'animate-spin' : ''}`} />
                             </button>
-                            <button className="px-10 py-5 bg-white text-black hover:bg-primary hover:text-white transition-all rounded-3xl font-black text-[11px] uppercase tracking-widest shadow-2xl active:scale-95">Statement_PDF</button>
-                            <button className="p-5 bg-white/5 border border-white/5 hover:bg-white/10 rounded-3xl text-white/40 hover:text-white transition-all group/mail">
-                                <MailIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                            </button>
+                            <button className="px-10 py-5 bg-white text-black hover:bg-primary hover:text-white transition-all rounded-3xl font-black text-[11px] uppercase tracking-widest shadow-2xl active:scale-95 text-center px-8">Statement_PDF</button>
                         </div>
                     </div>
                 </div>
@@ -479,7 +554,9 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                             <div className="flex gap-10">
                                 <div className="space-y-1">
                                     <p className="text-[9px] font-black text-white/10 uppercase tracking-widest">Protocol Integrity</p>
-                                    <p className="text-xs font-black text-emerald-500 uppercase tracking-[0.3em]">SYNCHRONIZED</p>
+                                    <p className={`text-xs font-black uppercase tracking-[0.3em] ${accountData.is_standby ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                        {accountData.is_standby ? 'STANDBY_MODE' : 'SYNCHRONIZED'}
+                                    </p>
                                 </div>
                                 {assignedStructure && (
                                     <button
@@ -492,9 +569,12 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                     </button>
                                 )}
                             </div>
-                            <button className="flex items-center gap-3 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-[0.4em] transition-all underline underline-offset-8 decoration-primary/40">
-                                View Full Protocol Matrix <ArrowRightIcon className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Version: <span className="text-white/40">{assignedStructure?.version_label || 'v1.0.0'}</span></p>
+                                <button className="flex items-center gap-3 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-[0.4em] transition-all underline underline-offset-8 decoration-primary/40">
+                                    Full Matrix <ArrowRightIcon className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -794,6 +874,25 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                 />
             )}
         </motion.div>
+    );
+};
+
+const StatusBadge: React.FC<{ status: string, className?: string }> = ({ status, className }) => {
+    const configs: Record<string, { color: string, glow: string }> = {
+        'Draft': { color: 'bg-white/20 text-white', glow: 'shadow-[0_0_10px_rgba(255,255,255,0.1)]' },
+        'Active': { color: 'bg-blue-500 text-white', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.5)]' },
+        'Partial': { color: 'bg-amber-500 text-black', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.5)]' },
+        'Paid': { color: 'bg-emerald-500 text-black', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.5)]' },
+        'Overdue': { color: 'bg-red-500 text-white', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.5)]' },
+        'Archived': { color: 'bg-white/10 text-white/40', glow: '' }
+    };
+
+    const config = configs[status] || configs['Draft'];
+
+    return (
+        <div className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] ${config.color} ${config.glow} ${className}`}>
+            {status}
+        </div>
     );
 };
 
