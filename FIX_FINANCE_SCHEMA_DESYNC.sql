@@ -19,9 +19,9 @@ BEGIN
     -- First drop conflicting ones if they use old name
     ALTER TABLE public.student_fee_assignments DROP CONSTRAINT IF EXISTS student_fee_assignments_student_id_fee_structure_id_key;
     
-    -- Add standardized unique constraint
+    -- Add standardized unique constraint (Must match ON CONFLICT target in functions)
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'student_fee_assignments_identity_idx') THEN
-        ALTER TABLE public.student_fee_assignments ADD CONSTRAINT student_fee_assignments_identity_idx UNIQUE (student_id, structure_id);
+        ALTER TABLE public.student_fee_assignments ADD CONSTRAINT student_fee_assignments_identity_idx UNIQUE (student_id);
     END IF;
 END $$;
 

@@ -313,7 +313,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     <TabButton id="accounts" label="Accounts" icon={<UsersIcon className="w-4 h-4" />} isActive={activeView === 'accounts'} onClick={setActiveView} />
                     <TabButton id="expenditure" label="Expenditure" icon={<TrendingUpCustomIcon className="w-4 h-4 rotate-180" />} isActive={activeView === 'expenditure'} onClick={setActiveView} />
 
-                    {(profile.role?.toLowerCase().includes('admin') || profile.role?.toLowerCase() === 'accountant') && (
+                    {(profile.role?.toLowerCase()?.includes('admin') || profile.role?.toLowerCase() === 'accountant') && (
                         <>
                             <TabButton id="master" label="Master Control" icon={<ShieldCheckIcon className="w-4 h-4" />} isActive={activeView === 'master'} onClick={setActiveView} />
                             <TabButton id="audit" label="Audit Logs" icon={<ActivityIcon className="w-4 h-4" />} isActive={activeView === 'audit'} onClick={setActiveView} />

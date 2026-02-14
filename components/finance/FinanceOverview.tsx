@@ -448,7 +448,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                         </div>
 
                         <div className="xl:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-                            {projections.projections.map((node, idx) => (
+                            {projections?.projections?.map((node, idx) => (
                                 <motion.div
                                     key={idx}
                                     whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.03)' }}
