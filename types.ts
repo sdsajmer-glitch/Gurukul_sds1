@@ -235,6 +235,9 @@ export interface FeeComponent {
     is_mandatory: boolean;
     category?: string;
     is_refundable?: boolean;
+    gl_code?: string;
+    tax_percentage?: number;
+    description?: string;
 }
 
 export interface FeeStructure {

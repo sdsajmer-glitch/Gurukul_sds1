@@ -27,7 +27,7 @@ import { ClockIcon } from './icons/ClockIcon';
 import { WorkflowIcon } from './icons/WorkflowIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import { RefreshIcon } from './icons/RefreshIcon';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { motion, AnimatePresence } from 'framer-motion';
 
 import FinanceAuditLog from './finance/FinanceAuditLog';
@@ -64,16 +64,23 @@ const TabButton: React.FC<{
     <button
         onClick={() => onClick(id)}
         className={`
-            flex items-center gap-2.5 px-6 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-300 relative overflow-hidden group
+            flex items-center gap-3 px-8 py-3.5 rounded-[1.25rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden group
             ${isActive
-                ? 'bg-primary text-white shadow-lg shadow-primary/25 ring-1 ring-white/10 z-10'
-                : 'text-white/40 hover:text-white hover:bg-white/5'
+                ? 'bg-white text-black shadow-[0_20px_40px_-10px_rgba(255,255,255,0.3)] z-10 scale-105'
+                : 'text-white/30 hover:text-white hover:bg-white/5 hover:scale-102'
             }
         `}
     >
-        <span className="relative z-10 flex items-center gap-2">
-            {icon} {label}
+        <span className="relative z-10 flex items-center gap-2.5">
+            {React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${isActive ? 'text-black' : 'text-primary/40'}` })}
+            {label}
         </span>
+        {isActive && (
+            <motion.div
+                layoutId="tab-glow"
+                className="absolute inset-0 bg-gradient-to-tr from-white to-white/80 pointer-events-none"
+            />
+        )}
     </button>
 );
 
@@ -200,21 +207,23 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
         if (!financeData) return;
         setIsAnalyzing(true);
         try {
-            // FIX: Correct SDK initialization for @google/genai
-            const genAI = new GoogleGenAI({ apiKey: (import.meta as any).env.VITE_GEMINI_API_KEY || '' });
+            const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+            if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+                setAiInsight("AI_ORACLE_PENDING_CONFIG: PROVIDE_API_KEY");
+                return;
+            }
+
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
             const prompt = `Act as an institutional CFO. Analyze these stats: Total Assigned: ${financeData.total_assigned}, Collected: ${financeData.total_collected}, Pending: ${financeData.total_pending}, Overdue: ${financeData.total_overdue}, Monthly Collection: ${financeData.monthly_collection}. Provide a 25-word strategic insight on liquidity and collection efficiency.`;
 
-            const result = await genAI.models.generateContent({
-                model: "gemini-1.5-flash",
-                contents: [{ role: 'user', parts: [{ text: prompt }] }]
-            });
-            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            setAiInsight(text || "Synchronizing insights...");
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            setAiInsight(response.text());
         } catch (e) {
             console.error("AI Oracle Error:", e);
-            setAiInsight("AI context currently unavailable.");
+            setAiInsight("AI_ORACLE_DEFERRED: SEC_NODE_OFFLINE");
         } finally {
             setIsAnalyzing(false);
         }

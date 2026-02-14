@@ -22,6 +22,8 @@ import { LockIcon } from './icons/LockIcon';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { UserIcon } from './icons/UserIcon';
 import { UserPlusIcon } from './icons/UserPlusIcon';
+import { CameraIcon } from './icons/CameraIcon';
+import { StorageService, BUCKETS } from '../services/storage';
 import StudentProfileModal, { AssignClassModal } from './students/StudentProfileModal';
 import BulkStudentActionsModal, { BulkStudentActionType } from './students/BulkStudentActionsModal';
 import PremiumAvatar from './common/PremiumAvatar';
@@ -95,8 +97,29 @@ export const AddStudentModal: React.FC<{ onClose: () => void; onSave: () => void
         display_name: '',
         email: '',
         grade: '',
-        parent_guardian_details: ''
+        parent_guardian_details: '',
+        profile_photo_url: ''
     });
+    const [uploading, setUploading] = useState(false);
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const tempId = crypto.randomUUID();
+            const path = StorageService.getProfilePath('child', tempId);
+            const { path: uploadedPath } = await StorageService.upload(BUCKETS.PROFILES, path, file);
+
+            const { data } = supabase.storage.from(BUCKETS.PROFILES).getPublicUrl(uploadedPath);
+            setFormData(prev => ({ ...prev, profile_photo_url: data.publicUrl }));
+        } catch (err: any) {
+            setError("Photo upload failed: " + err.message);
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -108,7 +131,8 @@ export const AddStudentModal: React.FC<{ onClose: () => void; onSave: () => void
                 p_email: formData.email,
                 p_grade: formData.grade,
                 p_parent_details: formData.parent_guardian_details,
-                p_branch_id: branchId
+                p_branch_id: branchId,
+                p_profile_photo_url: formData.profile_photo_url || null
             });
 
             if (rpcError) throw rpcError;
@@ -144,6 +168,37 @@ export const AddStudentModal: React.FC<{ onClose: () => void; onSave: () => void
                             <p className="text-xs font-bold leading-relaxed">{error}</p>
                         </div>
                     )}
+
+                    {/* Photo Upload Section */}
+                    <div className="flex flex-col items-center justify-center space-y-4 pb-4">
+                        <div className="relative group/photo">
+                            <div className="w-32 h-32 rounded-[2rem] bg-muted/30 border-2 border-dashed border-border group-hover/photo:border-primary/50 transition-all overflow-hidden flex items-center justify-center relative">
+                                {formData.profile_photo_url ? (
+                                    <img src={formData.profile_photo_url} alt="Preview" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="flex flex-col items-center text-muted-foreground/20 group-hover/photo:text-primary/40 transition-colors">
+                                        <CameraIcon className="w-10 h-10 mb-2" />
+                                        <span className="text-[8px] font-black uppercase tracking-widest">Identity Capture</span>
+                                    </div>
+                                )}
+                                {uploading && (
+                                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
+                                        <Spinner size="sm" />
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handlePhotoUpload}
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                />
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary text-white rounded-xl shadow-lg flex items-center justify-center ring-4 ring-card pointer-events-none group-hover/photo:scale-110 transition-transform">
+                                <PlusIcon className="w-5 h-5" />
+                            </div>
+                        </div>
+                        <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.3em]">Institutional Photograph</p>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2.5">

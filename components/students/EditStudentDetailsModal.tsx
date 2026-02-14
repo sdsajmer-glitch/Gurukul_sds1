@@ -15,6 +15,8 @@ import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { ActivityIcon } from '../icons/ActivityIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
 import { RefreshCwIcon } from '../icons/RefreshCwIcon';
+import { CameraIcon } from '../icons/CameraIcon';
+import { StorageService, BUCKETS } from '../../services/storage';
 
 interface EditStudentDetailsModalProps {
     student: StudentForAdmin;
@@ -173,7 +175,28 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
         address: sanitizeVal(student.address),
         parent_guardian_details: sanitizeVal(student.parent_guardian_details),
         enrollment_status: student.enrollment_status || 'Active',
+        profile_photo_url: student.profile_photo_url || ''
     });
+
+    const [uploading, setUploading] = useState(false);
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const path = StorageService.getProfilePath('child', student.id);
+            const { path: uploadedPath } = await StorageService.upload(BUCKETS.PROFILES, path, file);
+
+            const { data } = supabase.storage.from(BUCKETS.PROFILES).getPublicUrl(uploadedPath);
+            setFormData(prev => ({ ...prev, profile_photo_url: data.publicUrl }));
+        } catch (err: any) {
+            setError("Photo upload failed: " + err.message);
+        } finally {
+            setUploading(false);
+        }
+    };
 
     // Reactive Refresh
     useEffect(() => {
@@ -397,7 +420,8 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                 p_parent_details: formData.parent_guardian_details,
                 p_student_id_number: formData.student_id_number,
                 p_grade: formData.grade,
-                p_enrollment_status: formData.enrollment_status
+                p_enrollment_status: formData.enrollment_status,
+                p_profile_photo_url: formData.profile_photo_url || null
             };
 
             const { error: rpcError } = await supabase.rpc('update_student_details_admin', updatePayload);
@@ -527,6 +551,43 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                             {error}
                         </motion.div>
                     )}
+
+                    {/* Photo Management Protocol */}
+                    <div className="flex flex-col items-center justify-center space-y-6 pb-4">
+                        <div className="relative group/photo">
+                            <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                className="w-40 h-40 rounded-[2.5rem] bg-indigo-500/5 border-2 border-dashed border-indigo-500/20 group-hover/photo:border-indigo-500/40 transition-all overflow-hidden flex items-center justify-center relative shadow-3xl ring-1 ring-white/5"
+                            >
+                                {formData.profile_photo_url ? (
+                                    <img src={formData.profile_photo_url} alt="Student" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="flex flex-col items-center text-indigo-400/20 group-hover/photo:text-indigo-400/40 transition-colors">
+                                        <CameraIcon className="w-12 h-12 mb-3" />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">No Identity Artifact</span>
+                                    </div>
+                                )}
+                                {uploading && (
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center">
+                                        <Spinner size="md" className="text-indigo-400" />
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handlePhotoUpload}
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                />
+                            </motion.div>
+                            <div className="absolute -bottom-3 -right-3 w-12 h-12 bg-indigo-600 text-white rounded-2xl shadow-[0_10px_30px_rgba(79,70,229,0.4)] flex items-center justify-center ring-8 ring-[#0c0e12] pointer-events-none group-hover/photo:scale-110 group-hover/photo:rotate-12 transition-all">
+                                <CameraIcon className="w-6 h-6" />
+                            </div>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.4em] mb-1.5">Identity Visualization</p>
+                            <p className="text-[9px] font-medium text-white/20 uppercase tracking-[0.2em]">Mandatory for institutional record-keeping</p>
+                        </div>
+                    </div>
 
                     {/* Identity Section */}
                     <section className="space-y-10">

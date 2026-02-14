@@ -14,8 +14,13 @@ import { MailIcon } from '../icons/MailIcon';
 import { PrinterIcon } from '../icons/PrinterIcon';
 import { TrendingUpCustomIcon } from '../icons/TrendingUpIcon';
 import { SearchIcon } from '../icons/SearchIcon';
+import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+import { CreditCardIcon } from '../icons/CreditCardIcon';
+import { SparklesIcon } from '../icons/SparklesIcon';
+import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import PremiumAvatar from '../common/PremiumAvatar';
 import { motion } from 'framer-motion';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const formatCurrency = (amount: number, currency: CurrencyCode = 'INR') => {
     return new Intl.NumberFormat('en-IN', {
@@ -126,7 +131,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'ALL' | 'PAID' | 'PENDING'>('ALL');
-    const [isResolving, setIsResolving] = useState(false);
+    const [aiInsight, setAiInsight] = useState<string | null>(null);
 
     const isMounted = useRef(true);
 
@@ -157,6 +162,41 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                 .maybeSingle();
 
             setAssignedStructure(structData?.fee_structures || null);
+
+            // 4. Fetch Governance Artifacts
+            const { data: auditData } = await supabase
+                .from('finance_governance_audit')
+                .select('*')
+                .ilike('description', `%${initialStudent.student_id}%`)
+                .order('created_at', { ascending: false })
+                .limit(5);
+
+            setAuditLogs(auditData || []);
+
+            // 5. Initialize AI Oracle (with safety guard)
+            const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+            if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY') {
+                try {
+                    const genAI = new GoogleGenerativeAI(apiKey);
+                    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+                    const prompt = `Analyze this student's financial state: 
+                    Billed: ${nodeData[0].total_billed}, 
+                    Paid: ${nodeData[0].total_paid}, 
+                    Outstanding: ${nodeData[0].outstanding_balance}, 
+                    Integrity: ${nodeData[0].integrity_score}%.
+                    Provide a one-sentence professional financial insight for a school administrator.`;
+
+                    const result = await model.generateContent(prompt);
+                    const response = await result.response;
+                    setAiInsight(response.text());
+                } catch (err) {
+                    console.warn('AI Oracle failed to initialize:', err);
+                    setAiInsight("AUTOMATED_INSIGHT_DEFERRED: SEC_NODE_OFFLINE");
+                }
+            } else {
+                setAiInsight("AI_ORACLE_PENDING_CONFIG: PROVIDE_API_KEY");
+            }
 
         } catch (err) {
             console.error("Registry Desync:", err);
@@ -190,251 +230,366 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
     const totalAssigned = accountData.total_billed || 0;
     const totalPaid = accountData.total_paid || 0;
     const outstanding = accountData.outstanding_balance || 0;
-    const overdue = 0; // Need backend field for overdue, defaulting to 0 or logic could be added
+    const recoveryRate = totalAssigned > 0 ? (totalPaid / totalAssigned) * 100 : 0;
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-[#08090a]"><Spinner /></div>;
+    if (loading) return (
+        <div className="min-h-screen bg-black flex items-center justify-center">
+            <div className="flex flex-col items-center gap-6">
+                <Spinner />
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.6em] animate-pulse">Synchronizing Student Nodes...</p>
+            </div>
+        </div>
+    );
+
+    if (error) return (
+        <div className="min-h-screen bg-black flex items-center justify-center p-10">
+            <div className="bg-red-500/10 border border-red-500/20 p-12 rounded-[3rem] text-center max-w-2xl">
+                <AlertTriangleIcon className="w-16 h-16 text-red-500 mx-auto mb-8" />
+                <h2 className="text-2xl font-serif font-black text-white uppercase mb-4">Registry Error</h2>
+                <p className="text-white/40 mb-10 leading-relaxed font-medium">{error}</p>
+                <button onClick={() => window.location.reload()} className="px-10 py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-widest">Retry Handshake</button>
+            </div>
+        </div>
+    );
+
+    if (!accountData) return null;
 
     return (
-        <div className="min-h-screen bg-[#08090a] text-foreground font-sans selection:bg-primary/20 pb-32">
-            <div className="max-w-[1600px] mx-auto px-6 md:px-12 pt-8 space-y-10 animate-in fade-in duration-700">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="min-h-screen bg-[#0a0a0c] text-white p-6 lg:p-12 font-sans selection:bg-primary selection:text-white"
+        >
+            <div className="max-w-[1600px] mx-auto space-y-12">
+                {/* Layer 0 – Identity Navigation */}
+                <div className="flex items-center justify-between">
+                    <button
+                        onClick={onBack}
+                        className="flex items-center gap-4 text-white/30 hover:text-white transition-all group"
+                    >
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:bg-white/10 group-hover:border-white/20 transition-all">
+                            <ArrowRightIcon className="w-5 h-5 rotate-180" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em]">Node Directory</span>
+                    </button>
+                    <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                        <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">Live Node Access</span>
+                    </div>
+                </div>
 
-                {/* 1. Identity & Financial Header Layer */}
-                <header className="grid grid-cols-1 xl:grid-cols-12 gap-8 bg-black/40 border border-white/5 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden backdrop-blur-3xl group">
-                    <div className="absolute inset-y-0 left-0 w-1 bg-primary/40"></div>
-                    <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:rotate-12 transition-transform duration-1000"><ReceiptIcon className="w-48 h-48" /></div>
+                {/* Layer 1 – Institutional Student Header */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-[4rem] p-12 lg:p-20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-24 opacity-[0.03] group-hover:scale-110 transition-transform duration-[3000ms] -rotate-12">
+                        <TrendingUpCustomIcon className="w-96 h-96 text-primary" />
+                    </div>
 
-                    {/* Compact Identity */}
-                    <div className="xl:col-span-4 flex items-center gap-10 relative z-10 border-r border-white/5 pr-10">
-                        <div className="relative group/avatar">
-                            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full opacity-50 group-hover/avatar:opacity-80 transition-opacity"></div>
+                    <div className="flex flex-col lg:flex-row items-center gap-16 relative z-10">
+                        <div className="relative">
+                            <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full opacity-40 animate-pulse"></div>
                             <PremiumAvatar
                                 src={accountData.profile_photo_url}
                                 name={accountData.display_name}
                                 size="lg"
-                                className="w-32 h-32 rounded-[2.5rem] border-2 border-white/10 relative z-10 shadow-2xl transition-transform duration-700 group-hover/avatar:scale-105"
+                                className="w-48 h-48 rounded-[3.5rem] border-2 border-white/10 ring-8 ring-white/5 shadow-3xl"
                             />
-                            <div className="absolute -bottom-3 -right-3 w-10 h-10 rounded-2xl bg-emerald-500 border-4 border-[#0c0d12] z-20 flex items-center justify-center shadow-xl">
-                                <ShieldCheckIcon className="w-5 h-5 text-white" />
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-black px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-2xl">
+                                Active Profile
                             </div>
                         </div>
-                        <div>
-                            <div className="flex items-center gap-3 mb-3">
-                                <span className="text-[9px] font-black uppercase bg-primary/10 border border-primary/20 px-3 py-1 rounded-lg text-primary tracking-[0.2em]">GRADE_{accountData.grade}_CORE</span>
-                                <span className="text-[9px] font-black uppercase text-white/20 tracking-widest">ID: {accountData.student_id ? accountData.student_id.substring(0, 12).toUpperCase() : 'NULL_NODE'}</span>
+
+                        <div className="flex-1 text-center lg:text-left">
+                            <h1 className="text-5xl lg:text-7xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-6 group-hover:translate-x-2 transition-transform duration-700">
+                                {accountData.display_name}
+                            </h1>
+                            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-10 gap-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-primary/40"></div>
+                                    <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Protocol: <span className="text-white/80">{assignedStructure?.name || 'NODE_GENESIS'}</span></p>
+                                </div>
+                                <div className="w-1.5 h-1.5 rounded-full bg-white/10"></div>
+                                <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Section: <span className="text-white/80">{accountData.class_name || 'UNASSIGNED'}</span></p>
+                                <div className="w-1.5 h-1.5 rounded-full bg-white/10"></div>
+                                <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Grade: <span className="text-white/80">{accountData.grade || 'N/A'}</span></p>
+                                <div className="w-1.5 h-1.5 rounded-full bg-white/10"></div>
+                                <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Cycle: <span className="text-white/80">2023-24</span></p>
                             </div>
-                            <h1 className="text-4xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-3">{accountData.display_name}</h1>
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em]">PROTOCOL: <span className="text-white/80">{assignedStructure?.name || 'GENERIC_FALLBACK'}</span></p>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button className="px-10 py-5 bg-white text-black hover:bg-primary hover:text-white transition-all rounded-3xl font-black text-[11px] uppercase tracking-widest shadow-2xl active:scale-95">Statement_PDF</button>
+                            <button className="p-5 bg-white/5 border border-white/5 hover:bg-white/10 rounded-3xl text-white/40 hover:text-white transition-all group/mail">
+                                <MailIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Layer 2 – Registry KPIs Cluster */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <StatCard
+                        title="Billed Magnitude"
+                        value={formatCurrency(totalAssigned, viewCurrency)}
+                        subValue="Gross Liability Node"
+                        icon={<ActivityIcon className="w-6 h-6" />}
+                        variant="neutral"
+                    />
+                    <StatCard
+                        title="Settled Capital"
+                        value={formatCurrency(totalPaid, viewCurrency)}
+                        subValue={`${recoveryRate.toFixed(1)}% Recovery Velocity`}
+                        icon={<ShieldCheckIcon className="w-6 h-6" />}
+                        variant="success"
+                    />
+                    <StatCard
+                        title="Net Exposure"
+                        value={formatCurrency(outstanding, viewCurrency)}
+                        subValue={outstanding > 0 ? "ACTION_REQUIRED" : "LIQUIDITY_SECURED"}
+                        icon={<AlertTriangleIcon className="w-6 h-6" />}
+                        variant={outstanding > 0 ? "warning" : "success"}
+                    />
+                    <StatCard
+                        title="Unallocated Funds"
+                        value={formatCurrency(accountData.unallocated_funds || 0, viewCurrency)}
+                        subValue={(accountData.unallocated_funds > 0) ? "CREDIT_AVAILABLE" : "NET_ZERO_BALANCE"}
+                        icon={<CreditCardIcon className="w-6 h-6" />}
+                        variant={(accountData.unallocated_funds > 0) ? "success" : "neutral"}
+                    />
+                </div>
+
+                {/* Layer 3 – Intelligence & Integrity Matrix */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div className="bg-primary/10 border border-primary/20 rounded-[4rem] p-12 relative overflow-hidden group shadow-3xl">
+                        <div className="absolute top-0 right-0 p-16 opacity-[0.05] group-hover:scale-125 transition-transform duration-[3000ms]">
+                            <SparklesIcon className="w-64 h-64 text-primary" />
+                        </div>
+                        <div className="relative z-10 space-y-8">
+                            <div className="flex items-center gap-5">
+                                <div className="p-4 bg-primary rounded-2xl text-white shadow-2xl">
+                                    <SparklesIcon className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Financial Intelligence Oracle</h3>
                             </div>
+                            <p className="text-2xl font-serif italic text-white/80 leading-snug tracking-tight border-l-4 border-primary/40 pl-8 py-2">
+                                {aiInsight || "Synchronizing with the neural financial node..."}
+                            </p>
                         </div>
                     </div>
 
-                    {/* Financial Snapshot */}
-                    <div className="xl:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <StatCard
-                            title="Total Billed"
-                            value={formatCurrency(totalAssigned, viewCurrency)}
-                            icon={<ActivityIcon className="w-5 h-5" />}
-                            variant="neutral"
-                        />
-                        <StatCard
-                            title="Total Cleared"
-                            value={formatCurrency(totalPaid, viewCurrency)}
-                            icon={<CheckCircleIcon className="w-5 h-5" />}
-                            variant="success"
-                        />
-                        <StatCard
-                            title="Institutional Due"
-                            value={formatCurrency(outstanding, viewCurrency)}
-                            icon={<TrendingUpCustomIcon className="w-5 h-5" />}
-                            variant="warning"
-                        />
-                        <StatCard
-                            title="Critical Arrears"
-                            value={formatCurrency(overdue, viewCurrency)}
-                            subValue={overdue > 0 ? "ACTION_REQ" : "STATUS_OK"}
-                            icon={<AlertTriangleIcon className="w-5 h-5" />}
-                            variant={overdue > 0 ? "danger" : "success"}
-                        />
-                    </div>
-                </header>
-
-                {/* 2. Visualization & Analytics Layer */}
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-black/40 border border-white/5 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden group">
-                        <div className="flex justify-between items-start mb-10">
-                            <div>
-                                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tighter flex items-center gap-4">
-                                    <TrendingUpCustomIcon className="w-6 h-6 text-primary" /> Forensic Trend Analysis
-                                </h3>
-                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mt-2">Institutional collection velocity per temporal node.</p>
+                    <div className="bg-[#12141c]/60 border border-white/5 rounded-[4rem] p-12 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
+                        <div className="absolute -bottom-10 -right-10 opacity-[0.02] group-hover:scale-110 transition-transform duration-1000">
+                            <ShieldCheckIcon className="w-80 h-80 text-emerald-500" />
+                        </div>
+                        <div className="relative z-10 flex flex-col h-full justify-between">
+                            <div className="flex items-center justify-between mb-10">
+                                <div>
+                                    <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Institutional Integrity Node</h4>
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Compliance & Reliability Index</p>
+                                </div>
+                                <div className="text-6xl font-serif font-black text-emerald-500 drop-shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                                    {accountData.integrity_score}%
+                                </div>
                             </div>
-                            <div className="flex items-center gap-4 p-2 bg-white/[0.02] rounded-xl border border-white/5">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
-                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Revenue_Protocol</span>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-[2rem] space-y-2">
+                                    <p className="text-[9px] font-black text-emerald-500/60 uppercase tracking-widest">Payment Probability</p>
+                                    <p className="text-lg font-serif font-black text-white uppercase">{accountData.integrity_score > 90 ? 'ULTRA_HIGH' : accountData.integrity_score > 70 ? 'HIGH' : 'MODERATE'}</p>
+                                </div>
+                                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-[2rem] space-y-2">
+                                    <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">Registry Stability</p>
+                                    <p className="text-lg font-serif font-black text-white uppercase">ACTIVE_PROTOCOL</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="h-56 w-full">
-                            <PaymentTrendChart ledger={ledger} />
-                        </div>
                     </div>
+                </div>
 
-                    <div className="bg-primary/5 border border-primary/10 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden flex flex-col justify-center items-center text-center group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
-                        <div className="relative w-40 h-40 mb-8">
-                            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="42" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/5" />
-                                <motion.circle
-                                    cx="50" cy="50" r="42" stroke="currentColor" strokeWidth="6" fill="transparent"
-                                    initial={{ strokeDashoffset: 264 }}
-                                    animate={{ strokeDashoffset: 264 - (264 * (accountData.integrity_score || 100) / 100) }}
-                                    strokeDasharray={264}
-                                    className="text-primary drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]"
-                                    strokeLinecap="round"
-                                />
-                            </svg>
-                            <div className="absolute inset-0 flex items-center justify-center flex-col">
-                                <span className="text-5xl font-serif font-black text-white">{accountData.integrity_score || 100}</span>
-                                <span className="text-[9px] font-black text-primary/40 uppercase tracking-widest">Index</span>
-                            </div>
+                {/* Layer 4 – Forensic Ledger Execution */}
+                <div className="bg-[#12141c]/60 border border-white/5 rounded-[4rem] shadow-3xl overflow-hidden backdrop-blur-3xl">
+                    <div className="p-10 lg:p-14 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                        <div>
+                            <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tight">Deep Ledger Registry</h3>
+                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] mt-3">Full Transactional Audit & Historical Vector Stream</p>
                         </div>
-                        <h4 className="text-xl font-serif font-black text-white uppercase tracking-tighter">Institutional Integrity</h4>
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] mt-3 bg-white/[0.03] px-5 py-2 rounded-full border border-white/5">
-                            {((accountData.integrity_score || 100) < 70) ? 'DEFICIT_RISK_DETECTED' : 'STABLE_NODE_PROTOCOL'}
-                        </p>
-                    </div>
-                </section>
-
-                {/* 3. Controls & Ledger Actions */}
-                <section className="space-y-8">
-                    <div className="flex flex-col md:flex-row justify-between items-end gap-8 bg-black/60 backdrop-blur-3xl border border-white/5 p-8 rounded-[2.5rem] sticky top-8 z-40 shadow-[0_32px_64px_-16px_rgba(0,0,0,1)] group">
-                        <div className="w-full md:w-auto flex-grow max-w-2xl flex items-center gap-6">
-                            <div className="relative flex-grow group/search">
-                                <SearchIcon className="absolute left-8 top-1/2 -translate-y-1/2 w-6 h-6 text-white/10 group-focus-within/search:text-primary transition-colors" />
+                        <div className="flex gap-4">
+                            <div className="relative group">
+                                <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
                                 <input
                                     type="text"
-                                    placeholder="SEARCH FORENSIC LEDGER..."
+                                    placeholder="SEARCH TRANSACTION..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-white/[0.02] border border-white/5 rounded-2xl pl-16 pr-8 py-5 text-[11px] font-black text-white uppercase tracking-[0.3em] focus:outline-none focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 transition-all placeholder:text-white/5"
+                                    className="pl-14 pr-8 py-4 bg-black/40 border border-white/5 rounded-2xl text-[10px] font-black text-white outline-none focus:border-primary/40 uppercase tracking-widest transition-all w-64"
                                 />
                             </div>
-                            <div className="flex bg-white/[0.02] rounded-2xl p-1.5 border border-white/5 shadow-inner">
-                                {['ALL', 'PENDING', 'PAID'].map(t => (
-                                    <button
-                                        key={t}
-                                        onClick={() => setFilterType(t as any)}
-                                        className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${filterType === t ? 'bg-white/10 text-white shadow-2xl ring-1 ring-white/10' : 'text-white/20 hover:text-white'}`}
-                                    >
-                                        {t}
-                                    </button>
-                                ))}
+                            <button className="px-8 py-4 bg-primary text-white hover:bg-primary/80 transition-all rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl active:scale-95">Record Settlement</button>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left whitespace-nowrap">
+                            <thead className="bg-black/40 text-[10px] font-black text-white/20 uppercase tracking-[0.4em] border-b border-white/5">
+                                <tr>
+                                    <th className="p-10 pl-14 font-black">Transaction Matrix</th>
+                                    <th className="p-10 font-black">Event Identifier</th>
+                                    <th className="p-10 font-black">Protocol Node</th>
+                                    <th className="p-10 text-right font-black">Debit</th>
+                                    <th className="p-10 text-right font-black">Credit</th>
+                                    <th className="p-10 text-right pr-14 font-black">Running Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/[0.03]">
+                                {filteredLedger.length > 0 ? filteredLedger.map((item, i) => (
+                                    <tr key={i} className="group hover:bg-white/[0.03] transition-all duration-300">
+                                        <td className="p-10 pl-14">
+                                            <div className="flex items-center gap-6">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${Number(item.debit) > 0 ? 'bg-amber-500/5 text-amber-500 border border-amber-500/10' : 'bg-emerald-500/5 text-emerald-500 border border-emerald-500/10'}`}>
+                                                    {Number(item.debit) > 0 ? <AlertTriangleIcon className="w-5 h-5" /> : <ShieldCheckIcon className="w-5 h-5" />}
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <p className="text-base font-serif font-black text-white/90 group-hover:text-primary transition-colors">{item.description}</p>
+                                                    <p className="text-[10px] text-white/25 font-black uppercase tracking-[0.2em]">{new Date(item.transaction_date).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-10 font-mono text-[11px] text-white/30 uppercase tracking-tighter">
+                                            <span className="bg-white/[0.03] px-4 py-2 rounded-xl border border-white/5">#{item.identifier || 'GEN_NODE_TX'}</span>
+                                        </td>
+                                        <td className="p-10">
+                                            <span className="px-5 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black uppercase text-white/40 tracking-widest">{item.protocol || 'STANDARD_CYCLE'}</span>
+                                        </td>
+                                        <td className="p-10 text-right text-lg font-black font-mono text-white/40 tracking-tighter">
+                                            {Number(item.debit) > 0 ? formatCurrency(item.debit, viewCurrency) : '—'}
+                                        </td>
+                                        <td className="p-10 text-right text-lg font-black font-mono text-emerald-500 tracking-tighter drop-shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                                            {Number(item.credit) > 0 ? formatCurrency(item.credit, viewCurrency) : '—'}
+                                        </td>
+                                        <td className="p-10 text-right pr-14 text-xl font-serif font-black text-white tracking-tighter">
+                                            {formatCurrency(item.running_balance, viewCurrency)}
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan={6} className="p-32 text-center">
+                                            <div className="flex flex-col items-center gap-8 opacity-20">
+                                                <ShieldCheckIcon className="w-24 h-24" />
+                                                <p className="text-xl font-serif font-black uppercase tracking-[0.5em]">Ledger Node Quiet</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Registry Balance Summary Footer */}
+                    <div className="p-12 lg:p-16 bg-white/[0.01] border-t border-white/5 flex flex-col xl:flex-row justify-between items-center gap-16 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent pointer-events-none" />
+
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-16 relative z-10">
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Total Registry Debit</p>
+                                <p className="text-3xl font-serif font-black text-white/60 tracking-tighter italic">{formatCurrency(totalAssigned, viewCurrency)}</p>
+                            </div>
+                            <div className="w-px h-12 bg-white/5"></div>
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Total Registry Credit</p>
+                                <p className="text-3xl font-serif font-black text-emerald-500 tracking-tighter drop-shadow-[0_0_15px_rgba(16,185,129,0.3)] italic">{formatCurrency(totalPaid, viewCurrency)}</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <button className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all shadow-inner active:scale-95 group/btn" title="Dispatch Statement">
-                                <MailIcon className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
-                            </button>
-                            <button className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all shadow-inner active:scale-95 group/btn" title="Extract Hardcopy">
-                                <PrinterIcon className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
-                            </button>
-                            <button onClick={() => refreshAccountStatus()} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all shadow-inner active:scale-95 group/btn">
-                                <RefreshCwIcon className={`w-6 h-6 group-hover/btn:rotate-180 transition-all duration-700 ${loading ? 'animate-spin' : ''}`} />
-                            </button>
-                            <button
-                                onClick={() => setIsPaymentModalOpen(true)}
-                                className="px-10 py-5 bg-primary text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all flex items-center gap-4 transform hover:-translate-y-1 active:scale-95 group/action"
-                            >
-                                <ReceiptIcon className="w-6 h-6 group-hover/action:rotate-12 transition-transform" /> Record Transaction
-                            </button>
+                        <div className="bg-black/80 px-16 py-8 rounded-[3rem] border border-primary/20 shadow-3xl flex items-center gap-12 group hover:border-primary/40 transition-all relative z-10">
+                            <div className="text-right space-y-2">
+                                <p className="text-[11px] font-black text-primary/60 uppercase tracking-[0.5em] italic">Current Net Exposure</p>
+                                <p className="text-4xl lg:text-5xl font-serif font-black text-white tracking-tighter drop-shadow-2xl">{formatCurrency(outstanding, viewCurrency)}</p>
+                            </div>
+                            <div className={`p-6 rounded-[2rem] transition-all duration-700 ${outstanding > 0 ? 'bg-amber-500/10 text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)] rotate-12' : 'bg-emerald-500/10 text-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.2)]'}`}>
+                                {outstanding > 0 ? <AlertTriangleIcon className="w-10 h-10 animate-pulse" /> : <ShieldCheckIcon className="w-10 h-10" />}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Layer 5 – Forensic Metadata & Communication Trace */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pb-24">
+                    {/* Forensic Audit Logs Polish */}
+                    <div className="bg-[#12141c]/60 border border-white/5 rounded-[4rem] p-12 lg:p-16 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-16 opacity-[0.02] group-hover:scale-110 transition-transform duration-[3000ms]">
+                            <ShieldCheckIcon className="w-72 h-72 text-primary" />
+                        </div>
+
+                        <div className="flex items-center gap-8 mb-16 relative z-10">
+                            <div className="p-5 bg-primary/10 rounded-[2rem] text-primary border border-primary/20 shadow-inner">
+                                <ShieldCheckIcon className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tight">Forensic Registry Trace</h3>
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-3 italic">Immutable Transactional Evidence Log</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6 relative z-10">
+                            {auditLogs.length > 0 ? auditLogs.map((log, i) => (
+                                <div key={i} className="flex items-center justify-between p-8 bg-white/[0.03] border border-white/5 rounded-[2.5rem] group/log cursor-default hover:bg-white/[0.05] hover:translate-x-3 transition-all duration-500">
+                                    <div className="flex items-center gap-8">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)] group-hover/log:scale-150 transition-transform"></div>
+                                        <div className="space-y-2">
+                                            <p className="text-[13px] font-black text-white/80 uppercase tracking-tight">{log.action_type || 'SYSTEM_NODE_EVENT'}</p>
+                                            <p className="text-[10px] text-white/25 font-black uppercase tracking-widest">{new Date(log.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-mono font-black text-white/10 bg-white/[0.02] px-5 py-2.5 rounded-xl border border-white/5 group-hover/log:text-white/40 group-hover/log:border-white/20 transition-all">TXID_{log.id?.substring(0, 8).toUpperCase()}</span>
+                                </div>
+                            )) : (
+                                <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3.5rem] bg-white/[0.01]">
+                                    <p className="text-[11px] font-black text-white/10 uppercase tracking-[0.5em] italic leading-loose">No institutional artifacts archived for this node yet.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Enterprise Ledger Table */}
-                    <div className="bg-black/40 border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl relative group/table">
-                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-white/[0.01] text-[10px] font-black uppercase tracking-[0.4em] text-white/20 border-b border-white/5">
-                                    <tr>
-                                        <th className="p-10 pl-12">Registry Date</th>
-                                        <th className="p-10">Identifier / Narrative</th>
-                                        <th className="p-10">Protocol</th>
-                                        <th className="p-10">Integrity</th>
-                                        <th className="p-10 text-right">Debit</th>
-                                        <th className="p-10 text-right">Credit</th>
-                                        <th className="p-10 text-right pr-12">Balance_Node</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/[0.02]">
-                                    {filteredLedger.length > 0 ? filteredLedger.map((entry, idx) => {
-                                        const date = new Date(entry.transaction_date);
-                                        const isCredit = Number(entry.credit) > 0;
-                                        return (
-                                            <tr key={idx} className="group hover:bg-primary/[0.02] transition-colors relative">
-                                                <td className="p-10 pl-12">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-black text-white font-serif tracking-tighter uppercase italic">
-                                                            {date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '_')}
-                                                        </span>
-                                                        <span className="text-[9px] font-black text-white/20 mt-1 uppercase tracking-widest">{date.toLocaleTimeString()}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-10">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-black text-white/80 uppercase tracking-tight">{entry.description}</span>
-                                                        <span className="text-[9px] font-mono text-white/20 mt-1.5 uppercase tracking-widest bg-white/[0.03] w-max px-2 py-0.5 rounded-lg border border-white/5">{entry.identifier || 'SYS_VOID'}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-10">
-                                                    <span className="px-4 py-1.5 bg-white/[0.02] border border-white/5 rounded-xl text-[9px] font-black text-white/30 uppercase tracking-[0.2em] shadow-inner">
-                                                        {entry.protocol || (isCredit ? 'SETTLEMENT' : 'AUTOMATION')}
-                                                    </span>
-                                                </td>
-                                                <td className="p-10">
-                                                    <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border shadow-inner ${isCredit ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                                                        }`}>
-                                                        {isCredit ? 'ARCHIVED' : 'PENDING'}
-                                                    </span>
-                                                </td>
-                                                <td className="p-10 text-right font-serif font-black text-white/40">
-                                                    {Number(entry.debit) > 0 ? formatCurrency(entry.debit, viewCurrency) : '-'}
-                                                </td>
-                                                <td className="p-10 text-right font-serif font-black text-emerald-500">
-                                                    {Number(entry.credit) > 0 ? formatCurrency(entry.credit, viewCurrency) : '-'}
-                                                </td>
-                                                <td className="p-10 pr-12 text-right font-serif font-black text-white tracking-tighter text-xl">
-                                                    {formatCurrency(entry.running_balance, viewCurrency)}
-                                                </td>
-                                            </tr>
-                                        );
-                                    }) : (
-                                        <tr>
-                                            <td colSpan={7} className="p-40 text-center">
-                                                <div className="flex flex-col items-center gap-6">
-                                                    <div className="w-20 h-20 bg-white/[0.02] rounded-[2.5rem] flex items-center justify-center border-2 border-dashed border-white/5">
-                                                        <SearchIcon className="w-8 h-8 opacity-10" />
-                                                    </div>
-                                                    <p className="text-[11px] font-black uppercase tracking-[0.5em] text-white/10">No ledger artifacts detected in this temporal node</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                    {/* Operational Dispatch Logs */}
+                    <div className="bg-[#12141c]/60 border border-white/5 rounded-[4rem] p-12 lg:p-16 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-16 opacity-[0.02] group-hover:scale-110 transition-transform duration-[3000ms]">
+                            <MailIcon className="w-72 h-72 text-emerald-500" />
+                        </div>
+
+                        <div className="flex items-center gap-8 mb-16 relative z-10">
+                            <div className="p-5 bg-emerald-500/10 rounded-[2rem] text-emerald-500 border border-emerald-500/20 shadow-inner">
+                                <MailIcon className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tight">Statement Dispatch Registry</h3>
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-3 italic">Communication Persistence Stream</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6 relative z-10">
+                            {[
+                                { type: 'Statement_Dispatch', date: '2023-11-01', channel: 'EMAIL_SMTP', status: 'CONFIRMED' },
+                                { type: 'Arrears_Alert', date: '2023-10-15', channel: 'SMS_GATEWAY', status: 'DELIVERED' }
+                            ].map((comm, i) => (
+                                <div key={i} className="flex items-center justify-between p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] group/comm hover:bg-white/[0.04] transition-all duration-500">
+                                    <div className="flex items-center gap-8">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/40"></div>
+                                        <div className="space-y-2">
+                                            <p className="text-[13px] font-black text-white/70 uppercase tracking-tight font-serif italic">{comm.type}</p>
+                                            <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">{comm.channel} • {new Date(comm.date).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-[9px] font-black text-emerald-500/60 bg-emerald-500/5 px-4 py-2 rounded-xl border border-emerald-500/10 uppercase tracking-widest group-hover/comm:bg-emerald-500/20 group-hover/comm:text-emerald-500 transition-all">{comm.status}</span>
+                                </div>
+                            ))}
+                            <div className="pt-8">
+                                <button className="w-full py-6 bg-white/5 hover:bg-white/10 border border-white/5 rounded-[2rem] text-[10px] font-black text-white/40 hover:text-white uppercase tracking-[0.5em] transition-all shadow-xl group/btn">
+                                    <span className="flex items-center justify-center gap-4">
+                                        Trigger Manual Dispatch Trace <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                                    </span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </section>
-
-                <footer className="pt-20 text-center pb-12">
-                    <button onClick={onBack} className="group px-10 py-5 bg-white/[0.02] border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.5em] text-white/20 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-4 mx-auto shadow-inner active:scale-95">
-                        <ChevronLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Financial Registry
-                    </button>
-                </footer>
+                </div>
             </div>
 
             {isPaymentModalOpen && (
@@ -445,7 +600,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     onSuccess={() => { setIsPaymentModalOpen(false); refreshAccountStatus(); onUpdate(); }}
                 />
             )}
-        </div>
+        </motion.div>
     );
 };
 
