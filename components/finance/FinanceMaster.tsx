@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusIcon } from '../icons/PlusIcon';
 import { BookIcon } from '../icons/BookIcon';
@@ -10,7 +10,12 @@ import { ChevronDownIcon } from '../icons/ChevronDownIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import { CreditCardIcon } from '../icons/CreditCardIcon';
 import { UsersIcon } from '../icons/UsersIcon';
+import { ActivityIcon } from '../icons/ActivityIcon';
+import { ClockIcon } from '../icons/ClockIcon';
+import { WorkflowIcon } from '../icons/WorkflowIcon';
+import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
 import { FeeStructure, CurrencyCode } from '../../types';
+import { supabase } from '../../services/supabase';
 
 interface FinanceMasterProps {
     feeStructures: FeeStructure[];
@@ -37,22 +42,26 @@ const ConfigCard: React.FC<{
     children: React.ReactNode;
     isExpanded: boolean;
     onToggle: () => void;
-}> = ({ title, description, icon, children, isExpanded, onToggle }) => (
-    <div className="bg-[#12141c] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 hover:border-white/10 group">
+    badge?: string;
+}> = ({ title, description, icon, children, isExpanded, onToggle, badge }) => (
+    <div className={`bg-[#12141c]/80 backdrop-blur-xl border border-white/5 rounded-[3rem] overflow-hidden shadow-3xl transition-all duration-500 hover:border-white/10 group ${isExpanded ? 'ring-1 ring-primary/20' : ''}`}>
         <div
             onClick={onToggle}
-            className="p-8 md:p-10 flex items-center justify-between cursor-pointer"
+            className="p-10 md:p-12 flex items-center justify-between cursor-pointer"
         >
-            <div className="flex items-center gap-8">
-                <div className="p-5 rounded-[1.8rem] bg-white/[0.03] text-white/20 group-hover:text-primary transition-all group-hover:bg-primary/10 border border-white/5 group-hover:border-primary/20">
+            <div className="flex items-center gap-10">
+                <div className="p-6 rounded-[2rem] bg-white/[0.03] text-white/20 group-hover:text-primary transition-all group-hover:bg-primary/10 border border-white/5 group-hover:border-primary/20 shadow-inner">
                     {icon}
                 </div>
                 <div>
-                    <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors">{title}</h3>
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2 group-hover:text-white/40 transition-colors">{description}</p>
+                    <div className="flex items-center gap-4 mb-2">
+                        <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tighter group-hover:text-primary transition-colors">{title}</h3>
+                        {badge && <span className="px-3 py-1 bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest rounded-lg border border-primary/20">{badge}</span>}
+                    </div>
+                    <p className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em] group-hover:text-white/40 transition-colors leading-none">{description}</p>
                 </div>
             </div>
-            <div className={`p-4 rounded-full bg-white/5 text-white/20 transition-transform duration-500 ${isExpanded ? 'rotate-180 bg-primary/20 text-primary' : ''}`}>
+            <div className={`p-4 rounded-full bg-white/5 text-white/20 transition-transform duration-500 ${isExpanded ? 'rotate-180 bg-primary/20 text-primary shadow-lg shadow-primary/20' : ''}`}>
                 <ChevronDownIcon className="w-6 h-6" />
             </div>
         </div>
@@ -63,9 +72,9 @@ const ConfigCard: React.FC<{
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.5, ease: 'circOut' }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 >
-                    <div className="px-10 pb-10 pt-4 border-t border-white/[0.03]">
+                    <div className="px-12 pb-12 pt-4 border-t border-white/[0.03]">
                         {children}
                     </div>
                 </motion.div>
@@ -74,99 +83,89 @@ const ConfigCard: React.FC<{
     </div>
 );
 
-const ReadinessNavigator: React.FC<{ readiness: any; onNew: () => void }> = ({ readiness, onNew }) => {
-    const checklist = [
-        { key: 'coa', label: 'Chart of Accounts', desc: 'Accounting Backbone', status: 'SYNCHRONIZED', icon: <SecurityIcon className="w-4 h-4" /> },
-        { key: 'structures', label: 'Fee Protocols', desc: 'Billing Matrices', status: readiness?.hasStructures ? 'ACTIVE' : 'PENDING', icon: <BookIcon className="w-4 h-4" /> },
-        { key: 'mapping', label: 'Student Mapping', desc: 'Node Assignment', status: readiness?.hasAssignments ? 'MAPPED' : 'EMPTY', icon: <UsersIcon className="w-4 h-4" /> },
-        { key: 'ledger', label: 'Global Ledger', desc: 'Mass Invoicing', status: readiness?.hasLedger ? 'LIVE' : 'WAITING', icon: <CreditCardIcon className="w-4 h-4" /> }
-    ];
-
-    const percentage = readiness?.isSetupComplete ? 100 : (readiness?.percentage || (readiness?.hasStructures ? (readiness?.hasAssignments ? 85 : 65) : 35));
+const MasterControlCenter: React.FC<{ currency: string }> = ({ currency }) => {
+    const [globalToggles, setGlobalToggles] = useState({
+        taxInvoicing: true,
+        approvalMatrix: true,
+        lateFeeAutomation: true,
+        versionControl: true
+    });
 
     return (
-        <div className="bg-[#12141c]/40 backdrop-blur-3xl p-12 rounded-[4rem] border border-white/5 shadow-[0_64px_128px_-32px_rgba(0,0,0,0.6)] relative overflow-hidden group mb-12">
-            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-primary/10 transition-all duration-1000"></div>
+        <div className="bg-[#0c0d12] border border-white/5 rounded-[4rem] p-12 mb-16 shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
 
-            <div className="flex flex-col xl:flex-row justify-between items-center gap-16 relative z-10">
-                <div className="flex-1 space-y-10 w-full">
-                    <div className="flex items-center gap-8">
-                        <div className="w-20 h-20 bg-gradient-to-br from-amber-500/20 to-amber-500/5 rounded-3xl flex items-center justify-center text-amber-500 ring-1 ring-amber-500/30 shadow-[0_20px_40px_-10px_rgba(245,158,11,0.2)] transform group-hover:rotate-6 transition-transform">
-                            <SecurityIcon className="w-10 h-10 animate-pulse" />
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-12 mb-12">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-primary/10 text-primary rounded-xl border border-primary/20">
+                            <WorkflowIcon className="w-6 h-6" />
+                        </div>
+                        <h2 className="text-5xl font-serif font-black text-white uppercase tracking-tighter">Finance <span className="text-primary italic">Master</span> Control</h2>
+                    </div>
+                    <p className="text-white/20 text-[11px] font-black uppercase tracking-[0.6em] max-w-xl">Global configuration protocol for institutional financial integrity</p>
+                </div>
+
+                <div className="flex flex-wrap gap-6 items-center">
+                    <div className="flex flex-col gap-2">
+                        <span className="text-[9px] font-black text-white/10 uppercase tracking-widest ml-1">Academic Year</span>
+                        <select className="bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-[11px] font-black text-white uppercase tracking-widest outline-none focus:border-primary/40 transition-all">
+                            <option>2025-2026 (Operational)</option>
+                            <option>2024-2025 (Historical)</option>
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <span className="text-[9px] font-black text-white/10 uppercase tracking-widest ml-1">Base Currency</span>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-3">
+                            <CreditCardIcon className="w-4 h-4 text-primary" /> {currency}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                    { key: 'taxInvoicing', label: 'Fiscal Tax Matrix', desc: 'GST/VAT Compliance', icon: <SecurityIcon className="w-5 h-5" /> },
+                    { key: 'approvalMatrix', label: 'Approval Hierarchy', desc: 'Authoritative Tiers', icon: <UsersIcon className="w-5 h-5" /> },
+                    { key: 'lateFeeAutomation', label: 'Late Fee Engine', desc: 'Penalty Protocols', icon: <ClockIcon className="w-5 h-5" /> },
+                    { key: 'versionControl', label: 'State Versioning', desc: 'Audit Persistence', icon: <VersionIcon className="w-5 h-5" /> }
+                ].map((toggle) => (
+                    <div
+                        key={toggle.key}
+                        onClick={() => setGlobalToggles(prev => ({ ...prev, [toggle.key]: !prev[toggle.key as keyof typeof prev] }))}
+                        className={`p-8 rounded-[2.5rem] border transition-all cursor-pointer flex flex-col gap-6 group/toggle ${globalToggles[toggle.key as keyof typeof globalToggles] ? 'bg-primary/5 border-primary/20' : 'bg-white/[0.02] border-white/5'}`}
+                    >
+                        <div className="flex justify-between items-center">
+                            <div className={`p-4 rounded-2xl border transition-all ${globalToggles[toggle.key as keyof typeof globalToggles] ? 'bg-primary text-black border-primary' : 'bg-white/5 text-white/10 border-white/10'}`}>
+                                {toggle.icon}
+                            </div>
+                            <div className={`w-12 h-6 rounded-full relative transition-all ${globalToggles[toggle.key as keyof typeof globalToggles] ? 'bg-primary' : 'bg-white/10'}`}>
+                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${globalToggles[toggle.key as keyof typeof globalToggles] ? 'right-1' : 'left-1'}`}></div>
+                            </div>
                         </div>
                         <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className="px-3 py-1 bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-[0.3em] rounded-lg border border-amber-500/20">Operational Readiness</span>
-                                <span className="text-white/20 text-[10px] uppercase font-black tracking-widest">Protocol v4.0.2</span>
-                            </div>
-                            <h2 className="text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none">Institutional Setup <span className="text-amber-500/80 italic font-medium">Readiness</span></h2>
+                            <p className="text-[11px] font-black text-white uppercase tracking-[0.2em] mb-1">{toggle.label}</p>
+                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">{toggle.desc}</p>
                         </div>
                     </div>
+                ))}
+            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {checklist.map((item, idx) => {
-                            const isDone = (item.key === 'coa') ||
-                                (item.key === 'structures' && readiness?.hasStructures) ||
-                                (item.key === 'mapping' && readiness?.hasAssignments) ||
-                                (item.key === 'ledger' && readiness?.hasLedger);
-
-                            return (
-                                <motion.div
-                                    key={idx}
-                                    whileHover={{ y: -5, backgroundColor: 'rgba(255,255,255,0.03)' }}
-                                    className={`p-6 rounded-3xl border transition-all flex flex-col gap-6 ${isDone ? 'bg-emerald-500/[0.03] border-emerald-500/20' : 'bg-white/[0.01] border-white/5 opacity-40'}`}
-                                >
-                                    <div className="flex justify-between items-center">
-                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${isDone ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white/5 text-white/10'}`}>
-                                            {item.icon}
-                                        </div>
-                                        <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDone ? 'text-emerald-500' : 'text-white/20'}`}>{item.status}</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-[11px] font-black text-white uppercase tracking-[0.2em] mb-1">{item.label}</p>
-                                        <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em] leading-none">{item.desc}</p>
-                                    </div>
-                                    {isDone && (
-                                        <div className="h-1 w-full bg-emerald-500/10 rounded-full overflow-hidden">
-                                            <div className="h-full bg-emerald-500 w-full"></div>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            );
-                        })}
+            <div className="mt-12 pt-12 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center gap-12">
+                <div className="flex gap-12">
+                    <div className="space-y-1">
+                        <p className="text-[9px] font-black text-white/10 uppercase tracking-widest">Global Status</p>
+                        <p className="text-xs font-black text-emerald-500 uppercase tracking-[0.3em] flex items-center gap-4">
+                            Operational <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        </p>
+                    </div>
+                    <div className="space-y-1 border-l border-white/5 pl-12 font-serif italic text-white/40 text-sm">
+                        Total System Yield: $1.2M <span className="text-[10px] uppercase font-black tracking-widest ml-3 not-italic">Institutional Health Index</span>
                     </div>
                 </div>
-
-                <div className="w-full xl:w-96 flex flex-col items-center gap-10 p-10 bg-white/[0.02] border border-white/5 rounded-[3rem] shadow-inner relative">
-                    <div className="relative w-56 h-56 flex items-center justify-center">
-                        <div className="absolute inset-0 bg-amber-500/10 rounded-full blur-[40px] opacity-40 animate-pulse"></div>
-                        <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100">
-                            <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="4" className="text-white/[0.03]" />
-                            <motion.circle
-                                cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="4"
-                                initial={{ strokeDashoffset: 283 }}
-                                animate={{ strokeDashoffset: 283 - (283 * percentage) / 100 }}
-                                strokeDasharray={283}
-                                className="text-amber-500"
-                                strokeLinecap="round"
-                            />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-                            <span className="text-6xl font-serif font-black text-white tracking-tighter">{percentage}<span className="text-2xl text-amber-500">%</span></span>
-                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Matrix Synthesis</span>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4 w-full">
-                        <button
-                            onClick={onNew}
-                            className="w-full py-5 bg-amber-500 hover:bg-amber-400 text-black font-black text-[11px] uppercase tracking-[0.4em] rounded-2xl shadow-[0_24px_48px_-12px_rgba(245,158,11,0.4)] transition-all items-center gap-3 flex justify-center transform active:scale-95 group/btn"
-                        >
-                            Continue Setup <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                        </button>
-                        <p className="text-[9px] text-center text-white/20 uppercase font-black tracking-[0.3em]">Institutional Verification Required</p>
-                    </div>
-                </div>
+                <button className="flex items-center gap-4 px-10 py-5 bg-white/5 hover:bg-white/[0.08] text-white/40 hover:text-white rounded-2xl border border-white/10 transition-all text-[11px] font-black uppercase tracking-[0.4em] group/log">
+                    <ActivityIcon className="w-5 h-5 group-hover/log:rotate-12 transition-transform" /> View Activity Registry
+                </button>
             </div>
         </div>
     );
@@ -177,6 +176,7 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
     paymentProtocols = [],
     adjustmentRules = [],
     onNewStructure,
+    onEditStructure,
     onNewProtocol,
     onNewRule,
     currency,
@@ -189,154 +189,142 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
     };
 
     return (
-        <div className="space-y-12 pb-24">
-            {/* Top Readiness Navigator */}
-            {(!readiness?.isSetupComplete || readiness?.percentage < 100) && <ReadinessNavigator readiness={readiness} onNew={onNewStructure} />}
+        <div className="space-y-12 pb-32 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
+            {/* 1. MASTER CONTROL CENTER */}
+            <MasterControlCenter currency={currency} />
 
-            {/* Foundation Navigation Stats - Operational Hub */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {[
-                    { label: 'Fiscal Matrix', status: 'ACTIVE PERIOD', icon: <VersionIcon className="w-5 h-5" />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Q1-2026 Sync', complexity: 'Medium Risk' },
-                    { label: 'Registry Map', status: feeStructures.length > 0 ? `${feeStructures.length} PROTOCOLS` : 'EMPTY', icon: <BookIcon className="w-5 h-5" />, color: feeStructures.length > 0 ? 'text-emerald-500' : 'text-amber-500', bg: feeStructures.length > 0 ? 'bg-emerald-500/10' : 'bg-amber-500/10', desc: 'Institutional Billing', complexity: 'Governance Locked' },
-                    { label: 'Audit Security', status: 'ENABLED', icon: <SecurityIcon className="w-5 h-5" />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Forensic Logic', complexity: 'AES-256 Auth' },
-                    { label: 'Global Ledger', status: 'VERIFIED', icon: <CreditCardIcon className="w-5 h-5" />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Posting Balance Index', complexity: 'Settled Node' }
-                ].map((step, i) => (
-                    <motion.div
-                        key={i}
-                        whileHover={{ scale: 1.02 }}
-                        className="bg-[#12141c]/60 border border-white/5 rounded-[3rem] p-10 flex flex-col gap-8 group hover:border-primary/20 transition-all relative overflow-hidden backdrop-blur-xl shadow-2xl"
-                    >
-                        <div className="absolute top-0 right-0 p-10 opacity-[0.02] group-hover:opacity-[0.08] group-hover:scale-125 transition-all duration-700">{step.icon}</div>
-                        <div className={`w-14 h-14 rounded-[1.5rem] ${step.bg} ${step.color} flex items-center justify-center shadow-inner ring-1 ring-white/10 group-hover:ring-primary/40 transition-all`}>
-                            {step.icon}
-                        </div>
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">{step.label}</h4>
-                                <span className="text-[8px] font-black text-white/10 uppercase tracking-widest">{step.complexity}</span>
-                            </div>
-                            <p className={`text-lg font-serif font-black uppercase tracking-tight ${step.color}`}>{step.status}</p>
-                            <p className="text-[10px] font-medium text-white/10 mt-2 uppercase tracking-[0.2em] italic">{step.desc}</p>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
-
-            <div className="grid grid-cols-1 gap-16">
-                {/* 1. Foundation Governance: Chart of Accounts */}
+            <div className="grid grid-cols-1 gap-12">
+                {/* 2. Foundation Governance: Chart of Accounts & Policies */}
                 <ConfigCard
                     title="Foundation Governance"
-                    description="Core accounting rules, CoA hierarchy & fiscal policies"
-                    icon={<SecurityIcon className="w-7 h-7" />}
+                    description="Institutional authority hierarchy & fiscal settlement policies"
+                    icon={<SecurityIcon className="w-8 h-8" />}
                     isExpanded={expandedCard === 'foundation'}
                     onToggle={() => toggleCard('foundation')}
+                    badge="Structural Backbone"
                 >
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-8">
-                        <div className="space-y-8">
-                            <div className="flex justify-between items-center ml-1">
-                                <h5 className="text-[11px] font-black text-white/40 uppercase tracking-[0.4em]">Master Chart of Accounts (CoA)</h5>
-                                <button className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline underline-offset-4">Advanced Mapping</button>
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-12 pt-6">
+                        <div className="xl:col-span-2 space-y-10">
+                            <div className="flex justify-between items-center bg-[#1a1c26] p-8 rounded-[2.5rem] border border-white/5">
+                                <div>
+                                    <h5 className="text-[11px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Refund & Settlement Protocols</h5>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {[
+                                            { label: 'Auto-Refund Validated', active: true },
+                                            { label: 'Escalation Node (Principal)', active: true },
+                                            { label: 'Fiscal Freeze Date Locked', active: false },
+                                            { label: 'Audit Trail Immutability', active: true }
+                                        ].map((pol, i) => (
+                                            <div key={i} className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/5">
+                                                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">{pol.label}</span>
+                                                <div className={`w-3 h-3 rounded-full ${pol.active ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-red-500/40'}`}></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-1 gap-4">
-                                {[
-                                    { code: '1000', name: 'ASSETS', sub: 'Current Assets, Banks, Receivables', type: 'asset', color: 'text-emerald-500' },
-                                    { code: '2000', name: 'LIABILITIES', sub: 'Deferred Revenue, Deposits', type: 'liability', color: 'text-amber-500' },
-                                    { code: '4000', name: 'REVENUE', sub: 'Tuition Fees, Transport, Lab', type: 'revenue', color: 'text-primary' },
-                                    { code: '5000', name: 'EXPENSES', sub: 'Payroll, Maintenance, Utilities', type: 'expense', color: 'text-red-500' }
-                                ].map(acc => (
-                                    <div key={acc.code} className="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] flex justify-between items-center group/acc hover:bg-white/[0.04] hover:border-primary/20 transition-all shadow-xl">
-                                        <div className="flex items-center gap-6">
-                                            <span className={`text-[11px] font-black ${acc.color} bg-white/5 px-4 py-2 rounded-xl border border-white/5 font-mono`}>{acc.code}</span>
+
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center px-4">
+                                    <h5 className="text-[11px] font-black text-white/40 uppercase tracking-[0.4em]">Governance Hierarchy</h5>
+                                    <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:brightness-125 transition-all flex items-center gap-2 underline underline-offset-4">Configure Matrix <ArrowRightIcon className="w-3 h-3" /></button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {[
+                                        { level: 'Tier 1 - Operational', role: 'Accountant', auth: 'Daily Posting', color: 'text-emerald-500' },
+                                        { level: 'Tier 2 - Structural', role: 'School Admin', auth: 'Waivers & Discounts', color: 'text-amber-500' },
+                                        { level: 'Tier 3 - Strategic', role: 'Super Admin', auth: 'Policy & Tax Shift', color: 'text-red-500' },
+                                        { level: 'Tier 4 - Sovereign', role: 'Board Node', auth: 'Institutional Lock', color: 'text-primary' }
+                                    ].map((tier, idx) => (
+                                        <div key={idx} className="bg-white/[0.02] border border-white/5 p-8 rounded-[2.5rem] flex flex-col gap-6 group/tier hover:bg-white/[0.04] hover:shadow-2xl transition-all">
+                                            <div className="flex items-center justify-between">
+                                                <span className={`text-[9px] font-black ${tier.color} uppercase tracking-[0.3em]`}>{tier.level}</span>
+                                                <SecurityIcon className={`w-5 h-5 ${tier.color} opacity-20`} />
+                                            </div>
                                             <div>
-                                                <p className="text-sm font-black text-white uppercase tracking-[0.1em]">{acc.name}</p>
-                                                <p className="text-[10px] text-white/20 uppercase tracking-tight mt-1">{acc.sub}</p>
+                                                <p className="text-xl font-serif font-black text-white tracking-tighter uppercase leading-none mb-2">{tier.role}</p>
+                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest italic">{tier.auth}</p>
                                             </div>
                                         </div>
-                                        <ArrowRightIcon className="w-4 h-4 text-white/5 group-hover/acc:text-primary transition-all translate-x-0 group-hover/acc:translate-x-1" />
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                        <div className="bg-gradient-to-br from-primary/[0.08] to-transparent rounded-[3.5rem] border border-white/10 p-12 flex flex-col justify-center text-center space-y-8 relative overflow-hidden shadow-3xl">
-                            <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-[100px] opacity-30"></div>
-                            <VersionIcon className="w-20 h-20 text-primary/30 mx-auto animate-spin-slow" />
-                            <div className="space-y-4">
-                                <h6 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Automatic Harmony Engine</h6>
-                                <p className="text-white/40 text-[13px] leading-relaxed max-w-sm mx-auto font-medium">Transactional entropy is reduced by mapping every billing event to the Chart of Accounts in real-time. Lock institutional rules before the next fiscal freeze.</p>
+
+                        <div className="bg-[#1a1c26] border border-white/5 rounded-[3.5rem] p-12 flex flex-col items-center justify-center text-center space-y-10 group/inf relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover/inf:opacity-10 transition-opacity">
+                                <WorkflowIcon className="w-48 h-48 -rotate-12" />
                             </div>
-                            <button className="px-12 py-5 bg-white text-black hover:bg-white/90 font-black text-[11px] uppercase tracking-[0.4em] rounded-2xl shadow-2xl transition-all mx-auto transform hover:-translate-y-1 active:scale-95">
-                                Configure Posting Rules
+                            <div className="w-24 h-24 bg-primary/20 rounded-[2.5rem] flex items-center justify-center text-primary shadow-2xl relative z-10">
+                                <ShieldCheckIcon className="w-12 h-12" />
+                            </div>
+                            <div className="space-y-4 relative z-10">
+                                <h3 className="text-3xl font-serif font-black text-white tracking-tighter uppercase">Governance Protocol</h3>
+                                <p className="text-white/40 text-[13px] leading-relaxed font-medium italic">Every financial mutation is validated against the Authority Matrix before being committed to the immutable global ledger.</p>
+                            </div>
+                            <button className="w-full py-5 bg-white text-black font-black text-[11px] uppercase tracking-[0.4em] rounded-2xl shadow-3xl hover:bg-white/90 active:scale-95 transition-all relative z-10">
+                                Deploy Policy Node
                             </button>
                         </div>
                     </div>
                 </ConfigCard>
 
-                {/* 2. Fee Structures Accordion */}
+                {/* 3. Fee Structures */}
                 <ConfigCard
                     title="Institutional Fee Structures"
-                    description="Curated grade-wise billing cycles & currency nodes"
-                    icon={<BookIcon className="w-7 h-7" />}
+                    description="Grade-wise billing cycles & financial registry protocols"
+                    icon={<BookIcon className="w-8 h-8" />}
                     isExpanded={expandedCard === 'fee_structures'}
                     onToggle={() => toggleCard('fee_structures')}
+                    badge={`${feeStructures.length} Protocols`}
                 >
-                    <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-10 pt-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-10 pt-6">
                         {feeStructures.map(fs => (
                             <motion.div
                                 key={fs.id}
-                                whileHover={{ y: -8 }}
-                                className="bg-[#1a1c26]/60 backdrop-blur-2xl border border-white/[0.05] rounded-[3rem] p-10 hover:border-primary/40 transition-all group/item relative overflow-hidden shadow-3xl"
+                                whileHover={{ y: -10 }}
+                                className="bg-[#1a1c26] border border-white/5 rounded-[3rem] p-10 hover:border-primary/40 transition-all group/item shadow-3xl flex flex-col"
                             >
-                                <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover/item:opacity-[0.1] group-hover/item:scale-125 transition-all duration-1000">
-                                    <VersionIcon className="w-32 h-32 text-primary -rotate-12" />
-                                </div>
-                                <div className="flex justify-between items-start mb-12 relative z-10">
+                                <div className="flex justify-between items-start mb-12">
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-3">
                                             <span className="px-3 py-1 bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest rounded-lg border border-primary/20">{fs.academic_year}</span>
-                                            <span className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Structural ID: {fs.id.toString().slice(-6)}</span>
+                                            <span className="text-[10px] text-white/20 font-black uppercase tracking-widest">v25.0</span>
                                         </div>
-                                        <h4 className="text-3xl font-serif font-black text-white group-hover/item:text-primary transition-colors tracking-tight uppercase leading-[0.9]">{fs.name}</h4>
-                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Target: GRADE_{fs.target_grade}</p>
+                                        <h4 className="text-3xl font-serif font-black text-white uppercase tracking-tighter group-hover/item:text-primary transition-colors leading-[0.95]">{fs.name}</h4>
+                                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.5em]">Target: Grade_{fs.target_grade}</p>
                                     </div>
                                     <button
                                         onClick={() => onEditStructure(fs)}
-                                        className="p-4 bg-white/5 text-white/20 rounded-2xl hover:text-white hover:bg-white/10 transition-all border border-white/5 group-hover/item:border-primary/20"
+                                        className="p-4 bg-white/5 text-white/20 rounded-2xl hover:text-primary hover:bg-primary/10 transition-all border border-white/10 group-hover/item:border-primary/40"
                                     >
                                         <EditIcon className="w-5 h-5" />
                                     </button>
                                 </div>
-                                <div className="flex justify-between items-end mb-10 relative z-10 border-b border-white/5 pb-10">
+
+                                <div className="grid grid-cols-2 gap-6 mb-10 pb-10 border-b border-white/5">
                                     <div className="space-y-3">
-                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">Protocol Integrity</p>
-                                        <span className={`inline-block px-4 py-2 rounded-xl text-[10px] font-black tracking-[0.2em] uppercase border ${fs.status === 'Active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
+                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">Status Node</p>
+                                        <span className={`inline-flex px-4 py-2 rounded-xl text-[9px] font-black tracking-[0.2em] uppercase border ${fs.status === 'Active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
                                             {fs.status}
                                         </span>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em] mb-2">Component Cloud</p>
-                                        <div className="flex items-baseline justify-end gap-2">
-                                            <span className="text-5xl font-black text-white font-serif italic tracking-tighter drop-shadow-xl">{fs.components?.length || 0}</span>
-                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Nodes</span>
-                                        </div>
+                                    <div className="text-right space-y-3">
+                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">Components</p>
+                                        <p className="text-4xl font-black text-white font-serif italic tracking-tighter leading-none">{fs.components?.length || 0}</p>
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-center relative z-10">
-                                    <div className="flex flex-col gap-2">
-                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">Sync Status</p>
-                                        <div className="flex -space-x-3">
-                                            {[1, 2, 3].map(i => (
-                                                <div key={i} className="w-10 h-10 rounded-full bg-black/40 border-2 border-[#1a1c26] flex items-center justify-center text-[10px] font-black text-white/20 ring-1 ring-white/5 group-hover/item:ring-primary/40 transition-all">
-                                                    <UsersIcon className="w-5 h-5 opacity-40" />
-                                                </div>
-                                            ))}
-                                            <div className="h-10 px-4 rounded-full bg-primary/10 border-2 border-[#1a1c26] flex items-center justify-center text-[10px] font-black text-primary uppercase tracking-widest ring-1 ring-primary/20">
-                                                {readiness?.hasAssignments ? 'MAPPED' : 'EMPTY'}
-                                            </div>
+
+                                <div className="mt-auto flex justify-between items-center">
+                                    <div>
+                                        <p className="text-[8px] font-black text-white/10 uppercase tracking-[0.5em] mb-3">Sync Readiness</p>
+                                        <div className="h-2 w-32 bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-primary w-2/3"></div>
                                         </div>
                                     </div>
-                                    <div className="text-right space-y-2">
-                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em]">Cumulative Node Value</p>
-                                        <span className="text-3xl font-black text-white font-mono tracking-tighter bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                                    <div className="text-right">
+                                        <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em] mb-2">Total Node Value</p>
+                                        <span className="text-2xl font-black text-white font-mono tracking-tighter">
                                             {new Intl.NumberFormat('en-IN', { style: 'currency', currency: fs.currency as CurrencyCode, minimumFractionDigits: 0 }).format(fs.components?.reduce((a, c) => a + Number(c.amount), 0) || 0)}
                                         </span>
                                     </div>
@@ -345,159 +333,127 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                         ))}
                         <button
                             onClick={onNewStructure}
-                            className="bg-white/[0.01] border-2 border-dashed border-white/5 rounded-[3rem] p-10 flex flex-col items-center justify-center gap-6 hover:bg-primary/[0.03] hover:border-primary/40 transition-all group/new min-h-[400px]"
+                            className="bg-white/[0.01] border-2 border-dashed border-white/5 rounded-[3rem] p-12 flex flex-col items-center justify-center gap-8 hover:bg-primary/[0.03] hover:border-primary/20 transition-all group/new min-h-[400px]"
                         >
-                            <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center text-white/20 group-hover/new:bg-primary/20 group-hover/new:text-primary transition-all ring-1 ring-white/10 group-hover/new:ring-primary/40">
-                                <PlusIcon className="w-8 h-8" />
+                            <div className="w-20 h-20 rounded-[2.5rem] bg-white/5 flex items-center justify-center text-white/10 group-hover/new:bg-primary/20 group-hover/new:text-primary transition-all ring-1 ring-white/10 group-hover/new:ring-primary/40 shadow-inner">
+                                <PlusIcon className="w-10 h-10" />
                             </div>
-                            <div className="text-center">
-                                <p className="text-lg font-serif font-black text-white/30 uppercase tracking-tight group-hover/new:text-white transition-colors">Initialize New Protocol</p>
-                                <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.4em] mt-2 italic">Forge new structural billing nodes</p>
+                            <div className="text-center space-y-4">
+                                <p className="text-xl font-serif font-black text-white/30 uppercase tracking-tighter group-hover/new:text-white transition-colors">Initialize New Protocol</p>
+                                <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.5em] italic">Architect new institutional billing node</p>
                             </div>
                         </button>
                     </div>
                 </ConfigCard>
 
-                {/* 3. Payment Plan Protocols */}
-                <ConfigCard
-                    title="Payment Plan Protocols"
-                    description="Late fee matrices, grace periods & installment orchestration"
-                    icon={<CreditCardIcon className="w-7 h-7" />}
-                    isExpanded={expandedCard === 'payment_plans'}
-                    onToggle={() => toggleCard('payment_plans')}
-                >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 pt-8">
-                        {paymentProtocols.length > 0 ? (
-                            paymentProtocols.map(p => (
-                                <motion.div
-                                    key={p.id}
-                                    whileHover={{ y: -5 }}
-                                    className="bg-white/[0.02] border border-white/5 p-10 rounded-[3rem] space-y-8 hover:border-amber-500/30 transition-all group/pp relative shadow-2xl"
-                                >
-                                    <div className="flex justify-between items-center text-[10px] font-black text-white/10 uppercase tracking-[0.4em]">
-                                        <span>Node: {p.id.slice(0, 8)}</span>
-                                        <SecurityIcon className={`w-5 h-5 ${p.is_active ? 'text-emerald-500' : 'text-red-500'} opacity-40 group-hover/pp:opacity-100 transition-opacity`} />
-                                    </div>
-                                    <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tighter leading-tight">{p.name}</h4>
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div className="p-6 bg-black/40 border border-white/5 rounded-[2rem] shadow-inner">
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] mb-3">Grace Protocol</p>
-                                            <p className="text-lg font-black text-white tracking-widest">{p.grace_period_days} <span className="text-[10px] text-white/40 italic">DAYS</span></p>
-                                        </div>
-                                        <div className="p-6 bg-black/40 border border-white/5 rounded-[2rem] shadow-inner">
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] mb-3">Penalty Node</p>
-                                            <p className="text-lg font-black text-amber-500 font-mono italic tracking-widest">{p.penalty_type === 'percentage' ? `${p.penalty_value}%` : `${currency} ${p.penalty_value}`}</p>
-                                        </div>
-                                    </div>
-                                    <div className="pt-8 border-t border-white/5 flex justify-between items-center text-[11px] uppercase font-black tracking-[0.3em]">
-                                        <span className="text-white/20">Frequency Logic</span>
-                                        <span className="text-primary/80 italic">{p.compounding_frequency}</span>
-                                    </div>
-                                </motion.div>
-                            ))
-                        ) : (
-                            <div className="col-span-full py-24 flex flex-col items-center justify-center gap-8 opacity-40 border-2 border-dashed border-white/5 rounded-[4rem] group hover:bg-white/[0.01] hover:border-white/10 transition-all">
-                                <div className="p-8 bg-white/5 rounded-[2.5rem] ring-1 ring-white/10 group-hover:bg-amber-500/10 group-hover:ring-amber-500/20 transition-all">
-                                    <CreditCardIcon className="w-16 h-16 text-white/10 group-hover:text-amber-500/40 animate-pulse" />
-                                </div>
-                                <div className="text-center space-y-4">
-                                    <p className="text-xl font-serif font-black text-white/30 uppercase tracking-tighter">No Operational Protocols Defined</p>
-                                    <button onClick={onNewProtocol} className="px-12 py-5 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-[0.4em] rounded-2xl border border-white/10 transition-all font-serif italic shadow-2xl transform active:scale-95">
-                                        Initialize Protocol Node
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </ConfigCard>
-
-                {/* 4. Discount & Adjustment Rules */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                {/* 4. Payment Protocols */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     <ConfigCard
-                        title="Discount & Waiver Rules"
-                        description="Rule-based hardship incentives & sibling relief nodes"
-                        icon={<UsersIcon className="w-7 h-7" />}
-                        isExpanded={expandedCard === 'discounts'}
-                        onToggle={() => toggleCard('discounts')}
+                        title="Payment Plan Protocols"
+                        description="Installment matrices, late fee triggers & grace periods"
+                        icon={<CreditCardIcon className="w-8 h-8" />}
+                        isExpanded={expandedCard === 'payment_plans'}
+                        onToggle={() => toggleCard('payment_plans')}
                     >
-                        <div className="space-y-6 pt-8">
-                            {adjustmentRules.length > 0 ? (
-                                adjustmentRules.map(r => (
-                                    <motion.div
-                                        key={r.id}
-                                        whileHover={{ x: 5 }}
-                                        className="bg-[#12141c] border border-white/5 p-8 rounded-[2.5rem] flex justify-between items-center group/rule hover:border-emerald-500/40 hover:bg-emerald-500/[0.02] transition-all shadow-2xl relative overflow-hidden"
-                                    >
-                                        <div className="absolute inset-y-0 left-0 w-1 bg-emerald-500/0 group-hover/rule:bg-emerald-500/40 transition-all"></div>
-                                        <div className="flex items-center gap-8">
-                                            <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500/40 border border-emerald-500/20 group-hover/rule:text-emerald-500 transition-all">
-                                                <SecurityIcon className="w-7 h-7" />
-                                            </div>
+                        <div className="space-y-6 pt-6">
+                            {paymentProtocols.length > 0 ? (
+                                paymentProtocols.map(p => (
+                                    <div key={p.id} className="bg-white/[0.02] border border-white/5 p-8 rounded-[2.5rem] flex items-center justify-between group/plan hover:border-primary/20 transition-all">
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center text-white/20 group-hover/plan:text-primary transition-all font-mono font-bold">L{p.grace_period_days}</div>
                                             <div>
-                                                <p className="text-lg font-black text-white uppercase tracking-tight leading-none mb-2">{r.rule_name}</p>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Priority: <span className="text-primary/60">{r.value_priority}</span></span>
+                                                <h4 className="text-lg font-black text-white uppercase tracking-tight leading-none mb-2">{p.name}</h4>
+                                                <div className="flex gap-4 items-center">
+                                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest italic">{p.compounding_frequency} Protocol</span>
                                                     <span className="w-1.5 h-1.5 rounded-full bg-white/10"></span>
-                                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{r.is_stackable ? 'Stackable Matrix' : 'Exclusive Protocol'}</span>
+                                                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Penalty: {p.penalty_value}{p.penalty_type === 'percentage' ? '%' : ''}</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col items-end gap-3">
-                                            <span className="text-lg font-black text-emerald-500 bg-emerald-500/10 px-6 py-3 rounded-2xl border border-emerald-500/30 font-serif italic tracking-tighter shadow-lg">
-                                                {r.calculation_type === 'percentage' ? `${r.value}% OFF` : `-${currency} ${r.value}`}
-                                            </span>
-                                            {r.requires_approval && (
-                                                <div className="flex items-center gap-2">
-                                                    <ClockIcon className="w-3 h-3 text-amber-500" />
-                                                    <span className="text-[8px] font-black text-amber-500 uppercase tracking-[0.2em]">Verification Loop Required</span>
-                                                </div>
-                                            )}
+                                        <div className={`p-3 rounded-xl border ${p.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
+                                            <ActivityIcon className="w-5 h-5" />
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 ))
                             ) : (
-                                <div className="py-24 flex flex-col items-center justify-center gap-6 opacity-30 border-2 border-dashed border-white/5 rounded-[3.5rem] hover:bg-white/[0.01] transition-all group">
-                                    <UsersIcon className="w-16 h-16 text-white/10 group-hover:text-primary transition-all animate-bounce" />
-                                    <p className="text-[11px] font-black uppercase text-white/40 tracking-[0.5em]">Awaiting Rule Deployment</p>
-                                    <button onClick={onNewRule} className="px-10 py-4 bg-white/5 hover:bg-white/10 text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl border border-white/10 transition-all font-serif italic">
-                                        Deploy Rule Node
-                                    </button>
+                                <div className="py-20 flex flex-col items-center justify-center gap-8 opacity-40 border border-dashed border-white/5 rounded-[3rem]">
+                                    <p className="text-[10px] font-black text-white uppercase tracking-[0.4em]">No Payment Protocols Assigned</p>
+                                    <button onClick={onNewProtocol} className="px-10 py-4 bg-primary text-black font-black text-[10px] uppercase tracking-widest rounded-xl shadow-2xl active:scale-95 transition-all">Create New Matrix</button>
                                 </div>
                             )}
                         </div>
                     </ConfigCard>
 
                     <ConfigCard
-                        title="Fiscal Tax Matrix"
-                        description="Direct & regional tax node orchestration"
-                        icon={<SecurityIcon className="w-7 h-7" />}
-                        isExpanded={expandedCard === 'tax'}
-                        onToggle={() => toggleCard('tax')}
+                        title="Discount & Waiver Rules"
+                        description="Conditional hardship rules & scholarship nodes"
+                        icon={<UsersIcon className="w-8 h-8" />}
+                        isExpanded={expandedCard === 'discounts'}
+                        onToggle={() => toggleCard('discounts')}
                     >
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-8">
-                            {[
-                                { name: 'Direct Institutional Tax', rate: '18', code: 'GST-S', desc: 'Standard Educational Service Tax' },
-                                { name: 'Education Surcharge', rate: '2', code: 'EDU-C', desc: 'Regional Development Cess' }
-                            ].map((t, i) => (
-                                <motion.div
-                                    key={i}
-                                    whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.02)' }}
-                                    className="bg-black/40 border border-white/5 p-10 rounded-[3rem] space-y-6 hover:border-primary/40 transition-all shadow-3xl relative overflow-hidden group/tax"
-                                >
-                                    <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-[60px] opacity-0 group-hover/tax:opacity-20 transition-opacity"></div>
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex flex-col">
-                                            <span className="text-6xl font-serif font-black text-white tracking-widest italic drop-shadow-2xl">{t.rate}<span className="text-2xl text-primary">%</span></span>
-                                            <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mt-2">{t.name}</p>
+                        <div className="space-y-6 pt-6">
+                            {adjustmentRules.length > 0 ? (
+                                adjustmentRules.map(r => (
+                                    <div key={r.id} className="bg-white/[0.02] border border-white/5 p-8 rounded-[2.5rem] flex items-center justify-between group/rule hover:border-emerald-500/30 transition-all">
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-14 h-14 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center border border-emerald-500/20">
+                                                <ShieldCheckIcon className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-lg font-black text-white uppercase tracking-tight leading-none mb-2">{r.rule_name}</h4>
+                                                <div className="flex gap-4 items-center">
+                                                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Value: {r.value}{r.calculation_type === 'percentage' ? '%' : ''}</span>
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-white/10"></span>
+                                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest italic">Priority Node {r.value_priority}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <span className="text-[10px] font-black text-primary bg-primary/10 px-4 py-2 rounded-xl border border-primary/30 uppercase tracking-widest">{t.code}</span>
                                     </div>
-                                    <p className="text-[9px] font-medium text-white/20 uppercase tracking-[0.3em] border-t border-white/5 pt-6">{t.desc}</p>
-                                </motion.div>
-                            ))}
+                                ))
+                            ) : (
+                                <div className="py-20 flex flex-col items-center justify-center gap-8 opacity-40 border border-dashed border-white/5 rounded-[3rem]">
+                                    <p className="text-[10px] font-black text-white uppercase tracking-[0.4em]">No Adjustment Rules Available</p>
+                                    <button onClick={onNewRule} className="px-10 py-4 bg-primary text-black font-black text-[10px] uppercase tracking-widest rounded-xl shadow-2xl active:scale-95 transition-all">Add Rule Layer</button>
+                                </div>
+                            )}
                         </div>
                     </ConfigCard>
                 </div>
+
+                {/* 5. Fiscal Tax Matrix */}
+                <ConfigCard
+                    title="Fiscal Tax Matrix"
+                    description="Institutional tax nodes & regional compliance matrices"
+                    icon={<WorkflowIcon className="w-8 h-8" />}
+                    isExpanded={expandedCard === 'tax'}
+                    onToggle={() => toggleCard('tax')}
+                    badge="Compliance Node"
+                >
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 pt-6">
+                        {[
+                            { name: 'Core Service Tax', rate: '18', code: 'GST-18', desc: 'Educational Services Protocol' },
+                            { name: 'Secondary Cess', rate: '2', code: 'CESS-2', desc: 'Regional Development Node' }
+                        ].map((t, i) => (
+                            <div key={i} className="bg-black/60 border border-white/5 p-10 rounded-[3rem] space-y-8 hover:border-primary/40 transition-all group/tax shadow-2xl overflow-hidden relative">
+                                <div className="absolute top-0 right-0 p-8 opacity-[0.05] group-hover/tax:opacity-20 transition-opacity">
+                                    <WorkflowIcon className="w-32 h-32 text-primary" />
+                                </div>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="text-6xl font-serif font-black text-white tracking-widest italic">{t.rate}<span className="text-2xl text-primary font-black not-italic ml-2">%</span></p>
+                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] mt-3">{t.name}</p>
+                                    </div>
+                                    <span className="px-4 py-2 bg-primary/10 text-primary text-[10px] font-black rounded-xl border border-primary/20">{t.code}</span>
+                                </div>
+                                <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest leading-relaxed border-t border-white/5 pt-6">{t.desc}</p>
+                            </div>
+                        ))}
+                        <button className="bg-white/[0.01] border-2 border-dashed border-white/5 rounded-[3rem] p-10 flex flex-col items-center justify-center gap-6 hover:bg-primary/[0.03] hover:border-primary/20 transition-all opacity-40 hover:opacity-100 min-h-[300px]">
+                            <PlusIcon className="w-8 h-8 text-white/10 group-hover:text-primary transition-all" />
+                            <p className="text-[11px] font-black uppercase text-white/40 tracking-widest">Append Tax Matrix Node</p>
+                        </button>
+                    </div>
+                </ConfigCard>
             </div>
         </div>
     );
