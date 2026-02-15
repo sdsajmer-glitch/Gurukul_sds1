@@ -2555,17 +2555,26 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                 {activeTab === 'fees' && (
                                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 max-w-5xl">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] text-center">
-                                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.25em]">Total Billed</p>
-                                                <p className="text-2xl font-mono font-black text-white mt-1">{formatCurrency(feesSummary?.total_billed)}</p>
+                                            <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] text-center relative overflow-hidden group">
+                                                <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform">
+                                                    <ActivityIcon className="w-16 h-16 text-white" />
+                                                </div>
+                                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.25em] relative z-10">Billed Magnitude</p>
+                                                <p className="text-3xl font-serif font-black text-white mt-2 relative z-10 tracking-tighter">{formatCurrency(feesSummary?.total_billed || 0)}</p>
                                             </div>
-                                            <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] text-center">
-                                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.25em]">Collected</p>
-                                                <p className="text-2xl font-mono font-black text-emerald-500 mt-1">{formatCurrency(feesSummary?.total_paid)}</p>
+                                            <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] text-center relative overflow-hidden group">
+                                                <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform">
+                                                    <ShieldCheckIcon className="w-16 h-16 text-emerald-500" />
+                                                </div>
+                                                <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.25em] relative z-10">Settled Capital</p>
+                                                <p className="text-3xl font-serif font-black text-emerald-500 mt-2 relative z-10 tracking-tighter drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">{formatCurrency(feesSummary?.total_paid || 0)}</p>
                                             </div>
-                                            <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] text-center">
-                                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.25em]">Due Balance</p>
-                                                <p className="text-2xl font-mono font-black text-red-500 mt-1">{formatCurrency(feesSummary?.outstanding_balance)}</p>
+                                            <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] text-center relative overflow-hidden group">
+                                                <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform">
+                                                    <AlertTriangleIcon className="w-16 h-16 text-red-500" />
+                                                </div>
+                                                <p className="text-[10px] font-black text-red-500/60 uppercase tracking-[0.25em] relative z-10">Net Exposure</p>
+                                                <p className="text-3xl font-serif font-black text-white mt-2 relative z-10 tracking-tighter">{formatCurrency(feesSummary?.outstanding_balance || 0)}</p>
                                             </div>
                                         </div>
 
@@ -2587,23 +2596,33 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                             {transactions.length > 0 ? (
                                                 <div className="divide-y divide-white/5">
                                                     {transactions.map((txn, idx) => (
-                                                        <div key={idx} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className={`p-2 rounded-xl ${txn.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                                                                    {txn.status === 'success' ? <CheckCircleIcon className="w-4 h-4" /> : <ShieldCheckIcon className="w-4 h-4" />}
+                                                        <div key={idx} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors group">
+                                                            <div className="flex items-center gap-5">
+                                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${txn.status?.toLowerCase() === 'success' ? 'bg-emerald-500/5 text-emerald-500 border border-emerald-500/10' : 'bg-amber-500/5 text-amber-500 border border-amber-500/10'}`}>
+                                                                    {txn.status?.toLowerCase() === 'success' ? <CheckCircleIcon className="w-5 h-5" /> : <ShieldCheckIcon className="w-5 h-5" />}
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-sm font-bold text-white">{formatCurrency(txn.amount)}</p>
-                                                                    <p className="text-[10px] uppercase font-black tracking-widest text-white/40 mt-0.5">
-                                                                        {txn.payment_method} • {new Date(txn.paid_at).toLocaleDateString()}
-                                                                    </p>
+                                                                    <p className="text-base font-serif font-black text-white/90 group-hover:text-primary transition-colors">{formatCurrency(txn.amount)}</p>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <span className="text-[9px] uppercase font-black tracking-widest text-white/30">
+                                                                            {new Date(txn.paid_at).toLocaleDateString()}
+                                                                        </span>
+                                                                        <span className="w-1 h-1 rounded-full bg-white/10"></span>
+                                                                        <span className="text-[9px] uppercase font-black tracking-widest text-white/40">
+                                                                            {txn.payment_method}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <div className="text-right">
-                                                                <p className="text-[10px] font-mono text-white/50">{txn.transaction_reference}</p>
-                                                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${txn.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                                                                <div className="flex items-center justify-end gap-2 mb-1">
+                                                                    <span className="bg-white/[0.03] px-2 py-0.5 rounded border border-white/5 text-[9px] font-mono text-white/30 tracking-wider">
+                                                                        #{txn.transaction_reference}
+                                                                    </span>
+                                                                </div>
+                                                                <p className={`text-[9px] font-black uppercase tracking-widest ${txn.status?.toLowerCase() === 'success' ? 'text-emerald-500' : 'text-amber-500'}`}>
                                                                     {txn.status}
-                                                                </span>
+                                                                </p>
                                                             </div>
                                                         </div>
                                                     ))}
