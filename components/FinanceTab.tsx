@@ -367,13 +367,47 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     <Skeleton.List rows={8} />
                 </div>
             ) : error ? (
-                <div className="p-32 text-center flex flex-col items-center gap-10 bg-[#0c0d12] rounded-[4rem] border border-white/5 shadow-3xl ring-1 ring-white/10">
-                    <div className="p-6 bg-red-500/10 rounded-3xl border border-red-500/20 text-red-500">
-                        <AlertTriangleIcon className="w-12 h-12" />
+                <div className="p-24 text-center flex flex-col items-center justify-center bg-[#0c0d12] rounded-[4rem] border border-white/5 shadow-3xl ring-1 ring-white/10 max-w-4xl mx-auto backdrop-blur-3xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-24 opacity-[0.02] rotate-12 pointer-events-none">
+                        <AlertTriangleIcon className="w-96 h-96" />
                     </div>
-                    <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tight leading-none">Registry Protocol Fault</h3>
-                    <p className="text-white/40 max-w-lg leading-relaxed font-serif italic text-lg">{error}</p>
-                    <button onClick={() => fetchAllData()} className="px-12 py-5 bg-white text-black font-black text-[11px] uppercase tracking-[0.4em] rounded-2xl hover:bg-white/90 transition-all shadow-xl active:scale-95 border border-white/20">Initialize Sync Reconstruction</button>
+
+                    <div className="p-8 bg-red-500/10 rounded-[2.5rem] border border-red-500/20 text-red-500 mb-10 shadow-[0_0_40px_-10px_rgba(239,68,68,0.3)] animate-pulse relative z-10">
+                        <AlertTriangleIcon className="w-16 h-16" />
+                    </div>
+
+                    <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tight leading-none mb-8 relative z-10">Registry Protocol Fault</h3>
+
+                    <div className="bg-black/40 border border-white/5 rounded-3xl p-8 mb-10 text-left w-full max-w-2xl relative z-10">
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-4 italic">Diagnostic Trace:</p>
+                        <p className="text-lg font-mono font-medium text-white/60 leading-relaxed mb-6 break-words">
+                            {error}
+                        </p>
+
+                        {(error.includes('ambiguous') || error.includes('function')) && (
+                            <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+                                <div>
+                                    <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">Required Admin Action</p>
+                                    <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold select-all">FIX_FINANCE_AMBIGUITY_V5_OVERVIEW.sql</span></p>
+                                </div>
+                                <button
+                                    onClick={() => navigator.clipboard.writeText('FIX_FINANCE_AMBIGUITY_V5_OVERVIEW.sql')}
+                                    className="px-6 py-3 bg-red-500 hover:bg-red-400 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-lg active:scale-95 whitespace-nowrap"
+                                >
+                                    Copy Script Name
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex gap-4 relative z-10">
+                        <button
+                            onClick={() => fetchAllData()}
+                            className="px-10 py-5 bg-white text-black font-black text-[11px] uppercase tracking-[0.4em] rounded-[1.25rem] hover:bg-white/90 transition-all shadow-xl active:scale-95 border border-white/20"
+                        >
+                            Retry Sync
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <AnimatePresence mode="wait">

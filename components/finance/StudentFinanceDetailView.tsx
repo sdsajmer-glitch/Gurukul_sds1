@@ -333,10 +333,10 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-xl flex items-center justify-between gap-4">
                             <div>
                                 <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Required Admin Action</p>
-                                <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold">FIX_FINANCE_AMBIGUITY_V3_FINAL.sql</span></p>
+                                <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold">FIX_FINANCE_AMBIGUITY_V4_ULTIMATE.sql</span></p>
                             </div>
                             <button
-                                onClick={() => navigator.clipboard.writeText('FIX_FINANCE_AMBIGUITY_V3_FINAL.sql')}
+                                onClick={() => navigator.clipboard.writeText('FIX_FINANCE_AMBIGUITY_V4_ULTIMATE.sql')}
                                 className="px-5 py-3 bg-red-500 hover:bg-red-400 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-lg active:scale-95"
                             >
                                 Copy Script Name
