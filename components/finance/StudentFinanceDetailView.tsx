@@ -319,8 +319,16 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     </div>
                     <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] mb-4 italic">Diagnostic Trace:</p>
                     <p className="text-lg font-mono font-medium text-white/60 leading-relaxed">
-                        {error.includes('ambiguous')
-                            ? "CONFLICT_DETECTED: Multiple node identifiers resolved in the global registry. The structural identity of the student node cannot be determined."
+                        {error.includes('ambiguous') || error.includes('function')
+                            ? (
+                                <span>
+                                    CONFLICT_DETECTED: Multiple node identifiers or outdated RPC signature.<br />
+                                    The global registry cannot resolve the student node structure.<br />
+                                    <span className="text-white/40 text-sm mt-2 block">
+                                        System requires schema harmonization. Admin instructions: Execute <code className="text-primary">FIX_FINANCE_AND_DASHBOARD_FINAL.sql</code> to restore protocol integrity.
+                                    </span>
+                                </span>
+                            )
                             : error}
                     </p>
                 </div>
