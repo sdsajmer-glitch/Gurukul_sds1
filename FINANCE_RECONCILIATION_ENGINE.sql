@@ -119,7 +119,7 @@ RETURNS JSONB LANGUAGE plpgsql AS $$
 DECLARE
     v_payment_id UUID;
     v_ledger_id UUID;
-    v_branch_id BIGINT;
+    v_branch_id UUID; -- Fixed: Changed from BIGINT to UUID to match schema
 BEGIN
     -- 1. Identify context
     SELECT id, branch_id INTO v_ledger_id, v_branch_id 
