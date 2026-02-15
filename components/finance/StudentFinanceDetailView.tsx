@@ -296,7 +296,6 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
 
     if (error) return (
         <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center p-12 overflow-hidden relative">
-            {/* Background Glows */}
             <div className="absolute top-0 left-0 w-full h-full">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-500/5 blur-[120px] rounded-full"></div>
             </div>
@@ -311,26 +310,47 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                 </div>
 
                 <h2 className="text-[10px] font-black text-red-500 uppercase tracking-[0.8em] mb-6">Critical System Desync</h2>
-                <h3 className="text-4xl lg:text-6xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-10">Registry Error</h3>
+                <h3 className="text-4xl lg:text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-10">Registry Conflict</h3>
 
-                <div className="bg-black/40 border border-white/5 rounded-[2rem] p-10 mb-16 text-left relative overflow-hidden">
+                <div className="bg-black/40 border border-white/5 rounded-[2rem] p-10 mb-10 text-left relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-6 opacity-[0.03]">
                         <SecurityIcon className="w-24 h-24" />
                     </div>
                     <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] mb-4 italic">Diagnostic Trace:</p>
-                    <p className="text-lg font-mono font-medium text-white/60 leading-relaxed">
+                    <p className="text-lg font-mono font-medium text-white/60 leading-relaxed mb-6">
                         {error.includes('ambiguous') || error.includes('function')
                             ? (
                                 <span>
                                     CONFLICT_DETECTED: Multiple node identifiers or outdated RPC signature.<br />
-                                    The global registry cannot resolve the student node structure.<br />
-                                    <span className="text-white/40 text-sm mt-2 block">
-                                        System requires schema harmonization. Admin instructions: Execute <code className="text-primary">FIX_FINANCE_AND_DASHBOARD_FINAL.sql</code> to restore protocol integrity.
-                                    </span>
+                                    The global registry cannot resolve 'profile_photo_url'.<br />
                                 </span>
                             )
                             : error}
                     </p>
+
+                    {/* Actionable Fix Suggestion */}
+                    {(error.includes('ambiguous') || error.includes('function')) && (
+                        <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-xl flex items-center justify-between gap-4">
+                            <div>
+                                <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Required Admin Action</p>
+                                <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold">FIX_FINANCE_AMBIGUITY_V3_FINAL.sql</span></p>
+                            </div>
+                            <button
+                                onClick={() => navigator.clipboard.writeText('FIX_FINANCE_AMBIGUITY_V3_FINAL.sql')}
+                                className="px-5 py-3 bg-red-500 hover:bg-red-400 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-lg active:scale-95"
+                            >
+                                Copy Script Name
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Collapsible raw error for debugging */}
+                    <div className="mt-8 pt-8 border-t border-white/5">
+                        <p className="text-[8px] font-black text-white/10 uppercase tracking-[0.2em] mb-2">Raw Error Log</p>
+                        <code className="block w-full bg-black/50 p-4 rounded-lg text-[10px] font-mono text-red-400/60 break-all select-all hover:bg-black/60 transition-colors cursor-text">
+                            {error}
+                        </code>
+                    </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
