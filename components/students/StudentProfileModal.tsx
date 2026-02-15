@@ -1075,6 +1075,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
     const [admissionRecord, setAdmissionRecord] = useState<any>(null);
     const [enquiryRecord, setEnquiryRecord] = useState<any>(null);
     const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+    const [transactions, setTransactions] = useState<any[]>([]);
 
     // --- Modal States ---
     const [showGuardianEdit, setShowGuardianEdit] = useState<'primary' | 'secondary' | null>(null);
@@ -1126,12 +1127,14 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                 { data: parentRes },
                 { data: admissionRes },
                 { data: enquiryRes },
-                { data: feeData }
+                { data: feeData },
+                { data: payHistory }
             ] = await Promise.all([
                 supabaseAdmin.rpc('get_linked_parent_for_student', { p_student_id: student.id }),
                 admissionId ? supabaseAdmin.from('admissions').select('*').eq('id', admissionId).maybeSingle() : Promise.resolve({ data: null }),
                 enquiryId ? supabaseAdmin.from('enquiries').select('*').eq('id', enquiryId).maybeSingle() : Promise.resolve({ data: null }),
-                supabaseAdmin.rpc('get_student_fee_summary', { p_student_id: student.id })
+                supabaseAdmin.rpc('get_student_fee_summary', { p_student_id: student.id }),
+                supabaseAdmin.rpc('get_student_payment_history', { p_student_id: student.id })
             ]);
 
             // 4. Update State
@@ -1304,6 +1307,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             }
 
             setFeesSummary(feeData);
+            setTransactions(payHistory || []);
 
             // --- 4. Activity Log ---
             setActivityLog([
@@ -2575,12 +2579,46 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                         </div>
 
                                         <div className="border border-white/5 rounded-[2rem] overflow-hidden bg-[#0c0e12]">
-                                            <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+                                            <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
                                                 <h4 className="font-bold text-white text-sm uppercase tracking-wide">Transaction History</h4>
+                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{transactions.length} Records</span>
                                             </div>
-                                            <div className="p-8 text-center text-white/20 text-sm italic">
-                                                Full ledger details available in Finance Module.
-                                            </div>
+
+                                            {transactions.length > 0 ? (
+                                                <div className="divide-y divide-white/5">
+                                                    {transactions.map((txn, idx) => (
+                                                        <div key={idx} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className={`p-2 rounded-xl ${txn.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                                    {txn.status === 'success' ? <CheckCircleIcon className="w-4 h-4" /> : <ShieldCheckIcon className="w-4 h-4" />}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-white">{formatCurrency(txn.amount)}</p>
+                                                                    <p className="text-[10px] uppercase font-black tracking-widest text-white/40 mt-0.5">
+                                                                        {txn.payment_method} • {new Date(txn.paid_at).toLocaleDateString()}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-[10px] font-mono text-white/50">{txn.transaction_reference}</p>
+                                                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${txn.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                                                                    {txn.status}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="p-12 text-center flex flex-col items-center justify-center">
+                                                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                                        <ReceiptIcon className="w-5 h-5 text-white/20" />
+                                                    </div>
+                                                    <p className="text-sm text-white/40 font-bold">No Transaction History</p>
+                                                    <p className="text-xs text-white/20 mt-1 max-w-[200px]">
+                                                        Payments recorded in the system will appear here automatically.
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
