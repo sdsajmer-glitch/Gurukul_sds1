@@ -27,11 +27,15 @@ interface DashboardOverviewProps {
 }
 
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, currentBranch, profile, onNavigate }) => {
-    const [stats, setStats] = useState({ students: 0, teachers: 0, courses: 0 });
+    const [stats, setStats] = useState({
+        students: 0,
+        teachers: 0,
+        courses: 0,
+        revenue: 0,
+        outstanding: 0,
+        overdueCount: 0
+    });
     const [loading, setLoading] = useState(true);
-
-
-
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -43,23 +47,40 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
             }
 
             try {
-                const [studentRes, teacherRes, courseRes] = await Promise.all([
+                // Fetch Operational Stats & Financial Intelligence in Parallel
+                const [studentRes, teacherRes, courseRes, financeRes] = await Promise.all([
                     supabase.rpc('get_all_students_for_admin', { p_branch_id: branchId }),
                     supabase.from('teacher_profiles').select('user_id', { count: 'exact', head: true }).eq('branch_id', branchId),
-                    supabase.from('courses').select('id', { count: 'exact', head: true }).eq('branch_id', branchId)
+                    supabase.from('courses').select('id', { count: 'exact', head: true }).eq('branch_id', branchId),
+                    supabase.rpc('get_finance_dashboard_snapshot', { p_branch_id: branchId })
                 ]);
+
+                const fData = financeRes.data || {};
 
                 setStats({
                     students: studentRes.data?.length || 0,
                     teachers: teacherRes.count || 0,
-                    courses: courseRes.count || 0
+                    courses: courseRes.count || 0,
+                    revenue: fData.total_paid || 0,
+                    outstanding: fData.total_outstanding || 0,
+                    overdueCount: fData.overdue_count || 0
                 });
+            } catch (err) {
+                console.error("Dashboard Metadata Error:", err);
             } finally {
                 setLoading(false);
             }
         };
         fetchStats();
     }, [currentBranch]);
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(amount);
+    };
 
     const isBranchAdmin = profile.role === BuiltInRoles.SCHOOL_ADMINISTRATION && !!profile.branch_id;
     const branchStatus = currentBranch?.status || 'Active';
@@ -169,18 +190,18 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
                             colorClass="bg-emerald-500/10 text-emerald-400"
                         />
                         <StatCard
-                            title="Live Courses"
-                            value={stats.courses.toString()}
-                            icon={<CoursesIcon className="h-7 w-7" />}
-                            trend="Stable"
-                            colorClass="bg-amber-500/10 text-amber-400"
+                            title="Revenue (Gross)"
+                            value={formatCurrency(stats.revenue)}
+                            icon={<TrendingUpCustomIcon className="h-7 w-7" />}
+                            trend="Live Sync"
+                            colorClass="bg-indigo-500/10 text-indigo-400"
                         />
                         <StatCard
-                            title="Revenue (YTD)"
-                            value="$0"
-                            icon={<TrendingUpCustomIcon className="h-7 w-7" />}
-                            trend="--%"
-                            colorClass="bg-indigo-500/10 text-indigo-400"
+                            title="Due Balances"
+                            value={formatCurrency(stats.outstanding)}
+                            icon={<AlertTriangleIcon className="h-7 w-7" />}
+                            trend={`${stats.overdueCount} Overdue`}
+                            colorClass={stats.outstanding > 0 ? "bg-red-500/10 text-red-400" : "bg-emerald-500/10 text-emerald-400"}
                         />
                     </div>
                 )}
