@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Role } from '../types';
 import Header from './parent/Header';
@@ -7,11 +6,17 @@ import { ProfileCreationPage } from './ProfileCreationPage';
 // Import the tab components
 import OverviewTab from './parent_tabs/OverviewTab';
 import MyChildrenTab from './parent_tabs/MyChildrenTab';
+import FinanceTab from './parent_tabs/FinanceTab';
+import AcademicsTab from './parent_tabs/AcademicsTab'; // Added
 import DocumentsTab from './parent_tabs/DocumentsTab';
 import ShareCodesTab from './parent_tabs/ShareCodesTab';
 import MessagesTab from './parent_tabs/MessagesTab';
+
+// Import Icons
 import { HomeIcon } from './icons/HomeIcon';
 import { StudentsIcon } from './icons/StudentsIcon';
+import { FinanceIcon } from './icons/FinanceIcon';
+import { AcademicCapIcon } from './icons/AcademicCapIcon'; // Added
 import { DocumentTextIcon } from './icons/DocumentTextIcon';
 import { CommunicationIcon } from './icons/CommunicationIcon';
 import { ReceiptIcon } from './icons/ReceiptIcon';
@@ -26,6 +31,8 @@ interface ParentDashboardProps {
 const navItems = [
     { id: 'Overview', label: 'Dashboard', icon: <HomeIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'My Children', label: 'Children', icon: <StudentsIcon className="w-4 h-4 md:w-5 md:h-5" /> },
+    { id: 'Academics', label: 'Academics', icon: <AcademicCapIcon className="w-4 h-4 md:w-5 md:h-5" /> }, // Added
+    { id: 'Finance', label: 'Finance', icon: <FinanceIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Documents', label: 'Vault', icon: <DocumentTextIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Messages', label: 'Inbox', icon: <CommunicationIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Share Codes', label: 'Access', icon: <ReceiptIcon className="w-4 h-4 md:w-5 md:h-5" /> },
@@ -46,6 +53,8 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
     const components: { [key: string]: React.ReactNode } = {
         'Overview': <OverviewTab profile={profile} setActiveComponent={setActiveComponent} />,
         'My Children': <MyChildrenTab onManageDocuments={handleManageDocuments} profile={profile} />,
+        'Academics': <AcademicsTab profile={profile} />, // Added
+        'Finance': <FinanceTab profile={profile} />,
         'Documents': <DocumentsTab profile={profile} focusOnAdmissionId={focusedAdmissionId} onClearFocus={() => setFocusedAdmissionId(null)} setActiveComponent={setActiveComponent} />,
         'Messages': <MessagesTab />,
         'Share Codes': <ShareCodesTab onNavigate={setActiveComponent} />,
