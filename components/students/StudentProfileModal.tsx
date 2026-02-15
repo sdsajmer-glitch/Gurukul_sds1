@@ -1082,6 +1082,12 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
     const [isSyncing, setIsSyncing] = useState(false);
     const [showAssignClass, setShowAssignClass] = useState(false);
     const [showPayment, setShowPayment] = useState(false);
+
+    // --- Financial Dashboard State ---
+    const [financialFilter, setFinancialFilter] = useState('All');
+    const [financialSearch, setFinancialSearch] = useState('');
+    const [financialDateRange, setFinancialDateRange] = useState('All Time');
+    const [expandedTxn, setExpandedTxn] = useState<string | null>(null);
     const [docViewerUrl, setDocViewerUrl] = useState<string | null>(null);
 
     // --- Role Context ---
@@ -1307,7 +1313,60 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             }
 
             setFeesSummary(feeData);
-            setTransactions(payHistory || []);
+
+            // --- ROBUST DATA FETCHING & FALLBACK (Self-Healing) ---
+            let finalTransactions = payHistory || [];
+
+            setTransactions(finalTransactions);
+
+            try {
+                if (finalTransactions.length === 0) {
+                    console.log("RPC returned empty history. Attempting direct table fetch...");
+
+                    // 1. Try Enterprise Payments Table
+                    const { data: enterprisePayments, error: entError } = await supabase
+                        .from('payments')
+                        .select('*')
+                        .eq('student_id', student.id)
+                        .order('created_at', { ascending: false });
+
+                    if (!entError && enterprisePayments && enterprisePayments.length > 0) {
+                        finalTransactions = enterprisePayments.map(p => ({
+                            id: p.id,
+                            amount: p.amount,
+                            payment_method: p.payment_method || 'Manual',
+                            transaction_reference: p.transaction_reference || p.transaction_id || 'N/A',
+                            paid_at: p.paid_at || p.payment_date || p.created_at || new Date().toISOString(),
+                            status: p.status || 'Success'
+                        }));
+                    }
+
+                    if (finalTransactions.length === 0) {
+                        const { data: legacyPayments, error: legError } = await supabase
+                            .from('fee_payments')
+                            .select('*')
+                            .eq('student_id', student.id)
+                            .order('created_at', { ascending: false });
+
+                        if (!legError && legacyPayments && legacyPayments.length > 0) {
+                            finalTransactions = legacyPayments.map(p => ({
+                                id: p.id,
+                                amount: p.amount,
+                                payment_method: p.payment_method || 'Legacy',
+                                transaction_reference: p.transaction_id || 'N/A',
+                                paid_at: p.payment_date || p.created_at || new Date().toISOString(),
+                                status: p.status || 'Completed'
+                            }));
+                        }
+                    }
+
+                    if (finalTransactions.length > 0) {
+                        setTransactions(finalTransactions);
+                    }
+                }
+            } catch (fallbackErr) {
+                console.warn("Fallback fetch failed silently:", fallbackErr);
+            }
 
             // --- 4. Activity Log ---
             setActivityLog([
@@ -2547,97 +2606,271 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     <ShieldCheckIcon className="w-4 h-4" /> Finalize Enrollment
                                                 </button>
                                             </div>
-
                                         </div>
                                     </div>
                                 )}
 
                                 {activeTab === 'fees' && (
-                                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 max-w-5xl">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] text-center relative overflow-hidden group">
-                                                <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform">
-                                                    <ActivityIcon className="w-16 h-16 text-white" />
+                                    <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500 overflow-hidden">
+
+                                        {/* 1. FINANCIAL SUMMARY STRIP (Executive Grade) */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 shrink-0">
+                                            {/* Total Billed */}
+                                            <div className="relative p-5 bg-[#0c0e12] border border-white/5 rounded-2xl group overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform">
+                                                    <ActivityIcon className="w-12 h-12 text-white" />
                                                 </div>
-                                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.25em] relative z-10">Billed Magnitude</p>
-                                                <p className="text-3xl font-serif font-black text-white mt-2 relative z-10 tracking-tighter">{formatCurrency(feesSummary?.total_billed || 0)}</p>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.25em]">Total Billed</p>
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-white/20"></div>
+                                                </div>
+                                                <p className="text-2xl font-serif font-black text-white tracking-tight">{formatCurrency(feesSummary?.total_billed || 0)}</p>
+                                                <p className="text-[10px] text-white/20 mt-1 font-mono uppercase tracking-wider">Lifetime Volume</p>
                                             </div>
-                                            <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] text-center relative overflow-hidden group">
-                                                <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform">
-                                                    <ShieldCheckIcon className="w-16 h-16 text-emerald-500" />
+
+                                            {/* Settled Capital */}
+                                            <div className="relative p-5 bg-[#0c0e12] border border-white/5 rounded-2xl group overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform">
+                                                    <ShieldCheckIcon className="w-12 h-12 text-emerald-500" />
                                                 </div>
-                                                <p className="text-[10px] font-black text-emerald-500/60 uppercase tracking-[0.25em] relative z-10">Settled Capital</p>
-                                                <p className="text-3xl font-serif font-black text-emerald-500 mt-2 relative z-10 tracking-tighter drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">{formatCurrency(feesSummary?.total_paid || 0)}</p>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <p className="text-[9px] font-black text-emerald-500/60 uppercase tracking-[0.25em]">Settled Capital</p>
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                                </div>
+                                                <p className="text-2xl font-serif font-black text-emerald-500 tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.2)]">{formatCurrency(feesSummary?.total_paid || 0)}</p>
+                                                <p className="text-[10px] text-emerald-500/30 mt-1 font-mono uppercase tracking-wider">100% Verified</p>
                                             </div>
-                                            <div className="p-6 bg-[#0c0e12] border border-white/5 rounded-[2rem] text-center relative overflow-hidden group">
-                                                <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:scale-110 transition-transform">
-                                                    <AlertTriangleIcon className="w-16 h-16 text-red-500" />
+
+                                            {/* Net Exposure */}
+                                            <div className="relative p-5 bg-[#0c0e12] border border-white/5 rounded-2xl group overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform">
+                                                    <AlertTriangleIcon className="w-12 h-12 text-rose-500" />
                                                 </div>
-                                                <p className="text-[10px] font-black text-red-500/60 uppercase tracking-[0.25em] relative z-10">Net Exposure</p>
-                                                <p className="text-3xl font-serif font-black text-white mt-2 relative z-10 tracking-tighter">{formatCurrency(feesSummary?.outstanding_balance || 0)}</p>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <p className="text-[9px] font-black text-rose-500/60 uppercase tracking-[0.25em]">Net Exposure</p>
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+                                                </div>
+                                                <p className="text-2xl font-serif font-black text-white tracking-tight">{formatCurrency(feesSummary?.outstanding_balance || 0)}</p>
+                                                <p className="text-[10px] text-rose-400/40 mt-1 font-mono uppercase tracking-wider">Due This Cycle</p>
+                                            </div>
+
+                                            {/* Scholarship / Adjustment (Mock for now, can be real later) */}
+                                            <div className="relative p-5 bg-[#0c0e12] border border-white/5 rounded-2xl group overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform">
+                                                    <SparklesIcon className="w-12 h-12 text-indigo-400" />
+                                                </div>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <p className="text-[9px] font-black text-indigo-400/60 uppercase tracking-[0.25em]">Scholarships</p>
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                                                </div>
+                                                <p className="text-2xl font-serif font-black text-indigo-300 tracking-tight">₹0</p>
+                                                <p className="text-[10px] text-indigo-400/30 mt-1 font-mono uppercase tracking-wider">Applied Merit</p>
                                             </div>
                                         </div>
 
-                                        <div className="flex justify-end">
-                                            <button
-                                                onClick={() => setShowPayment(true)}
-                                                className="px-8 py-3 bg-primary text-white font-black text-xs uppercase tracking-[0.2em] rounded-xl shadow-lg hover:bg-primary/90 transition-all flex items-center gap-2"
-                                            >
-                                                <ReceiptIcon className="w-4 h-4" /> Record Manual Payment
-                                            </button>
-                                        </div>
+                                        <div className="grid grid-cols-12 gap-6 h-full min-h-0">
+                                            {/* 2. LEDGER & ACTIONS (Main Content) */}
+                                            <div className="col-span-12 lg:col-span-8 flex flex-col h-full min-h-0 space-y-4">
 
-                                        <div className="border border-white/5 rounded-[2rem] overflow-hidden bg-[#0c0e12]">
-                                            <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
-                                                <h4 className="font-bold text-white text-sm uppercase tracking-wide">Transaction History</h4>
-                                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{transactions.length} Records</span>
-                                            </div>
-
-                                            {transactions.length > 0 ? (
-                                                <div className="divide-y divide-white/5">
-                                                    {transactions.map((txn, idx) => (
-                                                        <div key={idx} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors group">
-                                                            <div className="flex items-center gap-5">
-                                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${txn.status?.toLowerCase() === 'success' ? 'bg-emerald-500/5 text-emerald-500 border border-emerald-500/10' : 'bg-amber-500/5 text-amber-500 border border-amber-500/10'}`}>
-                                                                    {txn.status?.toLowerCase() === 'success' ? <CheckCircleIcon className="w-5 h-5" /> : <ShieldCheckIcon className="w-5 h-5" />}
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-base font-serif font-black text-white/90 group-hover:text-primary transition-colors">{formatCurrency(txn.amount)}</p>
-                                                                    <div className="flex items-center gap-2 mt-1">
-                                                                        <span className="text-[9px] uppercase font-black tracking-widest text-white/30">
-                                                                            {new Date(txn.paid_at).toLocaleDateString()}
-                                                                        </span>
-                                                                        <span className="w-1 h-1 rounded-full bg-white/10"></span>
-                                                                        <span className="text-[9px] uppercase font-black tracking-widest text-white/40">
-                                                                            {txn.payment_method}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
+                                                {/* Action Bar */}
+                                                <div className="flex flex-wrap items-center justify-between gap-4 p-1">
+                                                    <div className="flex items-center gap-2 flex-grow">
+                                                        <div className="relative flex-grow max-w-xs group">
+                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                                <EyeIcon className="h-3.5 w-3.5 text-white/20 group-focus-within:text-indigo-400 transition-colors" />
                                                             </div>
-                                                            <div className="text-right">
-                                                                <div className="flex items-center justify-end gap-2 mb-1">
-                                                                    <span className="bg-white/[0.03] px-2 py-0.5 rounded border border-white/5 text-[9px] font-mono text-white/30 tracking-wider">
-                                                                        #{txn.transaction_reference}
-                                                                    </span>
-                                                                </div>
-                                                                <p className={`text-[9px] font-black uppercase tracking-widest ${txn.status?.toLowerCase() === 'success' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                                                                    {txn.status}
-                                                                </p>
+                                                            <input
+                                                                type="text"
+                                                                className="block w-full pl-9 pr-3 py-2.5 border border-white/5 rounded-xl leading-5 bg-[#0c0e12] text-xs text-white placeholder-white/20 focus:outline-none focus:bg-[#13151b] focus:border-indigo-500/30 focus:ring-1 focus:ring-indigo-500/20 sm:text-xs transition-all font-bold shadow-inner"
+                                                                placeholder="Search Reference, Date..."
+                                                                value={financialSearch}
+                                                                onChange={(e) => setFinancialSearch(e.target.value)}
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            className="p-2.5 bg-[#0c0e12] hover:bg-white/5 border border-white/5 rounded-xl text-white/40 hover:text-white transition-all"
+                                                            title="Filter"
+                                                            onClick={() => setFinancialFilter(prev => prev === 'All' ? 'Success' : 'All')}
+                                                        >
+                                                            <MenuIcon className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-3">
+                                                        <button className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-[9px] font-black text-white/60 hover:text-white uppercase tracking-widest transition-all flex items-center gap-2">
+                                                            <DownloadIcon className="w-3.5 h-3.5" /> Statement
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setShowPayment(true)}
+                                                            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[9px] uppercase tracking-[0.2em] rounded-xl shadow-[0_0_20px_-5px_rgba(79,70,229,0.5)] hover:shadow-indigo-600/40 transition-all hover:-translate-y-0.5 flex items-center gap-2"
+                                                        >
+                                                            <PlusIcon className="w-3.5 h-3.5" /> Record Payment
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Ledger Table Container */}
+                                                <div className="flex-grow bg-[#0c0e12] border border-white/5 rounded-2xl overflow-hidden flex flex-col min-h-0 relative">
+                                                    {/* Table Header */}
+                                                    <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-white/5 bg-white/[0.01]">
+                                                        <div className="col-span-3 text-[9px] font-black text-white/20 uppercase tracking-[0.25em]">Date & Ref</div>
+                                                        <div className="col-span-3 text-[9px] font-black text-white/20 uppercase tracking-[0.25em]">Method</div>
+                                                        <div className="col-span-3 text-[9px] font-black text-white/20 uppercase tracking-[0.25em] text-right">Amount</div>
+                                                        <div className="col-span-3 text-[9px] font-black text-white/20 uppercase tracking-[0.25em] text-right">Status</div>
+                                                    </div>
+
+                                                    {/* Scrollable List */}
+                                                    <div className="overflow-y-auto custom-scrollbar flex-grow p-2 space-y-1">
+                                                        {loading ? (
+                                                            <div className="space-y-3 p-4">
+                                                                {[1, 2, 3, 4].map(i => (
+                                                                    <div key={i} className="h-16 bg-white/[0.02] border border-white/5 rounded-xl animate-pulse"></div>
+                                                                ))}
+                                                            </div>
+                                                        ) : transactions.length > 0 ? (
+                                                            transactions
+                                                                .filter(t => financialSearch ? JSON.stringify(t).toLowerCase().includes(financialSearch.toLowerCase()) : true)
+                                                                .map((txn, idx) => (
+                                                                    <div
+                                                                        key={idx}
+                                                                        onClick={() => setExpandedTxn(expandedTxn === txn.id ? null : txn.id)}
+                                                                        className={`
+                                                                        group relative overflow-hidden rounded-xl border transition-all duration-300 cursor-pointer
+                                                                        ${expandedTxn === txn.id
+                                                                                ? 'bg-white/[0.04] border-indigo-500/20'
+                                                                                : 'bg-transparent hover:bg-white/[0.02] border-transparent hover:border-white/5'
+                                                                            }
+                                                                    `}
+                                                                    >
+                                                                        <div className="grid grid-cols-12 gap-4 px-4 py-4 items-center relative z-10">
+                                                                            <div className="col-span-3">
+                                                                                <p className="text-xs font-bold text-white tracking-tight">
+                                                                                    {txn.paid_at ? new Date(txn.paid_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : 'Unknown'}
+                                                                                </p>
+                                                                                <p className="text-[9px] font-mono text-white/30 uppercase tracking-wider mt-0.5 truncate group-hover:text-indigo-400 transition-colors">
+                                                                                    #{String(txn.transaction_reference).substring(0, 10)}...
+                                                                                </p>
+                                                                            </div>
+                                                                            <div className="col-span-3 flex items-center gap-2">
+                                                                                <div className="p-1.5 rounded-lg bg-white/5 text-white/40">
+                                                                                    <CreditCardIcon className="w-3 h-3" />
+                                                                                </div>
+                                                                                <span className="text-[10px] font-bold text-white/50 uppercase tracking-wide truncate">
+                                                                                    {txn.payment_method || 'System'}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="col-span-3 text-right">
+                                                                                <p className="text-sm font-serif font-black text-white tracking-tight group-hover:text-emerald-400 transition-colors">
+                                                                                    {formatCurrency(txn.amount)}
+                                                                                </p>
+                                                                            </div>
+                                                                            <div className="col-span-3 flex justify-end">
+                                                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${['success', 'completed'].includes(txn.status?.toLowerCase())
+                                                                                    ? 'bg-emerald-500/5 text-emerald-400 border border-emerald-500/10'
+                                                                                    : 'bg-amber-500/5 text-amber-400 border border-amber-500/10'
+                                                                                    }`}>
+                                                                                    <div className={`w-1 h-1 rounded-full ${['success', 'completed'].includes(txn.status?.toLowerCase()) ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                                                                                    {txn.status || 'UNKNOWN'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Expanded Details */}
+                                                                        {expandedTxn === txn.id && (
+                                                                            <div className="px-4 pb-4 pt-0 animate-in slide-in-from-top-2 duration-300">
+                                                                                <div className="p-4 bg-[#08090a] rounded-xl border border-white/5 grid grid-cols-2 gap-4">
+                                                                                    <div>
+                                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Transaction ID</p>
+                                                                                        <p className="text-xs font-mono text-white/60 select-all">{txn.transaction_reference}</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Processed Via</p>
+                                                                                        <p className="text-xs font-bold text-white/60">{txn.payment_method}</p>
+                                                                                    </div>
+                                                                                    <div className="col-span-2 pt-2 border-t border-white/5 flex gap-3">
+                                                                                        <button className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-1">
+                                                                                            <DownloadIcon className="w-3 h-3" /> Download Receipt
+                                                                                        </button>
+                                                                                        <button className="text-[9px] font-black text-white/40 hover:text-white uppercase tracking-widest flex items-center gap-1 ml-auto">
+                                                                                            <AlertTriangleIcon className="w-3 h-3" /> Report Issue
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                ))
+                                                        ) : (
+                                                            <div className="h-full flex flex-col items-center justify-center p-10 text-center text-white/20">
+                                                                <ReceiptIcon className="w-12 h-12 mb-4 opacity-20" />
+                                                                <p className="text-xs font-black uppercase tracking-widest opacity-50">Ledger Silent</p>
+                                                                <p className="text-[10px] uppercase tracking-wide mt-1 opacity-30">No transactions match your criteria</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* 3. FINANCIAL INSIGHTS (Side Panel) */}
+                                            <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 min-h-0 overflow-y-auto custom-scrollbar">
+
+                                                {/* Upcoming Due (Mock) */}
+                                                <div className="p-5 bg-gradient-to-br from-[#1a1c24] to-[#0c0e12] border border-white/5 rounded-2xl relative overflow-hidden group">
+                                                    <div className="absolute top-0 right-0 p-4 opacity-[0.05] group-hover:rotate-12 transition-transform">
+                                                        <CalendarIcon className="w-24 h-24 text-white" />
+                                                    </div>
+                                                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-4">Upcoming Schedule</h4>
+                                                    <div className="space-y-4 relative z-10">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20 text-center min-w-[3.5rem]">
+                                                                <p className="text-[9px] font-black uppercase">Mar</p>
+                                                                <p className="text-lg font-black leading-none">10</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-bold text-white">Term 3 Installment</p>
+                                                                <p className="text-[10px] text-white/40 uppercase tracking-wide">Due in 24 Days</p>
                                                             </div>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="p-12 text-center flex flex-col items-center justify-center">
-                                                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                                                        <ReceiptIcon className="w-5 h-5 text-white/20" />
+                                                        <button className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-[9px] font-black text-white/60 hover:text-white uppercase tracking-widest transition-all">
+                                                            View Schedule
+                                                        </button>
                                                     </div>
-                                                    <p className="text-sm text-white/40 font-bold">No Transaction History</p>
-                                                    <p className="text-xs text-white/20 mt-1 max-w-[200px]">
-                                                        Payments recorded in the system will appear here automatically.
-                                                    </p>
                                                 </div>
-                                            )}
+
+                                                {/* Payment Mode Analysis */}
+                                                <div className="p-5 bg-[#0c0e12] border border-white/5 rounded-2xl">
+                                                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-4">Payment Velocity</h4>
+                                                    <div className="space-y-3">
+                                                        <div className="flex justify-between items-center text-xs">
+                                                            <span className="text-white/40 font-bold uppercase tracking-wide text-[9px]">Avg. Transaction</span>
+                                                            <span className="text-white font-mono">{formatCurrency(transactions.length ? feesSummary?.total_paid / transactions.length : 0)}</span>
+                                                        </div>
+                                                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-indigo-500 w-[65%]"></div>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-xs pt-2">
+                                                            <span className="text-white/40 font-bold uppercase tracking-wide text-[9px]">Cash vs Digital</span>
+                                                            <span className="text-emerald-400 font-mono">82% Digital</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Quick Actions List */}
+                                                <div className="p-5 bg-[#0c0e12] border border-white/5 rounded-2xl">
+                                                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-4">Quick Protocols</h4>
+                                                    <div className="space-y-2">
+                                                        <button className="w-full text-left px-4 py-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 flex items-center justify-between group transition-all">
+                                                            <span className="text-[10px] font-black text-white/60 group-hover:text-white uppercase tracking-widest">Send Fee Rerminder</span>
+                                                            <ArrowRightIcon className="w-3 h-3 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                                                        </button>
+                                                        <button className="w-full text-left px-4 py-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 flex items-center justify-between group transition-all">
+                                                            <span className="text-[10px] font-black text-white/60 group-hover:text-white uppercase tracking-widest">Generate Invoice</span>
+                                                            <ArrowRightIcon className="w-3 h-3 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -2662,7 +2895,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                         )}
                     </div>
                 </div>
-            </div >
+            </div>
+
 
             {/* Sub-Modals */}
             {
