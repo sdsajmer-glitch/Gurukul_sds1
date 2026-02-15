@@ -384,14 +384,14 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                             {error}
                         </p>
 
-                        {(error.includes('ambiguous') || error.includes('function')) && (
+                        {(error.includes('ambiguous') || error.includes('function') || error.includes('schema') || error.includes('Reference')) && (
                             <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-6">
                                 <div>
                                     <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">Required Admin Action</p>
-                                    <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold select-all">FIX_FINANCE_AMBIGUITY_V5_OVERVIEW.sql</span></p>
+                                    <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold select-all">FIX_FINANCE_TAB_GLOBAL_REPAIR.sql</span></p>
                                 </div>
                                 <button
-                                    onClick={() => navigator.clipboard.writeText('FIX_FINANCE_AMBIGUITY_V5_OVERVIEW.sql')}
+                                    onClick={() => navigator.clipboard.writeText('FIX_FINANCE_TAB_GLOBAL_REPAIR.sql')}
                                     className="px-6 py-3 bg-red-500 hover:bg-red-400 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-lg active:scale-95 whitespace-nowrap"
                                 >
                                     Copy Script Name
