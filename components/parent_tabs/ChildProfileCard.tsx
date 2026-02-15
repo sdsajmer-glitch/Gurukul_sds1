@@ -4,6 +4,7 @@ import { AdmissionApplication } from '../../types';
 import { DocumentTextIcon } from '../icons/DocumentTextIcon';
 import { GraduationCapIcon } from '../icons/GraduationCapIcon';
 import { EditIcon } from '../icons/EditIcon';
+import { CreditCardIcon } from '../icons/CreditCardIcon';
 import PremiumAvatar from '../common/PremiumAvatar';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import Tooltip from '../common/Tooltip';
@@ -16,11 +17,12 @@ interface ChildProfileCardProps {
     onToggleExpand: () => void;
     onEdit: () => void;
     onManageDocuments: () => void;
+    onViewFinance?: () => void;
     onNavigateDashboard: () => void;
     index?: number;
 }
 
-const ChildProfileCard: React.FC<ChildProfileCardProps> = ({ child, onEdit, onManageDocuments, onNavigateDashboard }) => {
+const ChildProfileCard: React.FC<ChildProfileCardProps> = ({ child, onEdit, onManageDocuments, onViewFinance, onNavigateDashboard }) => {
     const navigate = useNavigate();
 
     const getProgress = () => {
@@ -58,8 +60,7 @@ const ChildProfileCard: React.FC<ChildProfileCardProps> = ({ child, onEdit, onMa
 
     const handlePortalClick = () => {
         if (!isEnrolled) return;
-        // Navigate to student portal with studentId in state
-        navigate('/student-portal', { state: { studentId: child.id } });
+        navigate('/student'); // Correct route for student portal based on context
     };
 
     return (
@@ -150,7 +151,7 @@ const ChildProfileCard: React.FC<ChildProfileCardProps> = ({ child, onEdit, onMa
                 </div>
 
                 {/* Actions Footer */}
-                <div className="mt-auto grid grid-cols-3 gap-3 border-t border-white/5 pt-6">
+                <div className="mt-auto grid grid-cols-4 gap-2 border-t border-white/5 pt-6">
                     <Tooltip content="Manage Documents & Records">
                         <button
                             onClick={onManageDocuments}
@@ -158,6 +159,16 @@ const ChildProfileCard: React.FC<ChildProfileCardProps> = ({ child, onEdit, onMa
                         >
                             <DocumentTextIcon className="w-5 h-5 group-hover/btn:text-blue-400 transition-colors" />
                             <span className="text-[9px] font-bold uppercase tracking-wider">Vault</span>
+                        </button>
+                    </Tooltip>
+
+                    <Tooltip content="Financial Status & Fees">
+                        <button
+                            onClick={onViewFinance}
+                            className="w-full h-full flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] hover:text-white text-white/40 transition-all active:scale-95 group/btn"
+                        >
+                            <CreditCardIcon className="w-5 h-5 group-hover/btn:text-emerald-400 transition-colors" />
+                            <span className="text-[9px] font-bold uppercase tracking-wider">Fees</span>
                         </button>
                     </Tooltip>
 

@@ -15,10 +15,11 @@ type FilterType = 'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED';
 
 interface MyChildrenTabProps {
     onManageDocuments: (id: string) => void;
+    onNavigateFinance?: (id: string) => void;
     profile: UserProfile;
 }
 
-const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profile }) => {
+const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, onNavigateFinance, profile }) => {
     const navigate = useNavigate();
     const [applications, setApplications] = useState<AdmissionApplication[]>([]);
     const [loading, setLoading] = useState(true);
@@ -180,6 +181,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, profil
                                 onToggleExpand={() => { }}
                                 onEdit={() => { setEditingChild(app); setIsModalOpen(true); }}
                                 onManageDocuments={() => onManageDocuments(app.id)}
+                                onViewFinance={() => onNavigateFinance?.(app.id)}
                                 onNavigateDashboard={async () => {
                                     const { error } = await supabase.rpc('parent_switch_student_view', { p_new_admission_id: app.id });
                                     if (!error) navigate('/student');

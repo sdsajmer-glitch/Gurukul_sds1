@@ -10,11 +10,13 @@ import MyChildrenTab from './components/parent_tabs/MyChildrenTab';
 import DocumentsTab from './components/parent_tabs/DocumentsTab';
 import ShareCodesTab from './components/parent_tabs/ShareCodesTab';
 import MessagesTab from './components/parent_tabs/MessagesTab';
+import FinanceTab from './components/parent_tabs/FinanceTab';
 import { HomeIcon } from './components/icons/HomeIcon';
 import { StudentsIcon } from './components/icons/StudentsIcon';
 import { DocumentTextIcon } from './components/icons/DocumentTextIcon';
 import { CommunicationIcon } from './components/icons/CommunicationIcon';
 import { ReceiptIcon } from './components/icons/ReceiptIcon';
+import { CreditCardIcon } from './components/icons/CreditCardIcon';
 
 interface ParentDashboardProps {
     profile: UserProfile;
@@ -26,6 +28,7 @@ interface ParentDashboardProps {
 const navItems = [
     { id: 'Overview', label: 'Dashboard', icon: <HomeIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'My Children', label: 'Children', icon: <StudentsIcon className="w-4 h-4 md:w-5 md:h-5" /> },
+    { id: 'Finance', label: 'Finance & Fees', icon: <CreditCardIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Documents', label: 'Vault', icon: <DocumentTextIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Messages', label: 'Inbox', icon: <CommunicationIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Share Codes', label: 'Access', icon: <ReceiptIcon className="w-4 h-4 md:w-5 md:h-5" /> },
@@ -45,7 +48,14 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
 
     const components: { [key: string]: React.ReactNode } = {
         'Overview': <OverviewTab profile={profile} setActiveComponent={setActiveComponent} />,
-        'My Children': <MyChildrenTab onManageDocuments={handleManageDocuments} profile={profile} />,
+        'My Children': <MyChildrenTab onManageDocuments={handleManageDocuments} profile={profile} onNavigateFinance={(studentId) => {
+            setFocusedAdmissionId(studentId); // Re-using this or create new state? Better to use a dedicated prop for FinanceTab if needed, but FinanceTab uses internal state. 
+            // Actually FinanceTab should accept a prop to pre-select a student. 
+            // But ParentDashboard controls the active tab. 
+            // We can pass focusedAdmissionId to FinanceTab too or a new state.
+            setActiveComponent('Finance');
+        }} />,
+        'Finance': <FinanceTab profile={profile} initialStudentId={focusedAdmissionId} />,
         'Documents': <DocumentsTab profile={profile} focusOnAdmissionId={focusedAdmissionId} onClearFocus={() => setFocusedAdmissionId(null)} setActiveComponent={setActiveComponent} />,
         'Messages': <MessagesTab />,
         'Share Codes': <ShareCodesTab onNavigate={setActiveComponent} />,

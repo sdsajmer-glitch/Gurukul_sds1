@@ -8,10 +8,13 @@ import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { ClockIcon } from '../icons/ClockIcon';
 import { RefreshIcon } from '../icons/RefreshIcon';
+import { UploadIcon } from '../icons/UploadIcon';
+import { XIcon } from '../icons/XIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface FinanceTabProps {
     profile: UserProfile;
+    initialStudentId?: string | null;
 }
 
 const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
@@ -121,6 +124,111 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         }
     };
 
+    // Manual Payment State
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [uploadData, setUploadData] = useState({
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        mode: 'NEFT', // NEFT, UPI, CHEQUE, CASH
+        ref: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Mock Payment Logic
+    const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+
+    const handlePayNow = async (invoiceId: string, amount: number) => {
+        if (!selectedStudentId) return;
+        setIsPaymentProcessing(true);
+        try {
+            // 1. Create Payment Intent (Mock)
+            const { data: intent, error: intentError } = await supabase.rpc('initiate_parent_payment', {
+                p_student_id: selectedStudentId,
+                p_amount: amount,
+                p_invoice_id: invoiceId
+            });
+
+            if (intentError) throw intentError;
+
+            // 2. Simulate User Redirect to Gateway
+            // In a real app, window.location.href = intent.payment_url;
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate gateway time
+
+            // 3. Simulate Successful Webhook Callback (for demo purposes)
+            const { error: webhookError } = await supabase.rpc('process_payment_success', {
+                p_payment_id: intent, // intent returns payment ID in this mock
+                p_transaction_id: `TXN_${Date.now()}`
+            });
+
+            if (webhookError) throw webhookError;
+
+            // 4. Refresh Data
+            await fetchFinanceDetail();
+            alert('Payment processed successfully!');
+
+        } catch (err: any) {
+            console.error('Payment Error:', err);
+            alert('Payment failed: ' + err.message);
+        } finally {
+            setIsPaymentProcessing(false);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setUploadFile(e.target.files[0]);
+        }
+    };
+
+    const handleManualSubmit = async () => {
+        if (!selectedStudentId || !uploadFile || !uploadData.amount || !uploadData.ref) {
+            alert('Please fill all fields and upload a receipt.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // 1. Upload File
+            const fileExt = uploadFile.name.split('.').pop();
+            const fileName = `${selectedStudentId}/${Date.now()}.${fileExt}`;
+            const filePath = `receipts/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('documents') // Reusing documents bucket or 'receipts' if exists. Using 'documents' for safety as it likely exists.
+                .upload(filePath, uploadFile);
+
+            if (uploadError) throw uploadError;
+
+            // 2. Get Public URL (or signed, but public for now for simplicity of receipt viewing by admin)
+            const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath);
+
+            // 3. Submit Record
+            const { error: dbError } = await supabase.rpc('submit_manual_payment_receipt', {
+                p_student_id: selectedStudentId,
+                p_amount: parseFloat(uploadData.amount),
+                p_transaction_date: uploadData.date,
+                p_transaction_ref: uploadData.ref,
+                p_payment_mode: uploadData.mode,
+                p_proof_url: publicUrl,
+                p_invoice_ids: [] // Optional: could link to specific invoices if UI allowed selection
+            });
+
+            if (dbError) throw dbError;
+
+            alert('Receipt uploaded successfully! Pending verification.');
+            setIsUploadModalOpen(false);
+            setUploadFile(null);
+            setUploadData({ ...uploadData, amount: '', ref: '' });
+            fetchFinanceDetail(); // Refresh to show pending status if applicable
+
+        } catch (err: any) {
+            alert('Error uploading receipt: ' + err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     if (loading && students.length === 0) return (
         <div className="flex justify-center items-center h-64">
             <Spinner />
@@ -223,39 +331,50 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                 <div className="p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <h3 className="text-lg font-serif font-bold text-white uppercase tracking-wider">Installment Schedule</h3>
 
-                    {/* Cycle Selector */}
-                    <div className="relative">
+                    <div className="flex items-center gap-4">
+                        {/* Upload Receipt Button */}
                         <button
-                            onClick={() => setIsCycleMenuOpen(!isCycleMenuOpen)}
-                            className="px-6 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-3 hover:bg-white/10 transition-colors"
+                            onClick={() => setIsUploadModalOpen(true)}
+                            className="px-5 py-2 bg-white/[0.05] hover:bg-white/[0.1] text-white text-[10px] font-black uppercase tracking-widest rounded-full border border-white/10 transition-all flex items-center gap-2"
                         >
-                            Cycle: {allCycles.find(c => c.id === activeCycle)?.year_name || 'Current'}
-                            <div className={`w-0 h-0 border-l-[3px] border-l-transparent border-t-[4px] border-t-white/50 border-r-[3px] border-r-transparent transition-transform ${isCycleMenuOpen ? 'rotate-180' : ''}`} />
+                            <UploadIcon className="w-3 h-3" />
+                            Upload Receipt
                         </button>
 
-                        <AnimatePresence>
-                            {isCycleMenuOpen && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10 }}
-                                    className="absolute right-0 top-full mt-2 w-48 bg-[#1a1b23] border border-white/10 rounded-xl shadow-2xl z-20 py-2"
-                                >
-                                    {allCycles.map(cycle => (
-                                        <button
-                                            key={cycle.id}
-                                            onClick={() => {
-                                                setActiveCycle(cycle.id);
-                                                setIsCycleMenuOpen(false);
-                                            }}
-                                            className={`w-full text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors ${activeCycle === cycle.id ? 'text-emerald-500' : 'text-white/60'}`}
-                                        >
-                                            {cycle.year_name} {cycle.is_current && '(Active)'}
-                                        </button>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        {/* Cycle Selector */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsCycleMenuOpen(!isCycleMenuOpen)}
+                                className="px-6 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest flex items-center gap-3 hover:bg-white/10 transition-colors"
+                            >
+                                Cycle: {allCycles.find(c => c.id === activeCycle)?.year_name || 'Current'}
+                                <div className={`w-0 h-0 border-l-[3px] border-l-transparent border-t-[4px] border-t-white/50 border-r-[3px] border-r-transparent transition-transform ${isCycleMenuOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            <AnimatePresence>
+                                {isCycleMenuOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        className="absolute right-0 top-full mt-2 w-48 bg-[#1a1b23] border border-white/10 rounded-xl shadow-2xl z-20 py-2"
+                                    >
+                                        {allCycles.map(cycle => (
+                                            <button
+                                                key={cycle.id}
+                                                onClick={() => {
+                                                    setActiveCycle(cycle.id);
+                                                    setIsCycleMenuOpen(false);
+                                                }}
+                                                className={`w-full text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors ${activeCycle === cycle.id ? 'text-emerald-500' : 'text-white/60'}`}
+                                            >
+                                                {cycle.year_name} {cycle.is_current && '(Active)'}
+                                            </button>
+                                        ))}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </div>
                 </div>
 
@@ -369,6 +488,109 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Manual Payment Upload Modal */}
+            <AnimatePresence>
+                {isUploadModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="bg-[#1a1b23] border border-white/10 rounded-[2rem] p-8 max-w-md w-full relative overflow-hidden shadow-2xl"
+                        >
+                            <button
+                                onClick={() => setIsUploadModalOpen(false)}
+                                className="absolute top-6 right-6 text-white/20 hover:text-white transition-colors"
+                            >
+                                <XIcon className="w-6 h-6" />
+                            </button>
+
+                            <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight mb-6">Upload Receipt</h3>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Amount Paid</label>
+                                    <input
+                                        type="number"
+                                        value={uploadData.amount}
+                                        onChange={e => setUploadData({ ...uploadData, amount: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 outline-none focus:border-emerald-500/50 transition-colors font-mono"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Date</label>
+                                        <input
+                                            type="date"
+                                            value={uploadData.date}
+                                            onChange={e => setUploadData({ ...uploadData, date: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500/50 transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Mode</label>
+                                        <select
+                                            value={uploadData.mode}
+                                            onChange={e => setUploadData({ ...uploadData, mode: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500/50 transition-colors appearance-none"
+                                        >
+                                            <option value="NEFT">NEFT / RTGS</option>
+                                            <option value="UPI">UPI</option>
+                                            <option value="CHEQUE">Cheque</option>
+                                            <option value="CASH">Cash Deposit</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Transaction Ref / ID</label>
+                                    <input
+                                        type="text"
+                                        value={uploadData.ref}
+                                        onChange={e => setUploadData({ ...uploadData, ref: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 outline-none focus:border-emerald-500/50 transition-colors font-mono"
+                                        placeholder="UTR / Cheque No."
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Receipt Image / PDF</label>
+                                    <div className="relative group">
+                                        <input
+                                            type="file"
+                                            onChange={handleFileSelect}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            accept="image/*,.pdf"
+                                        />
+                                        <div className="w-full bg-white/5 border border-dashed border-white/10 rounded-xl p-6 flex flex-col items-center justify-center gap-2 group-hover:bg-white/[0.08] transition-colors">
+                                            <UploadIcon className="w-6 h-6 text-white/30 group-hover:text-emerald-500 transition-colors" />
+                                            <span className="text-[10px] text-white/40 uppercase tracking-widest">
+                                                {uploadFile ? uploadFile.name : 'Click to Upload'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleManualSubmit}
+                                    disabled={isSubmitting}
+                                    className="w-full py-4 mt-4 bg-emerald-500 text-black font-black uppercase tracking-[0.2em] rounded-xl hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmitting ? 'Submitting...' : 'Submit Receipt'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
