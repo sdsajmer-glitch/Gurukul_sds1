@@ -34,6 +34,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     const [students, setStudents] = useState<any[]>([]);
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [financeDetail, setFinanceDetail] = useState<any>(null);
+    const [error, setError] = useState<string | null>(null);
 
     // Academic Year State
     const [cycleOptions, setCycleOptions] = useState<AcademicCycle[]>([]);
@@ -63,10 +64,12 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         // Fetch known cycles from DB to map IDs
         const { data: dbCycles } = await supabase.from('academic_years').select('*').order('start_date', { ascending: true });
 
+        // CRITICAL FIX: Base on current real-world time (2026) or DB flag
         const currentDbCycle = dbCycles?.find(c => c.is_current);
-        const currentYearStart = currentDbCycle ? parseInt(currentDbCycle.year_name.split('-')[0]) : 2024;
+        // If DB says nothing, we are in Feb 2026 -> 2025-2026 is the active cycle
+        const currentYearStart = currentDbCycle ? parseInt(currentDbCycle.year_name.split('-')[0]) : 2025;
 
-        const baseYear = 2023; // Start a bit earlier to show history if needed
+        const baseYear = 2023;
         const endYear = 2030;
         const generated: AcademicCycle[] = [];
 
@@ -74,49 +77,56 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
             const yearName = `${y}-${y + 1}`;
             let status: AcademicCycle['status'] = 'UPCOMING';
 
-            if (y < currentYearStart) status = 'ARCHIVED';
-            else if (y === currentYearStart) status = 'CURRENT';
-            else status = 'UPCOMING';
-
-            // Find matching DB ID
+            // Match exact DB status if available
             const dbMatch = dbCycles?.find(c => c.year_name === yearName);
+
+            if (dbMatch) {
+                status = dbMatch.status.toUpperCase() as any;
+            } else {
+                if (y < currentYearStart) status = 'ARCHIVED';
+                else if (y === currentYearStart) status = 'CURRENT';
+                else status = 'UPCOMING';
+            }
 
             generated.push({
                 id: y,
                 year_name: yearName,
-                is_current: status === 'CURRENT',
+                is_current: status === 'CURRENT' || (dbMatch?.is_current ?? false),
                 status: status,
                 db_id: dbMatch?.id
             });
         }
 
         // Filter: Show only from 1 year back to future
-        const relevantCycles = generated.filter(c => c.id >= currentYearStart - 1);
+        const relevantCycles = generated.filter(c => c.id >= 2023);
         setCycleOptions(relevantCycles);
 
-        // Default to Current
-        const current = relevantCycles.find(c => c.status === 'CURRENT');
-        if (current) setSelectedCycleId(current.id);
-        else if (relevantCycles.length > 0) setSelectedCycleId(relevantCycles[1]?.id || relevantCycles[0].id);
+        // Auto-selection logic: Prioritize DB "Current"
+        const dbCurrent = relevantCycles.find(c => c.db_id && dbCycles?.find(db => db.id === c.db_id)?.is_current);
+        const logicCurrent = relevantCycles.find(c => c.status === 'CURRENT');
+
+        if (dbCurrent) setSelectedCycleId(dbCurrent.id);
+        else if (logicCurrent) setSelectedCycleId(logicCurrent.id);
+        else if (relevantCycles.length > 0) setSelectedCycleId(relevantCycles.find(c => c.id === 2025)?.id || relevantCycles[0].id);
 
     }, []);
 
     const fetchStudents = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
             const { data, error } = await supabase.rpc('get_parent_linked_students_finance_v2', { p_parent_id: profile.id });
             if (error) throw error;
             setStudents(data || []);
+
             // Auto-select first student if none selected
             if (data && data.length > 0 && !selectedStudentId) {
                 setSelectedStudentId(data[0].student_id);
             }
         } catch (err: any) {
             console.error("Error fetching students:", err);
-            // Dev Mock: Only use if strictly necessary for UI dev, otherwise keep empty to show errors
-            if (process.env.NODE_ENV === 'development') {
-                setStudents([{ student_id: 'mock-1', display_name: 'Select a Student', grade: 'Unknown', profile_photo_url: null }]);
-            }
+            // Show more context in the error state
+            setError(`Roster Linkage Pending: ${err.message || "Connectivity check failed"}`);
         } finally {
             setLoading(false);
         }
@@ -166,8 +176,8 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     }, [initializeCycles, fetchStudents]);
 
     useEffect(() => {
-        if (selectedStudentId && selectedCycleId) fetchFinanceDetail();
-    }, [selectedStudentId, selectedCycleId, fetchFinanceDetail]);
+        if (selectedStudentId && selectedCycleId && cycleOptions.length > 0) fetchFinanceDetail();
+    }, [selectedStudentId, selectedCycleId, fetchFinanceDetail, cycleOptions.length]);
 
 
     // --- 2. COMPUTED METRICS ---
@@ -360,12 +370,27 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                 </div>
             </div>
 
-            {/* Error State: No Student */}
+            {/* Error State: Connectivity/Sync */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-4 text-red-500"
+                    >
+                        <AlertTriangleIcon className="w-5 h-5 shrink-0" />
+                        <div className="text-xs font-black uppercase tracking-widest">{error}</div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Error State: No Student selected (Default) */}
             {!selectedStudentId ? (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-8 text-center animate-pulse flex flex-col items-center">
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-8 text-center flex flex-col items-center">
                     <AlertTriangleIcon className="w-12 h-12 text-amber-500 mb-4" />
                     <h3 className="text-xl font-bold text-amber-500">Selection Required</h3>
-                    <p className="text-amber-200/60 mt-2 text-sm">Please select a student from the dropdown above to view their financial details.</p>
+                    <p className="text-amber-200/60 mt-2 text-sm">{students.length > 0 ? "Please select a student from the dropdown above to view their financial details." : "No linked students found. Check your profile linkage in 'Children' tab."}</p>
                 </div>
             ) : (
                 <>
@@ -405,7 +430,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                                 step.status === 'active' ? "bg-indigo-500 border-indigo-500 text-white animate-pulse" :
                                                     "bg-[#111827] border-white/10 text-white/20"
                                     )}>
-                                        {React.cloneElement(step.icon as React.ReactElement, { className: "w-4 h-4" })}
+                                        {React.cloneElement(step.icon as React.ReactElement, { className: "w-4 h-4" } as any)}
                                     </div>
                                     <span className={clsx(
                                         "text-[10px] font-black uppercase tracking-tighter whitespace-nowrap",
