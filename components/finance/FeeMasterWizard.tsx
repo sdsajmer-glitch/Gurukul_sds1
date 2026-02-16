@@ -54,8 +54,8 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
         type: 'Standard'
     });
 
-    const [components, setComponents] = useState<{ id?: number; name: string; amount: string; frequency: string; is_mandatory: boolean; category: string }[]>([
-        { name: 'TUITION_FEES', amount: '0', frequency: 'Monthly', is_mandatory: true, category: 'Tuition' }
+    const [components, setComponents] = useState<{ id?: number; name: string; amount: string; frequency: string; is_mandatory: boolean; category: string; gl_code?: string; tax_percentage?: number; is_refundable?: boolean }[]>([
+        { name: 'TUITION_FEES', amount: '0', frequency: 'Monthly', is_mandatory: true, category: 'Tuition', gl_code: '', tax_percentage: 0, is_refundable: false }
     ]);
 
     useEffect(() => {
@@ -178,7 +178,10 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                 amount: c.amount.toString(),
                 frequency: c.frequency,
                 is_mandatory: c.is_mandatory,
-                category: c.category || 'Tuition'
+                category: c.category || 'Tuition',
+                gl_code: c.gl_code || '',
+                tax_percentage: c.tax_percentage || 0,
+                is_refundable: c.is_refundable || false
             })));
         }
     };
@@ -514,7 +517,7 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                                     </div>
                                     <div>
                                         <h4 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Financial Ledger Nodes</h4>
-                                        <p className="text-white/30 text-xs font-medium tracking-wide">Define line items for this institutional financial configuration.</p>
+                                        <p className="text-white/30 text-xs font-medium tracking-wide">Define the institutional nexus and temporal scope for this financial node.</p>
                                     </div>
                                 </div>
                                 {!isLocked && (

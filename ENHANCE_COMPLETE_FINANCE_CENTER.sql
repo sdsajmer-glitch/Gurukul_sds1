@@ -121,7 +121,8 @@ RETURNS TABLE (
     total_paid NUMERIC,
     outstanding_balance NUMERIC,
     integrity_score INTEGER,
-    last_synced_at TIMESTAMPTZ
+    last_synced_at TIMESTAMPTZ,
+    profile_photo_url TEXT
 ) LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
     RETURN QUERY
@@ -133,7 +134,8 @@ BEGIN
         sfa.total_paid,
         sfa.outstanding_balance,
         sfa.integrity_score,
-        sfa.last_synced_at
+        sfa.last_synced_at,
+        p.profile_photo_url
     FROM public.student_fee_accounts sfa
     JOIN public.profiles p ON sfa.student_id = p.id
     JOIN public.student_profiles sp ON sfa.student_id = sp.user_id
