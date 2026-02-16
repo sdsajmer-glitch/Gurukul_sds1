@@ -8,7 +8,7 @@ import clsx from 'clsx';
 
 // Icons
 import { GraduationCapIcon } from '../icons/GraduationCapIcon';
-import { TrendingUpIcon } from '../icons/TrendingUpIcon';
+import { TrendingUpCustomIcon } from '../icons/TrendingUpIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { ClockIcon } from '../icons/ClockIcon';
 import { BookOpenIcon } from '../icons/BookOpenIcon';
@@ -60,7 +60,8 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
     // Fetch Linked Students
     const fetchStudents = useCallback(async () => {
         try {
-            const { data, error } = await supabase.rpc('get_parent_linked_students_finance_v2', { p_parent_id: profile.id });
+            // SECURITY UPGRADE: Use the unified hardened student roster
+            const { data, error } = await supabase.rpc('get_parent_linked_students_finance_v3');
             if (error) throw error;
             setStudents(data || []);
             if (data?.length > 0 && !selectedStudentId) {
@@ -68,23 +69,31 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
             }
         } catch (err: any) {
             console.error("Student fetch error:", err);
-            setError("Identity Roster unavailable.");
+            setError("Identity Roster isolation active.");
         }
-    }, [profile.id, selectedStudentId]);
+    }, [selectedStudentId]);
 
     // Fetch Academic Intelligence
     const fetchIntel = useCallback(async () => {
         if (!selectedStudentId) return;
         setLoading(true);
         try {
-            const { data, error: rpcError } = await supabase.rpc('get_student_academic_intel_v1', {
+            // SECURITY UPGRADE: v2 implements backend ownership checks
+            const { data, error: rpcError } = await supabase.rpc('get_student_academic_intel_v2', {
                 p_student_id: selectedStudentId
             });
             if (rpcError) throw rpcError;
+
+            if (data?.error === '403_ACCESS_FORBIDDEN') {
+                setError("SECURITY ALERT: Academic isolation breach detected.");
+                setIntel(null);
+                return;
+            }
+
             setIntel(data);
         } catch (err: any) {
             console.error("Intel fetch error:", err);
-            setError("Performance Matrix decryption failed.");
+            setError("Performance Matrix synchronization failed.");
         } finally {
             setLoading(false);
         }
@@ -166,7 +175,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Overall Score */}
                         <div className="bg-gradient-to-br from-indigo-600/20 to-transparent border border-indigo-500/20 rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><TrendingUpIcon className="w-24 h-24" /></div>
+                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><TrendingUpCustomIcon className="w-24 h-24" /></div>
                             <div className="relative z-10">
                                 <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-4">Academic Proficiency</p>
                                 <div className="flex items-baseline gap-3">

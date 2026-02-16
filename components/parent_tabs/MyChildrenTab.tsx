@@ -34,7 +34,8 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, onNavi
         setLoading(true);
         setError(null);
         try {
-            const { data, error: rpcError } = await supabase.rpc('get_my_children_profiles');
+            // SECURITY UPGRADE: v2 implements backend ownership checks and harmonized data
+            const { data, error: rpcError } = await supabase.rpc('get_my_children_profiles_v2');
             if (rpcError) throw rpcError;
             setApplications((data || []) as AdmissionApplication[]);
         } catch (err: any) {

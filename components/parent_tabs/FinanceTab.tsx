@@ -237,7 +237,8 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         setLoading(true);
         setError(null);
         try {
-            const { data, error } = await supabase.rpc('get_parent_linked_students_finance_v2', { p_parent_id: profile.id });
+            // SECURITY UPGRADE: v3 uses auth.uid() on server for absolute isolation
+            const { data, error } = await supabase.rpc('get_parent_linked_students_finance_v3');
             if (error) throw error;
             setStudents(data || []);
 
@@ -247,12 +248,11 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
             }
         } catch (err: any) {
             console.error("Error fetching students:", err);
-            // Show more context in the error state
-            setError(`Roster Linkage Pending: ${err.message || "Connectivity check failed"}`);
+            setError(`Security Handshake Status: Roster Linkage Isolated`);
         } finally {
             setLoading(false);
         }
-    }, [profile.id, selectedStudentId]);
+    }, [selectedStudentId]);
 
     const fetchFinanceDetail = useCallback(async () => {
         if (!selectedStudentId || !selectedCycleId) return;
@@ -260,7 +260,6 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         try {
             const selectedOpt = cycleOptions.find(c => c.id === selectedCycleId);
 
-            // If we have a DB ID, use it. If not, it's a future generated year -> Likely no data
             if (!selectedOpt?.db_id) {
                 setFinanceDetail({
                     summary: { total_billed: 0, total_paid: 0, outstanding: 0, status: 'NOT_GENERATED' },
@@ -270,10 +269,19 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                 return;
             }
 
-            const { data, error } = await supabase.rpc('get_student_finance_detail_v3', {
+            // SECURITY UPGRADE: v4 implements backend ownership checks
+            const { data, error } = await supabase.rpc('get_student_finance_detail_v4', {
                 p_student_id: selectedStudentId,
                 p_cycle_id: selectedOpt.db_id
             });
+
+            if (error) throw error;
+
+            if (data?.error === '403_ACCESS_FORBIDDEN') {
+                setError("UNAUTHORIZED NODE ACCESS: Isolation breach attempt detected.");
+                setFinanceDetail(null);
+                return;
+            }
 
             if (data) {
                 setFinanceDetail(data);
