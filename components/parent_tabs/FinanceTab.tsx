@@ -25,6 +25,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [financeDetail, setFinanceDetail] = useState<any>(null);
     const [activeCycle, setActiveCycle] = useState<number | null>(null);
+    const [financeError, setFinanceError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +44,14 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         ref: ''
     });
 
+    // Multi-Select Payment State
+    const [selectedInstallments, setSelectedInstallments] = useState<string[]>([]);
+
+    useEffect(() => {
+        // Reset selection when student/cycle changes
+        setSelectedInstallments([]);
+    }, [selectedStudentId, activeCycle]);
+
     // --- Data Fetching ---
 
     const fetchCycles = useCallback(async () => {
@@ -60,6 +69,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
 
             setStudents(data || []);
             if (data && data.length > 0 && !selectedStudentId) {
+                // Ensure we select the first student by default
                 setSelectedStudentId(data[0].student_id);
             }
         } catch (err: any) {
@@ -72,7 +82,8 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     const fetchFinanceDetail = useCallback(async () => {
         if (!selectedStudentId) return;
         try {
-            const { data, error } = await supabase.rpc('get_student_finance_detail_v2', {
+            // Updated to v3 for detailed breakdown and cycle isolation
+            const { data, error } = await supabase.rpc('get_student_finance_detail_v3', {
                 p_student_id: selectedStudentId,
                 p_cycle_id: activeCycle
             });
@@ -96,15 +107,20 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
 
     // --- Handlers ---
 
-    const handlePayNow = async (invoiceId: string, amount: number) => {
-        if (!selectedStudentId) return;
+    const handlePayNow = async (invoiceIds: string[]) => {
+        if (!selectedStudentId || invoiceIds.length === 0) return;
+
         setIsPaymentProcessing(true);
+        const totalAmount = financeDetail.installments
+            .filter((i: any) => invoiceIds.includes(i.id))
+            .reduce((sum: number, i: any) => sum + (i.amount - i.paid), 0);
+
         try {
             // 1. Mock Enrollment / Intent
             const { data: intent, error: intentError } = await supabase.rpc('initiate_parent_payment', {
                 p_student_id: selectedStudentId,
-                p_amount: amount,
-                p_invoice_ids: [invoiceId]
+                p_amount: totalAmount,
+                p_invoice_ids: invoiceIds
             });
             if (intentError) throw intentError;
 
@@ -260,12 +276,13 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                         isCritical: (financeDetail?.summary.outstanding > 0)
                     },
                     {
-                        label: 'Unallocated Funds',
-                        value: financeDetail?.summary.unallocated || 0,
-                        icon: <ClockIcon className="w-6 h-6 text-blue-500" />,
-                        color: 'blue-500',
-                        bg: 'bg-blue-500/5',
-                        border: 'border-blue-500/10'
+                        label: 'Overdue Amount',
+                        value: financeDetail?.summary.overdue || 0,
+                        icon: <ClockIcon className="w-6 h-6 text-amber-500" />,
+                        color: 'amber-500',
+                        bg: 'bg-amber-500/5',
+                        border: 'border-amber-500/10',
+                        isCritical: (financeDetail?.summary.overdue > 0)
                     }
                 ].map((item, idx) => (
                     <motion.div
@@ -304,7 +321,31 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                 ))}
             </div>
 
-            {/* 3. Main Operational View (Schedule & Transactions) */}
+            {/* 3. Fee Structure Breakdown (New Section) */}
+            {financeDetail?.breakdown?.length > 0 && (
+                <div className="bg-[#0c0e12] rounded-[2.5rem] border border-white/5 p-8 md:p-10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-10 opacity-[0.02]">
+                        <DocumentTextIcon className="w-48 h-48" />
+                    </div>
+                    <div className="relative z-10 mb-8">
+                        <h3 className="text-xl font-serif font-black text-white uppercase tracking-tighter mb-1">Fee Structure Breakdown</h3>
+                        <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest leading-none">Detailed Component Mapping for Cycle {activeCycle}</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 relative z-10">
+                        {financeDetail.breakdown.map((item: any, idx: number) => (
+                            <div key={idx} className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex justify-between items-center group hover:bg-white/[0.04] transition-colors">
+                                <div>
+                                    <p className="text-white font-bold text-sm mb-1">{item.name}</p>
+                                    <span className="text-[9px] text-white/30 font-black uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-md">{item.type || 'Standard'}</span>
+                                </div>
+                                <span className="text-emerald-400 font-mono font-bold text-lg">{formatCurrency(item.amount)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* 4. Main Operational View (Schedule & Transactions) */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
 
                 {/* Installment Schedule (Table) */}
@@ -367,11 +408,14 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-white/5 text-[10px] font-black uppercase tracking-[0.3em] text-white/20 bg-white/[0.01]">
-                                    <th className="px-10 py-6 text-left">Nomenclature</th>
-                                    <th className="px-10 py-6 text-left">Deadline</th>
-                                    <th className="px-10 py-6 text-right">Value</th>
-                                    <th className="px-10 py-6 text-center">Status Matrix</th>
-                                    <th className="px-10 py-6 text-right">Operation</th>
+                                    <th className="px-6 py-6 text-center w-16">
+                                        <div className="w-4 h-4 rounded border border-white/10 mx-auto"></div>
+                                    </th>
+                                    <th className="px-6 py-6 text-left">Nomenclature</th>
+                                    <th className="px-6 py-6 text-left">Deadline</th>
+                                    <th className="px-6 py-6 text-right">Value</th>
+                                    <th className="px-6 py-6 text-center">Status Matrix</th>
+                                    <th className="px-6 py-6 text-right">Operation</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -381,15 +425,34 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: idx * 0.05 }}
-                                        className="hover:bg-white/[0.03] transition-colors group/row"
+                                        className={clsx(
+                                            "hover:bg-white/[0.03] transition-colors group/row",
+                                            selectedInstallments.includes(inst.id) && "bg-emerald-500/[0.02]"
+                                        )}
                                     >
-                                        <td className="px-10 py-8">
+                                        <td className="px-6 py-8 text-center">
+                                            {inst.status !== 'paid' && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedInstallments.includes(inst.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedInstallments([...selectedInstallments, inst.id]);
+                                                        } else {
+                                                            setSelectedInstallments(selectedInstallments.filter(id => id !== inst.id));
+                                                        }
+                                                    }}
+                                                    className="w-4 h-4 rounded border-white/10 bg-white/5 checked:bg-emerald-500 checked:border-emerald-500 appearance-none cursor-pointer transition-all"
+                                                />
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-8">
                                             <div className="flex flex-col">
                                                 <span className="text-white font-serif font-bold text-lg">{inst.title}</span>
                                                 <span className="text-[10px] text-white/30 uppercase tracking-widest mt-1">Institutional Component</span>
                                             </div>
                                         </td>
-                                        <td className="px-10 py-8">
+                                        <td className="px-6 py-8">
                                             <div className="flex flex-col">
                                                 <span className={clsx("text-sm font-mono", inst.is_overdue ? "text-red-400" : "text-white/60")}>
                                                     {new Date(inst.due_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -397,29 +460,32 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                                 {inst.is_overdue && <span className="text-[9px] font-black text-red-500 uppercase tracking-widest mt-1">Breach of Deadline</span>}
                                             </div>
                                         </td>
-                                        <td className="px-10 py-8 text-right font-mono text-xl text-white tracking-tighter">
+                                        <td className="px-6 py-8 text-right font-mono text-xl text-white tracking-tighter">
                                             {formatCurrency(inst.amount)}
+                                            {inst.paid > 0 && inst.paid < inst.amount && (
+                                                <span className="block text-[10px] text-emerald-500 font-mono mt-1">Paid: {formatCurrency(inst.paid)}</span>
+                                            )}
                                         </td>
-                                        <td className="px-10 py-8 text-center">
+                                        <td className="px-6 py-8 text-center">
                                             <div className={clsx(
                                                 "inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-[0.2em]",
                                                 inst.status === 'paid' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]" :
-                                                    inst.status === 'partial' ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
-                                                        "bg-white/5 border-white/5 text-white/20"
+                                                    inst.status === 'overdue' ? "bg-red-500/10 border-red-500/20 text-red-500" :
+                                                        inst.status === 'partial' ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
+                                                            "bg-white/5 border-white/5 text-white/20"
                                             )}>
-                                                <div className={clsx("w-1 h-1 rounded-full", inst.status === 'paid' ? "bg-emerald-500" : "bg-white/20")}></div>
+                                                <div className={clsx("w-1 h-1 rounded-full", inst.status === 'paid' ? "bg-emerald-500" : inst.status === 'overdue' ? "bg-red-500" : "bg-white/20")}></div>
                                                 {inst.status}
                                             </div>
                                         </td>
-                                        <td className="px-10 py-8 text-right">
+                                        <td className="px-6 py-8 text-right">
                                             {inst.status !== 'paid' ? (
                                                 <button
-                                                    onClick={() => handlePayNow(inst.id, inst.amount)}
+                                                    onClick={() => handlePayNow([inst.id])}
                                                     disabled={isPaymentProcessing}
-                                                    className="relative overflow-hidden px-8 py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-emerald-400 hover:shadow-[0_10px_30px_rgba(52,211,153,0.3)] transition-all disabled:opacity-50 active:scale-95 group/btn"
+                                                    className="relative overflow-hidden px-6 py-2 bg-white/5 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-black transition-all disabled:opacity-50 active:scale-95 border border-white/10 hover:border-emerald-500"
                                                 >
-                                                    <span className="relative z-10">{isPaymentProcessing ? 'Initializing...' : 'Settlement'}</span>
-                                                    <div className="absolute inset-0 bg-emerald-400 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500"></div>
+                                                    Pay Single
                                                 </button>
                                             ) : (
                                                 <div className="flex justify-end gap-3 opacity-20 group-hover/row:opacity-100 transition-opacity">
@@ -433,6 +499,30 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                 ))}
                             </tbody>
                         </table>
+
+                        {/* Bulk Action Bar */}
+                        <AnimatePresence>
+                            {selectedInstallments.length > 0 && (
+                                <motion.div
+                                    initial={{ y: 100, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    exit={{ y: 100, opacity: 0 }}
+                                    className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-[#0c0e12] border border-white/10 rounded-full pl-6 pr-2 py-2 flex items-center gap-6 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)]"
+                                >
+                                    <span className="text-white text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-emerald-500">{selectedInstallments.length}</span> Installments Selected
+                                    </span>
+                                    <button
+                                        onClick={() => handlePayNow(selectedInstallments)}
+                                        disabled={isPaymentProcessing}
+                                        className="bg-emerald-500 hover:bg-emerald-400 text-black px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
+                                    >
+                                        {isPaymentProcessing ? 'Processing...' : 'Proceed to Pay'}
+                                        <CreditCardIcon className="w-4 h-4" />
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
@@ -486,6 +576,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                                 View Proof
                                             </a>
                                         )}
+                                        <span className="text-[8px] text-white/20 mt-1 uppercase tracking-wider">{tx.id.slice(0, 8)}</span>
                                     </div>
                                 </motion.div>
                             )) : (

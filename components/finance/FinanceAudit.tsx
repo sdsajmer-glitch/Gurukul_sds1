@@ -27,24 +27,29 @@ interface AuditLog {
 
 const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
     const [logs, setLogs] = useState<AuditLog[]>([]);
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('ALL');
 
     useEffect(() => {
-        const fetchLogs = async () => {
+        const fetchData = async () => {
             setLoading(true);
             try {
-                // Determine branch context
                 const bid = (branchId === null || branchId === undefined) ? null : branchId;
 
-                // CALL: Forensic Oversight Bridge
-                const { data, error } = await supabase.rpc('get_forensic_audit_logs', {
-                    p_branch_id: typeof bid === 'string' ? bid : null, // Handle both UUID and nullable branch
-                    p_limit: 50
-                });
+                // Parallel Fetch: Logs + Health Stats
+                const [logsRes, statsRes] = await Promise.all([
+                    supabase.rpc('get_forensic_audit_logs', {
+                        p_branch_id: typeof bid === 'string' ? bid : null,
+                        p_limit: 100
+                    }),
+                    supabase.rpc('get_institutional_health_index', { p_branch_id: bid })
+                ]);
 
-                if (error) throw error;
-                setLogs(data || []);
+                if (logsRes.error) throw logsRes.error;
+                setLogs(logsRes.data || []);
+                if (statsRes.data) setStats(statsRes.data);
+
             } catch (err) {
                 console.error("Forensic Sync Failure:", err);
             } finally {
@@ -52,10 +57,32 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
             }
         };
 
-        fetchLogs();
+        fetchData();
     }, [branchId]);
 
-    if (loading) return (
+    const filteredLogs = logs.filter(log => {
+        if (filter === 'ALL') return true;
+        if (filter === 'CRITICAL') return log.severity === 'CRITICAL' || log.severity === 'HIGH';
+        if (filter === 'MUTATIONS') return ['MANUAL_ADJUSTMENT', 'FEE_WAIVER', 'STRUCTURE_CHANGE'].includes(log.action);
+        if (filter === 'LOGINS') return log.action.includes('LOGIN') || log.action.includes('ACCESS');
+        return true;
+    });
+
+    const handleExport = () => {
+        if (logs.length === 0) return;
+        const headers = "Timestamp,Action,Description,Severity,Operator,Entity\n";
+        const csv = logs.map(l =>
+            `"${new Date(l.created_at).toISOString()}","${l.action}","${l.description}","${l.severity}","${l.performed_by_name}","${l.entity_type}:${l.entity_id}"`
+        ).join("\n");
+        const blob = new Blob([headers + csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Forensic_Audit_Trail_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+    };
+
+    if (loading && !logs.length) return (
         <div className="py-60 flex flex-col items-center justify-center space-y-12">
             <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 blur-[120px] rounded-full animate-pulse"></div>
@@ -69,7 +96,7 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
     );
 
     return (
-        <div className="space-y-12 pb-24">
+        <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Executive Header Layer */}
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-12">
                 <div className="space-y-6">
@@ -98,7 +125,10 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
                             </button>
                         ))}
                     </div>
-                    <button className="px-10 py-5 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] text-white/40 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-4 active:scale-95 shadow-2xl group">
+                    <button
+                        onClick={handleExport}
+                        className="px-10 py-5 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] text-white/40 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-4 active:scale-95 shadow-2xl group"
+                    >
                         <DownloadIcon className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
                         <span>Archive Trail</span>
                     </button>
@@ -108,11 +138,11 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
                 {/* Main Log Stream */}
                 <div className="xl:col-span-8 space-y-6">
-                    <div className="bg-[#12141c] border border-white/5 rounded-[3.5rem] overflow-hidden shadow-3xl relative group">
+                    <div className="bg-[#12141c] border border-white/5 rounded-[3.5rem] overflow-hidden shadow-3xl relative group min-h-[600px]">
                         <div className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-red-500/20 to-transparent top-0"></div>
 
                         <div className="divide-y divide-white/[0.03]">
-                            {logs.map((log, idx) => (
+                            {filteredLogs.length > 0 ? filteredLogs.map((log, idx) => (
                                 <motion.div
                                     key={log.id}
                                     initial={{ opacity: 0, x: -20 }}
@@ -121,13 +151,13 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
                                     className="p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-10 hover:bg-white/[0.02] transition-all group/item"
                                 >
                                     <div className="flex gap-8 items-start">
-                                        <div className={`p-4 rounded-2xl bg-black/40 border border-white/5 group-hover/item:border-white/10 transition-all ${log.severity === 'HIGH' ? 'text-red-500' : log.severity === 'MEDIUM' ? 'text-amber-500' : 'text-emerald-500'
+                                        <div className={`p-4 rounded-2xl bg-black/40 border border-white/5 group-hover/item:border-white/10 transition-all ${log.severity === 'HIGH' || log.severity === 'CRITICAL' ? 'text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]' : log.severity === 'MEDIUM' ? 'text-amber-500' : 'text-emerald-500'
                                             }`}>
                                             <ShieldCheckIcon className="w-6 h-6" />
                                         </div>
                                         <div className="space-y-3">
                                             <div className="flex items-center gap-6">
-                                                <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${log.severity === 'HIGH' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-primary/10 text-primary border-primary/20'
+                                                <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${log.severity === 'HIGH' || log.severity === 'CRITICAL' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-primary/10 text-primary border-primary/20'
                                                     }`}>{log.action}</span>
                                                 <span className="text-[10px] font-mono text-white/10 uppercase tracking-widest">{new Date(log.created_at).toLocaleString()}</span>
                                             </div>
@@ -142,11 +172,16 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
                                         </div>
                                     </div>
                                 </motion.div>
-                            ))}
+                            )) : (
+                                <div className="p-20 flex flex-col items-center justify-center opacity-30">
+                                    <SearchIcon className="w-12 h-12 mb-4" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">No Audit Trails Found for Filter: {filter}</p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="p-8 text-center bg-white/[0.01] border-t border-white/[0.03]">
-                            <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.6em]">Registry Visibility Limited to 50 Forensic Artifacts • Depth Stable</p>
+                            <p className="text-[10px] font-black text-white/10 uppercase tracking-[0.6em]">Registry Visibility Limited to 100 Forensic Artifacts • Depth Stable</p>
                         </div>
                     </div>
                 </div>
@@ -166,9 +201,9 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
 
                             <div className="space-y-8">
                                 {[
-                                    { label: 'Integrity Rating', value: '0.998', status: 'Stable', color: 'text-emerald-500' },
-                                    { label: 'Anomalies Detected', value: '03', status: 'In Review', color: 'text-amber-500' },
-                                    { label: 'Unverified Adjustments', value: '00', status: 'Clear', color: 'text-emerald-500' }
+                                    { label: 'Integrity Rating', value: stats?.integrity_index || '1.000', status: 'Stable', color: 'text-emerald-500' },
+                                    { label: 'Anomalies Detected', value: String(stats?.anomalies_detected || '00').padStart(2, '0'), status: (stats?.anomalies_detected || 0) > 0 ? 'Review' : 'Clear', color: (stats?.anomalies_detected || 0) > 0 ? 'text-amber-500' : 'text-emerald-500' },
+                                    { label: 'Adjustments (30d)', value: String(stats?.recent_adjustments || '00').padStart(2, '0'), status: 'Logged', color: 'text-blue-500' }
                                 ].map((item, i) => (
                                     <div key={i} className="space-y-4">
                                         <div className="flex justify-between items-end">
@@ -188,8 +223,17 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
                                     <AlertTriangleIcon className="w-5 h-5" />
                                     <h5 className="text-[11px] font-black uppercase tracking-widest">Critical Alert Vector</h5>
                                 </div>
-                                <p className="text-sm text-red-500/60 font-medium leading-relaxed">System identity mismatch detected during manual fee adjustment in Grade 10-A context. Forensic tracing engaged.</p>
-                                <button className="w-full py-4 bg-red-500 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl shadow-red-500/20 active:scale-95 transition-all">Engage Investigation</button>
+                                <p className="text-sm text-red-500/60 font-medium leading-relaxed">
+                                    {stats?.anomalies_detected > 0
+                                        ? `${stats.anomalies_detected} Anomalies detected in student ledger integrity. Immediate forensic tracing recommended.`
+                                        : "No critical vectors currently active. System operating within normal governance parameters."}
+                                </p>
+                                <button
+                                    onClick={() => setFilter('CRITICAL')}
+                                    className="w-full py-4 bg-red-500 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl shadow-red-500/20 active:scale-95 transition-all hover:bg-red-600"
+                                >
+                                    Engage Investigation
+                                </button>
                             </div>
                         </div>
                     </div>
