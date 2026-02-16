@@ -4,7 +4,8 @@
 -- =============================================================================
 -- Target: Corrects profile picture column names and enhances forensic artifacts.
 -- =============================================================================
-
+DROP FUNCTION IF EXISTS public.get_student_financial_node(uuid);
+DROP FUNCTION IF EXISTS public.get_student_fee_summary_all(bigint);
 BEGIN;
 
 -- 1. Rectify get_student_financial_node (The Detail View Engine)
