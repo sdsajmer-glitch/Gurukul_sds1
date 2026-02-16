@@ -67,10 +67,10 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isTransmitting, setIsTransmitting] = useState(false);
     const [terminalSteps, setTerminalSteps] = useState([
-        { id: '01', label: 'INITIALIZING_PULSE_CHECK', status: 'OK' },
-        { id: '02', label: 'FETCHING_ENROLLMENT_TREE', status: 'STABLE' },
-        { id: '03', label: 'AUDITOR_HANDSHAKE', status: 'MATCHING...' },
-        { id: '04', label: 'INTEGRITY_PULSE', status: 'WAITING' }
+        { id: '01', label: 'SYSTEM_SYNC_VALIDATION', status: 'OK' },
+        { id: '02', label: 'LEDGER_PENDING_REG', status: 'PENDING' },
+        { id: '03', label: 'CONFIG_MAPPING', status: 'VERIFIED' },
+        { id: '04', label: 'SECURITY_CERT', status: 'NON_COMPLETE' }
     ]);
 
     // --- SUB-COMPONENTS: CINEMATIC FLOW ELEMENTS ---
@@ -309,10 +309,9 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         setError(null);
 
         // Simulated pulse feeling for high-end UX
-        setTerminalSteps(prev => prev.map(s => s.id === '03' ? { ...s, status: 'CONNECTING...' } : s));
+        setTerminalSteps(prev => prev.map(s => s.id === '02' ? { ...s, status: 'REGISTERING...' } : s));
         await new Promise(r => setTimeout(r, 600));
-        setTerminalSteps(prev => prev.map(s => s.id === '03' ? { ...s, status: 'HANDSHAKE_OK' } : s));
-        setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: 'ANALYZING...' } : s));
+        setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: 'SIGNING...' } : s));
 
         try {
             const { data, error } = await supabase.rpc('automate_finance_lifecycle', {
@@ -323,10 +322,10 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
 
             if (data?.success) {
                 setTerminalSteps([
-                    { id: '01', label: 'INITIALIZING_PULSE_CHECK', status: 'OK' },
-                    { id: '02', label: 'FETCHING_ENROLLMENT_TREE', status: 'STABLE' },
-                    { id: '03', label: 'AUDITOR_HANDSHAKE', status: 'VERIFIED' },
-                    { id: '04', label: 'INTEGRITY_PULSE', status: 'SYNC_COMPLETE' }
+                    { id: '01', label: 'SYSTEM_SYNC_VALIDATION', status: 'OK' },
+                    { id: '02', label: 'LEDGER_PENDING_REG', status: 'STABLE' },
+                    { id: '03', label: 'CONFIG_MAPPING', status: 'VERIFIED' },
+                    { id: '04', label: 'SECURITY_CERT', status: 'SYNC_COMPLETE' }
                 ]);
                 setNotified(true);
                 await fetchFinanceDetail();
@@ -418,7 +417,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     const isPreview = activeCycle?.status?.toUpperCase() === 'UPCOMING' || financeDetail?.summary?.status === 'PREVIEW';
     const isCurrent = (activeCycle?.status?.toUpperCase() === 'CURRENT' || activeCycle?.status?.toUpperCase() === 'ACTIVE') && financeDetail?.summary?.status !== 'PREVIEW';
     const isArchived = activeCycle?.status?.toUpperCase() === 'ARCHIVED';
-    const isNotConfigured = financeDetail?.summary?.status === 'NOT_GENERATED' && (!financeDetail?.installments || financeDetail.installments.length === 0);
+    const isNotConfigured = (financeDetail?.summary?.status === 'NOT_GENERATED' || financeDetail?.summary?.status === 'FINANCE_SYNC_REQUIRED' || financeDetail?.summary?.status === 'ENROLLMENT_PENDING') && (!financeDetail?.installments || financeDetail.installments.length === 0);
 
     // Status Badge Helpers
     const getStatusColor = (status: string) => {
