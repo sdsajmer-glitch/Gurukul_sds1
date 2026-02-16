@@ -47,6 +47,10 @@ CREATE TABLE IF NOT EXISTS public.finance_adjustment_rules (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure student_fee_accounts has required columns
+ALTER TABLE public.student_fee_accounts ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+ALTER TABLE public.student_fee_accounts ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMPTZ DEFAULT NOW();
+
 -- [2] OVERVIEW STATS RPC
 -- ======================
 
@@ -76,7 +80,7 @@ BEGIN
     JOIN public.student_profiles sp ON fi.student_id = sp.user_id
     WHERE (p_branch_id IS NULL OR sp.branch_id = p_branch_id)
       AND fi.due_date < NOW()
-      AND fi.status NOT IN ('paid', 'cancelled', 'Success', 'Completed');
+      AND fi.status NOT IN ('paid', 'cancelled');
 
     -- Periodic Collections
     SELECT COALESCE(SUM(amount), 0) INTO v_monthly
@@ -123,7 +127,7 @@ BEGIN
     RETURN QUERY
     SELECT 
         sfa.student_id,
-        COALESCE(p.full_name, 'Unknown'),
+        COALESCE(p.display_name, 'Unknown'),
         COALESCE(sp.grade, 'N/A'),
         sfa.total_billed,
         sfa.total_paid,
@@ -328,7 +332,7 @@ BEGIN
         f.entity_id::TEXT,
         f.old_value,
         f.new_value,
-        COALESCE(p.full_name, 'SYSTEM_CORE'),
+        COALESCE(p.display_name, 'SYSTEM_CORE'),
         f.severity,
         f.performed_at
     FROM public.finance_governance_audit f
