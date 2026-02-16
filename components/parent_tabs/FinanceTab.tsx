@@ -66,6 +66,12 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     const [showProtocolInfo, setShowProtocolInfo] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isTransmitting, setIsTransmitting] = useState(false);
+    const [terminalSteps, setTerminalSteps] = useState([
+        { id: '01', label: 'INITIALIZING_PULSE_CHECK', status: 'OK' },
+        { id: '02', label: 'FETCHING_ENROLLMENT_TREE', status: 'STABLE' },
+        { id: '03', label: 'AUDITOR_HANDSHAKE', status: 'MATCHING...' },
+        { id: '04', label: 'INTEGRITY_PULSE', status: 'WAITING' }
+    ]);
 
     // --- SUB-COMPONENTS: CINEMATIC FLOW ELEMENTS ---
     const ForensicScanner = () => (
@@ -108,10 +114,10 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                 />
             )}
 
-            {['PARENT', 'BRANCH', 'CORE', 'AUDIT'].map((node, i) => (
+            {['ENROLLMENT', 'YEAR', 'FEES', 'LEDGER', 'PAYMENTS'].map((node, i) => (
                 <div key={node} className="relative z-20 flex flex-col items-center">
                     <motion.div
-                        animate={progress >= (i * 33) ? {
+                        animate={progress >= (i * 25) ? {
                             scale: [1, 1.15, 1],
                             borderColor: ['rgba(245,158,11,0.1)', 'rgba(245,158,11,0.6)', 'rgba(245,158,11,0.1)'],
                             boxShadow: progress >= (i * 33) ? ['0 0 0px rgba(245,158,11,0)', '0 0 20px rgba(245,158,11,0.3)', '0 0 0px rgba(245,158,11,0)'] : []
@@ -119,7 +125,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                         transition={{ duration: 4, repeat: Infinity }}
                         className={clsx(
                             "w-12 h-12 rounded-2xl border flex items-center justify-center transition-all duration-1000 backdrop-blur-md",
-                            progress >= (i * 33) ? "bg-amber-500/10 border-amber-500/50 text-amber-500" : "bg-black/60 border-white/5 text-white/5"
+                            progress >= (i * 25) ? "bg-amber-500/10 border-amber-500/50 text-amber-500" : "bg-black/60 border-white/5 text-white/5"
                         )}
                     >
                         <div className="text-[10px] font-black">{String(i + 1).padStart(2, '0')}</div>
@@ -292,17 +298,39 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     const handleNotifyAuditor = async () => {
         if (!selectedStudentId) return;
         setIsSubmitting(true);
+        setError(null);
+
+        // Simulated pulse feeling for high-end UX
+        setTerminalSteps(prev => prev.map(s => s.id === '03' ? { ...s, status: 'CONNECTING...' } : s));
+        await new Promise(r => setTimeout(r, 600));
+        setTerminalSteps(prev => prev.map(s => s.id === '03' ? { ...s, status: 'HANDSHAKE_OK' } : s));
+        setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: 'ANALYZING...' } : s));
+
         try {
             const { data, error } = await supabase.rpc('automate_finance_lifecycle', {
                 p_student_id: selectedStudentId
             });
+
             if (error) throw error;
 
-            setNotified(true);
-            await fetchFinanceDetail();
+            if (data?.success) {
+                setTerminalSteps([
+                    { id: '01', label: 'INITIALIZING_PULSE_CHECK', status: 'OK' },
+                    { id: '02', label: 'FETCHING_ENROLLMENT_TREE', status: 'STABLE' },
+                    { id: '03', label: 'AUDITOR_HANDSHAKE', status: 'VERIFIED' },
+                    { id: '04', label: 'INTEGRITY_PULSE', status: 'SYNC_COMPLETE' }
+                ]);
+                setNotified(true);
+                await fetchFinanceDetail();
+            } else {
+                const readinessError = data?.error || 'UNKNOWN_GAP';
+                setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: readinessError } : s));
+                setError(`Institutional Sync Gap: ${readinessError}`);
+            }
         } catch (err: any) {
             console.error("Sync error:", err);
-            setError(`Lifecycle Synchronization Failed: ${err.message || "Auditor node unreachable"}`);
+            setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: 'SEC_FAIL' } : s));
+            setError(`Critical Terminal Error: ${err.message || "Auditor node unreachable"}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -814,38 +842,22 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                             </div>
 
                                             <div className="space-y-3 font-mono">
-                                                <div className="flex items-center justify-between text-[10px]">
-                                                    <span className="text-white/20 italic tracking-tighter">01. INITIATING_PULSE_CHECK</span>
-                                                    <span className="text-emerald-500/80 font-black">OK</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-[10px]">
-                                                    <span className="text-white/20 italic tracking-tighter">02. FETCHING_ENROLLMENT_TREE</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[8px] bg-white/5 px-1.5 py-0.5 rounded text-white/40">NODE_B</span>
-                                                        <span className="text-emerald-500/80 font-black">STABLE</span>
+                                                {terminalSteps.map((step) => (
+                                                    <div key={step.id} className="flex items-center justify-between text-[10px]">
+                                                        <span className="text-white/20 italic tracking-tighter">{step.id}. {step.label}</span>
+                                                        <span className={clsx(
+                                                            "font-black tracking-widest",
+                                                            step.status === 'OK' || step.status === 'STABLE' || step.status === 'VERIFIED' || step.status === 'SYNC_COMPLETE' ? "text-emerald-500/80" :
+                                                                step.status === 'WAITING' || step.status.includes('...') ? "text-amber-500 animate-pulse" : "text-red-500"
+                                                        )}>
+                                                            {step.status}
+                                                        </span>
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center justify-between text-[10px]">
-                                                    <span className="text-white/20 italic tracking-tighter">03. AUDITOR_HANDSHAKE</span>
-                                                    <span className="text-amber-500 font-black animate-pulse">{financeDetail?.summary?.audit_node || 'MATCHING...'}</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-[10px]">
-                                                    <span className="text-white/20 italic tracking-tighter">04. INTEGRITY_PULSE</span>
-                                                    <div className="flex gap-1 items-center">
-                                                        {[1, 2, 3].map(i => (
-                                                            <motion.div
-                                                                key={i}
-                                                                animate={{ opacity: [0.2, 1, 0.2] }}
-                                                                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                                                                className="w-1 h-3 bg-emerald-500/50 rounded-full"
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
+                                                ))}
                                                 <div className="pt-3 border-t border-white/5 mt-3 flex items-center justify-between">
                                                     <span className="text-[9px] font-black text-amber-500/40 uppercase tracking-widest">Current Protocol:</span>
                                                     <span className="text-xs font-black text-amber-500 uppercase tracking-[0.2em] drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">
-                                                        {financeDetail?.summary?.sync_phase || 'VERIFICATION'}
+                                                        {financeDetail?.summary?.sync_phase || (isSubmitting ? 'SYNCHRONIZING' : 'VERIFICATION')}
                                                     </span>
                                                 </div>
                                             </div>

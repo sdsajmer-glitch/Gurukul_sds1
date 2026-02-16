@@ -11,12 +11,14 @@ import DocumentsTab from './components/parent_tabs/DocumentsTab';
 import ShareCodesTab from './components/parent_tabs/ShareCodesTab';
 import MessagesTab from './components/parent_tabs/MessagesTab';
 import FinanceTab from './components/parent_tabs/FinanceTab';
+import AcademicsTab from './components/parent_tabs/AcademicsTab';
 import { HomeIcon } from './components/icons/HomeIcon';
 import { StudentsIcon } from './components/icons/StudentsIcon';
 import { DocumentTextIcon } from './components/icons/DocumentTextIcon';
 import { CommunicationIcon } from './components/icons/CommunicationIcon';
 import { ReceiptIcon } from './components/icons/ReceiptIcon';
 import { CreditCardIcon } from './components/icons/CreditCardIcon';
+import { GraduationCapIcon } from './components/icons/GraduationCapIcon';
 
 interface ParentDashboardProps {
     profile: UserProfile;
@@ -28,6 +30,7 @@ interface ParentDashboardProps {
 const navItems = [
     { id: 'Overview', label: 'Dashboard', icon: <HomeIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'My Children', label: 'Children', icon: <StudentsIcon className="w-4 h-4 md:w-5 md:h-5" /> },
+    { id: 'Academics', label: 'Academics', icon: <GraduationCapIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Finance', label: 'Finance & Fees', icon: <CreditCardIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Documents', label: 'Vault', icon: <DocumentTextIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Messages', label: 'Inbox', icon: <CommunicationIcon className="w-4 h-4 md:w-5 md:h-5" /> },
@@ -55,6 +58,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
             // We can pass focusedAdmissionId to FinanceTab too or a new state.
             setActiveComponent('Finance');
         }} />,
+        'Academics': <AcademicsTab profile={profile} initialStudentId={focusedAdmissionId} />,
         'Finance': <FinanceTab profile={profile} initialStudentId={focusedAdmissionId} />,
         'Documents': <DocumentsTab profile={profile} focusOnAdmissionId={focusedAdmissionId} onClearFocus={() => setFocusedAdmissionId(null)} setActiveComponent={setActiveComponent} />,
         'Messages': <MessagesTab />,
