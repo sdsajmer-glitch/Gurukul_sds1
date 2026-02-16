@@ -289,12 +289,23 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         setTimeout(() => setIsRefreshing(false), 1000);
     };
 
-    const handleNotifyAuditor = () => {
+    const handleNotifyAuditor = async () => {
+        if (!selectedStudentId) return;
         setIsSubmitting(true);
-        setTimeout(() => {
+        try {
+            const { data, error } = await supabase.rpc('automate_finance_lifecycle', {
+                p_student_id: selectedStudentId
+            });
+            if (error) throw error;
+
             setNotified(true);
+            await fetchFinanceDetail();
+        } catch (err: any) {
+            console.error("Sync error:", err);
+            setError(`Lifecycle Synchronization Failed: ${err.message || "Auditor node unreachable"}`);
+        } finally {
             setIsSubmitting(false);
-        }, 1500);
+        }
     };
 
     useEffect(() => {
@@ -1143,17 +1154,49 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                     </div>
 
                                     {/* Download Receipt Block */}
-                                    <div className="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-6 flex items-center justify-between group cursor-pointer hover:bg-indigo-600/20 transition-all">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                                                <DownloadIcon className="w-5 h-5" />
+                                    <div className="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-6 flex flex-col gap-4 shadow-xl">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
+                                                    <DocumentTextIcon className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-black text-white uppercase tracking-widest">Transaction Ledger</div>
+                                                    <div className="text-[10px] text-white/30 mt-0.5">Verified Records</div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div className="text-xs font-black text-white uppercase tracking-widest">Statement</div>
-                                                <div className="text-[10px] text-white/30 mt-0.5">Download FY25 Ledger</div>
+                                            <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[9px] font-bold text-white/40 uppercase">
+                                                Live History
                                             </div>
                                         </div>
-                                        <ArrowRightIcon className="w-4 h-4 text-white/20" />
+
+                                        <div className="space-y-3 mt-2">
+                                            {financeDetail?.installments?.filter((i: any) => i.paid > 0).map((i: any) => (
+                                                <div key={`txn-${i.id}`} className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5 group hover:border-emerald-500/20 transition-all">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-500"><CheckCircleIcon className="w-3 h-3" /></div>
+                                                        <div>
+                                                            <div className="text-[10px] font-bold text-white uppercase">{i.title} Settlement</div>
+                                                            <div className="text-[8px] text-white/30 uppercase mt-0.5">REF: TXN-{i.id.substring(0, 8).toUpperCase()}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-xs font-black text-emerald-400">{formatCurrency(i.paid)}</div>
+                                                        <div className="text-[8px] text-white/20 uppercase">Receipt Generated</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {(!financeDetail?.installments?.some((i: any) => i.paid > 0)) && (
+                                                <div className="text-center py-6 border border-dashed border-white/10 rounded-xl bg-white/[0.01]">
+                                                    <div className="text-[10px] font-bold text-white/10 uppercase tracking-[0.2em]">No Transactions Recorded</div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <button className="w-full py-3 mt-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 group">
+                                            <DownloadIcon className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                                            Download Consolidated Receipt
+                                        </button>
                                     </div>
                                 </div>
                             </div>
