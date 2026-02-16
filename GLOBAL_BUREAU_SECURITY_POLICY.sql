@@ -252,7 +252,69 @@ BEGIN
 END;
 $$;
 
--- [4] FINANCE DETAIL HARDENING: get_student_finance_detail_v4
+-- [4] FINANCE SYNC FLOW: Core Logic
+CREATE OR REPLACE FUNCTION public.validate_institution_finance(
+    p_branch_id BIGINT,
+    p_grade_id TEXT,
+    p_academic_year_id BIGINT
+)
+RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    -- 1. Academic Year Active
+    IF NOT EXISTS (SELECT 1 FROM public.academic_years WHERE id = p_academic_year_id AND status = 'active') THEN
+        RETURN 'YEAR_NOT_ACTIVE';
+    END IF;
+
+    -- 2. Grade Fee Mapping & Template
+    IF NOT EXISTS (SELECT 1 FROM public.fee_structures WHERE target_grade = p_grade_id AND academic_cycle_id = p_academic_year_id AND status = 'Active') THEN
+        RETURN 'GRADE_MAPPING_MISSING';
+    END IF;
+
+    -- 3. Payment Plan / Components
+    IF NOT EXISTS (
+        SELECT 1 FROM public.fee_components 
+        WHERE structure_id = (SELECT id FROM public.fee_structures WHERE target_grade = p_grade_id AND academic_cycle_id = p_academic_year_id LIMIT 1)
+    ) THEN
+        RETURN 'PAYMENT_PLAN_MISSING';
+    END IF;
+
+    RETURN 'VALIDATED';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.check_finance_lifecycle(
+    p_student_id UUID,
+    p_academic_year_id BIGINT
+)
+RETURNS TEXT LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
+DECLARE
+    v_status TEXT;
+    v_ledger_id UUID;
+    v_installments_exist BOOLEAN;
+    v_branch_id BIGINT;
+    v_grade TEXT;
+    v_validation TEXT;
+BEGIN
+    SELECT enrollment_status, branch_id, grade INTO v_status, v_branch_id, v_grade 
+    FROM public.student_profiles WHERE user_id = p_student_id;
+    
+    IF v_status NOT IN ('Active', 'Enrolled') THEN RETURN 'ENROLLMENT_PENDING'; END IF;
+
+    SELECT id INTO v_ledger_id FROM public.student_fee_ledger WHERE student_id = p_student_id AND academic_year_id = p_academic_year_id;
+    
+    IF v_ledger_id IS NULL THEN
+        v_validation := public.validate_institution_finance(v_branch_id, v_grade, p_academic_year_id);
+        IF v_validation = 'VALIDATED' THEN RETURN 'FINANCE_SYNC_REQUIRED'; ELSE RETURN v_validation; END IF;
+    END IF;
+
+    SELECT EXISTS (SELECT 1 FROM public.installment_schedule WHERE ledger_id = v_ledger_id) INTO v_installments_exist;
+    IF NOT v_installments_exist THEN RETURN 'LEDGER_GENERATED'; END IF;
+
+    RETURN 'PAYMENTS_ENABLED';
+END;
+$$;
+
+-- [5] FINANCE DETAIL HARDENING v4 (Enhanced with Lifecycle)
 CREATE OR REPLACE FUNCTION public.get_student_finance_detail_v4(
     p_student_id UUID,
     p_cycle_id BIGINT
@@ -260,77 +322,56 @@ CREATE OR REPLACE FUNCTION public.get_student_finance_detail_v4(
 RETURNS JSONB LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
 DECLARE
     v_summary JSONB;
-    v_breakdown JSONB;
     v_installments JSONB;
     v_history JSONB;
-    v_struct_id UUID;
+    v_lifecycle_state TEXT;
+    v_progress INTEGER := 0;
+    v_ledger_id UUID;
+    v_total_billed NUMERIC := 0;
+    v_total_paid NUMERIC := 0;
 BEGIN
-    -- 1. Hardened Ownership Check
+    -- 1. Ownership Check
     IF NOT public.check_student_ownership(p_student_id) THEN
         RETURN jsonb_build_object('error', '403_ACCESS_FORBIDDEN');
     END IF;
 
-    -- 2. Calculate Summary
-    SELECT jsonb_build_object(
-        'total_billed', COALESCE(SUM(total_amount), 0),
-        'total_paid', COALESCE(SUM(paid_amount), 0),
-        'outstanding', COALESCE(SUM(total_amount - paid_amount), 0),
-        'overdue', COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE AND status != 'paid' THEN (total_amount - paid_amount) ELSE 0 END), 0),
-        'status', (SELECT enrollment_status FROM public.student_profiles WHERE user_id = p_student_id)
-    ) INTO v_summary
-    FROM public.fee_invoices
-    WHERE student_id = p_student_id 
-      AND academic_cycle_id = p_cycle_id
-      AND status != 'cancelled';
+    -- 2. Lifecycle Audit
+    v_lifecycle_state := public.check_finance_lifecycle(p_student_id, p_cycle_id);
+    v_progress := CASE 
+        WHEN v_lifecycle_state = 'PAYMENTS_ENABLED' THEN 100
+        WHEN v_lifecycle_state = 'LEDGER_GENERATED' THEN 75
+        WHEN v_lifecycle_state = 'FINANCE_SYNC_REQUIRED' THEN 45
+        WHEN v_lifecycle_state = 'ENROLLMENT_PENDING' THEN 0
+        ELSE 25 -- Validated or missing config
+    END;
 
-    -- 3. Fee Breakdown
-    SELECT jsonb_agg(jsonb_build_object(
-        'name', title,
-        'amount', total_amount,
-        'type', 'Standard'
-    )) INTO v_breakdown
-    FROM public.fee_invoices
-    WHERE student_id = p_student_id AND academic_cycle_id = p_cycle_id
-    ORDER BY due_date;
+    -- 3. Fetch Data if exists
+    SELECT id, total_amount INTO v_ledger_id, v_total_billed 
+    FROM public.student_fee_ledger WHERE student_id = p_student_id AND academic_year_id = p_cycle_id;
+    
+    SELECT COALESCE(SUM(paid_amount), 0) INTO v_total_paid 
+    FROM public.installment_schedule WHERE ledger_id = v_ledger_id;
 
-    -- 4. Installments
+    -- 4. Payload Assembly
     SELECT jsonb_agg(jsonb_build_object(
-        'id', id,
-        'title', title,
-        'amount', total_amount,
-        'paid', paid_amount,
-        'due_date', due_date,
-        'status', CASE 
-            WHEN status = 'paid' THEN 'paid'
-            WHEN due_date < CURRENT_DATE AND paid_amount < total_amount THEN 'overdue'
-            WHEN paid_amount > 0 THEN 'partial'
-            ELSE 'pending'
-        END,
-        'is_overdue', (due_date < CURRENT_DATE AND status != 'paid')
-    )) INTO v_installments
-    FROM public.fee_invoices
-    WHERE student_id = p_student_id
-      AND academic_cycle_id = p_cycle_id
-      AND status != 'cancelled'
-    ORDER BY due_date ASC;
+        'id', id, 'title', 'Installment ' || installment_no, 'amount', amount, 'paid', paid_amount,
+        'due_date', due_date, 'status', status, 'is_overdue', (due_date < CURRENT_DATE AND status != 'paid')
+    )) INTO v_installments FROM public.installment_schedule WHERE ledger_id = v_ledger_id ORDER BY installment_no;
 
-    -- 5. Transaction History
     SELECT jsonb_agg(jsonb_build_object(
-        'id', id,
-        'date', payment_date,
-        'amount', amount,
-        'mode', payment_method,
-        'status', status,
-        'ref_id', transaction_id,
-        'proof_url', proof_url
-    )) INTO v_history
-    FROM public.fee_payments
-    WHERE student_id = p_student_id
-    ORDER BY payment_date DESC;
+        'id', id, 'date', payment_date, 'amount', amount, 'mode', payment_method, 'status', status, 'ref_id', transaction_id
+    )) INTO v_history FROM public.fee_payments WHERE student_id = p_student_id ORDER BY payment_date DESC;
 
     RETURN jsonb_build_object(
-        'summary', COALESCE(v_summary, jsonb_build_object('total_billed',0,'total_paid',0,'outstanding',0,'status','N/A')),
-        'breakdown', COALESCE(v_breakdown, '[]'::jsonb),
+        'summary', jsonb_build_object(
+            'total_billed', v_total_billed,
+            'total_paid', v_total_paid,
+            'outstanding', (v_total_billed - v_total_paid),
+            'status', v_lifecycle_state,
+            'sync_progress', v_progress,
+            'academic_period', (SELECT year_name FROM public.academic_years WHERE id = p_cycle_id),
+            'branch', (SELECT jsonb_build_object('name', name, 'code', city) FROM public.school_branches WHERE id = (SELECT branch_id FROM public.student_profiles WHERE user_id = p_student_id))
+        ),
         'installments', COALESCE(v_installments, '[]'::jsonb),
         'history', COALESCE(v_history, '[]'::jsonb),
         'cycle_id', p_cycle_id
@@ -338,7 +379,19 @@ BEGIN
 END;
 $$;
 
--- [5] REINFORCE FIREWALL: Update ownership checks
+-- [6] REINFORCE FIREWALL & ORCHESTRATOR
+CREATE OR REPLACE FUNCTION public.automate_finance_lifecycle(p_student_id UUID)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_year_id BIGINT;
+    v_result JSONB;
+BEGIN
+    SELECT id INTO v_year_id FROM public.academic_years WHERE is_current = true LIMIT 1;
+    v_result := public.generate_student_ledger(p_student_id, v_year_id);
+    RETURN v_result;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.check_student_ownership(p_student_id UUID)
 RETURNS BOOLEAN LANGUAGE plpgsql STABLE AS $$
 BEGIN
