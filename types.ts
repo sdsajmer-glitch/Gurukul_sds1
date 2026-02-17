@@ -246,9 +246,12 @@ export interface FeeStructure {
     academic_year: string;
     target_grade: string;
     currency: CurrencyCode;
-    status: 'Active' | 'Draft';
+    status: 'Active' | 'Draft' | 'active' | 'draft'; // Support both casing conventions
+    state?: string; // Matches DB UPPERCASE state constraint
     type?: 'Standard' | 'Package' | 'Transport';
     components?: FeeComponent[];
+    projected_revenue?: number;
+    created_at?: string;
 }
 
 export interface StudentFeeSummary {

@@ -29,7 +29,7 @@ interface AcademicCycle {
     year_name: string;
     is_current: boolean;
     start_date?: string;
-    status: 'ARCHIVED' | 'CURRENT' | 'UPCOMING';
+    status: 'ARCHIVED' | 'CURRENT' | 'UPCOMING' | 'ACTIVE';
     db_id?: number; // Actual DB ID if available
 }
 
@@ -42,7 +42,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
 
     // Academic Year State
     const [cycleOptions, setCycleOptions] = useState<AcademicCycle[]>([]);
-    const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null); // This tracks the generic Year ID (e.g., 2024)
+    const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
     const [isYearMenuOpen, setIsYearMenuOpen] = useState(false);
     const [isStudentMenuOpen, setIsStudentMenuOpen] = useState(false);
 
@@ -66,12 +66,33 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     const [showProtocolInfo, setShowProtocolInfo] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isTransmitting, setIsTransmitting] = useState(false);
+    const [successToast, setSuccessToast] = useState<string | null>(null);
     const [terminalSteps, setTerminalSteps] = useState([
         { id: '01', label: 'SYSTEM_SYNC_VALIDATION', status: 'OK' },
         { id: '02', label: 'LEDGER_PENDING_REG', status: 'PENDING' },
         { id: '03', label: 'CONFIG_MAPPING', status: 'VERIFIED' },
         { id: '04', label: 'SECURITY_CERT', status: 'NON_COMPLETE' }
     ]);
+
+    // Auto-dismiss success toast
+    useEffect(() => {
+        if (successToast) {
+            const timer = setTimeout(() => setSuccessToast(null), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [successToast]);
+
+    // Reset notified state when context changes
+    useEffect(() => {
+        setNotified(false);
+        setShowProtocolInfo(false);
+        setTerminalSteps([
+            { id: '01', label: 'SYSTEM_SYNC_VALIDATION', status: 'OK' },
+            { id: '02', label: 'LEDGER_PENDING_REG', status: 'PENDING' },
+            { id: '03', label: 'CONFIG_MAPPING', status: 'VERIFIED' },
+            { id: '04', label: 'SECURITY_CERT', status: 'NON_COMPLETE' }
+        ]);
+    }, [selectedStudentId, selectedCycleId]);
 
     // --- SUB-COMPONENTS: CINEMATIC FLOW ELEMENTS ---
     const ForensicScanner = () => (
@@ -308,9 +329,13 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         setIsSubmitting(true);
         setError(null);
 
-        // Simulated pulse feeling for high-end UX
+        // Phase 1: Visual pulse — show sync in-progress
+        setTerminalSteps(prev => prev.map(s => s.id === '01' ? { ...s, status: 'VALIDATING...' } : s));
+        await new Promise(r => setTimeout(r, 400));
         setTerminalSteps(prev => prev.map(s => s.id === '02' ? { ...s, status: 'REGISTERING...' } : s));
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 400));
+        setTerminalSteps(prev => prev.map(s => s.id === '03' ? { ...s, status: 'MAPPING...' } : s));
+        await new Promise(r => setTimeout(r, 300));
         setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: 'SIGNING...' } : s));
 
         try {
@@ -321,18 +346,31 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
             if (error) throw error;
 
             if (data?.success) {
+                // Phase 2: Success cascade animation
                 setTerminalSteps([
                     { id: '01', label: 'SYSTEM_SYNC_VALIDATION', status: 'OK' },
-                    { id: '02', label: 'LEDGER_PENDING_REG', status: 'STABLE' },
-                    { id: '03', label: 'CONFIG_MAPPING', status: 'VERIFIED' },
-                    { id: '04', label: 'SECURITY_CERT', status: 'SYNC_COMPLETE' }
+                    { id: '02', label: 'LEDGER_GENERATION', status: 'STABLE' },
+                    { id: '03', label: 'INSTALLMENT_SCHEDULE', status: 'VERIFIED' },
+                    { id: '04', label: 'PAYMENT_GATEWAY', status: 'SYNC_COMPLETE' }
                 ]);
                 setNotified(true);
+                setSuccessToast(`Finance synchronized! Ledger generated with ${data.total_amount ? '₹' + Number(data.total_amount).toLocaleString('en-IN') : 'fee allocation'}.`);
+
+                // Phase 3: Refresh data to transition from sync view to financial console
                 await fetchFinanceDetail();
             } else {
                 const readinessError = data?.error || 'UNKNOWN_GAP';
+                const friendlyErrors: Record<string, string> = {
+                    'YEAR_NOT_ACTIVE': 'No active academic year found. Contact administration.',
+                    'GRADE_MAPPING_MISSING': 'Fee structure not configured for this grade. Admin action required.',
+                    'PAYMENT_PLAN_MISSING': 'Fee components not defined. Admin action required.',
+                    'STUDENT_NOT_FOUND': 'Student profile record not found.',
+                    'STUDENT_PROFILE_NOT_FOUND': 'Student profile record incomplete.',
+                    'NO_ACTIVE_ACADEMIC_YEAR': 'No active academic cycle on record.',
+                    'ZERO_FEE_AMOUNT': 'Fee structure found but total is ₹0. Admin review needed.',
+                };
                 setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: readinessError } : s));
-                setError(`Institutional Sync Gap: ${readinessError}`);
+                setError(friendlyErrors[readinessError] || `Institutional Sync Gap: ${readinessError}`);
             }
         } catch (err: any) {
             console.error("Sync error:", err);
@@ -412,12 +450,15 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         </div>
     );
 
-    // Helpers for UI Logic
-    // Helpers for UI Logic (Case-Insensitive)
-    const isPreview = activeCycle?.status?.toUpperCase() === 'UPCOMING' || financeDetail?.summary?.status === 'PREVIEW';
-    const isCurrent = (activeCycle?.status?.toUpperCase() === 'CURRENT' || activeCycle?.status?.toUpperCase() === 'ACTIVE') && financeDetail?.summary?.status !== 'PREVIEW';
+    // Helpers for UI Logic (Case-Insensitive, V13 Lifecycle States)
+    const lifecycleStatus = financeDetail?.summary?.status?.toUpperCase() || '';
+    const isPreview = activeCycle?.status?.toUpperCase() === 'UPCOMING' || lifecycleStatus === 'PREVIEW';
+    const isCurrent = (activeCycle?.status?.toUpperCase() === 'CURRENT' || activeCycle?.status?.toUpperCase() === 'ACTIVE') && lifecycleStatus !== 'PREVIEW';
     const isArchived = activeCycle?.status?.toUpperCase() === 'ARCHIVED';
-    const isNotConfigured = (financeDetail?.summary?.status === 'NOT_GENERATED' || financeDetail?.summary?.status === 'FINANCE_SYNC_REQUIRED' || financeDetail?.summary?.status === 'ENROLLMENT_PENDING') && (!financeDetail?.installments || financeDetail.installments.length === 0);
+    const isNotConfigured = (
+        ['NOT_GENERATED', 'FINANCE_SYNC_REQUIRED', 'ENROLLMENT_PENDING', 'GRADE_MAPPING_MISSING', 'PAYMENT_PLAN_MISSING', 'YEAR_NOT_ACTIVE', 'LEDGER_GENERATED'].includes(lifecycleStatus)
+    ) && (!financeDetail?.installments || financeDetail.installments.length === 0);
+    const isPaymentsEnabled = lifecycleStatus === 'PAYMENTS_ENABLED';
 
     // Status Badge Helpers
     const getStatusColor = (status: string) => {
@@ -433,6 +474,31 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
 
     return (
         <div className="max-w-7xl mx-auto pb-32 px-4 space-y-6 animate-in fade-in duration-700 font-sans">
+            {/* SUCCESS TOAST */}
+            <AnimatePresence>
+                {successToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                        className="fixed top-6 right-6 z-[100] max-w-sm"
+                    >
+                        <div className="bg-emerald-500/20 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-4 flex items-start gap-3 shadow-2xl shadow-emerald-500/10">
+                            <div className="p-1.5 bg-emerald-500/20 rounded-lg text-emerald-400 mt-0.5">
+                                <CheckCircleIcon className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">System Event</div>
+                                <div className="text-sm text-emerald-100 leading-snug">{successToast}</div>
+                            </div>
+                            <button onClick={() => setSuccessToast(null)} className="text-white/30 hover:text-white/60 transition-colors">
+                                <XIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* A. CONTROL STRIP (Merged Student & Year) */}
             <div className="bg-[#1f2937] border border-white/10 rounded-xl p-2 flex flex-col md:flex-row items-center gap-2 shadow-xl relative z-30 mt-6">
 
@@ -1222,97 +1288,204 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                         </>
                     )}
 
-                    {/* F. MANUAL PAYMENT MODAL (Simplified Reuse) */}
+                    {/* F. MANUAL PAYMENT MODAL (Executive Grade) */}
                     <AnimatePresence>
                         {isUploadModalOpen && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setIsUploadModalOpen(false)}>
                                 <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    className="bg-[#1f2937] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
+                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    onClick={e => e.stopPropagation()}
+                                    className="bg-[#111827] w-full max-w-lg rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
                                 >
-                                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                                        <h3 className="text-lg font-bold text-white">Upload Receipt</h3>
-                                        <button onClick={() => setIsUploadModalOpen(false)}>
+                                    {/* Header */}
+                                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-emerald-500/5 to-transparent">
+                                        <div>
+                                            <h3 className="text-lg font-black text-white uppercase tracking-tight">Payment Submission</h3>
+                                            <div className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-0.5">Manual Receipt Upload · Secure Channel</div>
+                                        </div>
+                                        <button onClick={() => setIsUploadModalOpen(false)} className="p-2 hover:bg-white/5 rounded-lg transition-colors">
                                             <XIcon className="w-5 h-5 text-white/50" />
                                         </button>
                                     </div>
-                                    <div className="p-6 space-y-4">
-                                        <div>
-                                            <label className="text-[10px] uppercase font-bold text-white/40 mb-1 block">Amount</label>
-                                            <input
-                                                type="number"
-                                                placeholder="Amount"
-                                                value={uploadData.amount}
-                                                onChange={e => setUploadData({ ...uploadData, amount: e.target.value })}
-                                                className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                                            />
+
+                                    {/* Selected Installments Badge */}
+                                    {selectedInstallments.length > 0 && (
+                                        <div className="px-6 pt-4">
+                                            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 flex items-center gap-3">
+                                                <div className="p-1.5 bg-indigo-500/20 rounded-lg text-indigo-400"><DocumentTextIcon className="w-4 h-4" /></div>
+                                                <div className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">
+                                                    {selectedInstallments.length} Installment{selectedInstallments.length > 1 ? 's' : ''} Selected for Settlement
+                                                </div>
+                                            </div>
                                         </div>
+                                    )}
+
+                                    <div className="p-6 space-y-5">
+                                        {/* Amount Field */}
                                         <div>
-                                            <label className="text-[10px] uppercase font-bold text-white/40 mb-1 block">UTR / Reference</label>
+                                            <label className="text-[10px] uppercase font-black text-white/40 tracking-widest mb-1.5 block">Payment Amount (₹)</label>
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 font-bold text-sm">₹</span>
+                                                <input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    value={uploadData.amount}
+                                                    onChange={e => setUploadData({ ...uploadData, amount: e.target.value })}
+                                                    className="w-full bg-black/30 border border-white/10 rounded-xl pl-8 pr-4 py-3.5 text-white text-lg font-bold focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all placeholder:text-white/10"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Payment Mode & Date - Side by side */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[10px] uppercase font-black text-white/40 tracking-widest mb-1.5 block">Payment Mode</label>
+                                                <select
+                                                    value={uploadData.mode}
+                                                    onChange={e => setUploadData({ ...uploadData, mode: e.target.value })}
+                                                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 transition-all appearance-none cursor-pointer"
+                                                >
+                                                    <option value="NEFT" className="bg-[#111827]">NEFT / RTGS</option>
+                                                    <option value="UPI" className="bg-[#111827]">UPI Transfer</option>
+                                                    <option value="CARD" className="bg-[#111827]">Card Payment</option>
+                                                    <option value="CASH" className="bg-[#111827]">Cash Deposit</option>
+                                                    <option value="CHEQUE" className="bg-[#111827]">Cheque / DD</option>
+                                                    <option value="WALLET" className="bg-[#111827]">Digital Wallet</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] uppercase font-black text-white/40 tracking-widest mb-1.5 block">Payment Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={uploadData.date}
+                                                    onChange={e => setUploadData({ ...uploadData, date: e.target.value })}
+                                                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm font-medium focus:outline-none focus:border-emerald-500/50 transition-all"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* UTR / Reference */}
+                                        <div>
+                                            <label className="text-[10px] uppercase font-black text-white/40 tracking-widest mb-1.5 block">UTR / Transaction Reference</label>
                                             <input
                                                 type="text"
-                                                placeholder="Transaction Reference ID"
+                                                placeholder="e.g. UTR123456789"
                                                 value={uploadData.ref}
                                                 onChange={e => setUploadData({ ...uploadData, ref: e.target.value })}
-                                                className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/10"
                                             />
                                         </div>
+
+                                        {/* File Upload */}
                                         <div>
-                                            <label className="text-[10px] uppercase font-bold text-white/40 mb-1 block">Proof</label>
-                                            <input
-                                                type="file"
-                                                accept="image/*,.pdf"
-                                                onChange={e => {
-                                                    if (e.target.files) setUploadFile(e.target.files[0]);
-                                                }}
-                                                className="w-full text-sm text-white/60 bg-black/20 rounded-lg p-3 border border-white/10"
-                                            />
+                                            <label className="text-[10px] uppercase font-black text-white/40 tracking-widest mb-1.5 block">Payment Proof (Receipt / Screenshot)</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*,.pdf"
+                                                    onChange={e => {
+                                                        if (e.target.files) setUploadFile(e.target.files[0]);
+                                                    }}
+                                                    className="hidden"
+                                                    id="payment-proof-upload"
+                                                />
+                                                <label
+                                                    htmlFor="payment-proof-upload"
+                                                    className="flex items-center justify-center gap-3 w-full py-4 bg-black/20 border-2 border-dashed border-white/10 hover:border-emerald-500/30 rounded-xl cursor-pointer transition-all group"
+                                                >
+                                                    {uploadFile ? (
+                                                        <div className="flex items-center gap-3">
+                                                            <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
+                                                            <span className="text-sm text-emerald-300 font-medium">{uploadFile.name}</span>
+                                                            <button onClick={(e) => { e.preventDefault(); setUploadFile(null); }} className="text-red-400 hover:text-red-300 ml-2">
+                                                                <XIcon className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <UploadIcon className="w-5 h-5 text-white/20 group-hover:text-emerald-500/50 transition-colors" />
+                                                            <span className="text-sm text-white/30 group-hover:text-white/50 transition-colors">Click to upload proof</span>
+                                                        </>
+                                                    )}
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="p-4 border-t border-white/5 flex justify-end gap-3">
-                                        <button
-                                            onClick={() => setIsUploadModalOpen(false)}
-                                            className="px-4 py-2 text-white/60 hover:text-white text-xs font-bold uppercase transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={async () => {
-                                                if (!selectedStudentId || !uploadFile || !uploadData.amount) return alert("Fill all fields");
-                                                setIsSubmitting(true);
-                                                try {
-                                                    const fileName = `receipts/${selectedStudentId}/${Date.now()}_${uploadFile.name}`;
-                                                    const { data: up, error: upErr } = await supabase.storage.from('secure-documents').upload(fileName, uploadFile);
-                                                    if (upErr && process.env.NODE_ENV !== 'development') throw upErr;
 
-                                                    const proofUrl = up ? supabase.storage.from('secure-documents').getPublicUrl(fileName).data.publicUrl : 'https://mock.com/receipt';
+                                    {/* Footer Actions */}
+                                    <div className="p-5 border-t border-white/5 flex items-center justify-between bg-white/[0.01]">
+                                        <div className="text-[9px] text-white/20 font-bold uppercase tracking-widest">Encrypted Submission · AES-256</div>
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => { setIsUploadModalOpen(false); setUploadFile(null); setSelectedInstallments([]); }}
+                                                className="px-5 py-2.5 text-white/60 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors rounded-xl hover:bg-white/5"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    if (!selectedStudentId || !uploadData.amount || parseFloat(uploadData.amount) <= 0) {
+                                                        setError('Please enter a valid payment amount.');
+                                                        return;
+                                                    }
+                                                    setIsSubmitting(true);
+                                                    setError(null);
+                                                    try {
+                                                        let proofUrl = '';
 
-                                                    await supabase.rpc('submit_manual_payment_receipt', {
-                                                        p_student_id: selectedStudentId,
-                                                        p_amount: parseFloat(uploadData.amount),
-                                                        p_transaction_date: uploadData.date,
-                                                        p_transaction_ref: uploadData.ref,
-                                                        p_payment_mode: uploadData.mode,
-                                                        p_proof_url: proofUrl,
-                                                        p_invoice_ids: []
-                                                    });
-                                                    alert("Submitted for verification!");
-                                                    setIsUploadModalOpen(false);
-                                                    fetchFinanceDetail();
-                                                } catch (e: any) {
-                                                    alert(e.message);
-                                                } finally {
-                                                    setIsSubmitting(false);
-                                                }
-                                            }}
-                                            disabled={isSubmitting}
-                                            className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold uppercase rounded-lg shadow-lg flex items-center gap-2"
-                                        >
-                                            {isSubmitting ? <Spinner size="sm" className="text-black" /> : null}
-                                            {isSubmitting ? 'Submitting...' : 'Submit Receipt'}
-                                        </button>
+                                                        // Upload proof if file selected
+                                                        if (uploadFile) {
+                                                            const fileName = `receipts/${selectedStudentId}/${Date.now()}_${uploadFile.name}`;
+                                                            const { data: up, error: upErr } = await supabase.storage.from('secure-documents').upload(fileName, uploadFile);
+                                                            if (upErr && process.env.NODE_ENV !== 'development') throw upErr;
+                                                            proofUrl = up ? supabase.storage.from('secure-documents').getPublicUrl(fileName).data.publicUrl : '';
+                                                        }
+
+                                                        // Submit payment via RPC
+                                                        const { data: result, error: rpcErr } = await supabase.rpc('submit_manual_payment_receipt', {
+                                                            p_student_id: selectedStudentId,
+                                                            p_amount: parseFloat(uploadData.amount),
+                                                            p_transaction_date: uploadData.date,
+                                                            p_transaction_ref: uploadData.ref,
+                                                            p_payment_mode: uploadData.mode,
+                                                            p_proof_url: proofUrl,
+                                                            p_invoice_ids: selectedInstallments
+                                                        });
+
+                                                        if (rpcErr) throw rpcErr;
+
+                                                        if (result?.success) {
+                                                            setSuccessToast(`Payment of ₹${parseFloat(uploadData.amount).toLocaleString('en-IN')} submitted successfully! ${result.allocated ? `₹${Number(result.allocated).toLocaleString('en-IN')} auto-allocated.` : ''}`);
+                                                        } else {
+                                                            setSuccessToast('Payment submitted for verification.');
+                                                        }
+
+                                                        setIsUploadModalOpen(false);
+                                                        setUploadFile(null);
+                                                        setSelectedInstallments([]);
+                                                        setUploadData({ amount: '', date: new Date().toISOString().split('T')[0], mode: 'NEFT', ref: '' });
+                                                        fetchFinanceDetail();
+                                                    } catch (e: any) {
+                                                        console.error('Payment submission error:', e);
+                                                        setError(`Payment Error: ${e.message || 'Submission failed'}`);
+                                                    } finally {
+                                                        setIsSubmitting(false);
+                                                    }
+                                                }}
+                                                disabled={isSubmitting || !uploadData.amount}
+                                                className={clsx(
+                                                    "px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg flex items-center gap-2 transition-all transform active:scale-95",
+                                                    !uploadData.amount || isSubmitting
+                                                        ? "bg-white/5 text-white/20 cursor-not-allowed border border-white/5"
+                                                        : "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-black shadow-emerald-500/20"
+                                                )}
+                                            >
+                                                {isSubmitting ? <Spinner size="sm" className="text-black" /> : <CreditCardIcon className="w-4 h-4" />}
+                                                {isSubmitting ? 'Processing...' : 'Submit Payment'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </motion.div>
                             </div>

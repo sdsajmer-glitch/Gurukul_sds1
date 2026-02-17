@@ -469,6 +469,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                 onUpdate={() => fetchAllData(true)}
                                 readiness={institutionalReadiness || readiness}
                                 masterState={masterState}
+                                onGuide={() => setIsProcessGuideOpen(true)}
                             />
                         </motion.div>
                     )}

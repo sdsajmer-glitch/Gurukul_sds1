@@ -441,7 +441,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         </div>
 
                         <div className="flex-1 text-center lg:text-left">
-                            <h1 className="text-5xl lg:text-7xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-6 group-hover:translate-x-2 transition-transform duration-700">
+                            <h1 className="text-4xl lg:text-6xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-6 group-hover:translate-x-2 transition-transform duration-700">
                                 {accountData.display_name}
                             </h1>
                             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-10 gap-y-4">

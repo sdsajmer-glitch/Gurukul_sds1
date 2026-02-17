@@ -42,6 +42,7 @@ interface FinanceMasterProps {
         approvals: any[];
         readiness: any;
     };
+    onGuide?: () => void;
 }
 
 const AccordionItem: React.FC<{
@@ -57,8 +58,8 @@ const AccordionItem: React.FC<{
 }> = ({ id, title, subtitle, icon, isOpen, onToggle, children, badge, color = 'primary' }) => {
     return (
         <div className={`group rounded-3xl border transition-all duration-500 overflow-hidden ${isOpen
-                ? 'bg-[#12141c] border-white/10 shadow-2xl ring-1 ring-white/5'
-                : 'bg-[#0c0d12] border-white/5 hover:bg-[#12141c] hover:border-white/10'
+            ? 'bg-[#12141c] border-white/10 shadow-2xl ring-1 ring-white/5'
+            : 'bg-[#0c0d12] border-white/5 hover:bg-[#12141c] hover:border-white/10'
             }`}>
             <button
                 onClick={onToggle}
@@ -66,8 +67,8 @@ const AccordionItem: React.FC<{
             >
                 <div className="flex items-center gap-6">
                     <div className={`p-4 rounded-2xl border transition-all duration-300 ${isOpen
-                            ? `bg-${color}/10 text-${color} border-${color}/20`
-                            : 'bg-white/5 text-white/20 border-white/5 group-hover:text-white group-hover:bg-white/10'
+                        ? `bg-${color}/10 text-${color} border-${color}/20`
+                        : 'bg-white/5 text-white/20 border-white/5 group-hover:text-white group-hover:bg-white/10'
                         }`}>
                         {icon}
                     </div>
@@ -79,8 +80,8 @@ const AccordionItem: React.FC<{
                             </h3>
                             {badge && (
                                 <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${isOpen
-                                        ? `bg-${color}/10 text-${color} border-${color}/20`
-                                        : 'bg-white/5 text-white/30 border-white/10'
+                                    ? `bg-${color}/10 text-${color} border-${color}/20`
+                                    : 'bg-white/5 text-white/30 border-white/10'
                                     }`}>
                                     {badge}
                                 </span>
@@ -93,8 +94,8 @@ const AccordionItem: React.FC<{
                 </div>
 
                 <div className={`p-3 rounded-full transition-all duration-500 ${isOpen
-                        ? 'bg-white/10 text-white rotate-180'
-                        : 'bg-transparent text-white/20 group-hover:bg-white/5 group-hover:text-white'
+                    ? 'bg-white/10 text-white rotate-180'
+                    : 'bg-transparent text-white/20 group-hover:bg-white/5 group-hover:text-white'
                     }`}>
                     <ChevronDownIcon className="w-5 h-5" />
                 </div>
@@ -129,7 +130,9 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
     currency,
     branchId,
     onUpdate,
-    masterState
+    masterState,
+    readiness,
+    onGuide // New prop for process guide
 }) => {
     const [expandedSection, setExpandedSection] = useState<string | null>('governance');
     const [loading, setLoading] = useState(false);
@@ -137,6 +140,12 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
 
     const toggleSection = (id: string) => {
         setExpandedSection(expandedSection === id ? null : id);
+        // Auto-scroll to section on open
+        if (expandedSection !== id) {
+            setTimeout(() => {
+                document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
     };
 
     const handleSettingToggle = async (key: string, currentValue: boolean) => {
@@ -173,8 +182,83 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
         { key: 'auto_late_fee_enabled', label: 'Late Fee Protocol', desc: 'Auto-Penalty Engine', icon: <ClockIcon className="w-5 h-5" />, active: masterState?.settings?.auto_late_fee_enabled },
     ];
 
+    // Readiness Alert Helper
+    const ReadinessAlert = () => {
+        const status = readiness?.status || masterState?.readiness?.status || 'VALIDATED';
+        if (status === 'VALIDATED') return null;
+
+        const alerts: Record<string, { title: string; desc: string; action: string; onAction: () => void }> = {
+            'YEAR_NOT_ACTIVE': {
+                title: 'Academic Year Inactive',
+                desc: 'The current academic cycle is not active. Finance operations are halted.',
+                action: 'Activate Year',
+                onAction: () => console.log('Navigate to Academic Settings')
+            },
+            'GRADE_MAPPING_MISSING': {
+                title: 'Fee Structures Missing',
+                desc: 'One or more active grades have no fee structure assigned.',
+                action: 'Create Structure',
+                onAction: onNewStructure
+            },
+            'PAYMENT_PLAN_MISSING': {
+                title: 'Payment Plans Incomplete',
+                desc: 'Fee components or installments are not fully configured.',
+                action: 'Configure Plans',
+                onAction: onNewProtocol || (() => { })
+            }
+        };
+
+        const currentAlert = alerts[status] || {
+            title: 'System Setup Required',
+            desc: 'Finance protocols are not fully initialized.',
+            action: 'Run Diagnostics',
+            onAction: () => { }
+        };
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-600/5 border border-amber-500/20 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_0_40px_-10px_rgba(245,158,11,0.15)] relative overflow-hidden group"
+            >
+                <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+                    <AlertTriangleIcon className="w-32 h-32" />
+                </div>
+
+                <div className="flex items-start gap-5 relative z-10">
+                    <div className="p-3.5 rounded-xl bg-amber-500/20 text-amber-500 shadow-inner ring-1 ring-amber-500/20">
+                        <AlertTriangleIcon className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tight mb-1">{currentAlert.title}</h3>
+                        <p className="text-xs font-medium text-amber-200/60 uppercase tracking-widest leading-relaxed max-w-lg">{currentAlert.desc}</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3 relative z-10 w-full md:w-auto">
+                    {onGuide && (
+                        <button
+                            onClick={onGuide}
+                            className="px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all border border-white/5 hover:border-white/10 flex-1 md:flex-none whitespace-nowrap"
+                        >
+                            View Guide
+                        </button>
+                    )}
+                    <button
+                        onClick={currentAlert.onAction}
+                        className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 active:scale-95 flex items-center justify-center gap-2 flex-1 md:flex-none group/btn"
+                    >
+                        <span>{currentAlert.action}</span>
+                        <ArrowRightIcon className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
+                    </button>
+                </div>
+            </motion.div>
+        );
+    };
+
     return (
         <div className="max-w-7xl mx-auto pb-40 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <ReadinessAlert />
 
             {/* 1. Header Control Strip */}
             <header className="flex flex-col md:flex-row justify-between items-end gap-6 mb-10 pb-8 border-b border-white/5">
@@ -227,8 +311,8 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                                 key={toggle.key}
                                 onClick={() => handleSettingToggle(toggle.key, !!toggle.active)}
                                 className={`cursor-pointer p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between min-h-[140px] group ${toggle.active
-                                        ? 'bg-primary/5 border-primary/20 hover:border-primary/40'
-                                        : 'bg-white/[0.02] border-white/5 hover:border-white/10'
+                                    ? 'bg-primary/5 border-primary/20 hover:border-primary/40'
+                                    : 'bg-white/[0.02] border-white/5 hover:border-white/10'
                                     }`}
                             >
                                 <div className="flex justify-between items-start">
@@ -296,8 +380,11 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <div className="flex items-center gap-2 mb-2">
-                                                    <span className={`w-2 h-2 rounded-full ${fs.state === 'ACTIVE' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
-                                                            fs.state === 'DRAFT' ? 'bg-amber-500' : 'bg-white/20'
+                                                    <span className={`w-2 h-2 rounded-full ${(fs.state === 'ACTIVE' || fs.status === 'Active' || fs.status === 'active')
+                                                        ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                                                        : (fs.state === 'DRAFT' || fs.status === 'Draft' || fs.status === 'draft')
+                                                            ? 'bg-amber-500'
+                                                            : 'bg-white/20'
                                                         }`} />
                                                     <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">{fs.academic_year}</span>
                                                 </div>
