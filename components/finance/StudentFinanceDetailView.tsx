@@ -228,7 +228,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                 setIsSyncing(false);
             }
         }
-    }, [initialStudent.student_id]);
+    }, [initialStudent.student_id, selectedCycleId]);
 
     const handleMapGenesisProtocol = async () => {
         setMappingInProgress(true);

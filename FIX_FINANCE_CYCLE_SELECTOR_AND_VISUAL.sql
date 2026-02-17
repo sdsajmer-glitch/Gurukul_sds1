@@ -1,12 +1,11 @@
 -- ==============================================================================
--- FIX FINANCE CYCLE SELECTOR & VISUAL ENHANCEMENTS
+-- FIX FINANCE CYCLE SELECTOR & VISUAL ENHANCEMENTS (AMBIGUITY FIX)
 -- ==============================================================================
--- 1. Updates get_student_financial_node to return cycle_name for UI display.
--- 2. Ensures the cycle selector dropdown works correctly.
--- 3. Fixes visual issues with large names.
+-- 1. Updates get_student_financial_node to return cycle_name.
+-- 2. Uses explicit aliases for academic_years in subqueries to resolve "branch_id" ambiguity.
+-- 3. Ensures correct cycle selector retrieval via p_cycle_id.
 -- ==============================================================================
 
--- Drop the old function signature to allow return type change
 DROP FUNCTION IF EXISTS public.get_student_financial_node(UUID, BIGINT);
 
 CREATE OR REPLACE FUNCTION public.get_student_financial_node(
@@ -53,8 +52,8 @@ BEGIN
             (sfl.id IS NULL) as is_standby,
             COALESCE(sfa.unallocated_funds, 0) as unallocated_funds,
             COALESCE(sfl.academic_year_id, p_cycle_id) as academic_cycle_id,
-            (SELECT year_name FROM public.academic_years WHERE id = p_cycle_id) as cycle_name,
-            (SELECT status::text FROM public.academic_years WHERE id = p_cycle_id) as cycle_status,
+            (SELECT ay_lookup.year_name FROM public.academic_years ay_lookup WHERE ay_lookup.id = p_cycle_id) as cycle_name,
+            (SELECT ay_lookup.status::text FROM public.academic_years ay_lookup WHERE ay_lookup.id = p_cycle_id) as cycle_status,
             sp.branch_id,
             COALESCE(sfl.status, 'NO_LEDGER')::text as ledger_status
         FROM public.profiles p
@@ -64,11 +63,8 @@ BEGIN
         LEFT JOIN public.student_fee_ledger sfl ON p.id = sfl.student_id AND sfl.academic_year_id = p_cycle_id
         WHERE p.id = p_student_id;
     ELSE
-        -- Global View (Default to Current Cycle if possible, or Aggregate)
-        -- For simplicity, we return the student's primary branch current cycle info if available, 
-        -- or just 'GLOBAL_VIEW' metadata.
-        
-        -- Attempt to find current active cycle for this student's branch
+        -- Global View (Default to Current Cycle)
+        -- Aliasing subqueries strictly to avoid "branch_id" ambiguity between academic_years and student_profiles
         RETURN QUERY
         SELECT 
             p.id as student_id,
@@ -83,8 +79,8 @@ BEGIN
             p.is_active,
             (COALESCE(sfa.total_billed, 0) = 0) as is_standby,
             COALESCE(sfa.unallocated_funds, 0) as unallocated_funds,
-            (SELECT id FROM public.academic_years WHERE branch_id = sp.branch_id AND is_current = true LIMIT 1) as academic_cycle_id,
-            (SELECT year_name FROM public.academic_years WHERE branch_id = sp.branch_id AND is_current = true LIMIT 1) as cycle_name,
+            (SELECT ay2.id FROM public.academic_years ay2 WHERE ay2.branch_id = sp.branch_id AND ay2.is_current = true LIMIT 1) as academic_cycle_id,
+            (SELECT ay2.year_name FROM public.academic_years ay2 WHERE ay2.branch_id = sp.branch_id AND ay2.is_current = true LIMIT 1) as cycle_name,
             'active'::text as cycle_status,
             sp.branch_id,
             'GLOBAL_VIEW'::text as ledger_status
