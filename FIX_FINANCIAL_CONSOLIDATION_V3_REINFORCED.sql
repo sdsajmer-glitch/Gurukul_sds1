@@ -543,7 +543,7 @@ BEGIN
         WHERE fi.student_id = p_student_id
         AND LOWER(fi.status::text) NOT IN ('cancelled')
         AND (p_cycle_id IS NULL OR fi.structure_id IN (
-            SELECT fs.id FROM public.fee_structures fs WHERE fs.academic_year_id = p_cycle_id
+            SELECT fs.id FROM public.fee_structures fs WHERE fs.academic_cycle_id = p_cycle_id
         ))
 
         UNION ALL
