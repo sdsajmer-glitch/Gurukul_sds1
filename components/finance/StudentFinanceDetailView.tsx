@@ -139,15 +139,13 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
     const [availableCycles, setAvailableCycles] = useState<any[]>([]);
     const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
     const [showCycleSelector, setShowCycleSelector] = useState(false);
-
     const isMounted = useRef(true);
-
     const refreshAccountStatus = useCallback(async (isSilent = false) => {
         if (!isMounted.current) return;
         if (!isSilent) setLoading(true);
         setError(null);
         try {
-            // 1. Fetch Core Financial Node
+            // 1. Fetch Core Financial Node (V17 Signature Aware)
             const { data: nodeData, error: nodeError } = await supabase.rpc('get_student_financial_node', {
                 p_student_id: initialStudent.student_id,
                 p_cycle_id: selectedCycleId
@@ -194,15 +192,17 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
 
             setAuditLogs(auditData || []);
 
-            // 5. Initialize AI Oracle (with safety guard)
+            // 5. Initialize AI Oracle
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-            if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY') {
+            if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY' && nodeData?.[0]) {
                 try {
                     const genAI = new GoogleGenerativeAI(apiKey);
                     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
                     const prompt = `Analyze this student's financial state: 
-                    Billed: ${nodeData[0].total_billed}, 
+                    Gross Billed: ${nodeData[0].gross_billed}, 
+                    Scholarship: ${nodeData[0].scholarship_amount},
+                    Net Billed: ${nodeData[0].total_billed}, 
                     Paid: ${nodeData[0].total_paid}, 
                     Outstanding: ${nodeData[0].outstanding_balance}, 
                     Integrity: ${nodeData[0].integrity_score}%.
@@ -212,10 +212,9 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     const response = await result.response;
                     setAiInsight(response.text());
                 } catch (err) {
-                    console.warn('AI Oracle failed to initialize:', err);
                     setAiInsight("AUTOMATED_INSIGHT_DEFERRED: SEC_NODE_OFFLINE");
                 }
-            } else {
+            } else if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
                 setAiInsight("AI_ORACLE_PENDING_CONFIG: PROVIDE_API_KEY");
             }
 
@@ -234,18 +233,15 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
         setMappingInProgress(true);
         setError(null);
         try {
+            // Use nuclear repair sync for the student
             const { data, error: rpcError } = await supabase.rpc('admin_sync_student_billing', {
                 p_student_id: initialStudent.student_id
             });
             if (rpcError) throw rpcError;
 
-            if (data?.success) {
-                // Flash success state then refresh
-                await refreshAccountStatus(true);
-                if (onUpdate) onUpdate();
-            } else {
-                throw new Error(data?.message || 'Failed to synchronize GENESIS_PROTOCOL');
-            }
+            // Flash success state then refresh
+            await refreshAccountStatus(true);
+            if (onUpdate) onUpdate();
         } catch (err: any) {
             console.error("Mapping failure:", err);
             setError(formatError(err));
@@ -279,11 +275,13 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
         });
     }, [ledger, searchQuery, filterType]);
 
-    // Financial calculations
+    // Financial calculations (strictly derived from accountData)
     const totalAssigned = accountData.total_billed || 0;
     const totalPaid = accountData.total_paid || 0;
+    const grossAssigned = accountData.gross_billed || totalAssigned;
+    const scholarshipAmount = accountData.scholarship_amount || 0;
     const outstanding = accountData.outstanding_balance || 0;
-    const recoveryRate = totalAssigned > 0 ? (totalPaid / totalAssigned) * 100 : 0;
+    const recoveryRate = accountData.integrity_score || (totalAssigned > 0 ? (totalPaid / totalAssigned) * 100 : 0);
 
     if (loading) return (
         <div className="min-h-screen bg-black flex items-center justify-center">
@@ -472,117 +470,128 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                 </div>
 
                 {/* Layer 2 – Registry KPIs Cluster */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard
-                        title="Billed Magnitude"
+                        title="Total Liability"
                         value={formatCurrency(totalAssigned, viewCurrency)}
-                        subValue="Gross Liability Node"
                         icon={<ActivityIcon className="w-6 h-6" />}
                         variant="neutral"
                     />
                     <StatCard
                         title="Settled Capital"
                         value={formatCurrency(totalPaid, viewCurrency)}
-                        subValue={`${recoveryRate.toFixed(1)}% Recovery Velocity`}
                         icon={<ShieldCheckIcon className="w-6 h-6" />}
                         variant="success"
                     />
                     <StatCard
-                        title="Net Exposure"
+                        title="Total Arrears"
                         value={formatCurrency(outstanding, viewCurrency)}
-                        subValue={outstanding > 0 ? "ACTION_REQUIRED" : "LIQUIDITY_SECURED"}
                         icon={<AlertTriangleIcon className="w-6 h-6" />}
                         variant={outstanding > 0 ? "warning" : "success"}
                     />
                     <StatCard
-                        title="Unallocated Funds"
-                        value={formatCurrency(accountData.unallocated_funds || 0, viewCurrency)}
-                        subValue={(accountData.unallocated_funds > 0) ? "CREDIT_AVAILABLE" : "NET_ZERO_BALANCE"}
+                        title="Next Due Magnitude"
+                        value={accountData.next_due_amount ? formatCurrency(accountData.next_due_amount, viewCurrency) : '---'}
+                        subValue={accountData.next_due_date ? `Due: ${new Date(accountData.next_due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}` : 'Settled'}
                         icon={<CreditCardIcon className="w-6 h-6" />}
-                        variant={(accountData.unallocated_funds > 0) ? "success" : "neutral"}
+                        variant={accountData.next_due_date ? "warning" : "neutral"}
                     />
                 </div>
 
-                {/* Layer 3 – Institutional Fee Protocol & Flow Map */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
-                    {/* Assigned Protocol Card */}
-                    <div className="xl:col-span-2 bg-[#12141c]/60 border border-white/5 rounded-[4rem] p-12 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-16 opacity-[0.02] group-hover:scale-110 transition-transform">
-                            <BookIcon className="w-64 h-64 text-primary" />
+                {/* Layer 3 – Institutional Flow & Trajectory */}
+                <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                    {/* Genesis Protocol Card (Left 3/4) */}
+                    <div className="xl:col-span-3 bg-[#12141c]/40 border border-white/[0.03] rounded-[3rem] p-10 lg:p-14 backdrop-blur-2xl shadow-3xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:scale-110 transition-transform duration-[4000ms]">
+                            <TrendingUpCustomIcon className="w-96 h-96 text-primary" />
                         </div>
 
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 mb-16 relative z-10">
+                        <div className="flex justify-between items-start mb-12 relative z-10">
                             <div>
-                                <div className="flex items-center gap-4 mb-3">
-                                    <span className="px-3 py-1 bg-primary/10 text-primary text-[9px] font-black uppercase tracking-[0.2em] rounded-lg border border-primary/20">Protocol Node</span>
-                                    <span className="text-[10px] text-white/20 font-black uppercase tracking-widest italic">{assignedStructure?.academic_year || 'v25.0 Deployment'}</span>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <span className="px-2.5 py-0.5 bg-primary/10 text-primary text-[8px] font-black uppercase tracking-[0.2em] rounded border border-primary/20">Protocol Node</span>
+                                    <span className="text-[9px] text-white/10 font-black uppercase tracking-[0.3em]">Institutional Deployment</span>
                                 </div>
-                                <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter group-hover:text-primary transition-colors">
-                                    {assignedStructure?.name || 'GENESIS_PROTOCOL'}
+                                <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none group-hover:text-primary transition-colors duration-500">
+                                    GENESIS_PROTOCOL
                                 </h3>
                             </div>
                             <div className="text-right">
-                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Node Valuation</p>
-                                <p className="text-4xl font-serif font-black text-white italic tracking-tighter">
-                                    {formatCurrency(assignedStructure?.components?.reduce((a: any, c: any) => a + Number(c.amount), 0) || totalAssigned, viewCurrency)}
+                                <p className="text-3xl font-serif font-black text-white/60 tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all">
+                                    {formatCurrency(grossAssigned, viewCurrency)}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
-                            {assignedStructure ? (
-                                (assignedStructure.components || []).map((comp: any, i: number) => (
-                                    <div key={i} className="bg-white/[0.03] border border-white/5 p-8 rounded-[2.5rem] flex flex-col gap-6 hover:bg-white/[0.05] transition-all group/node">
-                                        <div className="flex justify-between items-center">
-                                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover/node:bg-primary group-hover/node:text-black transition-all">
-                                                <WorkflowIcon className="w-5 h-5" />
-                                            </div>
-                                            <div className={`w-2 h-2 rounded-full ${totalPaid >= comp.amount ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-amber-500/40'}`}></div>
-                                        </div>
-                                        <div>
-                                            <p className="text-xl font-serif font-black text-white tracking-tighter uppercase mb-1">{comp.name}</p>
-                                            <p className="text-sm font-mono font-black text-white/40">{formatCurrency(comp.amount, viewCurrency)}</p>
-                                        </div>
+                        {scholarshipAmount > 0 && (
+                            <div className="mb-8 px-8 py-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <SparklesIcon className="w-4 h-4 text-emerald-500" />
+                                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Scholarship / Discount Applied</span>
+                                </div>
+                                <span className="font-mono font-black text-emerald-400">-{formatCurrency(scholarshipAmount, viewCurrency)}</span>
+                            </div>
+                        )}
+
+                        <div className="relative min-h-[350px] flex items-center justify-center p-8 bg-black/20 border border-white/[0.02] border-dashed rounded-[2.5rem] group/init overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover/init:opacity-100 transition-opacity"></div>
+
+                            {!assignedStructure ? (
+                                <div className="relative z-10 flex flex-col items-center text-center max-w-lg">
+                                    <div className="w-20 h-20 bg-white/[0.03] rounded-3xl border border-white/5 flex items-center justify-center mb-8 shadow-inner group-hover/init:scale-110 transition-transform duration-700">
+                                        <BookIcon className="w-10 h-10 text-white/10 group-hover/init:text-primary transition-colors duration-500" />
                                     </div>
-                                ))
+                                    <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight mb-4 group-hover/init:text-primary transition-colors">Node Unmapped</h4>
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] leading-relaxed mb-10">
+                                        This student node is currently in standby. Initialize the GENESIS_PROTOCOL to map institutional data based on their current grade profile.
+                                    </p>
+                                    <button
+                                        onClick={handleMapGenesisProtocol}
+                                        disabled={mappingInProgress}
+                                        className="px-12 py-5 bg-primary text-white hover:bg-white hover:text-black transition-all rounded-2xl font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl group/btn active:scale-95 disabled:opacity-50"
+                                    >
+                                        {mappingInProgress ? (
+                                            <span className="flex items-center gap-3">
+                                                <RefreshCwIcon className="w-4 h-4 animate-spin" /> SYNCHRONIZING_MATRIX...
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-3">
+                                                MAP GENESIS_PROTOCOL <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
                             ) : (
-                                <div className="col-span-1 md:col-span-2 lg:col-span-3 py-16 text-center bg-white/[0.01] border border-dashed border-white/10 rounded-[3rem] group/init overflow-hidden relative">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover/init:opacity-100 transition-opacity"></div>
-                                    <div className="relative z-10 flex flex-col items-center gap-8">
-                                        <div className="p-6 bg-white/5 rounded-[2rem] border border-white/10 shadow-inner group-hover/init:scale-110 transition-transform duration-700">
-                                            <WorkflowIcon className="w-12 h-12 text-white/20 group-hover/init:text-primary transition-colors" />
-                                        </div>
-                                        <div className="space-y-4">
-                                            <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Node Unmapped</h4>
-                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] max-w-md mx-auto leading-loose">
-                                                This student node is currently in standby. Initialize the GENESIS_PROTOCOL to map institutional fees based on their current grade profile.
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={handleMapGenesisProtocol}
-                                            disabled={mappingInProgress}
-                                            className="px-12 py-5 bg-primary text-white hover:bg-white hover:text-black transition-all rounded-[2rem] font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl relative overflow-hidden group/btn disabled:opacity-50"
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-full p-2">
+                                    {(assignedStructure.components || []).map((comp: any, i: number) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: i * 0.1 }}
+                                            className="bg-white/[0.03] border border-white/5 p-8 rounded-[2.5rem] flex flex-col justify-between hover:bg-white/[0.05] transition-all group/comp"
                                         >
-                                            {mappingInProgress ? (
-                                                <span className="flex items-center gap-4">
-                                                    <RefreshCwIcon className="w-4 h-4 animate-spin" /> SYNCHRONIZING_MATRIX...
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center gap-4">
-                                                    MAP GENESIS_PROTOCOL <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
-                                                </span>
-                                            )}
-                                        </button>
-                                    </div>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover/comp:bg-primary group-hover/comp:text-black transition-all">
+                                                    <WorkflowIcon className="w-5 h-5" />
+                                                </div>
+                                                <div className={`w-2 h-2 rounded-full ${totalPaid >= comp.amount ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-amber-500/40'}`}></div>
+                                            </div>
+                                            <div>
+                                                <p className="text-xl font-serif font-black text-white/90 uppercase tracking-tighter mb-1 select-none">{comp.name}</p>
+                                                <p className="text-sm font-mono font-black text-white/40">{formatCurrency(comp.amount, viewCurrency)}</p>
+                                            </div>
+                                        </motion.div>
+                                    ))}
                                 </div>
                             )}
                         </div>
 
-                        <div className="mt-12 pt-12 border-t border-white/5 flex justify-between items-center relative z-10">
-                            <div className="flex gap-10">
+                        <div className="mt-10 pt-8 border-t border-white/5 flex justify-between items-center relative z-10">
+                            <div className="flex gap-12">
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-white/10 uppercase tracking-widest">Protocol Integrity</p>
-                                    <p className={`text-xs font-black uppercase tracking-[0.3em] ${accountData.is_standby ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                    <p className="text-[8px] font-black text-white/10 uppercase tracking-widest">Registry Status</p>
+                                    <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${accountData.is_standby ? 'text-amber-500' : 'text-emerald-500'}`}>
                                         {accountData.is_standby ? 'STANDBY_MODE' : 'SYNCHRONIZED'}
                                     </p>
                                 </div>
@@ -590,62 +599,61 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                     <button
                                         onClick={handleMapGenesisProtocol}
                                         disabled={mappingInProgress}
-                                        className="flex items-center gap-3 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group/remap disabled:opacity-50"
+                                        className="flex items-center gap-3 text-[9px] font-black text-white/20 hover:text-primary transition-all uppercase tracking-widest group/remap"
                                     >
-                                        <RefreshCwIcon className={`w-3.5 h-3.5 text-white/40 group-hover/remap:text-primary transition-colors ${mappingInProgress ? 'animate-spin' : ''}`} />
-                                        <span className="text-[9px] font-black text-white/40 group-hover/remap:text-white uppercase tracking-widest">Remap Matrix</span>
+                                        <RefreshCwIcon className={`w-3.5 h-3.5 group-hover/remap:rotate-180 transition-transform ${mappingInProgress ? 'animate-spin' : ''}`} />
+                                        REMAP MATRIX
                                     </button>
                                 )}
                             </div>
-                            <div className="flex items-center gap-3">
-                                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Version: <span className="text-white/40">{assignedStructure?.version_label || 'v1.0.0'}</span></p>
-                                <button className="flex items-center gap-3 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-[0.4em] transition-all underline underline-offset-8 decoration-primary/40">
-                                    Full Matrix <ArrowRightIcon className="w-3.5 h-3.5" />
-                                </button>
+                            <div className="flex items-center gap-6">
+                                <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Matrix: <span className="text-white/40 select-all">FULL MATRIX</span></p>
+                                <ArrowRightIcon className="w-4 h-4 text-white/10" />
                             </div>
                         </div>
                     </div>
 
-                    {/* Financial Velocity Flow Map */}
-                    <div className="bg-primary/5 border border-primary/20 rounded-[4rem] p-12 relative overflow-hidden group shadow-3xl">
-                        <div className="absolute -right-20 -bottom-20 opacity-[0.03] group-hover:scale-125 transition-transform duration-[4000ms]">
+                    {/* Financial Velocity Flow (Right 1/4) */}
+                    <div className="xl:col-span-1 bg-black/40 border border-white/[0.03] rounded-[3rem] p-10 backdrop-blur-3xl overflow-hidden group shadow-2xl relative">
+                        <div className="absolute -right-20 -bottom-20 opacity-[0.02] group-hover:scale-125 transition-transform duration-[5000ms]">
                             <ActivityIcon className="w-96 h-96 text-primary" />
                         </div>
 
-                        <div className="relative z-10 h-full flex flex-col">
-                            <div className="mb-12">
+                        <div className="relative z-10 flex flex-col h-full">
+                            <div className="mb-10">
                                 <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Financial Velocity Flow</h4>
-                                <p className="text-[10px] font-black text-primary/40 uppercase tracking-[0.4em] mt-3">Active Reconciliation Trajectory</p>
+                                <p className="text-[9px] font-black text-primary/40 uppercase tracking-[0.4rem] mt-3">Active Reconciliation Trajectory</p>
                             </div>
 
                             <div className="flex-1 space-y-10 relative">
-                                <div className="absolute left-6 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary via-emerald-500/40 to-white/5"></div>
+                                <div className="absolute left-6 top-6 bottom-6 w-[1px] bg-gradient-to-b from-primary via-emerald-500/30 to-white/5 opacity-50"></div>
 
                                 {[
-                                    { step: 'Billing Initiated', status: 'COMPLETED', date: 'Cycle Start', icon: <ReceiptIcon className="w-4 h-4" />, color: 'bg-primary' },
-                                    { step: 'Payment Received', status: totalPaid > 0 ? 'ACTIVE' : 'PENDING', date: totalPaid > 0 ? 'Last Tx: 2 Days Ago' : 'Awaiting Settlement', icon: <CreditCardIcon className="w-4 h-4" />, color: totalPaid > 0 ? 'bg-emerald-500' : 'bg-white/10' },
-                                    { step: 'Ledger Reconciled', status: totalPaid >= totalAssigned ? 'VERIFIED' : 'WAITING', date: totalPaid >= totalAssigned ? 'Fully Settled' : 'Pending Fulfillment', icon: <ShieldCheckIcon className="w-4 h-4" />, color: totalPaid >= totalAssigned ? 'bg-emerald-500' : 'bg-white/5' },
-                                    { step: 'Integrity Locked', status: accountData.integrity_score > 90 ? 'LOCKED' : 'OPEN', date: 'Registry Immutable', icon: <WorkflowIcon className="w-4 h-4" />, color: accountData.integrity_score > 90 ? 'bg-emerald-500' : 'bg-white/5' }
+                                    { step: 'Billing Initiated', status: 'Analysis', icon: <ReceiptIcon className="w-4 h-4" />, color: 'bg-primary' },
+                                    { step: 'Payment Received', status: totalPaid > 0 ? 'Verified' : 'Pending', icon: <CreditCardIcon className="w-4 h-4" />, color: totalPaid > 0 ? 'bg-emerald-500' : 'bg-white/10' },
+                                    { step: 'Ledger Reconciled', status: totalPaid >= totalAssigned ? 'Verified' : 'Standby', icon: <ShieldCheckIcon className="w-4 h-4" />, color: totalPaid >= totalAssigned ? 'bg-emerald-500' : 'bg-white/10' },
+                                    { step: 'Integrity Locked', status: accountData.integrity_score > 90 ? 'Secured' : 'Evaluation', icon: <WorkflowIcon className="w-4 h-4" />, color: accountData.integrity_score > 90 ? 'bg-emerald-500' : 'bg-white/10' }
                                 ].map((node, i) => (
-                                    <div key={i} className="flex gap-10 items-start relative z-10 group/flow">
-                                        <div className={`w-12 h-12 rounded-[1.25rem] ${node.color} flex items-center justify-center text-black shadow-2xl transition-all duration-500 group-hover/flow:scale-110`}>
+                                    <div key={i} className="flex gap-8 items-start relative z-10 group/node transition-all hover:translate-x-1">
+                                        <div className={`w-12 h-12 rounded-[1.25rem] ${node.color} flex items-center justify-center text-black shadow-2xl transition-all duration-500`}>
                                             {node.icon}
                                         </div>
-                                        <div>
-                                            <p className="text-[13px] font-black text-white uppercase tracking-tighter leading-none mb-2">{node.step}</p>
-                                            <p className={`text-[9px] font-black uppercase tracking-widest ${node.status === 'COMPLETED' || node.status === 'ACTIVE' || node.status === 'VERIFIED' ? 'text-emerald-500' : 'text-white/20'}`}>{node.status}</p>
-                                            <p className="text-[8px] font-medium text-white/20 uppercase mt-2 tracking-[0.2em] italic">{node.date}</p>
+                                        <div className="pt-1">
+                                            <p className="text-[12px] font-black text-white uppercase tracking-tighter mb-1.5">{node.step}</p>
+                                            <p className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded border ${node.color.replace('bg-', 'text-').replace('-500', '-400')} ${node.color.replace('bg-', 'bg-').replace('-500', '-500/10')} ${node.color.replace('bg-', 'border-').replace('-500', '-500/20')}`}>
+                                                {node.status}
+                                            </p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="mt-12 p-6 bg-white/[0.03] border border-white/5 rounded-3xl">
+                            <div className="mt-12 p-6 bg-white/[0.02] border border-white/5 rounded-[2rem]">
                                 <div className="flex justify-between items-center mb-4">
-                                    <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Collection Velocity</p>
-                                    <p className="text-xl font-serif font-black text-emerald-500 italic">{(recoveryRate).toFixed(1)}%</p>
+                                    <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Collection Velocity</p>
+                                    <p className="text-xl font-serif font-black text-emerald-500 italic leading-none">{recoveryRate.toFixed(1)}%</p>
                                 </div>
-                                <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden">
+                                <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${recoveryRate}%` }}
@@ -658,72 +666,77 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     </div>
                 </div>
 
-                {/* Layer 4 – Intelligence & Integrity Matrix */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    <div className="bg-primary/10 border border-primary/20 rounded-[4rem] p-12 relative overflow-hidden group shadow-3xl">
-                        <div className="absolute top-0 right-0 p-16 opacity-[0.05] group-hover:scale-125 transition-transform duration-[3000ms]">
+                {/* Layer 4 – Intelligence & Metrics Strip */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Intelligence Card */}
+                    <div className="lg:col-span-2 bg-primary/5 border border-primary/20 rounded-[3rem] p-10 relative overflow-hidden group shadow-2xl">
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.05] group-hover:scale-125 transition-transform duration-[3000ms]">
                             <SparklesIcon className="w-64 h-64 text-primary" />
                         </div>
-                        <div className="relative z-10 space-y-8">
-                            <div className="flex items-center gap-5">
-                                <div className="p-4 bg-primary rounded-2xl text-white shadow-2xl">
-                                    <SparklesIcon className="w-6 h-6" />
+                        <div className="relative z-10 flex flex-col justify-center h-full">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="p-3.5 bg-primary rounded-2xl text-white shadow-2xl ring-1 ring-white/10 group-hover:bg-white group-hover:text-primary transition-all duration-500">
+                                    <SparklesIcon className="w-5 h-5" />
                                 </div>
-                                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Financial Intelligence Oracle</h3>
+                                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight leading-none">Financial Intelligence Oracle</h3>
                             </div>
-                            <p className="text-2xl font-serif italic text-white/80 leading-snug tracking-tight border-l-4 border-primary/40 pl-8 py-2">
-                                {aiInsight || "Synchronizing with the neural financial node..."}
+                            <p className="text-2xl font-serif italic text-white/90 leading-tight tracking-tight border-l-2 border-primary/30 pl-8 transition-colors group-hover:text-white">
+                                {aiInsight || "Calibrating neural financial nodes..."}
                             </p>
                         </div>
                     </div>
 
-                    <div className="bg-[#12141c]/60 border border-white/5 rounded-[4rem] p-12 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
-                        <div className="absolute -bottom-10 -right-10 opacity-[0.02] group-hover:scale-110 transition-transform duration-1000">
+                    {/* Integrity Card */}
+                    <div className="lg:col-span-1 bg-[#12141c]/40 border border-white/[0.03] rounded-[3rem] p-10 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
+                        <div className="absolute -bottom-10 -right-10 opacity-[0.02] group-hover:scale-110 transition-transform">
                             <SecurityIcon className="w-80 h-80 text-emerald-500" />
                         </div>
                         <div className="relative z-10 flex flex-col h-full justify-between">
-                            <div className="flex items-center justify-between mb-10">
+                            <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Institutional Integrity Node</h4>
-                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Compliance & Reliability Index</p>
+                                    <h4 className="text-xl font-serif font-black text-white uppercase tracking-tight">Institutional Integrity Node</h4>
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Index Analysis</p>
                                 </div>
-                                <div className="text-6xl font-serif font-black text-emerald-500 drop-shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                                <div className="text-6xl font-serif font-black text-emerald-500 tabular-nums">
                                     {accountData.integrity_score}%
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-[2rem] space-y-2">
-                                    <p className="text-[9px] font-black text-emerald-500/60 uppercase tracking-widest">Payment Probability</p>
-                                    <p className="text-lg font-serif font-black text-white uppercase">{accountData.integrity_score > 90 ? 'ULTRA_HIGH' : accountData.integrity_score > 70 ? 'HIGH' : 'MODERATE'}</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-2xl space-y-1 group-hover:bg-white/[0.05] transition-all">
+                                    <p className="text-[8px] font-black text-emerald-500/60 uppercase tracking-widest leading-none">Status</p>
+                                    <p className="text-sm font-serif font-black text-white uppercase">{accountData.integrity_score > 80 ? 'HIGH' : 'MODERATE'}</p>
                                 </div>
-                                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-[2rem] space-y-2">
-                                    <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest">Registry Stability</p>
-                                    <p className="text-lg font-serif font-black text-white uppercase">ACTIVE_PROTOCOL</p>
+                                <div className="bg-white/[0.03] border border-white/5 p-6 rounded-2xl space-y-1 group-hover:bg-white/[0.05] transition-all">
+                                    <p className="text-[8px] font-black text-primary/60 uppercase tracking-widest leading-none">Protocol</p>
+                                    <p className="text-sm font-serif font-black text-white uppercase">ACTIVE_PROTOCOL</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Layer 4 – Forensic Ledger Execution */}
-                <div className="bg-[#12141c]/60 border border-white/5 rounded-[4rem] shadow-3xl overflow-hidden backdrop-blur-3xl">
-                    <div className="p-10 lg:p-14 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-                        <div>
-                            <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tight">Deep Ledger Registry</h3>
-                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] mt-3">Full Transactional Audit & Historical Vector Stream</p>
+                {/* Layer 5 – Deep Ledger Registry */}
+                <div className="bg-[#12141c]/40 border border-white/5 rounded-[4rem] shadow-3xl overflow-hidden backdrop-blur-3xl relative">
+                    <div className="p-10 lg:p-14 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
+                        <div className="group/title">
+                            <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tight group-hover/title:text-primary transition-colors flex items-center gap-4">
+                                Deep Ledger Registry
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            </h3>
+                            <p className="text-[10px] font-black text-white/25 uppercase tracking-[0.5em] mt-3">Full Transactional Audit & Historical Vector Stream</p>
                         </div>
-                        <div className="flex gap-4">
-                            <div className="relative group">
-                                <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
+                        <div className="flex gap-4 w-full md:w-auto">
+                            <div className="relative group flex-1">
+                                <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors duration-300" />
                                 <input
                                     type="text"
                                     placeholder="SEARCH TRANSACTION..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-14 pr-8 py-4 bg-black/40 border border-white/5 rounded-2xl text-[10px] font-black text-white outline-none focus:border-primary/40 uppercase tracking-widest transition-all w-64"
+                                    className="pl-14 pr-8 py-4 bg-black/40 border border-white/5 rounded-2xl text-[10px] font-black text-white outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 uppercase tracking-widest transition-all w-full md:w-64"
                                 />
                             </div>
-                            <button className="px-8 py-4 bg-primary text-white hover:bg-primary/80 transition-all rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl active:scale-95">Record Settlement</button>
+                            <button className="px-10 py-4 bg-primary text-white hover:bg-white hover:text-black transition-all rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl active:translate-y-0.5">Record Settlement</button>
                         </div>
                     </div>
 
@@ -789,7 +802,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
 
                         <div className="flex flex-wrap items-center justify-center lg:justify-start gap-16 relative z-10">
                             <div className="space-y-3">
-                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Total Registry Debit</p>
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Total Registry Debit (Net)</p>
                                 <p className="text-3xl font-serif font-black text-white/60 tracking-tighter italic">{formatCurrency(totalAssigned, viewCurrency)}</p>
                             </div>
                             <div className="w-px h-12 bg-white/5"></div>

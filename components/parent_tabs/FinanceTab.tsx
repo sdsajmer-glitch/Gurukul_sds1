@@ -17,6 +17,9 @@ import { InfoIcon } from '../icons/InfoIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import { ShieldAlertIcon } from '../icons/ShieldAlertIcon';
+import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+import { LockIcon } from '../icons/LockIcon';
+import { IdCardIcon } from '../icons/IdCardIcon';
 import PremiumAvatar from '../common/PremiumAvatar';
 
 interface FinanceTabProps {
@@ -114,47 +117,73 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         </div>
     );
 
-    const NodeMap = ({ progress }: { progress: number }) => (
-        <div className="relative w-full h-20 mb-10 flex items-center justify-between px-8 md:px-14 mt-4">
-            <div className="absolute top-1/2 left-8 md:left-14 right-8 md:right-14 h-[1px] bg-white/5 border-t border-dashed border-white/10 z-0"></div>
-            {/* Animated Flow Line */}
-            <motion.div
-                className="absolute top-1/2 left-8 md:left-14 h-[2px] bg-gradient-to-r from-amber-600 via-orange-400 to-amber-500 z-10 origin-left shadow-[0_0_15px_rgba(245,158,11,0.5)]"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: progress / 100 }}
-                transition={{ duration: 2.5, ease: "easeInOut" }}
-                style={{ width: 'calc(100% - 112px)' }}
-            />
+    const NodeMap = ({ progress }: { progress: number }) => {
+        const nodes = [
+            { id: 'enrollment', label: 'Enrollment', description: 'Student registration verified' },
+            { id: 'year', label: 'Year Activated', description: 'Academic cycle initialized' },
+            { id: 'fee', label: 'Fee Configured', description: 'Grade mapping established' },
+            { id: 'ledger', label: 'Ledger Generated', description: 'Institutional ledger created' },
+            { id: 'installments', label: 'Installments Created', description: 'Payment schedule defined' },
+            { id: 'payments', label: 'Payments Enabled', description: 'Operational state active' }
+        ];
 
-            {/* Stroboscopic Connector Pulses */}
-            {progress > 0 && (
+        return (
+            <div className="relative w-full h-32 mb-12 flex items-center justify-between px-4 md:px-10 mt-6">
+                <div className="absolute top-1/2 left-4 md:left-10 right-4 md:right-10 h-[1px] bg-white/5 border-t border-dashed border-white/10 z-0"></div>
+                {/* Animated Flow Line */}
                 <motion.div
-                    animate={{ left: ["5%", "95%"], opacity: [0, 1, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    className="absolute top-[calc(50%-4px)] w-2 h-2 bg-amber-400 rounded-full blur-[2px] z-10"
+                    className="absolute top-1/2 left-4 md:left-10 h-[2px] bg-gradient-to-r from-amber-600 via-orange-400 to-amber-500 z-10 origin-left shadow-[0_0_15px_rgba(245,158,11,0.5)]"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: progress / 100 }}
+                    transition={{ duration: 2.5, ease: "easeInOut" }}
+                    style={{ width: 'calc(100% - 80px)' }}
                 />
-            )}
 
-            {['ENROLLMENT', 'YEAR', 'FEES', 'LEDGER', 'PAYMENTS'].map((node, i) => (
-                <div key={node} className="relative z-20 flex flex-col items-center">
-                    <motion.div
-                        animate={progress >= (i * 25) ? {
-                            scale: [1, 1.15, 1],
-                            borderColor: ['rgba(245,158,11,0.1)', 'rgba(245,158,11,0.6)', 'rgba(245,158,11,0.1)'],
-                            boxShadow: progress >= (i * 33) ? ['0 0 0px rgba(245,158,11,0)', '0 0 20px rgba(245,158,11,0.3)', '0 0 0px rgba(245,158,11,0)'] : []
-                        } : {}}
-                        transition={{ duration: 4, repeat: Infinity }}
-                        className={clsx(
-                            "w-12 h-12 rounded-2xl border flex items-center justify-center transition-all duration-1000 backdrop-blur-md",
-                            progress >= (i * 25) ? "bg-amber-500/10 border-amber-500/50 text-amber-500" : "bg-black/60 border-white/5 text-white/5"
-                        )}
-                    >
-                        <div className="text-[10px] font-black">{String(i + 1).padStart(2, '0')}</div>
-                    </motion.div>
-                </div>
-            ))}
-        </div>
-    );
+                {nodes.map((node, i) => {
+                    const stepThreshold = (i / (nodes.length - 1)) * 100;
+                    const isActive = progress >= stepThreshold;
+                    const isProcessing = progress > (i - 1) / (nodes.length - 1) * 100 && progress < stepThreshold;
+
+                    return (
+                        <div key={node.id} className="relative z-20 flex flex-col items-center group/node">
+                            <motion.div
+                                animate={isActive ? {
+                                    scale: [1, 1.1, 1],
+                                    borderColor: ['rgba(245,158,11,0.2)', 'rgba(245,158,11,0.6)', 'rgba(245,158,11,0.2)'],
+                                    boxShadow: isActive ? ['0 0 0px rgba(245,158,11,0)', '0 0 20px rgba(245,158,11,0.2)', '0 0 0px rgba(245,158,11,0)'] : []
+                                } : {}}
+                                transition={{ duration: 4, repeat: Infinity }}
+                                className={clsx(
+                                    "w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-1000 backdrop-blur-md cursor-help",
+                                    isActive ? "bg-amber-500/10 border-amber-500/50 text-amber-500" :
+                                        isProcessing ? "bg-amber-500/5 border-amber-500/30 text-amber-500/50" : "bg-black/60 border-white/5 text-white/5"
+                                )}
+                            >
+                                {isActive ? (
+                                    <CheckCircleIcon className="w-4 h-4" />
+                                ) : (
+                                    <div className="text-[9px] font-black">{String(i + 1).padStart(2, '0')}</div>
+                                )}
+                            </motion.div>
+
+                            {/* Tooltip on Hover */}
+                            <div className="absolute -top-12 opacity-0 group-hover/node:opacity-100 transition-opacity bg-black border border-white/10 p-2 rounded text-[8px] whitespace-nowrap z-50 pointer-events-none">
+                                <div className="font-bold text-amber-500 uppercase">{node.label}</div>
+                                <div className="text-white/40">{node.description}</div>
+                            </div>
+
+                            <div className={clsx(
+                                "absolute -bottom-8 w-max text-[7px] font-black uppercase tracking-[0.2em] text-center max-w-[60px] md:max-w-none md:text-[8px]",
+                                isActive ? "text-amber-500/60" : "text-white/10"
+                            )}>
+                                {node.label}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
 
     const DataParticles = () => (
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
@@ -290,8 +319,8 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                 return;
             }
 
-            // SECURITY UPGRADE: v4 implements backend ownership checks
-            const { data, error } = await supabase.rpc('get_student_finance_detail_v4', {
+            // SECURITY UPGRADE: v5 implements 6-step lifecycle architecture
+            const { data, error } = await supabase.rpc('get_student_finance_detail_v5', {
                 p_student_id: selectedStudentId,
                 p_cycle_id: selectedOpt.db_id
             });
@@ -362,12 +391,13 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                 const readinessError = data?.error || 'UNKNOWN_GAP';
                 const friendlyErrors: Record<string, string> = {
                     'YEAR_NOT_ACTIVE': 'No active academic year found. Contact administration.',
-                    'GRADE_MAPPING_MISSING': 'Fee structure not configured for this grade. Admin action required.',
-                    'PAYMENT_PLAN_MISSING': 'Fee components not defined. Admin action required.',
-                    'STUDENT_NOT_FOUND': 'Student profile record not found.',
+                    'FEE_CONFIG_MISSING': 'Fee structure not globalized for this grade. Admin required.',
+                    'PAYMENT_PLAN_MISSING': 'Fee components (Tuition/Lab) not defined. Admin required.',
+                    'STUDENT_NOT_FOUND': 'Student profile record not found in Bureau.',
                     'STUDENT_PROFILE_NOT_FOUND': 'Student profile record incomplete.',
-                    'NO_ACTIVE_ACADEMIC_YEAR': 'No active academic cycle on record.',
-                    'ZERO_FEE_AMOUNT': 'Fee structure found but total is ₹0. Admin review needed.',
+                    'NO_ACTIVE_ACADEMIC_YEAR': 'Global academic cycle not activated.',
+                    'ZERO_FEE_AMOUNT': 'Fee structure exists but ledger sum is ₹0.',
+                    'ENROLLMENT_PENDING': 'Student enrollment state is not marked as ACTIVE.'
                 };
                 setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: readinessError } : s));
                 setError(friendlyErrors[readinessError] || `Institutional Sync Gap: ${readinessError}`);
@@ -739,7 +769,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                     </div>
 
                                     <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">
-                                        Finance System <span className="text-amber-500">Synchronization</span>
+                                        Finance Activation <span className="text-amber-500">Workflow</span>
                                     </h3>
 
                                     <div className="flex items-center gap-4 mb-8">
@@ -771,24 +801,22 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
 
                                             <div className="flex items-center justify-between relative z-10">
                                                 <div className="flex items-center gap-4 text-left">
-                                                    <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center relative overflow-hidden">
-                                                        <div className="absolute inset-0 bg-emerald-500/5 animate-pulse"></div>
-                                                        <CheckCircleIcon className="w-6 h-6 text-emerald-500 relative z-10" />
+                                                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center relative shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                                                        <ShieldCheckIcon className="w-7 h-7 text-emerald-500 relative z-10" />
                                                     </div>
                                                     <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Institutional Node</div>
-                                                            <div className="h-px w-4 bg-white/5"></div>
-                                                            <div className="text-[9px] font-bold text-amber-500/50 uppercase">{financeDetail?.summary?.branch?.code || 'CIS-502'}</div>
+                                                        <div className="flex items-center gap-3 mb-1">
+                                                            <div className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em]">FEE MAPPING INTELLIGENCE NODE</div>
+                                                            <div className="px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded text-[8px] font-black text-indigo-500 uppercase">{financeDetail?.summary?.branch?.code || 'CIS'}</div>
                                                         </div>
-                                                        <div className="text-xl font-black text-white leading-tight">
+                                                        <div className="text-2xl font-black text-white leading-tight uppercase tracking-tighter">
                                                             {financeDetail?.summary?.branch?.name || selectedStudent?.branch_name || 'H.Q. Institutional Center'}
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="hidden sm:block text-right">
-                                                    <div className="text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/5 px-3 py-1.5 rounded-full border border-emerald-500/10 shadow-lg animate-pulse">
-                                                        NODE-ACTIVE
+                                                    <div className="text-[9px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/5 px-4 py-2 rounded-xl border border-amber-500/10 shadow-lg">
+                                                        NON-ACTIVE
                                                     </div>
                                                 </div>
                                             </div>
@@ -822,7 +850,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                     {/* 4. DYNAMIC NODE TOPOLOGY MAP */}
                                     <NodeMap progress={financeDetail?.summary?.sync_progress || 25} />
 
-                                    <div className="w-full max-w-lg">
+                                    <div className="w-full max-w-lg text-center mt-4">
                                         <p className="text-white/40 italic text-[11px] md:text-sm mx-auto mb-2 opacity-60">
                                             The configuration for the {activeCycle?.year_name} cycle has been initialized but requires final administrative authentication point at <span className="text-white/60">{financeDetail?.summary?.branch?.name || 'the primary branch'}</span>.
                                         </p>
@@ -841,8 +869,8 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                         <div className="relative flex-1 max-w-[200px]">
                                             {isTransmitting && (
                                                 <div className="absolute inset-0 z-0">
-                                                    <div className="absolute inset-0 bg-amber-500/20 rounded-2xl animate-ping"></div>
-                                                    <div className="absolute inset-0 bg-amber-500/10 rounded-2xl animate-ping" style={{ animationDelay: '500ms' }}></div>
+                                                    <div className="absolute inset-0 bg-emerald-500/20 rounded-2xl animate-ping"></div>
+                                                    <div className="absolute inset-0 bg-emerald-500/10 rounded-2xl animate-ping" style={{ animationDelay: '500ms' }}></div>
                                                 </div>
                                             )}
                                             <button
@@ -853,12 +881,12 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                                 }}
                                                 disabled={notified || isSubmitting}
                                                 className={clsx(
-                                                    "w-full px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all transform active:scale-95 flex items-center justify-center gap-3 shadow-2xl relative z-10",
-                                                    notified ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-orange-400 text-black"
+                                                    "w-full px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all transform active:scale-95 flex items-center justify-center gap-3 shadow-2xl relative z-10 font-bold",
+                                                    notified ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"
                                                 )}
                                             >
-                                                {isSubmitting ? <Spinner size="sm" /> : notified ? <CheckCircleIcon className="w-4 h-4" /> : <ClockIcon className="w-4 h-4" />}
-                                                {notified ? 'Auditor Notified' : 'Notify Auditor'}
+                                                {isSubmitting ? <Spinner size="sm" /> : notified ? <ShieldCheckIcon className="w-4 h-4" /> : <LockIcon className="w-4 h-4" />}
+                                                {notified ? 'VERIFIED NOTIFY' : 'AUTHENTICATE NODE'}
                                             </button>
                                         </div>
                                     </div>
@@ -870,10 +898,16 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                                 initial={{ opacity: 0, y: -10 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: -10 }}
-                                                className="mt-8 p-6 bg-white/5 border border-white/10 rounded-2xl text-left max-w-xl"
+                                                className="mt-8 p-6 bg-[#0a0a0b] border border-amber-500/20 rounded-2xl text-left max-w-xl relative"
                                             >
-                                                <h4 className="text-xs font-black text-amber-500 uppercase tracking-widest mb-3">Synchronization Protocol</h4>
-                                                <ul className="space-y-2 text-[11px] text-white/60 leading-relaxed">
+                                                <div className="absolute top-0 right-0 p-4 opacity-5">
+                                                    <ShieldAlertIcon className="w-20 h-20 text-amber-500" />
+                                                </div>
+                                                <h4 className="text-xs font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                    <InfoIcon className="w-4 h-4" />
+                                                    Synchronization Protocol
+                                                </h4>
+                                                <ul className="space-y-3 text-[11px] text-white/60 leading-relaxed relative z-10">
                                                     {[
                                                         { id: '01', text: 'Verification of student enrollment block on the regional ledger.' },
                                                         { id: '02', text: 'Administrative audit of grade-wise fee components (Tuition, Lab).' },
@@ -884,10 +918,10 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                                             initial={{ opacity: 0, x: -10 }}
                                                             animate={{ opacity: 1, x: 0 }}
                                                             transition={{ delay: idx * 0.15 }}
-                                                            className="flex gap-2"
+                                                            className="flex gap-3 items-start"
                                                         >
-                                                            <span className="text-amber-500 font-bold">{item.id}.</span>
-                                                            <span>{item.text}</span>
+                                                            <span className="w-5 h-5 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-[9px] font-black text-amber-500 shrink-0">{item.id}</span>
+                                                            <span className="pt-0.5">{item.text}</span>
                                                         </motion.li>
                                                     ))}
                                                 </ul>
@@ -895,74 +929,77 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                         )}
                                     </AnimatePresence>
 
-                                    {/* Forensic Pulse terminal */}
+                                    {/* TERMINAL ENHANCEMENT */}
                                     <div className="mt-12 w-full max-w-lg relative group/term">
                                         <div className="absolute -inset-0.5 bg-white/5 rounded-2xl blur-sm opacity-50"></div>
-                                        <div className="relative bg-[#0a0a0b] rounded-2xl p-5 border border-white/10 overflow-hidden">
+                                        <div className="relative bg-[#0a0a0b] rounded-2xl p-5 border border-white/10 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                                             <div className="flex items-center justify-between mb-5 border-b border-white/5 pb-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex gap-1">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500/50"></div>
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500/50"></div>
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/50"></div>
+                                                    <div className="flex gap-1.5">
+                                                        <div className="w-2 h-2 rounded-full bg-red-500/50"></div>
+                                                        <div className="w-2 h-2 rounded-full bg-amber-500/50"></div>
+                                                        <div className="w-2 h-2 rounded-full bg-emerald-500/50"></div>
                                                     </div>
-                                                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Forensic Pulse Terminal</span>
+                                                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">Finance Isolation Terminal</span>
                                                 </div>
-                                                <button onClick={handleRefresh} disabled={isRefreshing} className="text-[9px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20 hover:bg-emerald-500/20 transition-all uppercase flex items-center gap-2">
-                                                    <div className={clsx("w-1.5 h-1.5 rounded-full bg-emerald-500", isRefreshing && "animate-ping")}></div>
-                                                    {isRefreshing ? 'Syncing...' : 'Live'}
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                                    <span className="text-[9px] font-black text-emerald-500 uppercase">Live</span>
+                                                </div>
                                             </div>
 
-                                            <div className="space-y-3 font-mono">
+                                            <div className="space-y-4 font-mono">
                                                 {terminalSteps.map((step) => (
-                                                    <div key={step.id} className="flex items-center justify-between text-[10px]">
-                                                        <span className="text-white/20 italic tracking-tighter">{step.id}. {step.label}</span>
+                                                    <div key={step.id} className="flex items-center justify-between text-[11px] group/line cursor-default">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-white/10">{step.id}.</span>
+                                                            <span className="text-white/40 tracking-tight group-hover/line:text-white/60 transition-colors uppercase">{step.label}</span>
+                                                        </div>
                                                         <span className={clsx(
-                                                            "font-black tracking-widest",
-                                                            step.status === 'OK' || step.status === 'STABLE' || step.status === 'VERIFIED' || step.status === 'SYNC_COMPLETE' ? "text-emerald-500/80" :
+                                                            "font-black tracking-[0.1em]",
+                                                            step.status === 'OK' || step.status === 'STABLE' || step.status === 'VERIFIED' || step.status === 'SYNC_COMPLETE' ? "text-emerald-500" :
                                                                 step.status === 'WAITING' || step.status.includes('...') ? "text-amber-500 animate-pulse" : "text-red-500"
                                                         )}>
                                                             {step.status}
                                                         </span>
                                                     </div>
                                                 ))}
-                                                <div className="pt-3 border-t border-white/5 mt-3 flex items-center justify-between">
-                                                    <span className="text-[9px] font-black text-amber-500/40 uppercase tracking-widest">Current Protocol:</span>
-                                                    <span className="text-xs font-black text-amber-500 uppercase tracking-[0.2em] drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">
-                                                        {financeDetail?.summary?.sync_phase || (isSubmitting ? 'SYNCHRONIZING' : 'VERIFICATION')}
-                                                    </span>
+
+                                                <div className="pt-4 border-t border-white/5 mt-4 flex items-center justify-between">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">Active Subsystem</span>
+                                                        <span className="text-xs font-black text-amber-500 uppercase tracking-[0.2em]">{(financeDetail?.summary?.sync_phase || (isSubmitting ? 'SYNCHRONIZING' : 'VERIFICATION'))}</span>
+                                                    </div>
+                                                    <button className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[9px] font-black uppercase rounded-md hover:bg-amber-500/20 transition-all">
+                                                        Verify Tracker
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Verification Badges */}
-                                    <div className="mt-12 pt-8 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-6 opacity-30 group-hover:opacity-70 transition-all duration-700 w-full max-w-lg">
-                                        <div className="flex flex-col items-center">
-                                            <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1">Standard</div>
-                                            <div className="text-[10px] font-black text-emerald-500 uppercase">ISO-27001</div>
-                                        </div>
-                                        <div className="flex flex-col items-center">
-                                            <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1">Protocol</div>
-                                            <div className="text-[10px] font-black text-amber-500 uppercase">RBAC-SYNC</div>
-                                        </div>
-                                        <div className="flex flex-col items-center">
-                                            <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1">Encryption</div>
-                                            <div className="text-[10px] font-black text-indigo-500 uppercase">AES-256</div>
-                                        </div>
-                                        <div className="flex flex-col items-center">
-                                            <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1">Audit Node</div>
-                                            <div className="text-[10px] font-black text-purple-400 uppercase">MD-572</div>
-                                        </div>
+                                    {/* BOTTOM STATUS GRID */}
+                                    <div className="mt-12 w-full max-w-lg grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {[
+                                            { label: 'Inst. Plan', value: '2025-26 | PRI', color: 'text-blue-400' },
+                                            { label: 'Verification', value: 'NON-SYNC', color: 'text-amber-400' },
+                                            { label: 'Auditor', value: 'MD-572', color: 'text-emerald-400' },
+                                            { label: 'Audit Cert', value: 'NO-SIGN', color: 'text-red-400' }
+                                        ].map((box, i) => (
+                                            <div key={i} className="bg-white/[0.02] border border-white/5 p-3 rounded-xl flex flex-col items-center">
+                                                <div className="text-[7px] font-black text-white/20 uppercase tracking-widest mb-1">{box.label}</div>
+                                                <div className={clsx("text-[9px] font-black uppercase", box.color)}>{box.value}</div>
+                                            </div>
+                                        ))}
                                     </div>
 
                                     {/* Digital Signature Anchor */}
-                                    <div className="absolute bottom-6 left-8 flex flex-col items-start opacity-20 group-hover:opacity-40 transition-opacity">
-                                        <div className="text-[7px] font-black text-white/40 uppercase tracking-[0.3em] mb-2">Digital Audit Signature</div>
+                                    <div className="mt-12 flex flex-col items-center opacity-20">
+                                        <div className="text-[7px] font-black text-white/40 uppercase tracking-[0.4em] mb-2">Institutional Digital Signature</div>
                                         <div className="flex gap-2 items-center">
-                                            <div className="w-8 h-[1px] bg-white/20"></div>
-                                            <div className="text-[10px] font-serif italic text-white/60">G-OS/Finance_Core</div>
+                                            <div className="w-12 h-[1px] bg-white/20"></div>
+                                            <div className="text-[9px] font-serif italic text-white/60">G-OS/Core_Finance_Node</div>
+                                            <div className="w-12 h-[1px] bg-white/20"></div>
                                         </div>
                                     </div>
                                 </div>

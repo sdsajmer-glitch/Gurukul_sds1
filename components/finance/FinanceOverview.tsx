@@ -37,6 +37,7 @@ interface FinanceOverviewProps {
         hasLedger: boolean;
         missingSteps: string[];
     };
+    recentTransactions: import('../../types').FinancialTransaction[];
 }
 
 const formatCurrency = (amount: number, currency: CurrencyCode) => {
@@ -95,7 +96,8 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
     runOracle,
     aiInsight,
     isAnalyzing,
-    readiness
+    readiness,
+    recentTransactions = []
 }) => {
     const isLedgerEmpty = data.total_assigned === 0;
 
@@ -106,7 +108,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 <KPIBlock
                     title="Total Assigned"
                     value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_assigned, currency)}
-                    trend={isLedgerEmpty ? undefined : "+12.5%"}
+                    trend={isLedgerEmpty ? undefined : "Baseline"}
                     trendUp={true}
                     icon={<TrendingUpIcon className="w-6 h-6" />}
                     color="bg-primary"
@@ -115,7 +117,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 <KPIBlock
                     title="Total Collected"
                     value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_collected, currency)}
-                    trend={isLedgerEmpty ? undefined : "92%"}
+                    trend={isLedgerEmpty ? undefined : `${data.collection_efficiency}%`}
                     trendUp={true}
                     icon={<CheckCircleIcon className="w-6 h-6" />}
                     color="bg-emerald-500"
@@ -124,32 +126,34 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 <KPIBlock
                     title="Outstanding"
                     value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_pending, currency)}
-                    trend={isLedgerEmpty ? 'Inactive' : "Overdue"}
-                    trendUp={false}
+                    trend={isLedgerEmpty ? 'Inactive' : (data.outstanding_ratio > 20 ? "High" : "Low")}
+                    trendUp={data.outstanding_ratio <= 20}
                     icon={<ClockIcon className="w-6 h-6" />}
                     color="bg-amber-500"
                     onClick={() => onNavigate('accounts', { filter: 'pending' })}
                 />
                 <KPIBlock
                     title="Active Pending"
-                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_pending * 0.4, currency)}
+                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_pending - data.total_overdue, currency)}
+                    trend={isLedgerEmpty ? undefined : "Current"}
+                    trendUp={true}
                     icon={<ClockIcon className="w-6 h-6" />}
                     color="bg-indigo-500"
                 />
                 <KPIBlock
                     title="Overdue Critical"
                     value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_overdue, currency)}
-                    trend={isLedgerEmpty ? 'Zero Risk' : "High Risk"}
-                    trendUp={false}
+                    trend={isLedgerEmpty ? 'Zero Risk' : (data.total_overdue > 0 ? "Recovery Required" : "Secure")}
+                    trendUp={data.total_overdue === 0}
                     icon={<AlertTriangleIcon className="w-6 h-6" />}
                     color="bg-red-500"
                     onClick={() => onNavigate('accounts', { filter: 'overdue' })}
                 />
                 <KPIBlock
                     title="Burn Rate"
-                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.monthly_collection * 0.8, currency)}
-                    trend={isLedgerEmpty ? 'N/A' : "Optimal"}
-                    trendUp={true}
+                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_expense_30d || data.monthly_collection * 0.72, currency)}
+                    trend={isLedgerEmpty ? 'N/A' : (data.burn_rate_stability > 90 ? "Stable" : "Volatile")}
+                    trendUp={data.burn_rate_stability > 90}
                     icon={<TrendingUpIcon className="w-6 h-6" />}
                     color="bg-purple-500"
                 />
@@ -183,7 +187,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            <RevenueTrendChart total={data.total_collected} />
+                            <RevenueTrendChart total={data.total_collected} expensesTotal={data.total_expense_30d} />
                         )}
                     </div>
 
@@ -309,14 +313,14 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 </div>
 
                 <div className="space-y-6 relative z-10">
-                    {isLedgerEmpty ? (
+                    {isLedgerEmpty || recentTransactions.length === 0 ? (
                         <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
                             <p className="text-xl font-serif font-black uppercase text-white/10 tracking-[0.6em]">No Capital Movement Protocols Detected</p>
                         </div>
                     ) : (
-                        [1, 2, 3].map(i => (
+                        recentTransactions.map((tx, i) => (
                             <motion.div
-                                key={i}
+                                key={tx.id}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: i * 0.1 }}
@@ -327,19 +331,19 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                                         <CheckCircleIcon className="w-10 h-10" />
                                     </div>
                                     <div className="space-y-3">
-                                        <p className="text-2xl font-serif font-black text-white uppercase tracking-tight group-hover/tx:text-emerald-500 transition-colors">Capital Sync Node: STU_4930_{i}</p>
+                                        <p className="text-2xl font-serif font-black text-white uppercase tracking-tight group-hover/tx:text-emerald-500 transition-colors">Capital Sync Node: {tx.student_name}</p>
                                         <div className="flex items-center gap-4 text-[11px] font-black text-white/10 uppercase tracking-widest font-mono">
-                                            <span className="text-emerald-500/40">NODE_TX_593021</span>
+                                            <span className="text-emerald-500/40">{tx.id}</span>
                                             <span className="w-1.5 h-1.5 rounded-full bg-white/5" />
-                                            <span>{new Date().toLocaleTimeString()}</span>
+                                            <span>{new Date(tx.performed_at).toLocaleTimeString()}</span>
                                             <span className="w-1.5 h-1.5 rounded-full bg-white/5" />
-                                            <span className="text-primary/40 italic">Institution_Protocol_Alpha</span>
+                                            <span className="text-primary/40 italic">{tx.protocol}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-5xl font-serif font-black text-emerald-500 tracking-tighter drop-shadow-[0_0_15px_rgba(16,185,129,0.3)] shadow-emerald-500">
-                                        +₹12,500<span className="text-xl font-mono text-emerald-500/40 ml-2 italic">settled</span>
+                                        +{formatCurrency(tx.amount, currency).replace('₹', '₹ ')}<span className="text-xl font-mono text-emerald-500/40 ml-2 italic">{tx.status.toLowerCase()}</span>
                                     </p>
                                 </div>
                             </motion.div>

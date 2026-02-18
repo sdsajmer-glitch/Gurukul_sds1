@@ -227,6 +227,15 @@ export interface GradeCollectionStats {
     total_pending: number;
 }
 
+export interface FinancialTransaction {
+    id: string;
+    student_name: string;
+    amount: number;
+    status: string;
+    performed_at: string;
+    protocol: string;
+}
+
 export interface FeeComponent {
     id?: number;
     name: string;

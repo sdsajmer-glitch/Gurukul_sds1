@@ -1,11 +1,16 @@
 
 import React from 'react';
 
-const CollectionChart: React.FC = () => {
-    // Mock data. In a real app, this would come from props/API.
+interface CollectionChartProps {
+    collections?: number;
+    dues?: number;
+}
+
+const CollectionChart: React.FC<CollectionChartProps> = ({ collections = 78000, dues = 22000 }) => {
+    // In a real app, this would come from props/API.
     const data = {
-        collections: 78000,
-        dues: 22000
+        collections,
+        dues
     };
     const total = data.collections + data.dues;
     const collectionPercentage = total > 0 ? (data.collections / total) * 100 : 0;
@@ -20,9 +25,9 @@ const CollectionChart: React.FC = () => {
                         <span className="text-muted-foreground ml-2 font-mono">${data.collections.toLocaleString()}</span>
                     </div>
                 </div>
-                 <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
                     <div className="w-4 h-4 rounded-sm bg-muted shadow-inner"></div>
-                     <div>
+                    <div>
                         <span className="font-bold text-foreground">Pending Dues</span>
                         <span className="text-muted-foreground ml-2 font-mono">${data.dues.toLocaleString()}</span>
                     </div>
@@ -32,11 +37,11 @@ const CollectionChart: React.FC = () => {
                 </div>
             </div>
             <div className="w-full h-8 bg-muted rounded-full flex overflow-hidden shadow-inner border border-border/50">
-                <div 
+                <div
                     className="h-full bg-primary transition-all duration-1000 ease-out flex items-center justify-center text-xs font-bold text-primary-foreground"
                     style={{ width: `${collectionPercentage}%` }}
                 >
-                   {collectionPercentage > 10 && `${Math.round(collectionPercentage)}%`}
+                    {collectionPercentage > 10 && `${Math.round(collectionPercentage)}%`}
                 </div>
             </div>
         </div>

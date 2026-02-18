@@ -111,6 +111,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isReconciling, setIsReconciling] = useState(false);
     const [isProcessGuideOpen, setIsProcessGuideOpen] = useState(false);
+    const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
 
     const viewCurrency = useMemo(() => profile.base_currency || 'INR', [profile]);
 
@@ -128,8 +129,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 structQuery = structQuery.eq('branch_id', bid);
             }
 
-            const [finRes, structRes, ledgerRes, gradeRes, healthRes, protocolRes, ruleRes, readinessRes, projectionRes, masterRes] = await Promise.all([
-                supabase.rpc('get_finance_overview_stats_v2', { p_branch_id: bid }),
+            const [finRes, structRes, ledgerRes, gradeRes, healthRes, protocolRes, ruleRes, readinessRes, projectionRes, masterRes, streamRes] = await Promise.all([
+                supabase.rpc('get_finance_overview_stats_v3', { p_branch_id: bid }),
                 structQuery,
                 supabase.rpc('get_student_fee_summary_all', { p_branch_id: bid }),
                 supabase.rpc('get_grade_wise_collection_stats', { p_branch_id: bid }),
@@ -138,7 +139,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 supabase.from('finance_adjustment_rules').select('*').eq('branch_id', bid),
                 supabase.rpc('fn_calculate_finance_readiness', { p_branch_id: bid }),
                 supabase.rpc('get_financial_projection_matrix', { p_branch_id: bid }),
-                supabase.rpc('get_finance_master_state', { p_branch_id: bid })
+                supabase.rpc('get_finance_master_state', { p_branch_id: bid }),
+                supabase.rpc('get_recent_financial_stream', { p_branch_id: bid })
             ]);
 
             if (finRes.error) throw finRes.error;
@@ -151,7 +153,8 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 health_index: healthRes.data?.health_index || 0,
                 collection_efficiency: healthRes.data?.collection_efficiency || 0,
                 outstanding_ratio: healthRes.data?.outstanding_ratio || 0,
-                burn_rate_stability: healthRes.data?.burn_rate_stability || 0
+                burn_rate_stability: healthRes.data?.burn_rate_stability || 0,
+                total_expense_30d: baseData.total_expense_30d || 0
             });
             setFeeStructures(structRes.data || []);
             setStudentLedgers(Array.isArray(ledgerRes.data) ? ledgerRes.data : []);
@@ -161,6 +164,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
             setInstitutionalReadiness(readinessRes.data);
             setProjections(projectionRes.data);
             setMasterState(masterRes.data);
+            setRecentTransactions(streamRes.data || []);
 
         } catch (err: any) {
             console.error("Finance Registry Sync Failure:", err);
@@ -418,6 +422,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                 aiInsight={aiInsight}
                                 isAnalyzing={isAnalyzing}
                                 readiness={readiness}
+                                recentTransactions={recentTransactions}
                             />
                         </motion.div>
                     )}
