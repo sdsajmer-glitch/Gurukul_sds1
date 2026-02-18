@@ -261,6 +261,7 @@ export interface FeeStructure {
     components?: FeeComponent[];
     projected_revenue?: number;
     collected_revenue?: number;
+    base_amount?: number;
     student_count?: number;
     integrity_score?: number;
     created_at?: string;

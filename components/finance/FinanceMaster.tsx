@@ -437,21 +437,18 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Projection</p>
+                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Base Protocol</p>
                                                 <p className="text-lg font-mono font-bold text-primary">
-                                                    {new Intl.NumberFormat('en-IN', {
-                                                        style: 'currency', currency: (fs.currency || 'INR') as CurrencyCode,
-                                                        minimumFractionDigits: 0, maximumFractionDigits: 0
-                                                    }).format(fs.projected_revenue || 0)}
+                                                    {formatCurrency(fs.base_amount || 0, (fs.currency || 'INR') as CurrencyCode)}
                                                 </p>
                                             </div>
                                         </div>
 
                                         {/* Collection Progress Bar */}
-                                        {(fs.projected_revenue || 0) > 0 && (
+                                        {(fs.student_count || 0) > 0 && (
                                             <div className="mt-4 pt-4 border-t border-white/5">
                                                 <div className="flex justify-between items-center mb-1.5">
-                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Collection Efficiency</span>
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Collection (Institutional)</span>
                                                     <span className="text-[10px] font-mono font-bold text-emerald-400">
                                                         {Math.round(((fs.collected_revenue || 0) / (fs.projected_revenue || 1)) * 100)}%
                                                     </span>

@@ -1,9 +1,8 @@
 -- =============================================================================
--- [FINANCE] MASTER CONTROL ENHANCEMENT: FEE STRUCTURE METRICS (V19.1)
--- Objective: Enhance the "Institutional Fee Structures" module with real-time metrics.
---            1. Return Student Count per structure.
---            2. Return Real Displacement (Projected Revenue).
---            3. Return Collection Progress for that structure.
+-- [FINANCE] MASTER CONTROL ENHANCEMENT: FEE STRUCTURE METRICS (V19.2)
+-- Objective: Fix the ₹0 amounts by ensuring base template totals are returned.
+--            1. Return 'base_amount' (Sum of components for 1 student).
+--            2. Return 'projected_revenue' (Total expected from all assigned students).
 -- =============================================================================
 
 BEGIN;
@@ -20,6 +19,7 @@ RETURNS TABLE (
     created_at TIMESTAMPTZ,
     components JSONB,
     student_count BIGINT,
+    base_amount NUMERIC,
     projected_revenue NUMERIC,
     collected_revenue NUMERIC,
     integrity_score INTEGER
@@ -34,9 +34,9 @@ BEGIN
         SELECT 
             fs.id,
             fs.name::TEXT,
-            COALESCE(ay.year_name, fs.academic_cycle_id::TEXT)::TEXT as academic_year,
+            COALESCE(ay.year_name, fs.academic_year::TEXT, fs.academic_cycle_id::TEXT)::TEXT as academic_year,
             fs.target_grade::TEXT,
-            'INR'::TEXT as currency, -- Fallback to INR unless defined in fs
+            COALESCE(fs.currency, 'INR')::TEXT as currency,
             fs.status::TEXT,
             COALESCE(fs.state, 'DRAFT')::TEXT as state,
             fs.created_at,
@@ -44,7 +44,12 @@ BEGIN
                 SELECT jsonb_agg(comp.*) 
                 FROM public.fee_components comp 
                 WHERE comp.structure_id = fs.id
-            ) as components
+            ) as components_json,
+            COALESCE((
+                SELECT SUM(amount) 
+                FROM public.fee_components comp 
+                WHERE comp.structure_id = fs.id
+            ), 0) as b_amount
         FROM public.fee_structures fs
         LEFT JOIN public.academic_years ay ON fs.academic_cycle_id = ay.id
         WHERE (fs.branch_id = p_branch_id OR p_branch_id IS NULL)
@@ -55,7 +60,7 @@ BEGIN
             COUNT(DISTINCT sfa.student_id) as s_count,
             COALESCE(SUM(sacc.total_billed), 0) as p_rev,
             COALESCE(SUM(sacc.total_paid), 0) as c_rev,
-            AVG(sacc.integrity_score)::INTEGER as avg_integrity
+            AVG(COALESCE(sacc.integrity_score, 100))::INTEGER as avg_integrity
         FROM public.student_fee_assignments sfa
         LEFT JOIN public.student_fee_accounts sacc ON sfa.student_id = sacc.student_id
         GROUP BY sfa.structure_id
@@ -69,9 +74,13 @@ BEGIN
         sb.status,
         sb.state,
         sb.created_at,
-        sb.components,
+        sb.components_json,
         COALESCE(m.s_count, 0::BIGINT) as student_count,
-        COALESCE(m.p_rev, (SELECT SUM(amount) FROM public.fee_components WHERE structure_id = sb.id) * COALESCE(m.s_count, 0)) as projected_revenue,
+        sb.b_amount as base_amount,
+        CASE 
+            WHEN COALESCE(m.s_count, 0) > 0 THEN m.p_rev 
+            ELSE 0 -- Projection is 0 if no students, but base_amount is available for the card
+        END as projected_revenue,
         COALESCE(m.c_rev, 0::NUMERIC) as collected_revenue,
         COALESCE(m.avg_integrity, 100)::INTEGER as integrity_score
     FROM structure_base sb
@@ -82,4 +91,4 @@ $$;
 
 COMMIT;
 
-SELECT 'SUCCESS: Fee Structure Metrics V19.1 Deployed.' as status;
+SELECT 'SUCCESS: Fee Structure Metrics V19.2 Deployed.' as status;
