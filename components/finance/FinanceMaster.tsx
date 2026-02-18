@@ -45,6 +45,15 @@ interface FinanceMasterProps {
     onGuide?: () => void;
 }
 
+const formatCurrency = (amount: number, currency: CurrencyCode = 'INR') => {
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount || 0);
+};
+
 const AccordionItem: React.FC<{
     id: string;
     title: string;
@@ -170,9 +179,9 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
         }
     };
 
-    const filteredFeeStructures = feeStructures.filter(fs =>
-        fs.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        fs.target_grade.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredFeeStructures = (feeStructures || []).filter(fs =>
+        (fs.name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+        (fs.target_grade || '').toString().toLowerCase().includes((searchTerm || '').toLowerCase())
     );
 
     const governanceToggles = [
@@ -336,7 +345,6 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                     </div>
                 </AccordionItem>
 
-                {/* 3. Fee Structures Module */}
                 <AccordionItem
                     id="fee_structures"
                     title="Institutional Fee Structures"
@@ -348,6 +356,28 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                     color="primary"
                 >
                     <div className="flex flex-col gap-6">
+                        {/* Strategic Summary Strip */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-1">
+                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Institutional Projection</span>
+                                <span className="text-2xl font-serif font-black text-white">
+                                    {formatCurrency(feeStructures.reduce((a, s) => a + (s.projected_revenue || 0), 0), currency)}
+                                </span>
+                            </div>
+                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-1">
+                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Total Collections</span>
+                                <span className="text-2xl font-serif font-black text-emerald-400">
+                                    {formatCurrency(feeStructures.reduce((a, s) => a + (s.collected_revenue || 0), 0), currency)}
+                                </span>
+                            </div>
+                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-1 relative overflow-hidden group/alert">
+                                <div className="absolute top-0 right-0 p-4 opacity-[0.05] group-hover/alert:scale-110 transition-transform"><AlertTriangleIcon className="w-12 h-12" /></div>
+                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Draft Protocols</span>
+                                <span className="text-2xl font-serif font-black text-amber-500">
+                                    {feeStructures.filter(s => s.status?.toLowerCase() === 'draft').length} <span className="text-[10px] text-white/20 font-sans uppercase tracking-[0.2em] ml-1">Nodes</span>
+                                </span>
+                            </div>
+                        </div>
                         {/* Internal Toolbar */}
                         <div className="flex flex-col lg:flex-row justify-between items-center gap-4 py-2 sticky top-0 z-10 bg-[#12141c]/95 backdrop-blur-md border-b border-white/5 pb-4 mb-2">
                             <div className="relative w-full lg:w-96 group">
@@ -398,22 +428,42 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                                                 <EditIcon className="w-4 h-4" />
                                             </button>
                                         </div>
-
                                         <div className="mt-auto pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
                                             <div>
-                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Components</p>
-                                                <p className="text-lg font-mono font-bold text-white/80">{fs.components?.length || 0}</p>
+                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Students</p>
+                                                <div className="flex items-center gap-2">
+                                                    <UsersIcon className="w-3 h-3 text-white/40" />
+                                                    <p className="text-lg font-mono font-bold text-white/80">{fs.student_count || 0}</p>
+                                                </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Revenue</p>
+                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Projection</p>
                                                 <p className="text-lg font-mono font-bold text-primary">
                                                     {new Intl.NumberFormat('en-IN', {
                                                         style: 'currency', currency: (fs.currency || 'INR') as CurrencyCode,
                                                         minimumFractionDigits: 0, maximumFractionDigits: 0
-                                                    }).format(fs.projected_revenue || fs.components?.reduce((a: any, c: any) => a + Number(c.amount), 0) || 0)}
+                                                    }).format(fs.projected_revenue || 0)}
                                                 </p>
                                             </div>
                                         </div>
+
+                                        {/* Collection Progress Bar */}
+                                        {(fs.projected_revenue || 0) > 0 && (
+                                            <div className="mt-4 pt-4 border-t border-white/5">
+                                                <div className="flex justify-between items-center mb-1.5">
+                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Collection Efficiency</span>
+                                                    <span className="text-[10px] font-mono font-bold text-emerald-400">
+                                                        {Math.round(((fs.collected_revenue || 0) / (fs.projected_revenue || 1)) * 100)}%
+                                                    </span>
+                                                </div>
+                                                <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-gradient-to-r from-primary to-emerald-500 rounded-full transition-all duration-1000"
+                                                        style={{ width: `${Math.min(100, Math.round(((fs.collected_revenue || 0) / (fs.projected_revenue || 1)) * 100))}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
 
@@ -526,8 +576,8 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                     </div>
                 </AccordionItem>
 
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

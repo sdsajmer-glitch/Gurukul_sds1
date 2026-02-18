@@ -100,27 +100,29 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
     useEffect(() => {
         if (editingStructure) {
             setFormData({
-                name: editingStructure.name,
-                academicYear: editingStructure.academic_year,
-                targetGrade: editingStructure.target_grade,
+                name: editingStructure.name || '',
+                academicYear: editingStructure.academic_year || '',
+                targetGrade: editingStructure.target_grade || '1',
                 description: (editingStructure as any).description || '',
-                currency: editingStructure.currency as CurrencyCode,
+                currency: (editingStructure.currency as CurrencyCode) || 'INR',
                 isDefault: (editingStructure as any).is_default || false,
                 type: (editingStructure as any).type || 'Standard'
             });
 
-            if (editingStructure.components && editingStructure.components.length > 0) {
+            if (Array.isArray(editingStructure.components)) {
                 setComponents(editingStructure.components.map((c: any) => ({
                     id: c.id,
-                    name: c.name,
-                    amount: c.amount.toString(),
-                    frequency: c.frequency,
-                    is_mandatory: c.is_mandatory,
+                    name: c.name || '',
+                    amount: (c.amount || 0).toString(),
+                    frequency: c.frequency || 'Monthly',
+                    is_mandatory: !!c.is_mandatory,
                     category: c.category || 'Tuition',
                     gl_code: c.gl_code || '',
                     tax_percentage: c.tax_percentage || 0,
-                    is_refundable: c.is_refundable || false
+                    is_refundable: !!c.is_refundable
                 })));
+            } else {
+                setComponents([]);
             }
         }
     }, [editingStructure]);
@@ -186,8 +188,8 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
         }
     };
 
-    const isStep1Valid = formData.name.trim().length >= 3 && formData.academicYear.length > 0;
-    const isStep2Valid = components.every(c => c.name.trim().length > 0 && Number(c.amount) >= 0);
+    const isStep1Valid = (formData.name || '').trim().length >= 3 && (formData.academicYear || '').length > 0;
+    const isStep2Valid = Array.isArray(components) && components.length > 0 && components.every(c => (c.name || '').trim().length > 0 && Number(c.amount) >= 0);
 
     const handleFinalize = async (publish: boolean = false) => {
         if (isLocked) {

@@ -260,6 +260,9 @@ export interface FeeStructure {
     type?: 'Standard' | 'Package' | 'Transport';
     components?: FeeComponent[];
     projected_revenue?: number;
+    collected_revenue?: number;
+    student_count?: number;
+    integrity_score?: number;
     created_at?: string;
 }
 

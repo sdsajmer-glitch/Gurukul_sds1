@@ -121,17 +121,9 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
         try {
             const bid = (branchId === undefined || branchId === null) ? null : Number(branchId);
 
-            let structQuery = supabase.from('fee_structures')
-                .select('*, components:fee_components(*)')
-                .order('created_at', { ascending: false });
-
-            if (bid !== null) {
-                structQuery = structQuery.eq('branch_id', bid);
-            }
-
             const [finRes, structRes, ledgerRes, gradeRes, healthRes, protocolRes, ruleRes, readinessRes, projectionRes, masterRes, streamRes] = await Promise.all([
                 supabase.rpc('get_finance_overview_stats_v3', { p_branch_id: bid }),
-                structQuery,
+                supabase.rpc('get_fee_structures_with_metrics', { p_branch_id: bid }),
                 supabase.rpc('get_student_fee_summary_all', { p_branch_id: bid }),
                 supabase.rpc('get_grade_wise_collection_stats', { p_branch_id: bid }),
                 supabase.rpc('get_institutional_health_index', { p_branch_id: bid }),
