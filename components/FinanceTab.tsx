@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase, formatError } from '../services/supabase';
 import {
@@ -6,7 +5,7 @@ import {
     StudentFeeSummary, UserProfile, SchoolBranch, CurrencyCode
 } from '../types';
 import FinanceRefundManager from './finance/FinanceRefundManager';
-import Spinner from './common/Spinner';
+import { StatsSkeleton, Skeleton } from './common/Skeleton';
 import { PlusIcon } from './icons/PlusIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { TrendingUpCustomIcon } from './icons/TrendingUpIcon';
@@ -34,17 +33,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FinanceAuditLog from './finance/FinanceAuditLog';
 import FinanceOverview from './finance/FinanceOverview';
 import FinanceAccounts from './finance/FinanceAccounts';
-import FinanceMaster from './finance/FinanceMaster';
+import MasterControlPanel from './finance/MasterControlPanel';
 import FeeMasterWizard from './finance/FeeMasterWizard';
 import PaymentProtocolModal from './finance/PaymentProtocolModal';
 import AdjustmentRuleModal from './finance/AdjustmentRuleModal';
 import FinanceAudit from './finance/FinanceAudit';
 import FinanceExpense from './finance/FinanceExpense';
-import { StatsSkeleton, Skeleton } from './common/Skeleton';
 import StudentFinanceDetailView from './finance/StudentFinanceDetailView';
 import PremiumAvatar from './common/PremiumAvatar';
 import FinanceProcessGuide from './finance/FinanceProcessGuide';
-
+import FiscalTaxModal from './finance/FiscalTaxModal';
 
 const formatCurrency = (amount: number, currency: CurrencyCode = 'INR') => {
     return new Intl.NumberFormat('en-IN', {
@@ -65,12 +63,12 @@ const TabButton: React.FC<{
     <button
         onClick={() => onClick(id)}
         className={`
-            flex items-center gap-3 px-8 py-3.5 rounded-[1.25rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden group
-            ${isActive
+        flex items-center gap-3 px-8 py-3.5 rounded-[1.25rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden group
+        ${isActive
                 ? 'bg-white text-black shadow-[0_20px_40px_-10px_rgba(255,255,255,0.3)] z-10 scale-105'
                 : 'text-white/30 hover:text-white hover:bg-white/5 hover:scale-102'
             }
-        `}
+    `}
     >
         <span className="relative z-10 flex items-center gap-2.5">
             {React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${isActive ? 'text-black' : 'text-primary/40'}` })}
@@ -85,8 +83,13 @@ const TabButton: React.FC<{
     </button>
 );
 
+interface FinanceTabProps {
+    profile: UserProfile;
+    branchId?: number | null;
+    branches?: SchoolBranch[];
+}
 
-const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, branches: SchoolBranch[] }> = ({ profile, branchId, branches }) => {
+const FinanceTab: React.FC<FinanceTabProps> = ({ profile, branchId, branches }) => {
     const [activeView, setActiveView] = useState<'overview' | 'accounts' | 'master' | 'audit' | 'expenditure' | 'refunds'>('overview');
     const [financeData, setFinanceData] = useState<FinanceData | null>(null);
     const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
@@ -98,6 +101,7 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
     const [editingStructure, setEditingStructure] = useState<FeeStructure | null>(null);
     const [isProtocolModalOpen, setIsProtocolModalOpen] = useState(false);
     const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+    const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
     const [accountSearch, setAccountSearch] = useState('');
     const [riskOnly, setRiskOnly] = useState(false);
     const [accountViewFilter, setAccountViewFilter] = useState<string | undefined>(undefined);
@@ -269,53 +273,99 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
 
     return (
         <div className="space-y-16 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-24 max-w-[1800px] mx-auto px-4 md:px-8">
-            {/* Executive Header Layer */}
-            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-12 pt-6">
-                <div className="space-y-6">
-                    <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 mb-4">
-                        <span className="hover:text-primary cursor-pointer transition-colors" onClick={() => setActiveView('overview')}>Finance Center</span>
-                        <span className="opacity-40">/</span>
-                        <span className="text-primary/60 capitalize">{activeView}</span>
-                    </nav>
-                    <div className="flex items-center gap-4">
-                        <div className="h-[1px] w-12 bg-primary/40 rounded-full" />
-                        <span className="text-[10px] font-black uppercase text-primary/80 tracking-[0.5em]">Institutional Governance Node</span>
-                    </div>
-                    <div className="flex flex-wrap items-end gap-6">
-                        <h2 className="text-[clamp(48px,6vw,84px)] font-serif font-black text-white tracking-tighter uppercase leading-[0.85]">
+            {/* Enhanced Finance Executive Header */}
+            <div className="flex flex-col gap-8 pt-6">
+                <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
+                    {/* Left: Branding & Navigation */}
+                    <div className="space-y-4">
+                        <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+                            <span className="hover:text-primary cursor-pointer transition-colors" onClick={() => setActiveView('overview')}>Finance Center</span>
+                            <span className="opacity-40">/</span>
+                            <span className="text-primary/60 capitalize">{activeView}</span>
+                        </nav>
+                        <h2 className="text-[clamp(40px,5vw,64px)] font-serif font-black text-white tracking-tighter uppercase leading-[0.85]">
                             FINANCE <span className="text-white/20 italic font-medium lowercase">center.</span>
                         </h2>
-                        <div className="flex gap-4 mb-2">
+                    </div>
+
+                    {/* Right: Actions & Global Controls */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full xl:w-auto">
+                        {/* Search Bar - Global Context */}
+                        <div className="relative group flex-1 sm:w-64 xl:w-80">
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                <SearchIcon className="w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search Student, Invoice, ID..."
+                                className="w-full h-12 pl-12 pr-4 bg-[#12141c] border border-white/5 rounded-2xl text-xs font-medium text-white placeholder:text-white/20 focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/40 transition-all shadow-inner"
+                                value={accountSearch}
+                                onChange={(e) => setAccountSearch(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Year Selector (Mockup for Visual) */}
+                        <div className="flex items-center gap-3 px-4 h-12 bg-[#12141c] border border-white/5 rounded-2xl cursor-pointer hover:border-white/10 transition-all group">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-xs font-bold text-white/60 group-hover:text-white transition-colors">2025-2026</span>
+                            <ChevronDownIcon className="w-4 h-4 text-white/20" />
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="flex gap-2">
                             <button
                                 onClick={handleForceReconcile}
                                 disabled={isReconciling}
-                                className="px-5 py-2.5 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-emerald-400 transition-all flex items-center gap-3 active:scale-95 shadow-2xl backdrop-blur-md"
+                                className="h-12 px-4 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] rounded-2xl text-white/40 hover:text-emerald-400 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-lg group"
+                                title="Reconcile Matrix"
                             >
-                                <RefreshCwIcon className={`w-4 h-4 ${isReconciling ? 'animate-spin text-emerald-500' : 'opacity-40'}`} />
-                                <span>Reconcile Matrix</span>
+                                <RefreshCwIcon className={`w-4 h-4 ${isReconciling ? 'animate-spin text-emerald-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
                             </button>
                             <button
                                 onClick={() => setIsProcessGuideOpen(true)}
-                                className="px-5 py-2.5 bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-primary/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-primary transition-all flex items-center gap-3 active:scale-95 shadow-2xl backdrop-blur-md"
+                                className="h-12 px-6 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-white hover:text-black transition-all shadow-xl active:scale-95 flex items-center gap-2"
                             >
-                                <WorkflowIcon className="w-4 h-4 opacity-40 group-hover:opacity-100" />
-                                <span>Process Guide</span>
+                                <WorkflowIcon className="w-4 h-4" />
+                                <span className="hidden sm:inline">Process Guide</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex bg-[#12141c]/60 p-1.5 rounded-full border border-white/5 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] ring-1 ring-white/5">
-                    <TabButton id="overview" label="Overview" icon={<ChartBarIcon className="w-4 h-4" />} isActive={activeView === 'overview'} onClick={setActiveView} />
-                    <TabButton id="accounts" label="Accounts" icon={<UsersIcon className="w-4 h-4" />} isActive={activeView === 'accounts'} onClick={setActiveView} />
-                    <TabButton id="refunds" label="Refunds" icon={<RefreshCwIcon className="w-4 h-4" />} isActive={activeView === 'refunds'} onClick={setActiveView} />
-                    <TabButton id="expenditure" label="Expenditure" icon={<TrendingUpCustomIcon className="w-4 h-4 rotate-180" />} isActive={activeView === 'expenditure'} onClick={setActiveView} />
+                {/* Sub-Header: Navigation & Summary Widgets */}
+                <div className="flex flex-col xl:flex-row items-center justify-between gap-6 border-b border-white/[0.02] pb-6">
+                    <div className="flex bg-[#12141c]/60 p-1.5 rounded-[1.5rem] border border-white/5 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] ring-1 ring-white/5 overflow-x-auto max-w-full scrollbar-hide">
+                        <TabButton id="overview" label="Overview" icon={<ChartBarIcon className="w-4 h-4" />} isActive={activeView === 'overview'} onClick={setActiveView} />
+                        <TabButton id="accounts" label="Accounts" icon={<UsersIcon className="w-4 h-4" />} isActive={activeView === 'accounts'} onClick={setActiveView} />
+                        <TabButton id="refunds" label="Refunds" icon={<RefreshCwIcon className="w-4 h-4" />} isActive={activeView === 'refunds'} onClick={setActiveView} />
+                        <TabButton id="expenditure" label="Expenditure" icon={<TrendingUpCustomIcon className="w-4 h-4 rotate-180" />} isActive={activeView === 'expenditure'} onClick={setActiveView} />
 
-                    {(profile.role?.toLowerCase()?.includes('admin') || profile.role?.toLowerCase() === 'accountant' || profile.role?.toLowerCase() === 'principal' || profile.role?.toLowerCase()?.includes('finance')) && (
-                        <>
-                            <TabButton id="master" label="Master Control" icon={<ShieldCheckIcon className="w-4 h-4" />} isActive={activeView === 'master'} onClick={setActiveView} />
-                            <TabButton id="audit" label="Audit Logs" icon={<ActivityIcon className="w-4 h-4" />} isActive={activeView === 'audit'} onClick={setActiveView} />
-                        </>
+                        {(profile.role?.toLowerCase()?.includes('admin') || profile.role?.toLowerCase() === 'accountant' || profile.role?.toLowerCase() === 'principal' || profile.role?.toLowerCase()?.includes('finance')) && (
+                            <>
+                                <TabButton id="master" label="Master Control" icon={<ShieldCheckIcon className="w-4 h-4" />} isActive={activeView === 'master'} onClick={setActiveView} />
+                                <TabButton id="audit" label="Audit Logs" icon={<ActivityIcon className="w-4 h-4" />} isActive={activeView === 'audit'} onClick={setActiveView} />
+                            </>
+                        )}
+                    </div>
+
+                    {/* Mini Financial Summary Chips */}
+                    {!loading && financeData && (
+                        <div className="hidden xl:flex items-center gap-4">
+                            <div className="px-5 py-2 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex flex-col items-end">
+                                <span className="text-[9px] font-black uppercase text-emerald-500/60 tracking-wider">Collected</span>
+                                <span className="text-sm font-mono font-bold text-emerald-400">{formatCurrency(financeData.total_collected, viewCurrency)}</span>
+                            </div>
+                            <div className="w-px h-8 bg-white/5"></div>
+                            <div className="px-5 py-2 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex flex-col items-end">
+                                <span className="text-[9px] font-black uppercase text-amber-500/60 tracking-wider">Pending</span>
+                                <span className="text-sm font-mono font-bold text-amber-400">{formatCurrency(financeData.total_pending, viewCurrency)}</span>
+                            </div>
+                            <div className="w-px h-8 bg-white/5"></div>
+                            <div className="px-5 py-2 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex flex-col items-end">
+                                <span className="text-[9px] font-black uppercase text-blue-500/60 tracking-wider">Total</span>
+                                <span className="text-sm font-mono font-bold text-blue-400">{formatCurrency(financeData.total_assigned, viewCurrency)}</span>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
@@ -486,10 +536,12 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
 
                     {activeView === 'master' && (
                         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-                            <FinanceMaster
+                            <MasterControlPanel
                                 feeStructures={feeStructures}
                                 paymentProtocols={paymentProtocols}
                                 adjustmentRules={adjustmentRules}
+                                currency={viewCurrency}
+                                branchId={Number(branchId)} // cast to number for safety
                                 onNewStructure={() => setIsWizardOpen(true)}
                                 onEditStructure={(fs) => {
                                     setEditingStructure(fs);
@@ -497,12 +549,9 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                 }}
                                 onNewProtocol={() => setIsProtocolModalOpen(true)}
                                 onNewRule={() => setIsRuleModalOpen(true)}
-                                currency={viewCurrency}
-                                branchId={branchId}
+                                onNewTax={() => setIsTaxModalOpen(true)}
                                 onUpdate={() => fetchAllData(true)}
-                                readiness={institutionalReadiness || readiness}
                                 masterState={masterState}
-                                onGuide={() => setIsProcessGuideOpen(true)}
                             />
                         </motion.div>
                     )}
@@ -565,6 +614,17 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     }}
                 />
             )}
+            <AnimatePresence>
+                <FiscalTaxModal
+                    isOpen={isTaxModalOpen}
+                    onClose={() => setIsTaxModalOpen(false)}
+                    onSuccess={() => {
+                        setIsTaxModalOpen(false);
+                        fetchAllData(true);
+                    }}
+                    branchId={branchId ? Number(branchId) : null}
+                />
+            </AnimatePresence>
 
             <AnimatePresence>
                 {isProcessGuideOpen && (
