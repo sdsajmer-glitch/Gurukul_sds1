@@ -3,10 +3,8 @@ import { motion } from 'framer-motion';
 import { supabase } from '../../../services/supabase';
 import { ShieldCheckIcon } from '../../icons/ShieldCheckIcon';
 import { LockIcon } from '../../icons/LockIcon';
-import { RefreshCwIcon } from '../../icons/RefreshCwIcon'; // Acts as Toggle/Cycle
 import { CalculatorIcon } from '../../icons/CalculatorIcon';
 import { AlertTriangleIcon } from '../../icons/AlertTriangleIcon';
-import { CheckCircleIcon } from '../../icons/CheckCircleIcon';
 
 interface GovernanceProps {
     settings: any;
