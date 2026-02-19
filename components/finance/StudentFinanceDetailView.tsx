@@ -168,11 +168,11 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
             // 3. Fetch Metadata
             const { data: structData } = await supabase
                 .from('student_fee_assignments')
-                .select('*, fee_structures(*)')
+                .select('*, finance_fee_structures(*)')
                 .eq('student_id', initialStudent.student_id)
                 .maybeSingle();
 
-            setAssignedStructure(structData?.fee_structures || null);
+            setAssignedStructure(structData?.finance_fee_structures || null);
 
             // Fetch Available Cycles if not yet loaded
             if (availableCycles.length === 0 && nodeData?.[0]?.branch_id) {

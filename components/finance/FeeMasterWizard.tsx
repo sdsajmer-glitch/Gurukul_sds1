@@ -81,7 +81,7 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                 }
 
                 // Fetch Existing Structures for "Cloning/Template" functionality
-                let query = supabase.from('fee_structures').select('*, components:fee_components(*)');
+                let query = supabase.from('finance_fee_structures').select('*, components:finance_fee_components(*)');
                 if (bid) query = query.eq('branch_id', bid);
 
                 const { data: existing } = await query.limit(10);
@@ -205,7 +205,7 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
             // 1. If this is set as default, we need to clear other defaults for this grade/branch first
             if (formData.isDefault) {
                 const { error: clearError } = await supabase
-                    .from('fee_structures')
+                    .from('finance_fee_structures')
                     .update({ is_default: false })
                     .match({ branch_id: bid, target_grade: formData.targetGrade });
 
@@ -215,7 +215,7 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
             // 2. Insert or Update Structure
             if (isEditMode && editingStructure) {
                 const { error: structError } = await supabase
-                    .from('fee_structures')
+                    .from('finance_fee_structures')
                     .update({
                         name: formData.name,
                         academic_year: formData.academicYear,
@@ -232,11 +232,11 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                 structureId = editingStructure.id;
 
                 // Clear components to re-insert them (Clean sync protocol)
-                const { error: delError } = await supabase.from('fee_components').delete().eq('structure_id', structureId);
+                const { error: delError } = await supabase.from('finance_fee_components').delete().eq('structure_id', structureId);
                 if (delError) throw delError;
             } else {
                 const { data: struct, error: structError } = await supabase
-                    .from('fee_structures')
+                    .from('finance_fee_structures')
                     .insert({
                         name: formData.name,
                         academic_year: formData.academicYear,
@@ -269,7 +269,7 @@ const FeeMasterWizard: React.FC<FeeMasterWizardProps> = ({ onClose, onSuccess, b
                 is_refundable: c.is_refundable || false
             }));
 
-            const { error: compError } = await supabase.from('fee_components').insert(componentsPayload);
+            const { error: compError } = await supabase.from('finance_fee_components').insert(componentsPayload);
             if (compError) throw compError;
 
             // 4. Success Protocol
