@@ -146,13 +146,15 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
     const [expandedSection, setExpandedSection] = useState<string | null>('governance');
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; title: string; desc: string; onConfirm: () => void } | null>(null);
 
     const toggleSection = (id: string) => {
         setExpandedSection(expandedSection === id ? null : id);
-        // Auto-scroll to section on open
         if (expandedSection !== id) {
             setTimeout(() => {
-                document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const el = document.getElementById(id);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 300);
         }
     };
@@ -179,10 +181,15 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
         }
     };
 
-    const filteredFeeStructures = (feeStructures || []).filter(fs =>
-        (fs.name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
-        (fs.target_grade || '').toString().toLowerCase().includes((searchTerm || '').toLowerCase())
-    );
+    const filteredFeeStructures = (feeStructures || []).filter(fs => {
+        const matchesSearch = (fs.name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+            (fs.target_grade || '').toString().toLowerCase().includes((searchTerm || '').toLowerCase());
+
+        const currentStatus = (fs.status || fs.state || 'DRAFT').toUpperCase();
+        const matchesStatus = statusFilter === 'ALL' || currentStatus === statusFilter;
+
+        return matchesSearch && matchesStatus;
+    });
 
     const governanceToggles = [
         { key: 'is_tax_enabled', label: 'Fiscal Tax Matrix', desc: 'Enable GST/VAT Calculation', icon: <ShieldCheckIcon className="w-5 h-5" />, active: masterState?.settings?.is_tax_enabled },
@@ -357,22 +364,31 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                 >
                     <div className="flex flex-col gap-6">
                         {/* Strategic Summary Strip */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-1">
-                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Institutional Projection</span>
-                                <span className="text-2xl font-serif font-black text-white">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-1 relative overflow-hidden group/stat">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent"></div>
+                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] relative z-10">Billed Magnitude</span>
+                                <span className="text-2xl font-serif font-black text-white relative z-10">
                                     {formatCurrency(feeStructures.reduce((a, s) => a + (s.projected_revenue || 0), 0), currency)}
                                 </span>
                             </div>
-                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-1">
-                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Total Collections</span>
-                                <span className="text-2xl font-serif font-black text-emerald-400">
+                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-1 relative overflow-hidden group/stat">
+                                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.03] to-transparent"></div>
+                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] relative z-10">Total Collections</span>
+                                <span className="text-2xl font-serif font-black text-emerald-400 relative z-10">
                                     {formatCurrency(feeStructures.reduce((a, s) => a + (s.collected_revenue || 0), 0), currency)}
+                                </span>
+                            </div>
+                            <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-1 relative overflow-hidden group/stat">
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] to-transparent"></div>
+                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] relative z-10">Yield Potential</span>
+                                <span className="text-2xl font-serif font-black text-primary relative z-10">
+                                    {formatCurrency(feeStructures.reduce((a, s) => a + (((s as any).potential_count || 0) * (s.base_amount || 0)), 0), currency)}
                                 </span>
                             </div>
                             <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-1 relative overflow-hidden group/alert">
                                 <div className="absolute top-0 right-0 p-4 opacity-[0.05] group-hover/alert:scale-110 transition-transform"><AlertTriangleIcon className="w-12 h-12" /></div>
-                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Draft Protocols</span>
+                                <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] font-sans">Draft Protocols</span>
                                 <span className="text-2xl font-serif font-black text-amber-500">
                                     {feeStructures.filter(s => s.status?.toLowerCase() === 'draft').length} <span className="text-[10px] text-white/20 font-sans uppercase tracking-[0.2em] ml-1">Nodes</span>
                                 </span>
@@ -391,89 +407,165 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                                 />
                             </div>
                             <div className="flex gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
-                                {['ALL', 'ACTIVE', 'DRAFT', 'ARCHIVED'].map((filter) => (
-                                    <button key={filter} className="px-4 py-2 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 text-[9px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-all whitespace-nowrap">
-                                        {filter}
-                                    </button>
-                                ))}
+                                <div className="flex gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
+                                    {['ALL', 'ACTIVE', 'DRAFT', 'ARCHIVED'].map((filter) => (
+                                        <button
+                                            key={filter}
+                                            onClick={() => setStatusFilter(filter)}
+                                            className={`px-4 py-2 rounded-lg border transition-all whitespace-nowrap text-[9px] font-black uppercase tracking-widest ${statusFilter === filter
+                                                ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
+                                                : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white'
+                                                }`}
+                                        >
+                                            {filter}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
                         {/* Scrollable Grid Container */}
                         <div className="max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                {filteredFeeStructures.map(fs => (
-                                    <div
-                                        key={fs.id}
-                                        className="group p-5 bg-black/20 border border-white/5 hover:border-primary/30 rounded-2xl transition-all hover:bg-black/40 flex flex-col relative overflow-hidden"
-                                    >
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className={`w-2 h-2 rounded-full ${(fs.state === 'ACTIVE' || fs.status === 'Active' || fs.status === 'active')
-                                                        ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
-                                                        : (fs.state === 'DRAFT' || fs.status === 'Draft' || fs.status === 'draft')
-                                                            ? 'bg-amber-500'
-                                                            : 'bg-white/20'
-                                                        }`} />
-                                                    <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">{fs.academic_year}</span>
-                                                </div>
-                                                <h4 className="text-lg font-serif font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors truncate w-48">{fs.name}</h4>
-                                                <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Target: Grade {fs.target_grade}</p>
-                                            </div>
-                                            <button
-                                                onClick={() => onEditStructure(fs)}
-                                                className="p-2 rounded-lg bg-white/5 hover:bg-primary hover:text-black text-white/20 transition-all"
-                                            >
-                                                <EditIcon className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                        <div className="mt-auto pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Students</p>
-                                                <div className="flex items-center gap-2">
-                                                    <UsersIcon className="w-3 h-3 text-white/40" />
-                                                    <p className="text-lg font-mono font-bold text-white/80">{fs.student_count || 0}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Base Protocol</p>
-                                                <p className="text-lg font-mono font-bold text-primary">
-                                                    {formatCurrency(fs.base_amount || 0, (fs.currency || 'INR') as CurrencyCode)}
-                                                </p>
-                                            </div>
-                                        </div>
+                                {filteredFeeStructures.map(fs => {
+                                    const potentialCount = (fs as any).potential_count || 0;
+                                    const assignedCount = fs.student_count || 0;
+                                    const isSyncRequired = assignedCount < potentialCount && (fs.status?.toLowerCase() === 'active' || fs.state === 'ACTIVE');
+                                    const syncPercentage = potentialCount > 0 ? Math.round((assignedCount / potentialCount) * 100) : 100;
 
-                                        {/* Collection Progress Bar */}
-                                        {(fs.student_count || 0) > 0 && (
-                                            <div className="mt-4 pt-4 border-t border-white/5">
-                                                <div className="flex justify-between items-center mb-1.5">
-                                                    <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Collection (Institutional)</span>
-                                                    <span className="text-[10px] font-mono font-bold text-emerald-400">
-                                                        {Math.round(((fs.collected_revenue || 0) / (fs.projected_revenue || 1)) * 100)}%
-                                                    </span>
+                                    return (
+                                        <div
+                                            key={fs.id}
+                                            className="group p-6 bg-black/20 border border-white/5 hover:border-primary/30 rounded-[2.5rem] transition-all hover:bg-black/40 flex flex-col relative overflow-hidden shadow-2xl"
+                                        >
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-2.5">
+                                                        <span className={`w-2 h-2 rounded-full ${(fs.state === 'ACTIVE' || fs.status === 'Active' || fs.status === 'active')
+                                                            ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]'
+                                                            : (fs.state === 'DRAFT' || fs.status === 'Draft' || fs.status === 'draft')
+                                                                ? 'bg-amber-500'
+                                                                : 'bg-white/20'
+                                                            }`} />
+                                                        <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">{fs.type || 'PROTOCOL'} <span className="opacity-40">•</span> {fs.academic_year}</span>
+                                                    </div>
+                                                    <h4 className="text-xl font-serif font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors truncate w-56">{fs.name}</h4>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-black text-white/40 uppercase tracking-widest">Grade {fs.target_grade}</span>
+                                                        {isSyncRequired && (
+                                                            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-[9px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-1">
+                                                                <AlertTriangleIcon className="w-2.5 h-2.5" /> Desync Detected
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-gradient-to-r from-primary to-emerald-500 rounded-full transition-all duration-1000"
-                                                        style={{ width: `${Math.min(100, Math.round(((fs.collected_revenue || 0) / (fs.projected_revenue || 1)) * 100))}%` }}
+                                                <div className="flex gap-2">
+                                                    {isSyncRequired && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setConfirmModal({
+                                                                    isOpen: true,
+                                                                    title: 'Initialize Grade Sync',
+                                                                    desc: `Synchronize ${potentialCount - assignedCount} unassigned students in Grade ${fs.target_grade} to this specific protocol? This will generate their official ledgers.`,
+                                                                    onConfirm: async () => {
+                                                                        setLoading(true);
+                                                                        try {
+                                                                            await supabase.rpc('bulk_sync_grade_fee_structure', {
+                                                                                p_structure_id: fs.id,
+                                                                                p_branch_id: branchId
+                                                                            });
+                                                                            if (onUpdate) onUpdate();
+                                                                            setConfirmModal(null);
+                                                                        } catch (err) {
+                                                                            console.error("Sync Error:", err);
+                                                                        } finally {
+                                                                            setLoading(false);
+                                                                        }
+                                                                    }
+                                                                });
+                                                            }}
+                                                            title="Synchronize Grade Registry"
+                                                            className="p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-black transition-all border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)] relative group/sync"
+                                                        >
+                                                            <div className="absolute inset-0 bg-amber-500/20 rounded-xl animate-pulse group-hover/sync:hidden"></div>
+                                                            <RefreshIcon className={`w-4 h-4 relative z-10 ${loading ? 'animate-spin' : ''}`} />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => onEditStructure(fs)}
+                                                        className="p-2.5 rounded-xl bg-white/5 hover:bg-primary hover:text-black text-white/20 transition-all border border-white/5 hover:border-primary/20"
+                                                    >
+                                                        <EditIcon className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-auto grid grid-cols-2 gap-6 pb-4">
+                                                <div className="p-4 bg-white/[0.02] rounded-2xl border border-white/5">
+                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] mb-2 flex items-center justify-between">
+                                                        Students
+                                                        <span className={syncPercentage < 100 ? 'text-amber-500' : 'text-emerald-500'}>{syncPercentage}%</span>
+                                                    </p>
+                                                    <div className="flex items-end gap-1.5">
+                                                        <span className="text-2xl font-mono font-black text-white leading-none">{assignedCount}</span>
+                                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-widest mb-1">/ {potentialCount}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 bg-white/[0.02] rounded-2xl border border-white/5 text-right">
+                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] mb-2">Base Protocol</p>
+                                                    <p className="text-2xl font-mono font-black text-primary leading-none">
+                                                        {formatCurrency(fs.base_amount || 0, (fs.currency || 'INR') as CurrencyCode)}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Collection Progress & Projection */}
+                                            <div className="pt-5 border-t border-white/5">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em] mb-1">Yield Efficiency</span>
+                                                        <span className="text-xs font-mono font-bold text-white/60">
+                                                            {formatCurrency(fs.collected_revenue || 0, currency)} / {formatCurrency(fs.projected_revenue || 0, currency)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="text-[10px] font-mono font-black text-emerald-400">
+                                                            {fs.projected_revenue && fs.projected_revenue > 0
+                                                                ? Math.round(((fs.collected_revenue || 0) / fs.projected_revenue) * 100)
+                                                                : 0}%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${Math.min(100, Math.round(((fs.collected_revenue || 0) / (fs.projected_revenue || 1)) * 100))}%` }}
+                                                        className="h-full bg-gradient-to-r from-primary via-emerald-500 to-primary rounded-full"
+                                                        transition={{ duration: 1.5, ease: "easeOut" }}
                                                     />
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-                                ))}
+
+                                            {/* Ambient Background Grade Identifier */}
+                                            <div className="absolute -bottom-8 -right-8 text-white/[0.02] font-serif font-black text-[120px] select-none pointer-events-none group-hover:text-primary/[0.04] transition-colors leading-none uppercase">
+                                                {fs.target_grade}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
 
                                 {/* Add New Button */}
                                 <button
                                     onClick={onNewStructure}
-                                    className="min-h-[180px] rounded-2xl border-2 border-dashed border-white/5 hover:border-primary/40 hover:bg-primary/5 transition-all flex flex-col items-center justify-center gap-4 group/add"
+                                    className="min-h-[280px] rounded-[2.5rem] border-2 border-dashed border-white/5 hover:border-primary/40 hover:bg-primary/5 transition-all flex flex-col items-center justify-center gap-6 group/add relative overflow-hidden"
                                 >
-                                    <div className="p-3 rounded-xl bg-white/5 group-hover/add:bg-primary group-hover/add:text-black text-white/20 transition-all">
-                                        <PlusIcon className="w-6 h-6" />
+                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent"></div>
+                                    <div className="p-6 rounded-[2rem] bg-white/5 group-hover/add:bg-primary group-hover/add:text-black text-white/20 transition-all border border-white/5 shadow-2xl relative z-10">
+                                        <PlusIcon className="w-8 h-8" />
                                     </div>
-                                    <div className="text-center">
-                                        <p className="text-xs font-black text-white uppercase tracking-widest group-hover/add:text-primary transition-colors">Create Structure</p>
+                                    <div className="text-center relative z-10">
+                                        <p className="text-sm font-black text-white uppercase tracking-[0.4em] group-hover/add:text-primary transition-colors">Architect Structure</p>
+                                        <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest mt-2">Initialize new Grade-wise Protocol</p>
                                     </div>
                                 </button>
                             </div>
@@ -574,6 +666,60 @@ const FinanceMaster: React.FC<FinanceMasterProps> = ({
                 </AccordionItem>
 
             </div >
+
+            {/* Premium Confirmation Modal */}
+            <AnimatePresence>
+                {confirmModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setConfirmModal(null)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-md bg-black border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 p-8 opacity-5">
+                                <RefreshIcon className="w-32 h-32" />
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 w-fit mb-6">
+                                    <AlertTriangleIcon className="w-6 h-6 text-amber-500" />
+                                </div>
+
+                                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight mb-3">
+                                    {confirmModal.title}
+                                </h3>
+                                <p className="text-white/40 text-sm leading-relaxed mb-8 font-medium">
+                                    {confirmModal.desc}
+                                </p>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setConfirmModal(null)}
+                                        className="flex-1 py-4 px-6 rounded-2xl bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-black uppercase tracking-widest transition-all border border-white/5"
+                                    >
+                                        Abort
+                                    </button>
+                                    <button
+                                        onClick={confirmModal.onConfirm}
+                                        disabled={loading}
+                                        className="flex-1 py-4 px-6 rounded-2xl bg-primary hover:bg-primary/90 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                                    >
+                                        {loading ? <RefreshIcon className="w-4 h-4 animate-spin" /> : 'Execute Sync'}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div >
     );
 };
