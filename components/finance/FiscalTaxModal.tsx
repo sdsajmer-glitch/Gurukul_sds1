@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusIcon } from '../../icons/PlusIcon';
-import { CalculatorIcon } from '../../icons/CalculatorIcon';
-import { RefreshIcon as VersionIcon } from '../../icons/RefreshIcon';
-import { supabase } from '../../../services/supabase';
+import { PlusIcon } from '../icons/PlusIcon';
+import { CalculatorIcon } from '../icons/CalculatorIcon';
+import { RefreshIcon as VersionIcon } from '../icons/RefreshIcon';
+import { supabase } from '../../services/supabase';
 
 interface FiscalTaxModalProps {
     isOpen: boolean;

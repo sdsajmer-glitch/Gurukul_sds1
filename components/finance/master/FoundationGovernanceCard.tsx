@@ -107,7 +107,7 @@ const FoundationGovernanceCard: React.FC<GovernanceProps> = ({ settings, branchI
                             </div>
                         </div>
                         <h4 className="text-lg font-bold text-white mb-1">Installment Logic</h4>
-                        <p className="text-xs text-white/40 leading-relaxed">Enforce strict approval workflows for discount waivers > 10%.</p>
+                        <p className="text-xs text-white/40 leading-relaxed">Enforce strict approval workflows for discount waivers &gt; 10%.</p>
                     </div>
 
                     {/* Late Fee Protocol */}
