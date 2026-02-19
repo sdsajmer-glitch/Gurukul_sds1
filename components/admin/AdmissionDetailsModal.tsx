@@ -57,6 +57,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     }, []);
 
     const fetchDocs = useCallback(async () => {
+        if (!admission.id) return;
         setLoading(true);
         try {
             const { data, error } = await supabase
@@ -64,22 +65,28 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 .select('*, admission_documents(*)')
                 .eq('admission_id', admission.id)
                 .order('is_mandatory', { ascending: false });
+
             if (error) throw error;
 
-            // Standard mandatory set to ensure baseline compliance slots show up even if not in DB
-            const STANDARD_MANDATORY = ['Birth Certificate', 'ID Proof', 'Transfer Certificate', 'Student Photograph'];
+            // Normalized Mandatory Baseline
+            const STANDARD_MANDATORY = [
+                'Aadhar Card / National ID',
+                'Birth Certificate',
+                'Transfer Certificate',
+                'Student Photograph'
+            ];
 
-            // Normalize existing docs and filter out accidental duplicates from DB
             const seen = new Set();
             const uniqueDocs = (data || []).filter((d: any) => {
-                if (seen.has(d.document_name)) return false;
-                seen.add(d.document_name);
+                const key = d.document_name.toLowerCase().trim();
+                if (seen.has(key)) return false;
+                seen.add(key);
                 return true;
             });
 
-            const existingNames = uniqueDocs.map((d: any) => d.document_name);
-            const missingDocs = STANDARD_MANDATORY.filter(name => !existingNames.includes(name)).map((name, idx) => ({
-                id: -1 - idx,
+            const existingNames = uniqueDocs.map((d: any) => d.document_name.toLowerCase().trim());
+            const missingDocs = STANDARD_MANDATORY.filter(name => !existingNames.includes(name.toLowerCase().trim())).map((name, idx) => ({
+                id: -(idx + 100), // High negative ID to avoid collision with custom temporary ones
                 document_name: name,
                 status: 'Missing',
                 is_mandatory: true,
@@ -90,7 +97,6 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
 
             if (isMounted.current) {
                 const combined = [...uniqueDocs, ...missingDocs];
-                // Final sort: Mandatory first, then Alphanumeric
                 combined.sort((a, b) => {
                     if (a.is_mandatory && !b.is_mandatory) return -1;
                     if (!a.is_mandatory && b.is_mandatory) return 1;
@@ -99,7 +105,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 setDocs(combined);
             }
         } catch (error) {
-            console.error(error);
+            console.error("Vault Sync Error:", error);
         } finally {
             if (isMounted.current) setLoading(false);
         }
@@ -503,7 +509,15 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                                     />
                                                 ))}
                                                 {docs.filter(d => d.is_mandatory).length === 0 && (
-                                                    <EmptySlot label="No mandatory requirements initialized" />
+                                                    <div className="space-y-4">
+                                                        <EmptySlot label="No mandatory requirements initialized" />
+                                                        <button
+                                                            onClick={fetchDocs}
+                                                            className="w-full py-4 rounded-2xl border border-dashed border-white/10 hover:border-white/20 hover:bg-white/5 text-[10px] font-black uppercase text-white/20 hover:text-white transition-all tracking-[0.3em]"
+                                                        >
+                                                            Initialize Compliance Protocol
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
