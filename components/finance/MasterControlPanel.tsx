@@ -40,7 +40,6 @@ const MasterControlPanel: React.FC<MasterControlProps> = ({
     // Extract data from masterState
     const settings = masterState?.settings || {};
     const taxes = masterState?.taxes || [];
-    // approavls can be added later
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -73,23 +72,26 @@ const MasterControlPanel: React.FC<MasterControlProps> = ({
             <InstitutionalFeeStructureCard
                 structures={feeStructures}
                 currency={currency}
-                onNewStructure={onNewStructure}
-                onEditStructure={onEditStructure}
+                onRefresh={onUpdate}
+                branchId={branchId}
             />
 
             <PaymentPlanProtocolCard
                 protocols={paymentProtocols}
-                onNewProtocol={onNewProtocol}
+                onRefresh={onUpdate}
+                branchId={branchId}
             />
 
             <DiscountWaiverCard
                 rules={adjustmentRules}
-                onNewRule={onNewRule}
+                onRefresh={onUpdate}
+                branchId={branchId}
             />
 
             <FiscalTaxMatrixCard
                 taxes={taxes}
-                onNewTax={onNewTax}
+                onRefresh={onUpdate}
+                branchId={branchId}
             />
 
             <div className="h-24"></div> {/* Spacer */}

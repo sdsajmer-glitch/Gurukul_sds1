@@ -257,7 +257,7 @@ export interface FeeStructure {
     currency: CurrencyCode;
     status: 'Active' | 'Draft' | 'active' | 'draft'; // Support both casing conventions
     state?: string; // Matches DB UPPERCASE state constraint
-    type?: 'Standard' | 'Package' | 'Transport';
+    type: 'Standard' | 'Package' | 'Transport';
     components?: FeeComponent[];
     projected_revenue?: number;
     collected_revenue?: number;
@@ -265,6 +265,10 @@ export interface FeeStructure {
     student_count?: number;
     integrity_score?: number;
     created_at?: string;
+    description: string;
+    is_default: boolean;
+    is_locked: boolean;
+    total_amount?: number;
 }
 
 export interface StudentFeeSummary {
