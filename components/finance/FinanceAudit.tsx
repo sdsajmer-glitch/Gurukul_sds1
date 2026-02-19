@@ -43,7 +43,7 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
             const bid = (branchId === null || branchId === undefined) ? null : branchId;
             const [logsRes, statsRes] = await Promise.all([
                 supabase.rpc('get_forensic_audit_logs', {
-                    p_branch_id: typeof bid === 'string' ? bid : null,
+                    p_branch_id: bid,
                     p_limit: 100
                 }),
                 supabase.rpc('get_institutional_health_index', { p_branch_id: bid })
