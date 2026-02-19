@@ -445,7 +445,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-10 gap-y-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-2 h-2 rounded-full bg-primary/40"></div>
-                                    <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Protocol: <span className="text-white/80">{assignedStructure?.name || 'GENESIS_PROTOCOL'}</span></p>
+                                    <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Protocol: <span className="text-white/80">{assignedStructure?.name || 'PENDING_ASSIGNMENT'}</span></p>
                                 </div>
                                 <div className="w-1.5 h-1.5 rounded-full bg-white/10"></div>
                                 <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.3em]">Section: <span className="text-white/80">{accountData.class_name || 'UNASSIGNED'}</span></p>
@@ -513,7 +513,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                     <span className="text-[9px] text-white/10 font-black uppercase tracking-[0.3em]">Institutional Deployment</span>
                                 </div>
                                 <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none group-hover:text-primary transition-colors duration-500">
-                                    GENESIS_PROTOCOL
+                                    {assignedStructure?.name || 'UNINITIALIZED_PROTOCOL'}
                                 </h3>
                             </div>
                             <div className="text-right">
@@ -541,9 +541,9 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                     <div className="w-20 h-20 bg-white/[0.03] rounded-3xl border border-white/5 flex items-center justify-center mb-8 shadow-inner group-hover/init:scale-110 transition-transform duration-700">
                                         <BookIcon className="w-10 h-10 text-white/10 group-hover/init:text-primary transition-colors duration-500" />
                                     </div>
-                                    <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight mb-4 group-hover/init:text-primary transition-colors">Node Unmapped</h4>
+                                    <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight mb-4 group-hover/init:text-primary transition-colors">Protocol Not Linked</h4>
                                     <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] leading-relaxed mb-10">
-                                        This student node is currently in standby. Initialize the GENESIS_PROTOCOL to map institutional data based on their current grade profile.
+                                        This student node is currently in standby. Initialize the fee structure to map institutional data based on their current grade profile.
                                     </p>
                                     <button
                                         onClick={handleMapGenesisProtocol}
@@ -556,7 +556,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                             </span>
                                         ) : (
                                             <span className="flex items-center gap-3">
-                                                MAP GENESIS_PROTOCOL <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                                                INITIALIZE PROTOCOL <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
                                             </span>
                                         )}
                                     </button>
@@ -668,28 +668,30 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
 
                 {/* Layer 4 – Intelligence & Metrics Strip */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Intelligence Card */}
-                    <div className="lg:col-span-2 bg-primary/5 border border-primary/20 rounded-[3rem] p-10 relative overflow-hidden group shadow-2xl">
-                        <div className="absolute top-0 right-0 p-12 opacity-[0.05] group-hover:scale-125 transition-transform duration-[3000ms]">
-                            <SparklesIcon className="w-64 h-64 text-primary" />
-                        </div>
-                        <div className="relative z-10 flex flex-col justify-center h-full">
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="p-3.5 bg-primary rounded-2xl text-white shadow-2xl ring-1 ring-white/10 group-hover:bg-white group-hover:text-primary transition-all duration-500">
-                                    <SparklesIcon className="w-5 h-5" />
-                                </div>
-                                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight leading-none">Financial Intelligence Oracle</h3>
+                    {/* Intelligence Card - Only show if AI is available */}
+                    {aiInsight && !aiInsight.includes('PENDING_CONFIG') && (
+                        <div className="lg:col-span-2 bg-primary/5 border border-primary/20 rounded-[3rem] p-10 relative overflow-hidden group shadow-2xl">
+                            <div className="absolute top-0 right-0 p-12 opacity-[0.05] group-hover:scale-125 transition-transform duration-[3000ms]">
+                                <SparklesIcon className="w-64 h-64 text-primary" />
                             </div>
-                            <p className="text-2xl font-serif italic text-white/90 leading-tight tracking-tight border-l-2 border-primary/30 pl-8 transition-colors group-hover:text-white">
-                                {aiInsight || "Calibrating neural financial nodes..."}
-                            </p>
+                            <div className="relative z-10 flex flex-col justify-center h-full">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="p-3.5 bg-primary rounded-2xl text-white shadow-2xl ring-1 ring-white/10 group-hover:bg-white group-hover:text-primary transition-all duration-500">
+                                        <SparklesIcon className="w-5 h-5" />
+                                    </div>
+                                    <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight leading-none">Financial Intelligence Oracle</h3>
+                                </div>
+                                <p className="text-2xl font-serif italic text-white/90 leading-tight tracking-tight border-l-2 border-primary/30 pl-8 transition-colors group-hover:text-white">
+                                    {aiInsight}
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Integrity Card */}
-                    <div className="lg:col-span-1 bg-[#12141c]/40 border border-white/[0.03] rounded-[3rem] p-10 backdrop-blur-3xl shadow-3xl relative overflow-hidden group">
+                    <div className={`${(aiInsight && !aiInsight.includes('PENDING_CONFIG')) ? 'lg:col-span-1' : 'lg:col-span-3'} bg-[#12141c]/40 border border-white/[0.03] rounded-[3rem] p-10 backdrop-blur-3xl shadow-3xl relative overflow-hidden group`}>
                         <div className="absolute -bottom-10 -right-10 opacity-[0.02] group-hover:scale-110 transition-transform">
-                            <SecurityIcon className="w-80 h-80 text-emerald-500" />
+                            <SecurityIcon className={`w-80 h-80 ${(aiInsight && !aiInsight.includes('PENDING_CONFIG')) ? 'text-emerald-500' : 'text-primary'}`} />
                         </div>
                         <div className="relative z-10 flex flex-col h-full justify-between">
                             <div className="flex items-center justify-between mb-8">
