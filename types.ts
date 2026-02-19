@@ -749,3 +749,101 @@ export interface StudentLedgerEntry {
     credit?: number;
     balance: number;
 }
+
+// ── Enterprise Finance Interfaces ──
+
+export type RefundStatus = 'INITIATED' | 'PENDING_APPROVAL' | 'APPROVED' | 'PROCESSED' | 'REJECTED';
+
+export interface RefundRequest {
+    id: number;
+    student_id: string;
+    student_name?: string;
+    invoice_id?: number;
+    amount: number;
+    reason: string;
+    status: RefundStatus;
+    requested_by: string;
+    approved_by?: string;
+    processed_at?: string;
+    created_at: string;
+    branch_id?: number | null;
+    refund_method?: 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT_NOTE';
+    reference_number?: string;
+}
+
+export type WaiverStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+
+export interface WaiverApplication {
+    id: number;
+    student_id: string;
+    student_name?: string;
+    fee_structure_id?: number;
+    waiver_type: 'PERCENTAGE' | 'FLAT' | 'FULL';
+    waiver_value: number;
+    reason: string;
+    status: WaiverStatus;
+    applied_by: string;
+    approved_by?: string;
+    valid_from?: string;
+    valid_to?: string;
+    created_at: string;
+    branch_id?: number | null;
+}
+
+export type PeriodStatus = 'OPEN' | 'LOCKED' | 'CLOSED';
+
+export interface FinancialPeriod {
+    id: number;
+    name: string;
+    period_type: 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+    start_date: string;
+    end_date: string;
+    status: PeriodStatus;
+    locked_by?: string;
+    locked_at?: string;
+    branch_id?: number | null;
+    total_revenue?: number;
+    total_expenses?: number;
+    notes?: string;
+}
+
+export interface LateFeeRule {
+    id: number;
+    name: string;
+    fee_structure_id?: number;
+    grace_period_days: number;
+    fee_type: 'PERCENTAGE' | 'FLAT';
+    fee_value: number;
+    max_cap?: number;
+    is_active: boolean;
+    branch_id?: number | null;
+    created_at?: string;
+}
+
+export type ReconciliationStatus = 'MATCHED' | 'UNMATCHED' | 'PARTIAL' | 'DISPUTED';
+
+export interface BankReconciliationEntry {
+    id: number;
+    transaction_date: string;
+    bank_reference: string;
+    bank_amount: number;
+    system_amount?: number;
+    student_name?: string;
+    payment_id?: number;
+    status: ReconciliationStatus;
+    matched_at?: string;
+    branch_id?: number | null;
+    notes?: string;
+}
+
+export interface BudgetAllocation {
+    id: number;
+    department: string;
+    category: string;
+    allocated_amount: number;
+    spent_amount: number;
+    fiscal_year: string;
+    branch_id?: number | null;
+    notes?: string;
+    created_at?: string;
+}

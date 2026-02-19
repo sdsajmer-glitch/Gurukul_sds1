@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUpCustomIcon as TrendingUpIcon,
 } from '../icons/TrendingUpIcon';
@@ -10,9 +10,10 @@ import { AlertTriangleIcon } from '../icons/AlertTriangleIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
+import { DownloadIcon } from '../icons/DownloadIcon';
 import RevenueTrendChart from './charts/RevenueTrendChart';
 import CollectionDistributionChart from './charts/CollectionDistributionChart';
-import { CurrencyCode, FinanceData, GradeCollectionStats } from '../../types';
+import { CurrencyCode, FinanceData, GradeCollectionStats, FinancialTransaction } from '../../types';
 
 interface FinanceOverviewProps {
     data: FinanceData;
@@ -37,7 +38,8 @@ interface FinanceOverviewProps {
         hasLedger: boolean;
         missingSteps: string[];
     };
-    recentTransactions: import('../../types').FinancialTransaction[];
+    recentTransactions: FinancialTransaction[];
+    onExportDashboard?: () => void;
 }
 
 const formatCurrency = (amount: number, currency: CurrencyCode) => {
@@ -47,6 +49,34 @@ const formatCurrency = (amount: number, currency: CurrencyCode) => {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(amount || 0);
+};
+
+// --- Financial Risk Level Engine ---
+const computeRiskLevel = (data: FinanceData): { level: string; color: string; bgColor: string; borderColor: string; description: string } => {
+    const overdueRatio = data.total_assigned > 0 ? (data.total_overdue / data.total_assigned) * 100 : 0;
+    const outstandingRatio = data.outstanding_ratio || 0;
+
+    if (overdueRatio > 30 || outstandingRatio > 50) {
+        return { level: 'CRITICAL', color: 'text-red-500', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/20', description: 'Immediate intervention required. Overdue exceeds safety threshold.' };
+    }
+    if (overdueRatio > 15 || outstandingRatio > 30) {
+        return { level: 'HIGH', color: 'text-orange-500', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/20', description: 'Elevated risk. Active collection campaigns recommended.' };
+    }
+    if (overdueRatio > 5 || outstandingRatio > 15) {
+        return { level: 'MODERATE', color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/20', description: 'Moderate exposure. Monitor collection velocity closely.' };
+    }
+    return { level: 'LOW', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20', description: 'Financial health is within acceptable parameters.' };
+};
+
+// --- Variance Detection ---
+const computeVariance = (expected: number, actual: number): { percent: number; isPositive: boolean; label: string } => {
+    if (expected === 0) return { percent: 0, isPositive: true, label: 'N/A' };
+    const variance = ((actual - expected) / expected) * 100;
+    return {
+        percent: Math.abs(variance),
+        isPositive: variance >= 0,
+        label: `${variance >= 0 ? '+' : ''}${variance.toFixed(1)}%`
+    };
 };
 
 const KPIBlock: React.FC<{
@@ -87,6 +117,36 @@ const KPIBlock: React.FC<{
     </motion.div>
 );
 
+// --- Export Dashboard Snapshot ---
+const exportDashboardCSV = (data: FinanceData, gradeStats: GradeCollectionStats[], currency: CurrencyCode) => {
+    const lines = [
+        `Finance Dashboard Snapshot - ${new Date().toISOString().split('T')[0]}`,
+        '',
+        'KPI,Value',
+        `Total Assigned,${data.total_assigned}`,
+        `Total Collected,${data.total_collected}`,
+        `Outstanding,${data.total_pending}`,
+        `Overdue,${data.total_overdue}`,
+        `Monthly Collection,${data.monthly_collection}`,
+        `Collection Efficiency,${data.collection_efficiency || 0}%`,
+        `Health Index,${data.health_index || 0}`,
+        `Burn Rate (30d Expense),${data.total_expense_30d || 0}`,
+        '',
+        'Grade,Students,Billed,Collected,Pending,Collection %',
+        ...gradeStats.map(s => {
+            const pct = Number(s.total_billed) > 0 ? ((Number(s.total_collected) / Number(s.total_billed)) * 100).toFixed(1) : '0.0';
+            return `${s.grade},${s.total_students},${s.total_billed},${s.total_collected},${s.total_pending},${pct}%`;
+        })
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Finance_Dashboard_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+};
+
 const FinanceOverview: React.FC<FinanceOverviewProps> = ({
     data,
     gradeStats = [],
@@ -97,12 +157,95 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
     aiInsight,
     isAnalyzing,
     readiness,
-    recentTransactions = []
+    recentTransactions = [],
+    onExportDashboard
 }) => {
     const isLedgerEmpty = data.total_assigned === 0;
+    const [chartPeriod, setChartPeriod] = useState<'Weekly' | 'Monthly' | 'Quarterly'>('Monthly');
+
+    // Computed financial intelligence
+    const riskLevel = useMemo(() => computeRiskLevel(data), [data]);
+    const collectionVariance = useMemo(() => {
+        const expectedMonthly = data.total_assigned > 0 ? data.total_assigned / 12 : 0;
+        return computeVariance(expectedMonthly, data.monthly_collection);
+    }, [data]);
+    const reconciliationHealth = useMemo(() => {
+        if (isLedgerEmpty) return { status: 'INACTIVE', matched: 0, total: 0 };
+        const totalAccounts = gradeStats.reduce((sum, g) => sum + g.total_students, 0);
+        const matchedAccounts = gradeStats.reduce((sum, g) => {
+            const collected = Number(g.total_collected) || 0;
+            const billed = Number(g.total_billed) || 0;
+            if (billed > 0 && collected > 0) return sum + g.total_students;
+            return sum;
+        }, 0);
+        return { status: matchedAccounts === totalAccounts ? 'RECONCILED' : 'PARTIAL', matched: matchedAccounts, total: totalAccounts };
+    }, [gradeStats, isLedgerEmpty]);
 
     return (
         <div className="space-y-16 pb-24">
+            {/* Layer 0 – Financial Risk & Reconciliation Status Bar */}
+            {!isLedgerEmpty && (
+                <div className="flex flex-col lg:flex-row gap-6">
+                    {/* Risk Indicator */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex-1 flex items-center justify-between px-8 py-5 rounded-[2rem] ${riskLevel.bgColor} border ${riskLevel.borderColor} backdrop-blur-xl`}
+                    >
+                        <div className="flex items-center gap-5">
+                            <div className={`w-3 h-3 rounded-full ${riskLevel.color.replace('text-', 'bg-')} animate-pulse shadow-lg`} />
+                            <div>
+                                <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${riskLevel.color}`}>
+                                    Financial Risk: {riskLevel.level}
+                                </span>
+                                <p className="text-[11px] text-white/40 mt-1">{riskLevel.description}</p>
+                            </div>
+                        </div>
+                        <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border ${riskLevel.bgColor} ${riskLevel.color} ${riskLevel.borderColor}`}>
+                            {riskLevel.level}
+                        </span>
+                    </motion.div>
+
+                    {/* Reconciliation Status */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className={`flex items-center justify-between px-8 py-5 rounded-[2rem] border backdrop-blur-xl ${reconciliationHealth.status === 'RECONCILED'
+                            ? 'bg-emerald-500/10 border-emerald-500/20'
+                            : 'bg-amber-500/10 border-amber-500/20'
+                            }`}
+                    >
+                        <div className="flex items-center gap-5">
+                            <ShieldCheckIcon className={`w-5 h-5 ${reconciliationHealth.status === 'RECONCILED' ? 'text-emerald-500' : 'text-amber-500'}`} />
+                            <div>
+                                <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${reconciliationHealth.status === 'RECONCILED' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                    Reconciliation: {reconciliationHealth.status}
+                                </span>
+                                <p className="text-[11px] text-white/40 mt-1">
+                                    {reconciliationHealth.matched}/{reconciliationHealth.total} accounts matched
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Export Dashboard */}
+                    <motion.button
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        onClick={() => {
+                            if (onExportDashboard) onExportDashboard();
+                            else exportDashboardCSV(data, gradeStats, currency);
+                        }}
+                        className="flex items-center gap-4 px-8 py-5 rounded-[2rem] bg-white/[0.03] border border-white/10 hover:border-primary/30 hover:bg-white/[0.06] transition-all group"
+                    >
+                        <DownloadIcon className="w-5 h-5 text-white/30 group-hover:text-primary transition-colors" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 group-hover:text-white transition-colors">Export Snapshot</span>
+                    </motion.button>
+                </div>
+            )}
+
             {/* Layer 1 – Financial KPI Strip */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8">
                 <KPIBlock
@@ -117,7 +260,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 <KPIBlock
                     title="Total Collected"
                     value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_collected, currency)}
-                    trend={isLedgerEmpty ? undefined : `${data.collection_efficiency}%`}
+                    trend={isLedgerEmpty ? undefined : `${data.collection_efficiency || 0}%`}
                     trendUp={true}
                     icon={<CheckCircleIcon className="w-6 h-6" />}
                     color="bg-emerald-500"
@@ -126,8 +269,8 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 <KPIBlock
                     title="Outstanding"
                     value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_pending, currency)}
-                    trend={isLedgerEmpty ? 'Inactive' : (data.outstanding_ratio > 20 ? "High" : "Low")}
-                    trendUp={data.outstanding_ratio <= 20}
+                    trend={isLedgerEmpty ? 'Inactive' : ((data.outstanding_ratio || 0) > 20 ? "High" : "Low")}
+                    trendUp={(data.outstanding_ratio || 0) <= 20}
                     icon={<ClockIcon className="w-6 h-6" />}
                     color="bg-amber-500"
                     onClick={() => onNavigate('accounts', { filter: 'pending' })}
@@ -139,6 +282,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                     trendUp={true}
                     icon={<ClockIcon className="w-6 h-6" />}
                     color="bg-indigo-500"
+                    onClick={() => onNavigate('accounts', { filter: 'pending' })}
                 />
                 <KPIBlock
                     title="Overdue Critical"
@@ -149,15 +293,61 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                     color="bg-red-500"
                     onClick={() => onNavigate('accounts', { filter: 'overdue' })}
                 />
+                {/* FIX: Removed dummy formula `monthly_collection * 0.72` — now uses real expense data only */}
                 <KPIBlock
                     title="Burn Rate"
-                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_expense_30d || data.monthly_collection * 0.72, currency)}
-                    trend={isLedgerEmpty ? 'N/A' : (data.burn_rate_stability > 90 ? "Stable" : "Volatile")}
-                    trendUp={data.burn_rate_stability > 90}
+                    value={isLedgerEmpty ? '₹0' : formatCurrency(data.total_expense_30d || 0, currency)}
+                    trend={isLedgerEmpty ? 'N/A' : ((data.burn_rate_stability || 0) > 90 ? "Stable" : "Volatile")}
+                    trendUp={(data.burn_rate_stability || 0) > 90}
                     icon={<TrendingUpIcon className="w-6 h-6" />}
                     color="bg-purple-500"
                 />
             </div>
+
+            {/* Layer 1.5 – Variance Detection Strip */}
+            {!isLedgerEmpty && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-[#12141c]/60 border border-white/5 rounded-[2rem] p-8 flex items-center justify-between backdrop-blur-xl">
+                        <div>
+                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mb-2">Collection Variance</p>
+                            <span className={`text-2xl font-serif font-black ${collectionVariance.isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+                                {collectionVariance.label}
+                            </span>
+                        </div>
+                        <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border ${collectionVariance.isPositive
+                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                            : 'bg-red-500/10 text-red-500 border-red-500/20'
+                            }`}>
+                            {collectionVariance.isPositive ? 'ABOVE TARGET' : 'BELOW TARGET'}
+                        </div>
+                    </div>
+                    <div className="bg-[#12141c]/60 border border-white/5 rounded-[2rem] p-8 flex items-center justify-between backdrop-blur-xl">
+                        <div>
+                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mb-2">Net Revenue Position</p>
+                            <span className="text-2xl font-serif font-black text-white">
+                                {formatCurrency(data.total_collected - (data.total_expense_30d || 0), currency)}
+                            </span>
+                        </div>
+                        <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border ${(data.total_collected - (data.total_expense_30d || 0)) >= 0
+                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                            : 'bg-red-500/10 text-red-500 border-red-500/20'
+                            }`}>
+                            {(data.total_collected - (data.total_expense_30d || 0)) >= 0 ? 'SURPLUS' : 'DEFICIT'}
+                        </div>
+                    </div>
+                    <div className="bg-[#12141c]/60 border border-white/5 rounded-[2rem] p-8 flex items-center justify-between backdrop-blur-xl">
+                        <div>
+                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mb-2">Outstanding Aging</p>
+                            <span className={`text-2xl font-serif font-black ${data.total_overdue > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                {data.total_assigned > 0 ? ((data.total_overdue / data.total_assigned) * 100).toFixed(1) : '0.0'}%
+                            </span>
+                        </div>
+                        <div className="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border bg-white/5 text-white/40 border-white/10">
+                            OVERDUE RATIO
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Layer 2 & 3 – Cash Flow & Health Ring */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
@@ -169,8 +359,12 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                                 <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] mt-3">Fiscal Dynamics & Liquidity Vectors</p>
                             </div>
                             <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5">
-                                {['Weekly', 'Monthly', 'Quarterly'].map(t => (
-                                    <button key={t} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${t === 'Monthly' ? 'bg-white text-black shadow-2xl' : 'text-white/30 hover:text-white hover:bg-white/5'}`}>
+                                {(['Weekly', 'Monthly', 'Quarterly'] as const).map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setChartPeriod(t)}
+                                        className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${chartPeriod === t ? 'bg-white text-black shadow-2xl' : 'text-white/30 hover:text-white hover:bg-white/5'}`}
+                                    >
                                         {t}
                                     </button>
                                 ))}
@@ -187,11 +381,11 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            <RevenueTrendChart total={data.total_collected} expensesTotal={data.total_expense_30d} />
+                            <RevenueTrendChart total={data.total_collected} expensesTotal={data.total_expense_30d || 0} />
                         )}
                     </div>
 
-                    {/* AI Intelligence Oracle Polish */}
+                    {/* AI Intelligence Oracle */}
                     <div className="bg-primary/10 border border-primary/20 rounded-[4rem] p-12 relative overflow-hidden group shadow-3xl backdrop-blur-3xl ring-1 ring-primary/20">
                         <div className="absolute top-0 right-0 p-20 opacity-[0.05] group-hover:scale-125 transition-transform duration-[2000ms] -rotate-12"><SparklesIcon className="w-80 h-80 text-primary" /></div>
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-40 pointer-events-none" />
@@ -214,7 +408,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                                         </p>
                                     ) : aiInsight ? (
                                         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="relative">
-                                            <span className="absolute -left-8 -top-4 text-7xl font-serif text-primary/20 leading-none">“</span>
+                                            <span className="absolute -left-8 -top-4 text-7xl font-serif text-primary/20 leading-none">&ldquo;</span>
                                             <p className="text-2xl md:text-3xl text-white font-serif italic tracking-tight leading-tight relative z-10">
                                                 {aiInsight}
                                             </p>
@@ -238,7 +432,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                     </div>
                 </div>
 
-                {/* Financial Health Matrix Polish */}
+                {/* Financial Health Matrix */}
                 <div className="lg:col-span-4 bg-[#12141c]/60 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-12 shadow-[0_64px_128px_-32px_rgba(0,0,0,0.6)] flex flex-col relative overflow-hidden h-full ring-1 ring-white/5 group">
                     <div className="absolute top-0 right-0 p-12 opacity-[0.01] group-hover:scale-110 transition-transform duration-1000 rotate-12"><TrendingUpIcon className="w-96 h-96 text-primary" /></div>
 
@@ -280,9 +474,9 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
 
                         <div className="mt-auto space-y-10 pt-12 border-t border-white/5">
                             {[
-                                { label: 'Collection Efficiency', value: isLedgerEmpty ? 'NULL' : `${data.collection_efficiency}%`, status: isLedgerEmpty ? 'INACTIVE' : 'STABLE', color: 'text-emerald-500' },
-                                { label: 'Burn Volatility', value: isLedgerEmpty ? '0%' : `${data.burn_rate_stability}%`, status: isLedgerEmpty ? 'INACTIVE' : 'NOMINAL', color: 'text-primary' },
-                                { label: 'Risk Exposure', value: isLedgerEmpty ? 'N/A' : (data.outstanding_ratio > 30 ? 'CRITICAL' : 'SECURE'), status: isLedgerEmpty ? 'INACTIVE' : 'MONITORED', color: data.outstanding_ratio > 30 ? 'text-red-500' : 'text-emerald-500' }
+                                { label: 'Collection Efficiency', value: isLedgerEmpty ? 'NULL' : `${data.collection_efficiency || 0}%`, status: isLedgerEmpty ? 'INACTIVE' : 'STABLE', color: 'text-emerald-500' },
+                                { label: 'Burn Volatility', value: isLedgerEmpty ? '0%' : `${data.burn_rate_stability || 0}%`, status: isLedgerEmpty ? 'INACTIVE' : 'NOMINAL', color: 'text-primary' },
+                                { label: 'Risk Exposure', value: isLedgerEmpty ? 'N/A' : riskLevel.level, status: isLedgerEmpty ? 'INACTIVE' : 'MONITORED', color: riskLevel.color }
                             ].map((stat, i) => (
                                 <div key={i} className="flex justify-between items-end">
                                     <div className="space-y-2">
@@ -297,7 +491,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 </div>
             </div>
 
-            {/* Real-time Transaction Stream Upgrade */}
+            {/* Real-time Transaction Stream */}
             <div className="bg-[#12141c]/60 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-12 shadow-3xl relative overflow-hidden group">
                 <div className="flex justify-between items-center mb-16 relative z-10">
                     <div className="flex items-center gap-6">
@@ -309,7 +503,12 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                             <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.6em] mt-3 italic">Live Capital Injection Monitoring</p>
                         </div>
                     </div>
-                    <button className="text-[11px] font-black text-primary uppercase tracking-[0.5em] hover:text-white transition-all underline decoration-primary/20 decoration-2 underline-offset-[12px] hover:decoration-white font-serif italic">EXPLORE_DEEP_LEDGER_MAP</button>
+                    <button
+                        onClick={() => onNavigate('accounts')}
+                        className="text-[11px] font-black text-primary uppercase tracking-[0.5em] hover:text-white transition-all underline decoration-primary/20 decoration-2 underline-offset-[12px] hover:decoration-white font-serif italic"
+                    >
+                        EXPLORE_DEEP_LEDGER_MAP
+                    </button>
                 </div>
 
                 <div className="space-y-6 relative z-10">
@@ -318,7 +517,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                             <p className="text-xl font-serif font-black uppercase text-white/10 tracking-[0.6em]">No Capital Movement Protocols Detected</p>
                         </div>
                     ) : (
-                        recentTransactions.map((tx, i) => (
+                        recentTransactions.slice(0, 10).map((tx, i) => (
                             <motion.div
                                 key={tx.id}
                                 initial={{ opacity: 0, x: -20 }}
@@ -352,14 +551,18 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 </div>
             </div>
 
-            {/* Structural Collection Matrix Upgrade */}
+            {/* Structural Collection Matrix */}
             <div className="bg-[#12141c]/60 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-12 shadow-[0_64px_128px_-32px_rgba(0,0,0,0.6)] relative overflow-hidden ring-1 ring-white/5 group">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-16 relative z-10">
                     <div>
                         <h4 className="text-3xl font-serif font-black text-white uppercase tracking-tight">Structural Collection Matrix</h4>
                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.6em] mt-3 italic">Performance Benchmarking & Node Saturation Index</p>
                     </div>
-                    <button className="px-10 py-4 bg-white/5 border border-white/5 hover:border-white/20 rounded-[1.25rem] text-[10px] font-black text-white/40 hover:text-white uppercase tracking-[0.4em] transition-all shadow-xl backdrop-blur-md">
+                    <button
+                        onClick={() => exportDashboardCSV(data, gradeStats, currency)}
+                        className="px-10 py-4 bg-white/5 border border-white/5 hover:border-white/20 rounded-[1.25rem] text-[10px] font-black text-white/40 hover:text-white uppercase tracking-[0.4em] transition-all shadow-xl backdrop-blur-md flex items-center gap-3"
+                    >
+                        <DownloadIcon className="w-4 h-4" />
                         MATRIX_RECON_EXPORT
                     </button>
                 </div>
@@ -374,7 +577,8 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                             <motion.div
                                 key={idx}
                                 whileHover={{ y: -8, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' }}
-                                className="p-10 bg-white/[0.02] border border-white/5 rounded-[3.5rem] space-y-8 transition-all group/card shadow-2xl relative overflow-hidden"
+                                onClick={() => onNavigate('accounts', { filter: stat.grade })}
+                                className="p-10 bg-white/[0.02] border border-white/5 rounded-[3.5rem] space-y-8 transition-all group/card shadow-2xl relative overflow-hidden cursor-pointer"
                             >
                                 <div className="absolute top-0 right-0 p-8 opacity-0 group-hover/card:opacity-10 transition-opacity duration-1000 rotate-12">
                                     <CheckCircleIcon className="w-20 h-20 text-emerald-500" />
@@ -421,7 +625,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                 </div>
             </div>
 
-            {/* Layer 6 – Financial Command Node (Projections) Upgrade */}
+            {/* Fiscal Projection Matrix */}
             {projections && (
                 <div className="bg-[#12141c]/60 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-16 shadow-[0_64px_128px_-32px_rgba(0,0,0,0.6)] relative overflow-hidden ring-1 ring-white/5">
                     <div className="absolute top-0 right-0 p-16 opacity-[0.05] -rotate-12 group-hover:scale-110 transition-transform duration-[3000ms]">
@@ -452,7 +656,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                         </div>
 
                         <div className="xl:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-                            {projections?.projections?.map((node, idx) => (
+                            {projections?.projections?.map((node: { node: string; amount: number; confidence: number }, idx: number) => (
                                 <motion.div
                                     key={idx}
                                     whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.03)' }}

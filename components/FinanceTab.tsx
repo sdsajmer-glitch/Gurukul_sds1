@@ -5,6 +5,7 @@ import {
     FinanceData, FeeStructure, GradeCollectionStats,
     StudentFeeSummary, UserProfile, SchoolBranch, CurrencyCode
 } from '../types';
+import FinanceRefundManager from './finance/FinanceRefundManager';
 import Spinner from './common/Spinner';
 import { PlusIcon } from './icons/PlusIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
@@ -86,7 +87,7 @@ const TabButton: React.FC<{
 
 
 const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, branches: SchoolBranch[] }> = ({ profile, branchId, branches }) => {
-    const [activeView, setActiveView] = useState<'overview' | 'accounts' | 'master' | 'audit' | 'expenditure'>('overview');
+    const [activeView, setActiveView] = useState<'overview' | 'accounts' | 'master' | 'audit' | 'expenditure' | 'refunds'>('overview');
     const [financeData, setFinanceData] = useState<FinanceData | null>(null);
     const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
     const [studentLedgers, setStudentLedgers] = useState<StudentFeeSummary[]>([]);
@@ -307,9 +308,10 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                 <div className="flex bg-[#12141c]/60 p-1.5 rounded-full border border-white/5 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] ring-1 ring-white/5">
                     <TabButton id="overview" label="Overview" icon={<ChartBarIcon className="w-4 h-4" />} isActive={activeView === 'overview'} onClick={setActiveView} />
                     <TabButton id="accounts" label="Accounts" icon={<UsersIcon className="w-4 h-4" />} isActive={activeView === 'accounts'} onClick={setActiveView} />
+                    <TabButton id="refunds" label="Refunds" icon={<RefreshCwIcon className="w-4 h-4" />} isActive={activeView === 'refunds'} onClick={setActiveView} />
                     <TabButton id="expenditure" label="Expenditure" icon={<TrendingUpCustomIcon className="w-4 h-4 rotate-180" />} isActive={activeView === 'expenditure'} onClick={setActiveView} />
 
-                    {(profile.role?.toLowerCase()?.includes('admin') || profile.role?.toLowerCase() === 'accountant') && (
+                    {(profile.role?.toLowerCase()?.includes('admin') || profile.role?.toLowerCase() === 'accountant' || profile.role?.toLowerCase() === 'principal' || profile.role?.toLowerCase()?.includes('finance')) && (
                         <>
                             <TabButton id="master" label="Master Control" icon={<ShieldCheckIcon className="w-4 h-4" />} isActive={activeView === 'master'} onClick={setActiveView} />
                             <TabButton id="audit" label="Audit Logs" icon={<ActivityIcon className="w-4 h-4" />} isActive={activeView === 'audit'} onClick={setActiveView} />
@@ -415,6 +417,27 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                 isAnalyzing={isAnalyzing}
                                 readiness={readiness}
                                 recentTransactions={recentTransactions}
+                                onExportDashboard={() => {
+                                    if (!financeData) return;
+                                    const lines = [
+                                        `Finance Dashboard Snapshot - ${new Date().toISOString().split('T')[0]}`,
+                                        '', 'KPI,Value',
+                                        `Total Assigned,${financeData.total_assigned}`,
+                                        `Total Collected,${financeData.total_collected}`,
+                                        `Outstanding,${financeData.total_pending}`,
+                                        `Overdue,${financeData.total_overdue}`,
+                                        `Monthly Collection,${financeData.monthly_collection}`,
+                                        `Collection Efficiency,${financeData.collection_efficiency || 0}%`,
+                                        `Health Index,${financeData.health_index || 0}`,
+                                    ];
+                                    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `Finance_Dashboard_${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                }}
                             />
                         </motion.div>
                     )}
@@ -440,7 +463,20 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                                     onSearchChange={setAccountSearch}
                                     riskOnly={riskOnly}
                                     onRiskToggle={() => setRiskOnly(!riskOnly)}
-                                    onExport={() => { }}
+                                    onExport={() => {
+                                        if (!studentLedgers.length) return;
+                                        const headers = 'Student Name,Grade,Class,Total Billed,Total Paid,Outstanding,Status\n';
+                                        const csv = studentLedgers.map(s =>
+                                            `"${s.display_name}","${s.grade}","${s.class_name}",${s.total_billed},${s.total_paid},${s.outstanding_balance},"${s.overall_status}"`
+                                        ).join('\n');
+                                        const blob = new Blob([headers + csv], { type: 'text/csv' });
+                                        const url = window.URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `Student_Fee_Registry_${new Date().toISOString().split('T')[0]}.csv`;
+                                        a.click();
+                                        window.URL.revokeObjectURL(url);
+                                    }}
                                     onSelectAccount={(acc) => setSelectedStudent(acc)}
                                     viewFilter={accountViewFilter}
                                 />
@@ -474,6 +510,12 @@ const FinanceTab: React.FC<{ profile: UserProfile, branchId?: number | null, bra
                     {activeView === 'audit' && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <FinanceAudit branchId={branchId || null} />
+                        </motion.div>
+                    )}
+
+                    {activeView === 'refunds' && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                            <FinanceRefundManager branchId={branchId || null} currency={viewCurrency} students={studentLedgers} />
                         </motion.div>
                     )}
 
