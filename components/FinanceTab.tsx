@@ -552,6 +552,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile, branchId, branches }) 
                                 onNewTax={() => setIsTaxModalOpen(true)}
                                 onUpdate={() => fetchAllData(true)}
                                 masterState={masterState}
+                                userRole={profile.role}
                             />
                         </motion.div>
                     )}

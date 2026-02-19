@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import FoundationGovernanceCard from './master/FoundationGovernanceCard';
@@ -22,6 +22,7 @@ interface MasterControlProps {
     onNewRule: () => void;
     onNewTax: () => void; // Need to bubble this up
     onUpdate: () => void;
+    userRole?: string; // New prop for RBAC
 }
 
 const MasterControlPanel: React.FC<MasterControlProps> = ({
@@ -35,18 +36,87 @@ const MasterControlPanel: React.FC<MasterControlProps> = ({
     onEditStructure,
     onNewProtocol,
     onNewRule,
-    onNewTax,
-    onUpdate
+    onNewTax, // Fixed duplicate identifier
+    onUpdate,
+    userRole
 }) => {
 
     // Extract data from masterState
-    const settings = masterState?.settings || {};
+    const initialSettings = masterState?.settings || {};
     const taxes = masterState?.taxes || [];
 
+    // RBAC: Check if user has institutional authority to modify governance
+    const canModify = React.useMemo(() => {
+        if (!userRole) return false;
+        const role = userRole.toLowerCase();
+        return role.includes('admin') ||
+            role.includes('finance') ||
+            role === 'accountant' ||
+            role === 'principal';
+    }, [userRole]);
+
+    const [localSettings, setLocalSettings] = useState(initialSettings);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Update local state when masterState changes
+    useEffect(() => {
+        if (masterState?.settings) {
+            setLocalSettings(masterState.settings);
+        }
+    }, [masterState?.settings]);
+
+    const handleSettingChange = (key: string, value: any) => {
+        if (!canModify) {
+            alert("Unauthorized: You do not have permissions to modify institutional governance.");
+            return;
+        }
+        setLocalSettings(prev => ({
+            ...prev,
+            [key]: value
+        }));
+    };
+
+    const handleGlobalSave = async () => {
+        if (!branchId || isSaving) return;
+        if (!canModify) {
+            alert("Unauthorized: Configuration changes restricted to Finance Administrators.");
+            return;
+        }
+        setIsSaving(true);
+        try {
+            const { data, error } = await supabase.rpc('save_finance_governance_settings', {
+                p_branch_id: branchId,
+                p_tax_enabled: localSettings.tax_enabled || false,
+                p_installment_strict_mode: localSettings.installment_strict_mode || false,
+                p_late_fee_enabled: localSettings.late_fee_enabled || false,
+                p_ledger_lock_date: localSettings.ledger_lock_date || null
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                // Success feedback
+                onUpdate();
+                // You could show a toast here if a toast context is available
+                alert("Governance settings saved successfully and audit logs created.");
+            } else {
+                throw new Error(data?.error || "Save failed");
+            }
+        } catch (err: any) {
+            console.error("Global Save Failed:", err.message);
+            alert("Error: " + err.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleSyncStudents = async () => {
         if (!branchId || isSyncing) return;
+        if (!canModify) {
+            alert("Unauthorized: Database synchronization requires administrative clearance.");
+            return;
+        }
         setIsSyncing(true);
         try {
             const { data, error } = await supabase.rpc('fn_sync_student_finance_profiles', {
@@ -100,17 +170,30 @@ const MasterControlPanel: React.FC<MasterControlProps> = ({
                     <button className="px-4 py-2 bg-white/[0.03] border border-white/10 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all">
                         Audit
                     </button>
-                    <button className="px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg">
-                        Global Save
+                    <button
+                        onClick={handleGlobalSave}
+                        disabled={isSaving || !canModify}
+                        className={`px-4 py-2 bg-purple-500 hover:bg-purple-400 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg flex items-center gap-2 ${(isSaving || !canModify) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                    >
+                        {!canModify && <div className="w-3 h-3 border border-white/20 rounded-full flex items-center justify-center text-[8px] font-bold">L</div>}
+                        {isSaving ? (
+                            <>
+                                <div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                                Saving...
+                            </>
+                        ) : 'Global Save'}
                     </button>
                 </div>
             </div>
 
             {/* Stacked Smart Cards */}
             <FoundationGovernanceCard
-                settings={settings}
+                settings={localSettings}
                 branchId={branchId}
                 onUpdate={onUpdate}
+                onChange={handleSettingChange}
+                isSaving={isSaving}
+                canModify={canModify} // Pass down RBAC state
             />
 
             <InstitutionalFeeStructureCard
