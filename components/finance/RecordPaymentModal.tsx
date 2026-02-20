@@ -120,12 +120,13 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
     const isStandby = !fetching && invoices.length === 0 && !error;
 
     return (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[3000] flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[3000] flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-[#0c0d12] w-full max-w-lg md:max-w-2xl rounded-3xl shadow-2xl border border-white/10 overflow-hidden flex flex-col my-8"
+                transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                className="bg-[#0a0c12] w-full max-w-lg md:max-w-2xl rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/[0.06] overflow-hidden flex flex-col my-8 relative"
                 onClick={e => e.stopPropagation()}
             >
                 <AnimatePresence mode="wait">
@@ -170,24 +171,26 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
                     ) : (
                         <form onSubmit={handleSubmit} className="flex flex-col h-full">
                             {/* Header */}
-                            <header className="p-6 md:p-8 border-b border-white/[0.06] bg-white/[0.01] flex justify-between items-start md:items-center gap-4 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.03] to-transparent pointer-events-none"></div>
-                                <div className="flex items-center gap-4 md:gap-6 relative z-10">
-                                    <div className="p-3 md:p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-lg shrink-0">
-                                        <DollarSignIcon className="w-6 h-6 md:w-8 md:h-8" />
+                            <header className="p-6 md:p-8 border-b border-white/[0.04] bg-gradient-to-r from-indigo-500/[0.03] to-transparent flex justify-between items-start md:items-center gap-4 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_0%_50%,rgba(99,102,241,0.08),transparent_60%)] pointer-events-none" />
+                                <div className="flex items-center gap-4 md:gap-5 relative z-10">
+                                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shadow-lg shadow-indigo-500/10 shrink-0">
+                                        <DollarSignIcon className="w-6 h-6 md:w-7 md:h-7" />
                                     </div>
                                     <div>
                                         <h3 className="text-xl md:text-2xl font-serif font-bold text-white tracking-tight leading-tight">Record Payment</h3>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                                            <p className="text-[10px] md:text-xs font-bold text-white/40 uppercase tracking-widest">{studentName}</p>
+                                        <div className="flex items-center gap-2 mt-1.5">
+                                            <div className="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
+                                            </div>
+                                            <p className="text-[10px] md:text-[11px] font-bold text-white/50 uppercase tracking-[0.2em]">{studentName}</p>
                                         </div>
                                     </div>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="p-2 md:p-3 rounded-xl hover:bg-white/5 text-white/30 hover:text-white transition-colors"
+                                    className="p-2.5 hover:bg-white/[0.06] rounded-xl transition-colors text-white/30 hover:text-white relative z-10"
                                 >
                                     <XIcon className="w-5 h-5 md:w-6 md:h-6" />
                                 </button>
@@ -208,11 +211,17 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
 
                                 {/* Warning/Info Display */}
                                 {isStandby && (
-                                    <div className="p-4 md:p-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-4">
-                                        <InfoIcon className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                        <div className="space-y-1">
-                                            <p className="text-[10px] font-bold uppercase text-amber-500 tracking-widest">No Pending Invoices</p>
-                                            <p className="text-sm text-white/50 leading-relaxed">This payment will be recorded as an <strong>Unallocated Advance</strong>.</p>
+                                    <div className="p-5 md:p-6 bg-gradient-to-br from-amber-500/[0.08] to-amber-600/[0.02] border border-amber-500/20 rounded-2xl flex items-start gap-4 shadow-[inner_0_0_20px_rgba(245,158,11,0.05)] relative overflow-hidden group">
+                                        <div className="absolute -inset-2 bg-amber-500/10 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0 border border-amber-500/20 shadow-inner">
+                                            <InfoIcon className="w-5 h-5" />
+                                        </div>
+                                        <div className="space-y-1.5 pt-0.5 relative z-10">
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-[10px] font-bold uppercase text-amber-500 tracking-[0.15em]">No Pending Invoices</p>
+                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500/50 animate-ping" />
+                                            </div>
+                                            <p className="text-sm text-amber-200/60 leading-relaxed font-medium">This payment will be recorded as an <strong className="text-amber-400 font-bold">Unallocated Advance</strong>.</p>
                                         </div>
                                     </div>
                                 )}
@@ -220,9 +229,10 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
                                 {/* Form Fields */}
                                 <div className="space-y-6">
                                     {/* Invoice Selection */}
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase text-white/30 tracking-widest ml-1">Payment For</label>
-                                        <div className="relative group">
+                                    <div className="space-y-2.5">
+                                        <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] pl-1">Payment For</label>
+                                        <div className="relative group/select">
+                                            <div className="absolute -inset-[1px] bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl opacity-0 group-focus-within/select:opacity-100 transition-opacity blur-sm pointer-events-none" />
                                             <select
                                                 value={selectedInvoiceId}
                                                 onChange={e => {
@@ -233,24 +243,24 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
                                                     setError(null);
                                                 }}
                                                 disabled={fetching}
-                                                className="w-full bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 rounded-2xl p-4 md:p-5 pr-12 text-sm md:text-base font-medium text-white focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none cursor-pointer transition-all appearance-none"
+                                                className="w-full relative bg-[#0a0c12] hover:bg-white/[0.02] border border-white/[0.08] group-focus-within/select:border-indigo-500/50 rounded-2xl p-4 md:p-5 pr-12 text-sm md:text-base font-bold text-white/90 outline-none cursor-pointer transition-all appearance-none shadow-[inner_0_2px_10px_rgba(0,0,0,0.5)] z-10"
                                             >
                                                 {fetching ? (
                                                     <option disabled>Loading invoices...</option>
                                                 ) : invoices.length > 0 ? (
                                                     <>
-                                                        <option value="ADVANCE" className="bg-[#1a1d23]">Unallocated Advance (Credit)</option>
+                                                        <option value="ADVANCE" className="bg-[#0c0e14]">Unallocated Advance (Credit)</option>
                                                         {invoices.map(inv => (
-                                                            <option key={inv.id} value={inv.id} className="bg-[#1a1d23]">
+                                                            <option key={inv.id} value={inv.id} className="bg-[#0c0e14]">
                                                                 {inv.description} — ₹{inv.amount_due} Due
                                                             </option>
                                                         ))}
                                                     </>
                                                 ) : (
-                                                    <option value="ADVANCE" className="bg-[#1a1d23]">Unallocated Advance (Credit)</option>
+                                                    <option value="ADVANCE" className="bg-[#0c0e14]">Unallocated Advance (Credit)</option>
                                                 )}
                                             </select>
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 group-hover:text-white transition-colors">
+                                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover/select:text-indigo-400 group-focus-within/select:text-indigo-400 transition-colors z-20">
                                                 <ChevronDownIcon className="w-5 h-5" />
                                             </div>
                                         </div>
@@ -258,38 +268,42 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {/* Amount Input */}
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase text-white/30 tracking-widest ml-1">Amount</label>
-                                            <div className="relative group">
-                                                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-primary/80 font-serif text-xl md:text-2xl font-bold">₹</div>
+                                        <div className="space-y-2.5">
+                                            <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] pl-1">Amount</label>
+                                            <div className="relative group/input">
+                                                <div className="absolute -inset-[1px] bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-2xl opacity-0 group-focus-within/input:opacity-100 transition-opacity blur-sm pointer-events-none" />
+                                                <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-20 pointer-events-none text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">
+                                                    <span className="font-serif text-xl md:text-2xl font-bold">₹</span>
+                                                </div>
                                                 <input
                                                     type="number"
                                                     step="0.01"
                                                     value={amount}
                                                     onChange={e => { setAmount(e.target.value); setError(null); }}
-                                                    className="w-full bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 rounded-2xl p-4 md:p-5 pl-12 text-lg md:text-xl font-bold text-white focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-white/10"
+                                                    className="w-full relative bg-[#0a0c12] hover:bg-white/[0.02] border border-white/[0.08] group-focus-within/input:border-emerald-500/50 rounded-2xl p-4 md:p-5 pl-12 text-xl md:text-2xl font-mono font-bold text-white outline-none transition-all placeholder:text-white/10 shadow-[inner_0_2px_10px_rgba(0,0,0,0.5)] z-10"
                                                     placeholder="0.00"
                                                 />
                                             </div>
                                         </div>
 
                                         {/* Payment Method */}
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase text-white/30 tracking-widest ml-1">Method</label>
-                                            <div className="relative group">
+                                        <div className="space-y-2.5">
+                                            <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] pl-1">Method</label>
+                                            <div className="relative group/select">
+                                                <div className="absolute -inset-[1px] bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl opacity-0 group-focus-within/select:opacity-100 transition-opacity blur-sm pointer-events-none" />
                                                 <select
                                                     value={method}
                                                     onChange={e => setMethod(e.target.value)}
-                                                    className="w-full bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 rounded-2xl p-4 md:p-5 pr-12 text-sm md:text-base font-bold uppercase tracking-wide text-white focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none cursor-pointer transition-all appearance-none"
+                                                    className="w-full relative bg-[#0a0c12] hover:bg-white/[0.02] border border-white/[0.08] group-focus-within/select:border-indigo-500/50 rounded-2xl p-4 md:p-5 pr-12 text-sm md:text-base font-bold uppercase tracking-wider text-white outline-none cursor-pointer transition-all appearance-none shadow-[inner_0_2px_10px_rgba(0,0,0,0.5)] z-10"
                                                 >
-                                                    <option value="ONLINE TRANS" className="bg-[#1a1d23]">Online Transfer</option>
-                                                    <option value="CASH PROTOCOL" className="bg-[#1a1d23]">Cash</option>
-                                                    <option value="INSTITUTIONAL CHECK" className="bg-[#1a1d23]">Cheque / DD</option>
-                                                    <option value="ELECTRONIC CLEARING" className="bg-[#1a1d23]">NEFT / RTGS</option>
-                                                    <option value="UPI" className="bg-[#1a1d23]">UPI</option>
-                                                    <option value="STRIPE" className="bg-[#1a1d23]">Stripe</option>
+                                                    <option value="ONLINE TRANS" className="bg-[#0c0e14]">Online Transfer</option>
+                                                    <option value="CASH PROTOCOL" className="bg-[#0c0e14]">Cash</option>
+                                                    <option value="INSTITUTIONAL CHECK" className="bg-[#0c0e14]">Cheque / DD</option>
+                                                    <option value="ELECTRONIC CLEARING" className="bg-[#0c0e14]">NEFT / RTGS</option>
+                                                    <option value="UPI" className="bg-[#0c0e14]">UPI</option>
+                                                    <option value="STRIPE" className="bg-[#0c0e14]">Stripe</option>
                                                 </select>
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 group-hover:text-white transition-colors">
+                                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover/select:text-indigo-400 group-focus-within/select:text-indigo-400 transition-colors z-20">
                                                     <ChevronDownIcon className="w-5 h-5" />
                                                 </div>
                                             </div>
@@ -297,39 +311,46 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
                                     </div>
 
                                     {/* Transaction Reference / UTR */}
-                                    <div className="space-y-2 col-span-1 md:col-span-2">
-                                        <label className="text-[10px] font-bold uppercase text-white/30 tracking-widest ml-1">Transaction Ref / UTR <span className="text-white/15 normal-case tracking-normal">(optional)</span></label>
-                                        <input
-                                            type="text"
-                                            value={transactionRef}
-                                            onChange={e => setTransactionRef(e.target.value)}
-                                            placeholder="e.g. UTR123456789 or pi_3abc..."
-                                            className="w-full bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 rounded-2xl p-4 md:p-5 text-sm font-medium text-white focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-white/15"
-                                        />
+                                    <div className="space-y-2.5 col-span-1 md:col-span-2">
+                                        <label className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] pl-1 flex items-center justify-between">
+                                            <span>Transaction Ref / UTR</span>
+                                            <span className="text-white/15 normal-case tracking-normal">(optional)</span>
+                                        </label>
+                                        <div className="relative group/input">
+                                            <div className="absolute -inset-[1px] bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl opacity-0 group-focus-within/input:opacity-100 transition-opacity blur-sm pointer-events-none" />
+                                            <input
+                                                type="text"
+                                                value={transactionRef}
+                                                onChange={e => setTransactionRef(e.target.value)}
+                                                placeholder="e.g. UTR123456789 or pi_3abc..."
+                                                className="w-full relative bg-[#0a0c12] hover:bg-white/[0.02] border border-white/[0.08] group-focus-within/input:border-indigo-500/50 rounded-2xl p-4 md:p-5 text-sm font-mono font-medium text-white/80 outline-none transition-all placeholder:text-white/15 shadow-[inner_0_2px_10px_rgba(0,0,0,0.5)] z-10"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </main>
 
                             {/* Footer */}
-                            <footer className="p-6 md:p-8 bg-white/[0.02] border-t border-white/[0.06] flex flex-col-reverse md:flex-row justify-between items-center gap-4 md:gap-8">
+                            <footer className="p-6 md:p-8 bg-white/[0.015] border-t border-white/[0.04] flex flex-col-reverse md:flex-row justify-between items-center gap-4 md:gap-8">
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="w-full md:w-auto px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white hover:bg-white/5 transition-all text-center"
+                                    className="w-full md:w-auto px-6 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 hover:text-white hover:bg-white/[0.04] transition-all text-center"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading || fetching}
-                                    className="w-full md:w-auto min-w-[200px] px-8 py-4 bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 relative overflow-hidden"
+                                    className="w-full md:w-auto min-w-[220px] px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-[0_0_20px_rgba(99,102,241,0.3)] border border-white/10 hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] transition-all transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3 relative overflow-hidden group/btn"
                                 >
+                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-out z-0" />
                                     {loading ? (
-                                        <Spinner size="sm" className="text-white" />
+                                        <Spinner size="sm" className="text-white relative z-10" />
                                     ) : (
                                         <>
-                                            <ShieldCheckIcon className="w-4 h-4" />
-                                            <span>Confirm Payment</span>
+                                            <ShieldCheckIcon className="w-4 h-4 relative z-10" />
+                                            <span className="relative z-10 drop-shadow-md">Confirm Payment</span>
                                         </>
                                     )}
                                 </button>
