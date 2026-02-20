@@ -427,10 +427,10 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile, branchId, branches }) 
                             <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-6">
                                 <div>
                                     <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">Required Admin Action</p>
-                                    <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold select-all">MASTER_FINANCE_RESTORATION_V37_ULTRASONIC.sql</span></p>
+                                    <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold select-all">MASTER_FINANCE_RESTORATION_V40_ULTRASONIC_AMBIGUITY_KILLER_FINAL.sql</span></p>
                                 </div>
                                 <button
-                                    onClick={() => navigator.clipboard.writeText('MASTER_FINANCE_RESTORATION_V37_ULTRASONIC.sql')}
+                                    onClick={() => navigator.clipboard.writeText('MASTER_FINANCE_RESTORATION_V40_ULTRASONIC_AMBIGUITY_KILLER_FINAL.sql')}
                                     className="px-6 py-3 bg-red-500 hover:bg-red-400 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-lg active:scale-95 whitespace-nowrap"
                                 >
                                     Copy Script Name
