@@ -406,48 +406,80 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile, branchId, branches }) 
                     <Skeleton.List rows={8} />
                 </div>
             ) : error ? (
-                <div className="p-24 text-center flex flex-col items-center justify-center bg-[#0c0d12] rounded-[4rem] border border-white/5 shadow-3xl ring-1 ring-white/10 max-w-4xl mx-auto backdrop-blur-3xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-24 opacity-[0.02] rotate-12 pointer-events-none">
-                        <AlertTriangleIcon className="w-96 h-96" />
-                    </div>
+                <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    className="max-w-2xl mx-auto"
+                >
+                    <div className="bg-[#12141c] rounded-3xl border border-white/[0.06] shadow-2xl overflow-hidden">
+                        {/* Status Bar */}
+                        <div className="flex items-center gap-3 px-6 py-3 bg-amber-500/[0.04] border-b border-white/[0.04]">
+                            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.4)]" />
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-500/70">System Status: Attention Required</span>
+                        </div>
 
-                    <div className="p-8 bg-red-500/10 rounded-[2.5rem] border border-red-500/20 text-red-500 mb-10 shadow-[0_0_40px_-10px_rgba(239,68,68,0.3)] animate-pulse relative z-10">
-                        <AlertTriangleIcon className="w-16 h-16" />
-                    </div>
-
-                    <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tight leading-none mb-8 relative z-10">Registry Protocol Fault</h3>
-
-                    <div className="bg-black/40 border border-white/5 rounded-3xl p-8 mb-10 text-left w-full max-w-2xl relative z-10">
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-4 italic">Diagnostic Trace:</p>
-                        <p className="text-lg font-mono font-medium text-white/60 leading-relaxed mb-6 break-words">
-                            {error}
-                        </p>
-
-                        {(error.includes('ambiguous') || error.includes('function') || error.includes('schema') || error.includes('Reference') || error.includes('signature')) && (
-                            <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-6">
-                                <div>
-                                    <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">Required Admin Action</p>
-                                    <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold select-all">MASTER_FINANCE_RESTORATION_V41_ABSOLUTE_FINAL_AMBIGUITY_KILLER_PRO.sql</span></p>
+                        <div className="p-8 md:p-12 space-y-8">
+                            {/* Icon + Heading */}
+                            <div className="flex flex-col items-center text-center space-y-5">
+                                <div className="p-5 bg-amber-500/[0.08] rounded-2xl border border-amber-500/[0.15] text-amber-500">
+                                    <AlertTriangleIcon className="w-10 h-10" />
                                 </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl md:text-3xl font-serif font-bold text-white tracking-tight">Something Needs Attention</h3>
+                                    <p className="text-sm text-white/40 max-w-md mx-auto leading-relaxed">The finance registry encountered an issue while loading data. This is usually resolved quickly.</p>
+                                </div>
+                            </div>
+
+                            {/* Error Detail */}
+                            <div className="bg-black/30 border border-white/[0.04] rounded-2xl p-5">
+                                <p className="text-[9px] font-bold uppercase text-white/20 tracking-[0.2em] mb-3">Diagnostic Detail</p>
+                                <p className="text-sm font-mono text-white/50 leading-relaxed break-words">{error}</p>
+                            </div>
+
+                            {(error.includes('ambiguous') || error.includes('function') || error.includes('schema') || error.includes('Reference') || error.includes('signature')) && (
+                                <div className="bg-amber-500/[0.06] border border-amber-500/[0.12] rounded-2xl p-5">
+                                    <p className="text-[9px] font-bold uppercase text-amber-500/60 tracking-[0.2em] mb-2">Recommended Fix</p>
+                                    <p className="text-sm text-white/60">Execute the latest schema restoration script in the Supabase SQL Editor:</p>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText('FINANCE_V43_COMPLETE_SYSTEM_AUDIT.sql');
+                                        }}
+                                        className="mt-3 px-4 py-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-all active:scale-95 inline-flex items-center gap-2"
+                                    >
+                                        <span className="font-mono select-all">FINANCE_V43_COMPLETE_SYSTEM_AUDIT.sql</span>
+                                        <span className="text-amber-500/40">— Click to copy</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                                 <button
-                                    onClick={() => navigator.clipboard.writeText('MASTER_FINANCE_RESTORATION_V41_ABSOLUTE_FINAL_AMBIGUITY_KILLER_PRO.sql')}
-                                    className="px-6 py-3 bg-red-500 hover:bg-red-400 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-lg active:scale-95 whitespace-nowrap"
+                                    onClick={() => fetchAllData()}
+                                    className="w-full sm:w-auto px-8 py-4 bg-white text-black font-bold text-[11px] uppercase tracking-[0.3em] rounded-2xl hover:bg-white/90 transition-all shadow-lg active:scale-[0.97] flex items-center justify-center gap-2"
                                 >
-                                    Copy Script Name
+                                    <RefreshCwIcon className="w-4 h-4" />
+                                    Retry Sync
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`Finance Error Report\n\nTimestamp: ${new Date().toISOString()}\nError: ${error}\nBranch: ${branchId || 'N/A'}\nUser: ${profile?.email || 'N/A'}`);
+                                    }}
+                                    className="w-full sm:w-auto px-6 py-4 bg-white/[0.04] border border-white/[0.06] text-white/50 hover:text-white hover:bg-white/[0.08] font-bold text-[11px] uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+                                >
+                                    Report Issue
+                                </button>
+                                <button
+                                    onClick={() => window.open('mailto:admin@gurucool.com?subject=Finance%20Module%20Error&body=' + encodeURIComponent(error || ''), '_blank')}
+                                    className="w-full sm:w-auto px-6 py-4 bg-white/[0.04] border border-white/[0.06] text-white/50 hover:text-white hover:bg-white/[0.08] font-bold text-[11px] uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+                                >
+                                    Contact Admin
                                 </button>
                             </div>
-                        )}
+                        </div>
                     </div>
-
-                    <div className="flex gap-4 relative z-10">
-                        <button
-                            onClick={() => fetchAllData()}
-                            className="px-10 py-5 bg-white text-black font-black text-[11px] uppercase tracking-[0.4em] rounded-[1.25rem] hover:bg-white/90 transition-all shadow-xl active:scale-95 border border-white/20"
-                        >
-                            Retry Sync
-                        </button>
-                    </div>
-                </div>
+                </motion.div>
             ) : (
                 <AnimatePresence mode="wait">
                     {activeView === 'overview' && financeData && (

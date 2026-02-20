@@ -29,6 +29,7 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>('ADVANCE');
     const [amount, setAmount] = useState<string>('1000');
     const [method, setMethod] = useState('ONLINE TRANS');
+    const [transactionRef, setTransactionRef] = useState('');
     const [receiptNo, setReceiptNo] = useState<string>('');
 
     const fetchInvoices = useCallback(async () => {
@@ -87,12 +88,14 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
             const targetInvoiceId = isAdvance ? null : parseInt(selectedInvoiceId);
 
             // ATOMIC PROTOCOL: RPC record_fee_payment handles invoice status AND forensic reconcile internally.
+            const reference = transactionRef.trim() || (isAdvance ? 'UNALLOCATED_ADVANCE_ENTRY' : 'MANUAL_LEDGER_SYNC');
             const { data, error: rpcError } = await supabase.rpc('record_fee_payment', {
                 p_invoice_id: targetInvoiceId,
                 p_amount: numAmount,
                 p_method: method,
-                p_reference: isAdvance ? 'UNALLOCATED_ADVANCE_ENTRY' : 'MANUAL_LEDGER_SYNC',
-                p_student_id: studentId
+                p_reference: reference,
+                p_student_id: studentId,
+                p_metadata: JSON.stringify({ source: 'admin_modal', method, reference, recorded_at: new Date().toISOString() })
             });
 
             if (rpcError) throw rpcError;
@@ -284,12 +287,25 @@ const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({ studentId, stud
                                                     <option value="INSTITUTIONAL CHECK" className="bg-[#1a1d23]">Cheque / DD</option>
                                                     <option value="ELECTRONIC CLEARING" className="bg-[#1a1d23]">NEFT / RTGS</option>
                                                     <option value="UPI" className="bg-[#1a1d23]">UPI</option>
+                                                    <option value="STRIPE" className="bg-[#1a1d23]">Stripe</option>
                                                 </select>
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 group-hover:text-white transition-colors">
                                                     <ChevronDownIcon className="w-5 h-5" />
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* Transaction Reference / UTR */}
+                                    <div className="space-y-2 col-span-1 md:col-span-2">
+                                        <label className="text-[10px] font-bold uppercase text-white/30 tracking-widest ml-1">Transaction Ref / UTR <span className="text-white/15 normal-case tracking-normal">(optional)</span></label>
+                                        <input
+                                            type="text"
+                                            value={transactionRef}
+                                            onChange={e => setTransactionRef(e.target.value)}
+                                            placeholder="e.g. UTR123456789 or pi_3abc..."
+                                            className="w-full bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 rounded-2xl p-4 md:p-5 text-sm font-medium text-white focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-white/15"
+                                        />
                                     </div>
                                 </div>
                             </main>
