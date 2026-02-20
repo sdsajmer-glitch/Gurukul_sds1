@@ -144,16 +144,33 @@ const FeeStructureWizard: React.FC<FeeStructureWizardProps> = ({ onClose, onSucc
         init();
     }, [editingStructure, isEditMode]);
 
+    // GL Code Generator
+    const generateGLCode = (category: string, index: number) => {
+        const prefixes: Record<string, string> = {
+            'Tuition': 'TUI', 'Transport': 'TRN', 'Lab': 'LAB', 'Library': 'LIB',
+            'Sports': 'SPO', 'Extracurricular': 'EXT', 'Hostel': 'HOS',
+            'Examination': 'EXM', 'Infrastructure': 'INF', 'Other': 'OTH'
+        };
+        const prefix = prefixes[category] || 'REV';
+        return `${prefix}-${String(index * 10 + 100).padStart(3, '0')}`;
+    };
+
     // Helpers
     const handleAddComponent = () => {
         if (isLocked) return;
-        setComponents([...components, { name: '', amount: '0', frequency: 'Monthly', is_mandatory: false, category: 'Tuition', gl_code: 'REV-100', tax_percentage: 0, is_refundable: false }]);
+        const newIdx = components.length;
+        setComponents([...components, { name: '', amount: '0', frequency: 'Monthly', is_mandatory: false, category: 'Tuition', gl_code: generateGLCode('Tuition', newIdx), tax_percentage: 0, is_refundable: false }]);
     };
 
     const updateComponent = (index: number, field: string, value: any) => {
         if (isLocked) return;
         const newComponents = [...components];
         (newComponents[index] as any)[field] = value;
+
+        if (field === 'category') {
+            newComponents[index].gl_code = generateGLCode(value, index);
+        }
+
         setComponents(newComponents);
     };
 
@@ -657,15 +674,25 @@ const FeeStructureWizard: React.FC<FeeStructureWizardProps> = ({ onClose, onSucc
                                                                 </div>
                                                             </div>
                                                             {/* GL Code */}
-                                                            <div className="col-span-6 sm:col-span-2">
-                                                                <label className="text-[9px] text-white/20 uppercase font-bold tracking-[0.15em] block mb-2 px-1">GL Code</label>
-                                                                <input
-                                                                    disabled={isLocked}
-                                                                    value={comp.gl_code}
-                                                                    onChange={e => updateComponent(idx, 'gl_code', e.target.value)}
-                                                                    className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-[11px] font-mono font-bold text-indigo-400 outline-none focus:border-indigo-500/50 uppercase placeholder:text-white/10 transition-all"
-                                                                    placeholder="ACC-001"
-                                                                />
+                                                            <div className="col-span-6 sm:col-span-2 relative group/gl">
+                                                                <label className="flex items-center justify-between text-[9px] text-blue-500 uppercase font-bold tracking-[0.2em] mb-2 px-1">
+                                                                    <span className="flex items-center gap-1.5 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+                                                                        GL CODE <SparklesIcon className="w-3 h-3 text-blue-400 animate-pulse" />
+                                                                    </span>
+                                                                </label>
+                                                                <div className="relative">
+                                                                    <div className="absolute -inset-[1px] bg-gradient-to-r from-blue-500/30 to-indigo-500/30 rounded-xl opacity-0 group-hover/gl:opacity-100 transition-opacity blur-sm pointer-events-none" />
+                                                                    <input
+                                                                        disabled={isLocked}
+                                                                        value={comp.gl_code}
+                                                                        onChange={e => updateComponent(idx, 'gl_code', e.target.value)}
+                                                                        className="relative w-full bg-[#06080d] border border-blue-500/30 hover:border-blue-500/50 rounded-xl px-4 py-3 text-[11px] font-mono font-bold text-blue-400 outline-none focus:border-blue-500/70 focus:ring-1 focus:ring-blue-500/40 uppercase placeholder:text-blue-900/40 transition-all z-10 shadow-[inner_0_2px_15px_rgba(0,0,0,0.6)] tracking-wider"
+                                                                        placeholder="ACC-001"
+                                                                    />
+                                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-20">
+                                                                        <ShieldCheckIcon className="w-4 h-4 text-blue-500/30 group-focus-within/gl:text-blue-400 transition-colors" />
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                             {/* Delete */}
                                                             <div className="col-span-12 sm:col-span-1 flex items-end justify-end pb-1">
@@ -687,7 +714,7 @@ const FeeStructureWizard: React.FC<FeeStructureWizardProps> = ({ onClose, onSucc
                                                         <div className="mt-4 ml-14 flex items-center gap-3">
                                                             <div className="h-px w-8 bg-white/[0.05]" />
                                                             <span className="text-[10px] text-white/15 uppercase font-bold tracking-widest">Annual projection:</span>
-                                                            <span className="text-[11px] font-mono font-bold text-emerald-400/80 bg-emerald-500/5 px-2.5 py-1 rounded-lg border border-emerald-500/10 shadow-sm">{formatCurrency(annualized, formData.currency)}</span>
+                                                            <span className="text-[11px] font-mono font-bold text-emerald-400/90 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">{formatCurrency(annualized, formData.currency)}</span>
                                                         </div>
                                                     )}
                                                 </motion.div>
