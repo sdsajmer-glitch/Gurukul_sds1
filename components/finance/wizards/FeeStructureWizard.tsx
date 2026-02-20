@@ -69,7 +69,7 @@ const FeeStructureWizard: React.FC<FeeStructureWizardProps> = ({ onClose, onSucc
     });
 
     const [components, setComponents] = useState<WizardComponent[]>([
-        { name: 'TUITION_FEES', amount: '0', frequency: 'Monthly', is_mandatory: true, category: 'Tuition', gl_code: '', tax_percentage: 0, is_refundable: false }
+        { name: 'TUITION_FEES', amount: '0', frequency: 'Monthly', is_mandatory: true, category: 'Tuition', gl_code: 'REV-100', tax_percentage: 0, is_refundable: false }
     ]);
 
     const [academicYears, setAcademicYears] = useState<any[]>([]);
@@ -103,18 +103,31 @@ const FeeStructureWizard: React.FC<FeeStructureWizardProps> = ({ onClose, onSucc
                         academicYear: editingStructure.academic_year,
                         targetGrade: editingStructure.target_grade,
                         description: editingStructure.description || '',
-                        currency: editingStructure.currency,
+                        currency: editingStructure.currency || 'INR',
                         isDefault: editingStructure.is_default,
                         type: editingStructure.type as any
                     });
 
-                    if (editingStructure.components) {
-                        setComponents(editingStructure.components.map(c => ({
+                    // Load components: prefer embedded, fallback to DB fetch
+                    let loadedComponents = editingStructure.components;
+
+                    if (!loadedComponents || loadedComponents.length === 0) {
+                        // Fetch directly from DB if not embedded in the structure
+                        const { data: dbComps } = await supabase
+                            .from('finance_fee_components')
+                            .select('*')
+                            .eq('structure_id', editingStructure.id)
+                            .order('id');
+                        loadedComponents = dbComps || [];
+                    }
+
+                    if (loadedComponents && loadedComponents.length > 0) {
+                        setComponents(loadedComponents.map((c: any) => ({
                             id: c.id,
                             name: c.name,
                             amount: String(c.amount),
-                            frequency: c.frequency,
-                            is_mandatory: c.is_mandatory,
+                            frequency: c.frequency || 'Annually',
+                            is_mandatory: c.is_mandatory ?? true,
                             category: c.category || 'Tuition',
                             gl_code: c.gl_code || '',
                             tax_percentage: c.tax_percentage || 0,
@@ -134,7 +147,7 @@ const FeeStructureWizard: React.FC<FeeStructureWizardProps> = ({ onClose, onSucc
     // Helpers
     const handleAddComponent = () => {
         if (isLocked) return;
-        setComponents([...components, { name: '', amount: '0', frequency: 'Monthly', is_mandatory: false, category: 'Tuition', gl_code: '', tax_percentage: 0, is_refundable: false }]);
+        setComponents([...components, { name: '', amount: '0', frequency: 'Monthly', is_mandatory: false, category: 'Tuition', gl_code: 'REV-100', tax_percentage: 0, is_refundable: false }]);
     };
 
     const updateComponent = (index: number, field: string, value: any) => {
@@ -166,22 +179,28 @@ const FeeStructureWizard: React.FC<FeeStructureWizardProps> = ({ onClose, onSucc
         setValidationErrors([]);
 
         try {
-            // 1. Upsert Structure
+            // 1. Prepare Structure Payload
+            const structPayload: any = {
+                branch_id: branchId,
+                name: formData.name,
+                academic_year: formData.academicYear,
+                target_grade: formData.targetGrade,
+                description: formData.description,
+                currency: formData.currency,
+                is_default: formData.isDefault,
+                type: formData.type,
+                status: editingStructure?.status || 'Draft',
+                updated_at: new Date().toISOString()
+            };
+
+            // Only include ID if we are editing an existing record to avoid identity conflicts
+            if (editingStructure?.id) {
+                structPayload.id = editingStructure.id;
+            }
+
             const { data: struct, error: structError } = await supabase
                 .from('finance_fee_structures')
-                .upsert({
-                    id: editingStructure?.id, // If undefined, creates new
-                    branch_id: branchId,
-                    name: formData.name,
-                    academic_year: formData.academicYear,
-                    target_grade: formData.targetGrade,
-                    description: formData.description,
-                    currency: formData.currency,
-                    is_default: formData.isDefault,
-                    type: formData.type,
-                    status: editingStructure?.status || 'Draft', // Defaults to Draft, updated later if activate
-                    updated_at: new Date()
-                })
+                .upsert(structPayload)
                 .select()
                 .single();
 

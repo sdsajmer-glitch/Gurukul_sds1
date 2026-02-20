@@ -141,7 +141,7 @@ const InstitutionalFeeStructureCard: React.FC<FeeStructureCardProps> = ({
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-2xl font-serif font-black text-white tracking-tight">
-                                                    {formatCurrency(structure.total_amount || 0)}
+                                                    {formatCurrency(structure.total_amount || (structure as any).base_amount || 0)}
                                                 </div>
                                                 <div className="text-[10px] text-white/30 uppercase tracking-widest font-bold mt-1">Total / Year</div>
                                             </div>

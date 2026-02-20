@@ -94,6 +94,22 @@ BEGIN
         ALTER TABLE public.fee_payments ADD COLUMN receipt_number TEXT;
         RAISE NOTICE '[B] Added receipt_number to fee_payments';
     END IF;
+
+    -- finance_fee_structures.updated_at
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema = 'public' AND table_name = 'finance_fee_structures'
+                   AND column_name = 'updated_at') THEN
+        ALTER TABLE public.finance_fee_structures ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+        RAISE NOTICE '[B] Added updated_at to finance_fee_structures';
+    END IF;
+
+    -- finance_fee_structures.created_at
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema = 'public' AND table_name = 'finance_fee_structures'
+                   AND column_name = 'created_at') THEN
+        ALTER TABLE public.finance_fee_structures ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
+        RAISE NOTICE '[B] Added created_at to finance_fee_structures';
+    END IF;
 END $$;
 
 

@@ -153,7 +153,13 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile, branchId, branches }) 
                 burn_rate_stability: healthRes.data?.burn_rate_stability || 0,
                 total_expense_30d: baseData.total_expense_30d || 0
             });
-            setFeeStructures(structRes.data || []);
+            // Parse structures: ensure components are proper JS arrays and total_amount is populated
+            const parsedStructures = (structRes.data || []).map((s: any) => ({
+                ...s,
+                total_amount: s.total_amount || s.base_amount || 0,
+                components: Array.isArray(s.components) ? s.components : (typeof s.components === 'string' ? JSON.parse(s.components) : []),
+            }));
+            setFeeStructures(parsedStructures);
             setStudentLedgers(Array.isArray(ledgerRes.data) ? ledgerRes.data : []);
             setGradeStats(Array.isArray(gradeRes.data) ? gradeRes.data : []);
             setPaymentProtocols(protocolRes.data || []);
