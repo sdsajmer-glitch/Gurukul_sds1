@@ -157,29 +157,46 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                 if (selectedCycleId === null) setSelectedCycleId(node.academic_cycle_id);
             }
 
-            // 2. Fetch Forensic Ledger
-            const { data: ledgerData, error: ledgerError } = await supabase.rpc('get_student_running_ledger', {
-                p_student_id: initialStudent.student_id,
-                p_cycle_id: selectedCycleId || nodeData?.[0]?.academic_cycle_id
-            });
-            if (ledgerError) throw ledgerError;
-            setLedger(ledgerData || []);
+            // 2. Fetch Forensic Ledger (non-fatal — log errors, don't crash view)
+            try {
+                const { data: ledgerData, error: ledgerError } = await supabase.rpc('get_student_running_ledger', {
+                    p_student_id: initialStudent.student_id,
+                    p_cycle_id: selectedCycleId || nodeData?.[0]?.academic_cycle_id || null
+                });
+                if (ledgerError) {
+                    console.warn('[V51] Ledger fetch warning:', ledgerError.message);
+                } else {
+                    setLedger(ledgerData || []);
+                }
+            } catch (ledgerErr) {
+                console.warn('[V51] Ledger fetch skipped:', ledgerErr);
+            }
 
             // 3. Fetch Metadata
-            const { data: structData } = await supabase
-                .from('student_fee_assignments')
-                .select('*, finance_fee_structures(*)')
-                .eq('student_id', initialStudent.student_id)
-                .maybeSingle();
+            try {
+                const { data: structData } = await supabase
+                    .from('student_fee_assignments')
+                    .select('*, finance_fee_structures(*)')
+                    .eq('student_id', initialStudent.student_id)
+                    .maybeSingle();
+                setAssignedStructure(structData?.finance_fee_structures || null);
+            } catch (assignErr) {
+                console.warn('[V51] Assignment fetch skipped:', assignErr);
+                setAssignedStructure(null);
+            }
 
-            setAssignedStructure(structData?.finance_fee_structures || null);
-
-            // Fetch Available Cycles if not yet loaded
-            if (availableCycles.length === 0 && nodeData?.[0]?.branch_id) {
-                const { data: cycles } = await supabase.rpc('get_branch_academic_cycles', {
-                    p_branch_id: nodeData[0].branch_id
-                });
-                setAvailableCycles(cycles || []);
+            // Fetch Available Cycles — guard: branch_id must be a positive integer
+            const rawBranchId = nodeData?.[0]?.branch_id;
+            const safeBranchId = rawBranchId ? Number(rawBranchId) : null;
+            if (availableCycles.length === 0 && safeBranchId && safeBranchId > 0) {
+                try {
+                    const { data: cycles } = await supabase.rpc('get_branch_academic_cycles', {
+                        p_branch_id: safeBranchId
+                    });
+                    setAvailableCycles(cycles || []);
+                } catch (cycleErr) {
+                    console.warn('[V51] Cycles fetch skipped:', cycleErr);
+                }
             }
 
             // 4. Fetch Governance Artifacts
@@ -233,17 +250,32 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
         setMappingInProgress(true);
         setError(null);
         try {
-            // Use nuclear repair sync for the student
-            const { data, error: rpcError } = await supabase.rpc('admin_sync_student_billing', {
+            // V50 — single unambiguous signature: admin_sync_student_billing(p_student_id UUID)
+            const { data: syncResult, error: rpcError } = await supabase.rpc('admin_sync_student_billing', {
                 p_student_id: initialStudent.student_id
             });
-            if (rpcError) throw rpcError;
 
-            // Flash success state then refresh
+            if (rpcError) {
+                // Surface the raw PostgreSQL error for diagnostics
+                throw new Error(rpcError.message || rpcError.details || JSON.stringify(rpcError));
+            }
+
+            // The V50 RPC returns JSONB with a `success` flag and diagnostic `message`
+            if (syncResult && typeof syncResult === 'object') {
+                if (syncResult.success === false) {
+                    // Functional failure (no grade, no structure, etc.) — not a DB error
+                    throw new Error(syncResult.message || 'Protocol initialization failed. Check fee structure configuration.');
+                }
+                // Log success details for debugging
+                console.info('[V50] Genesis Protocol initialized:', syncResult);
+            }
+
+            // Refresh the view and propagate update to parent
             await refreshAccountStatus(true);
             if (onUpdate) onUpdate();
+
         } catch (err: any) {
-            console.error("Mapping failure:", err);
+            console.error("Genesis Protocol mapping failure:", err);
             setError(formatError(err));
         } finally {
             setMappingInProgress(false);
@@ -316,25 +348,26 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     </div>
                     <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] mb-4 italic">Diagnostic Trace:</p>
                     <p className="text-lg font-mono font-medium text-white/60 leading-relaxed mb-6">
-                        {error.includes('ambiguous') || error.includes('function')
+                        {error.includes('ambiguous') || error.includes('function') || error.includes('conflict') || error.includes('CONFLICT')
                             ? (
                                 <span>
                                     CONFLICT_DETECTED: Multiple node identifiers or outdated RPC signature.<br />
                                     The global registry or signature mismatch detected.<br />
+                                    Execute the V50 SQL fix to resolve.
                                 </span>
                             )
                             : error}
                     </p>
 
                     {/* Actionable Fix Suggestion */}
-                    {(error.includes('ambiguous') || error.includes('function')) && (
+                    {(error.includes('ambiguous') || error.includes('function') || error.includes('conflict') || error.includes('CONFLICT')) && (
                         <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-xl flex items-center justify-between gap-4">
                             <div>
                                 <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Required Admin Action</p>
-                                <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold">MASTER_FINANCE_RESTORATION_V41_ABSOLUTE_FINAL_AMBIGUITY_KILLER_PRO.sql</span></p>
+                                <p className="text-sm font-mono text-white/80">Execute <span className="text-white font-bold">FINANCE_V50_INITIALIZE_PROTOCOL_FIX.sql</span> in Supabase SQL Editor</p>
                             </div>
                             <button
-                                onClick={() => navigator.clipboard.writeText('MASTER_FINANCE_RESTORATION_V41_ABSOLUTE_FINAL_AMBIGUITY_KILLER_PRO.sql')}
+                                onClick={() => navigator.clipboard.writeText('FINANCE_V50_INITIALIZE_PROTOCOL_FIX.sql')}
                                 className="px-5 py-3 bg-red-500 hover:bg-red-400 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-lg active:scale-95"
                             >
                                 Copy Script Name
