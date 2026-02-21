@@ -1153,9 +1153,9 @@ export const BranchCreationPage: React.FC<BranchCreationPageProps> = ({ onNext, 
                 isOpen={!!deletingBranch}
                 onClose={() => setDeletingBranch(null)}
                 onConfirm={handleDelete}
-                title="Decommission Node"
-                message={`Permanently terminate connection to "${deletingBranch?.name}"?`}
-                confirmText="Terminate Node"
+                title="Remove Branch"
+                message={`Warning: Removing "${deletingBranch?.name}" will disconnect this campus from the central management network. This action is recorded and requires administrative clearance.`}
+                confirmText="Confirm Removal"
                 loading={isDeleting}
             />
         </div >
