@@ -72,62 +72,74 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
     const fetchExistingProfileData = useCallback(async () => {
         if (!isMounted.current) return;
         setIsFetchingInitialData(true);
+        setError(null);
 
-        let tableName = '';
-        switch (role) {
-            case BuiltInRoles.SCHOOL_ADMINISTRATION: tableName = 'school_admin_profiles'; break;
-            case BuiltInRoles.PARENT_GUARDIAN: tableName = 'parent_profiles'; break;
-            case BuiltInRoles.TEACHER: tableName = 'teacher_profiles'; break;
-            case BuiltInRoles.STUDENT: tableName = 'student_profiles'; break;
-        }
-
-        let fetchedData: any = {};
-        if (tableName) {
-            const { data } = await supabase.from(tableName).select('*').eq('user_id', profile.id).maybeSingle();
-            if (data) fetchedData = data;
-        }
-
-        if (isMounted.current) {
-            const data: any = {
-                ...fetchedData,
-                phone: profile.phone || fetchedData.phone || '',
-                display_name: profile.display_name || fetchedData.display_name || '',
-                email: profile.email || fetchedData.email || '',
-                country: fetchedData.country || 'India'
-            };
-
-            // AUTO-FILL: School Admin specific contact details
-            if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
-                data.admin_contact_name = data.admin_contact_name || profile.display_name || '';
-                data.admin_designation = data.admin_designation || 'Director';
-                data.admin_contact_email = data.admin_contact_email || profile.email || '';
-
-                // Prioritize existing node phone over master profile phone for splitting
-                const phoneToSplit = data.admin_contact_phone || profile.phone || '';
-                if (phoneToSplit && !data.admin_contact_phone_local) {
-                    const phoneStr = phoneToSplit;
-                    if (phoneStr.startsWith('+')) {
-                        // Simple split assumption: first 3 chars for code if it looks like +91
-                        data.admin_contact_phone_country_code = phoneStr.slice(0, 3);
-                        data.admin_contact_phone_local = phoneStr.slice(3);
-                    } else {
-                        data.admin_contact_phone_local = phoneStr;
-                        data.admin_contact_phone_country_code = '+91';
-                    }
-                }
-
-                // ACADEMIC DEFAULTS: Fast-track typical Indian school setups
-                data.academic_board = data.academic_board || 'CBSE';
-                data.school_type = data.school_type || 'Co-Educational';
-                data.academic_year_start = data.academic_year_start || 'July';
-                data.academic_year_end = data.academic_year_end || 'March';
-                data.grade_range_start = data.grade_range_start || 'Pre-K';
-                data.grade_range_end = data.grade_range_end || '12';
+        try {
+            let tableName = '';
+            switch (role) {
+                case BuiltInRoles.SCHOOL_ADMINISTRATION: tableName = 'school_admin_profiles'; break;
+                case BuiltInRoles.PARENT_GUARDIAN: tableName = 'parent_profiles'; break;
+                case BuiltInRoles.TEACHER: tableName = 'teacher_profiles'; break;
+                case BuiltInRoles.STUDENT: tableName = 'student_profiles'; break;
             }
 
-            setFormData(data);
-            setIsFetchingInitialData(false);
-            setIsDirty(false); // Reset dirty state after fetching
+            let fetchedData: any = {};
+            if (tableName) {
+                const { data, error } = await supabase.from(tableName).select('*').eq('user_id', profile.id).maybeSingle();
+                if (error) {
+                    console.error(`Error fetching from ${tableName}:`, error);
+                }
+                if (data) fetchedData = data;
+            }
+
+            if (isMounted.current) {
+                const data: any = {
+                    ...fetchedData,
+                    phone: profile.phone || fetchedData.phone || '',
+                    display_name: profile.display_name || fetchedData.display_name || '',
+                    email: profile.email || fetchedData.email || '',
+                    country: fetchedData.country || 'India'
+                };
+
+                // AUTO-FILL: School Admin specific contact details
+                if (role === BuiltInRoles.SCHOOL_ADMINISTRATION) {
+                    data.admin_contact_name = data.admin_contact_name || profile.display_name || '';
+                    data.admin_designation = data.admin_designation || 'Director';
+                    data.admin_contact_email = data.admin_contact_email || profile.email || '';
+
+                    // Prioritize existing node phone over master profile phone for splitting
+                    const phoneToSplit = data.admin_contact_phone || profile.phone || '';
+                    if (phoneToSplit && !data.admin_contact_phone_local) {
+                        const phoneStr = phoneToSplit;
+                        if (phoneStr.startsWith('+')) {
+                            // Simple split assumption: first 3 chars for code if it looks like +91
+                            data.admin_contact_phone_country_code = phoneStr.slice(0, 3);
+                            data.admin_contact_phone_local = phoneStr.slice(3);
+                        } else {
+                            data.admin_contact_phone_local = phoneStr;
+                            data.admin_contact_phone_country_code = '+91';
+                        }
+                    }
+
+                    // ACADEMIC DEFAULTS: Fast-track typical Indian school setups
+                    data.academic_board = data.academic_board || 'CBSE';
+                    data.school_type = data.school_type || 'Co-Educational';
+                    data.academic_year_start = data.academic_year_start || 'July';
+                    data.academic_year_end = data.academic_year_end || 'March';
+                    data.grade_range_start = data.grade_range_start || 'Pre-K';
+                    data.grade_range_end = data.grade_range_end || '12';
+                }
+
+                setFormData(data);
+                setIsFetchingInitialData(false);
+                setIsDirty(false); // Reset dirty state after fetching
+            }
+        } catch (err: any) {
+            console.error('Core profile load failed:', err);
+            if (isMounted.current) {
+                setError("Core identity load failed: " + formatError(err));
+                setIsFetchingInitialData(false);
+            }
         }
     }, [role, profile.id, profile.display_name, profile.phone, profile.email]);
 
@@ -693,6 +705,8 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                         <ParentForm formData={formData} handleChange={handleFormChange} activeTab={activeTab} isStrictReadOnly={isStrictReadOnly} />
                     ) : role === BuiltInRoles.TEACHER ? (
                         <TeacherForm formData={formData} handleChange={handleFormChange} photoPreviewUrl={null} onPhotoChange={() => { }} currentUserId={profile.id} isRestrictedView={true} />
+                    ) : role === BuiltInRoles.STUDENT ? (
+                        <StudentForm formData={formData} handleChange={handleFormChange} profile={profile} />
                     ) : role === BuiltInRoles.SCHOOL_ADMINISTRATION ? (
                         isLimitedBranchAdmin ? (
                             <div className="space-y-8">
