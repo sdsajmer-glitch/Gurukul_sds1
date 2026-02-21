@@ -88,8 +88,8 @@ const DocumentCard: React.FC<{
 
     const isVerified = status === 'Verified' || status === 'APPROVED';
     const isRejected = status === 'Rejected';
-    const isSubmitted = status === 'Submitted' || status === 'Uploaded' || status === 'Reviewing';
-    const isPending = isSubmitted || (!hasFileRecord && isMandatory);
+    const isSubmitted = status === 'Submitted' || status === 'Uploaded' || status === 'Reviewing' || status === 'Reviewing Assets';
+    const isPending = !isVerified && !isRejected && !isSubmitted;
 
     const handleFileSelect = async (files: FileList | null) => {
         if (!files?.length || uploadProgress !== null) return;

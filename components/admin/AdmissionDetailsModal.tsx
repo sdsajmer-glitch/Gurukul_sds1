@@ -621,62 +621,96 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                     <section className="col-span-12 lg:col-span-9 overflow-y-auto custom-scrollbar p-8">
                         {finalizeState === 'success' ? (
                             <SuccessBanner provisionedData={provisionedData} />
+                        ) : loading ? (
+                            <div className="space-y-6 max-w-5xl mx-auto">
+                                <div className="h-32 bg-white/5 rounded-2xl animate-pulse" />
+                                <div className="space-y-3">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="h-16 bg-white/[0.03] rounded-xl animate-pulse" />
+                                    ))}
+                                </div>
+                            </div>
                         ) : activeTab === 'vault' ? (
                             <div className="space-y-8 max-w-5xl mx-auto">
-                                {/* Horizontal Compliance Summary Strip */}
-                                <div className="flex items-center justify-between gap-4 p-6 bg-bg-card/80 border border-white/[0.03] rounded-2xl shadow-xl">
-                                    <div className="flex items-center gap-12">
-                                        <div className="space-y-1">
-                                            <p className="text-2xl font-black text-white leading-none">{totalDocs}</p>
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Total Required</p>
+                                {docs.length === 0 ? (
+                                    <div className="py-20 flex flex-col items-center justify-center text-center gap-6 bg-bg-card/40 border border-dashed border-white/10 rounded-3xl">
+                                        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
+                                            <FileTextIcon className="w-10 h-10 text-white/10" />
                                         </div>
-                                        <div className="space-y-1">
-                                            <p className="text-2xl font-black text-accent-success leading-none">{verifiedDocs}</p>
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Verified</p>
+                                        <div className="space-y-2">
+                                            <h3 className="text-xl font-bold text-white/40 uppercase tracking-widest">No Documents Found</h3>
+                                            <p className="text-sm text-white/20 max-w-xs mx-auto">
+                                                No document requirements have been initialized for this application node.
+                                            </p>
                                         </div>
-                                        <div className="space-y-1">
-                                            <p className="text-2xl font-black text-accent-warning leading-none">{submittedDocs}</p>
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Submitted</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-2xl font-black text-accent-error leading-none">{docs.filter(d => d.status === 'Missing').length}</p>
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Missing</p>
-                                        </div>
+                                        <button
+                                            onClick={handleInitializeCompliance}
+                                            disabled={seedingDocs}
+                                            className="px-6 py-3 bg-accent-primary/10 hover:bg-accent-primary border border-accent-primary/20 text-accent-primary hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all gap-2 flex items-center"
+                                        >
+                                            {seedingDocs ? <RefreshCwIcon className="w-4 h-4 animate-spin" /> : <PlusIcon className="w-4 h-4" />}
+                                            Initialize Compliance Protocol
+                                        </button>
                                     </div>
+                                ) : (
+                                    <>
+                                        {/* Horizontal Compliance Summary Strip */}
+                                        <div className="flex items-center justify-between gap-4 p-6 bg-bg-card/80 border border-white/[0.03] rounded-2xl shadow-xl">
+                                            <div className="flex items-center gap-12">
+                                                <div className="space-y-1">
+                                                    <p className="text-2xl font-black text-white leading-none">{totalDocs}</p>
+                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Total Required</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-2xl font-black text-accent-success leading-none">{verifiedDocs}</p>
+                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Verified</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-2xl font-black text-accent-warning leading-none">{submittedDocs}</p>
+                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Submitted</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-2xl font-black text-accent-error leading-none">{docs.filter(d => d.status === 'Missing').length}</p>
+                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Missing</p>
+                                                </div>
+                                            </div>
 
-                                    <div className="flex items-center gap-6 pl-8 border-l border-white/[0.05]">
-                                        <div className="text-right space-y-1">
-                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Overall Compliance</p>
-                                            <p className="text-3xl font-black text-white leading-none tracking-tighter">{progressPercentage}%</p>
+                                            <div className="flex items-center gap-6 pl-8 border-l border-white/[0.05]">
+                                                <div className="text-right space-y-1">
+                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Overall Compliance</p>
+                                                    <p className="text-3xl font-black text-white leading-none tracking-tighter">{progressPercentage}%</p>
+                                                </div>
+                                                <div className="w-16 h-16 relative flex items-center justify-center">
+                                                    <svg className="w-full h-full -rotate-90">
+                                                        <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-white/5" />
+                                                        <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-accent-primary" strokeDasharray={176} strokeDashoffset={176 - (176 * progressPercentage) / 100} />
+                                                    </svg>
+                                                    <ShieldCheckIcon className="absolute w-5 h-5 text-accent-primary opacity-50" />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="w-16 h-16 relative flex items-center justify-center">
-                                            <svg className="w-full h-full -rotate-90">
-                                                <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-white/5" />
-                                                <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-accent-primary" strokeDasharray={176} strokeDashoffset={176 - (176 * progressPercentage) / 100} />
-                                            </svg>
-                                            <ShieldCheckIcon className="absolute w-5 h-5 text-accent-primary opacity-50" />
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Accordion Categories */}
-                                <div className="space-y-4">
-                                    {['Identity Documents', 'Academic Records', 'Financial Records', 'Medical Records', 'Compliance Artifacts'].map(catName => {
-                                        const catDocs = docs.filter(d => getDocumentCategory(d.document_name) === catName);
-                                        if (catDocs.length === 0 && catName === 'Compliance Artifacts') return null;
-                                        return (
-                                            <DocumentCategoryAccordion
-                                                key={catName}
-                                                category={catName}
-                                                docs={catDocs}
-                                                onVerify={handleVerifyDoc}
-                                                onReject={handleRejectDoc}
-                                                onDownload={handleDownload}
-                                                downloadingId={downloadingId}
-                                            />
-                                        );
-                                    })}
-                                </div>
+                                        {/* Accordion Categories */}
+                                        <div className="space-y-4">
+                                            {['Identity Documents', 'Academic Records', 'Financial Records', 'Medical Records', 'Compliance Artifacts'].map(catName => {
+                                                const catDocs = docs.filter(d => getDocumentCategory(d.document_name) === catName);
+                                                if (catDocs.length === 0 && catName === 'Compliance Artifacts') return null;
+                                                if (catDocs.length === 0) return null;
+                                                return (
+                                                    <DocumentCategoryAccordion
+                                                        key={catName}
+                                                        category={catName}
+                                                        docs={catDocs}
+                                                        onVerify={handleVerifyDoc}
+                                                        onReject={handleRejectDoc}
+                                                        onDownload={handleDownload}
+                                                        downloadingId={downloadingId}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ) : (
                             <IdentityTab admission={admission} />
