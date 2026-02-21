@@ -32,8 +32,8 @@ const VaultSummaryStrip: React.FC<VaultSummaryStripProps> = ({
         <div className="bg-[#14161c] border border-white/5 rounded-2xl p-6 shadow-sm overflow-hidden">
             <div className="flex flex-nowrap items-center gap-4 overflow-x-auto custom-scrollbar-horizontal pb-2 lg:pb-0">
                 <SummaryItem
-                    label="Total Inventory"
-                    value={`${totalDocs} ASSETS`}
+                    label="Total Documents"
+                    value={`${totalDocs} DOCUMENTS`}
                     icon={<FileTextIcon className="w-3.5 h-3.5" />}
                 />
                 <SummaryItem
@@ -43,18 +43,18 @@ const VaultSummaryStrip: React.FC<VaultSummaryStripProps> = ({
                     icon={<ShieldCheckIcon className="w-3.5 h-3.5" />}
                 />
                 <SummaryItem
-                    label="Encryption Level"
+                    label="Security"
                     value="AES-256"
                     color="text-primary/60"
                     icon={<LockIcon className="w-3.5 h-3.5" />}
                 />
                 <SummaryItem
-                    label="Storage Profile"
+                    label="Storage Used"
                     value={storageUsed}
                     icon={<ActivityIcon className="w-3.5 h-3.5" />}
                 />
                 <div className="flex-1 min-w-[200px] bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col gap-1 text-right ml-auto">
-                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Last Archival Batch</p>
+                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Last Updated</p>
                     <p className="text-[12px] font-bold text-white/60 tracking-tight">{lastArchived}</p>
                 </div>
             </div>

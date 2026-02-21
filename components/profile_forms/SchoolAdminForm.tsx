@@ -452,7 +452,7 @@ const SchoolAdminForm: React.FC<FormProps> = ({ formData, handleChange, isInitia
                         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full filter blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-amber-500/10 transition-colors duration-700"></div>
 
                         <SectionHeader
-                            title="Academic Protocol"
+                            title="Academic Standard"
                             subtitle="Configure global education boards, institutional session, and grade bandwidth."
                             icon={<DocumentTextIcon className="w-8 h-8 text-amber-500" />}
                             colorClass="bg-amber-500/10"

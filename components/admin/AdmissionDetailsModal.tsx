@@ -49,10 +49,9 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     const [newDocName, setNewDocName] = useState('');
     const [requestingLoading, setRequestingLoading] = useState(false);
     const [expandedDoc, setExpandedDoc] = useState<number | null>(null);
-    const [viewStudentProfile, setViewStudentProfile] = useState(false);
     const [studentData, setStudentData] = useState<StudentForAdmin | null>(null);
     const [seedingDocs, setSeedingDocs] = useState(false);
-    const [activeTab, setActiveTab] = useState<'identity' | 'vault'>('vault');
+    const [activeTab, setActiveTab] = useState<'identity' | 'documents'>('documents');
     const [showDBErrorPopup, setShowDBErrorPopup] = useState(false);
 
     const isMounted = useRef(true);
@@ -73,7 +72,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
         if (lower.includes('medical') || lower.includes('health')) {
             return 'Medical Records';
         }
-        return 'Compliance Artifacts';
+        return 'Other Documents';
     };
 
     const categories = Array.from(new Set(docs.map(d => getDocumentCategory(d.document_name))));
@@ -92,8 +91,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     }, []);
 
     // ═══════════════════════════════════════════════════════════
-    // AUTO-SEED: Persist mandatory documents to DB when vault is empty
-    // This is the CORE FIX for promoted students with no documents
+    // Initialize required documents when the record is empty
     // ═══════════════════════════════════════════════════════════
     const seedMandatoryDocuments = useCallback(async () => {
         if (!admission.id || hasSeeded.current) return false;
@@ -125,13 +123,13 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 .insert(records);
 
             if (error) {
-                console.error("Auto-seed error:", error);
+                console.error("Setup error:", error);
                 return false;
             }
             hasSeeded.current = true;
             return true;
         } catch (err) {
-            console.error("Seed protocol failure:", err);
+            console.error("Document setup failure:", err);
             return false;
         } finally {
             if (isMounted.current) setSeedingDocs(false);
@@ -184,7 +182,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 .order('is_mandatory', { ascending: false });
 
             if (reqErr) {
-                console.warn("[Vault] Requirements query failed:", reqErr.message);
+                console.warn("Document requirements query failed:", reqErr.message);
             }
 
             if (reqData && reqData.length > 0) {
@@ -207,9 +205,9 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                     admission_documents: docsMap.get(r.id) || []
                 }));
             } else {
-                // Step 3: No documents found — auto-seed mandatory docs
+                // Step 3: No documents found — initialize mandatory docs
                 if (!hasSeeded.current) {
-                    console.log("[Vault] No documents found, auto-seeding...");
+                    console.log("No documents found, initializing...");
                     const seeded = await seedMandatoryDocuments();
                     if (seeded) {
                         // Re-fetch after successful seed
@@ -226,7 +224,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 }
             }
         } catch (error) {
-            console.error("Vault Sync Error:", error);
+            console.error("Document Sync Error:", error);
         } finally {
             if (isMounted.current) {
                 setDocs(processDocsList(fetchedDocs));
@@ -239,7 +237,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
         fetchDocs();
     }, [fetchDocs]);
 
-    // ═══ Initialize Compliance Protocol: Actually seeds to DB ═══
+    // ═══ Initialize Required Documents ═══
     const handleInitializeCompliance = async () => {
         if (!admission.id) return;
         setSeedingDocs(true);
@@ -271,7 +269,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
             await fetchDocs();
         } catch (err) {
             console.error("Initialize error:", err);
-            alert("Failed to initialize compliance protocol.");
+            alert("Failed to initialize required documents.");
         } finally {
             if (isMounted.current) setSeedingDocs(false);
         }
@@ -311,7 +309,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                     });
                 }
             } catch (err) {
-                console.error("Student Node Fetch Error:", err);
+                console.error("Student Profile Fetch Error:", err);
             }
         };
 
@@ -397,7 +395,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                     }, 2500);
                 }
             } else {
-                throw new Error(data?.message || "Protocol rejection by enrollment engine.");
+                throw new Error(data?.message || "Finalization failed.");
             }
         } catch (err: any) {
             console.error("Enrollment Error:", err);
@@ -444,7 +442,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
         try {
             const realId = await ensureDocInDb(docId);
             if (!realId) {
-                alert("Could not create document record. Please try Initialize Compliance Protocol first.");
+                alert("Could not create document record. Please try clicking Initialize Documents first.");
                 return;
             }
             await supabase.from('document_requirements').update({ status: 'Verified' }).eq('id', realId);
@@ -458,7 +456,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
         try {
             const realId = await ensureDocInDb(docId);
             if (!realId) {
-                alert("Could not create document record. Please try Initialize Compliance Protocol first.");
+                alert("Could not create document record. Please try clicking Initialize Documents first.");
                 return;
             }
             await supabase.from('document_requirements').update({ status: 'Rejected', rejection_reason: reason }).eq('id', realId);
@@ -583,8 +581,8 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                         {/* Secondary Navigation Strip */}
                         <div className="flex items-center gap-1 mt-6 bg-bg-card p-1 rounded-xl border border-white/[0.03] w-fit">
                             {[
-                                { key: 'vault' as const, label: 'Documentation Vault', icon: <ShieldCheckIcon className="w-4 h-4" /> },
-                                { key: 'identity' as const, label: 'Applicant Identity', icon: <UserIcon className="w-4 h-4" /> },
+                                { key: 'documents' as const, label: 'Documents', icon: <ShieldCheckIcon className="w-4 h-4" /> },
+                                { key: 'identity' as const, label: 'Applicant Details', icon: <UserIcon className="w-4 h-4" /> },
                             ].map(tab => (
                                 <button
                                     key={tab.key}
@@ -608,24 +606,24 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                         {/* Left Sidebar / Meta Panel */}
                         <aside className="col-span-12 lg:col-span-3 border-r border-white/[0.03] bg-bg-card/30 p-8 space-y-8 overflow-y-auto custom-scrollbar">
                             <div>
-                                <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6">Vault Summary</h3>
+                                <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6">Document Summary</h3>
                                 <div className="space-y-4">
-                                    <SummaryBadge label="Total Artifacts" value={totalDocs} color="primary" />
-                                    <SummaryBadge label="Verified Assets" value={verifiedDocs} color="success" />
+                                    <SummaryBadge label="Total Documents" value={totalDocs} color="primary" />
+                                    <SummaryBadge label="Verified Docs" value={verifiedDocs} color="success" />
                                     <SummaryBadge label="Pending Review" value={submittedDocs} color="warning" />
                                     <SummaryBadge label="Missing mandatory" value={docs.filter(d => d.status === 'Missing').length} color="error" />
                                 </div>
                             </div>
 
                             <div className="pt-8 border-t border-white/[0.03]">
-                                <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Security Protocol</h3>
+                                <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Security</h3>
                                 <div className="p-4 rounded-xl bg-accent-success/5 border border-accent-success/10 space-y-3">
                                     <div className="flex items-center gap-2">
                                         <ShieldCheckIcon className="w-4 h-4 text-accent-success" />
-                                        <span className="text-[10px] font-black text-accent-success uppercase tracking-widest">End-to-End Encrypted</span>
+                                        <span className="text-[10px] font-black text-accent-success uppercase tracking-widest">Secure Storage</span>
                                     </div>
                                     <p className="text-[9px] text-white/30 leading-relaxed uppercase tracking-wider font-bold">
-                                        All documents are audit-logged and stored in verified compliance nodes.
+                                        All documents are encrypted and stored in secure institutional servers.
                                     </p>
                                 </div>
                             </div>
@@ -644,7 +642,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                         ))}
                                     </div>
                                 </div>
-                            ) : activeTab === 'vault' ? (
+                            ) : activeTab === 'documents' ? (
                                 <div className="space-y-8 max-w-5xl mx-auto">
                                     {docs.length === 0 ? (
                                         <div className="py-20 flex flex-col items-center justify-center text-center gap-6 bg-bg-card/40 border border-dashed border-white/10 rounded-3xl">
@@ -654,7 +652,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                             <div className="space-y-2">
                                                 <h3 className="text-xl font-bold text-white/40 uppercase tracking-widest">No Documents Found</h3>
                                                 <p className="text-sm text-white/20 max-w-xs mx-auto">
-                                                    No document requirements have been initialized for this application node.
+                                                    No document requirements have been set for this application.
                                                 </p>
                                             </div>
                                             <button
@@ -663,7 +661,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                                 className="px-6 py-3 bg-accent-primary/10 hover:bg-accent-primary border border-accent-primary/20 text-accent-primary hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all gap-2 flex items-center"
                                             >
                                                 {seedingDocs ? <RefreshCwIcon className="w-4 h-4 animate-spin" /> : <PlusIcon className="w-4 h-4" />}
-                                                Initialize Compliance Protocol
+                                                Initialize Documents
                                             </button>
                                         </div>
                                     ) : (
@@ -691,7 +689,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
 
                                                 <div className="flex items-center gap-6 pl-8 border-l border-white/[0.05]">
                                                     <div className="text-right space-y-1">
-                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Overall Compliance</p>
+                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Completion Progress</p>
                                                         <p className="text-3xl font-black text-white leading-none tracking-tighter">{progressPercentage}%</p>
                                                     </div>
                                                     <div className="w-16 h-16 relative flex items-center justify-center">
@@ -706,9 +704,9 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
 
                                             {/* Accordion Categories */}
                                             <div className="space-y-4">
-                                                {['Identity Documents', 'Academic Records', 'Financial Records', 'Medical Records', 'Compliance Artifacts'].map(catName => {
+                                                {['Identity Documents', 'Academic Records', 'Financial Records', 'Medical Records', 'Other Documents'].map(catName => {
                                                     const catDocs = docs.filter(d => getDocumentCategory(d.document_name) === catName);
-                                                    if (catDocs.length === 0 && catName === 'Compliance Artifacts') return null;
+                                                    if (catDocs.length === 0 && catName === 'Other Documents') return null;
                                                     if (catDocs.length === 0) return null;
                                                     return (
                                                         <DocumentCategoryAccordion
@@ -746,12 +744,12 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                         "text-[10px] font-black uppercase tracking-[0.25em]",
                                         allMandatoryVerified ? "text-accent-success" : "text-accent-warning"
                                     )}>
-                                        {allMandatoryVerified ? "Ready For Finalization" : "Awaiting Document Clearance"}
+                                        {allMandatoryVerified ? "Verification Complete" : "Pending Verification"}
                                     </p>
                                     <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-0.5">
                                         {allMandatoryVerified
-                                            ? "All mandatory artifacts verified. Enrollment protocol unlocked."
-                                            : `${mandatoryDocs.filter(d => d.status !== 'Verified').length} mandatory document(s) pending verification.`
+                                            ? "All required documents verified. Enrollment unlocked."
+                                            : `${mandatoryDocs.filter(d => d.status !== 'Verified').length} required document(s) pending verification.`
                                         }
                                     </p>
                                 </div>
@@ -776,7 +774,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                         {finalizeState === 'processing' ? (
                                             <>
                                                 <RefreshCwIcon className="w-4 h-4 animate-spin" />
-                                                Processing Identity...
+                                                Processing...
                                             </>
                                         ) : (
                                             <>

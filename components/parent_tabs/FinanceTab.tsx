@@ -71,10 +71,10 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
     const [isTransmitting, setIsTransmitting] = useState(false);
     const [successToast, setSuccessToast] = useState<string | null>(null);
     const [terminalSteps, setTerminalSteps] = useState([
-        { id: '01', label: 'SYSTEM_SYNC_VALIDATION', status: 'OK' },
-        { id: '02', label: 'LEDGER_PENDING_REG', status: 'PENDING' },
-        { id: '03', label: 'CONFIG_MAPPING', status: 'VERIFIED' },
-        { id: '04', label: 'SECURITY_CERT', status: 'NON_COMPLETE' }
+        { id: '01', label: 'System Validation', status: 'OK' },
+        { id: '02', label: 'Ledger Pending', status: 'PENDING' },
+        { id: '03', label: 'Configuration', status: 'VERIFIED' },
+        { id: '04', label: 'Security Verification', status: 'NON_COMPLETE' }
     ]);
 
     // Auto-dismiss success toast
@@ -90,10 +90,10 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
         setNotified(false);
         setShowProtocolInfo(false);
         setTerminalSteps([
-            { id: '01', label: 'SYSTEM_SYNC_VALIDATION', status: 'OK' },
-            { id: '02', label: 'LEDGER_PENDING_REG', status: 'PENDING' },
-            { id: '03', label: 'CONFIG_MAPPING', status: 'VERIFIED' },
-            { id: '04', label: 'SECURITY_CERT', status: 'NON_COMPLETE' }
+            { id: '01', label: 'System Validation', status: 'OK' },
+            { id: '02', label: 'Ledger Pending', status: 'PENDING' },
+            { id: '03', label: 'Configuration', status: 'VERIFIED' },
+            { id: '04', label: 'Security Verification', status: 'NON_COMPLETE' }
         ]);
     }, [selectedStudentId, selectedCycleId]);
 
@@ -298,7 +298,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
             }
         } catch (err: any) {
             console.error("Error fetching students:", err);
-            setError(`Security Handshake Status: Roster Linkage Isolated`);
+            setError(`Security Connection Status: Records Linkage Isolated`);
         } finally {
             setLoading(false);
         }
@@ -328,7 +328,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
             if (error) throw error;
 
             if (data?.error === '403_ACCESS_FORBIDDEN') {
-                setError("UNAUTHORIZED NODE ACCESS: Isolation breach attempt detected.");
+                setError("Access Denied: Isolation breach attempt detected.");
                 setFinanceDetail(null);
                 return;
             }
@@ -377,10 +377,10 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
             if (data?.success) {
                 // Phase 2: Success cascade animation
                 setTerminalSteps([
-                    { id: '01', label: 'SYSTEM_SYNC_VALIDATION', status: 'OK' },
-                    { id: '02', label: 'LEDGER_GENERATION', status: 'STABLE' },
-                    { id: '03', label: 'INSTALLMENT_SCHEDULE', status: 'VERIFIED' },
-                    { id: '04', label: 'PAYMENT_GATEWAY', status: 'SYNC_COMPLETE' }
+                    { id: '01', label: 'System Validation', status: 'OK' },
+                    { id: '02', label: 'Ledger Records', status: 'STABLE' },
+                    { id: '03', label: 'Payment Schedule', status: 'VERIFIED' },
+                    { id: '04', label: 'Payment Gateway', status: 'SYNC_COMPLETE' }
                 ]);
                 setNotified(true);
                 setSuccessToast(`Finance synchronized! Ledger generated with ${data.total_amount ? '₹' + Number(data.total_amount).toLocaleString('en-IN') : 'fee allocation'}.`);
@@ -400,12 +400,12 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                     'ENROLLMENT_PENDING': 'Student enrollment state is not marked as ACTIVE.'
                 };
                 setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: readinessError } : s));
-                setError(friendlyErrors[readinessError] || `Institutional Sync Gap: ${readinessError}`);
+                setError(friendlyErrors[readinessError] || `Record Update Required: ${readinessError}`);
             }
         } catch (err: any) {
             console.error("Sync error:", err);
             setTerminalSteps(prev => prev.map(s => s.id === '04' ? { ...s, status: 'SEC_FAIL' } : s));
-            setError(`Critical Terminal Error: ${err.message || "Auditor node unreachable"}`);
+            setError(`Critical Terminal Error: ${err.message || "System server timeout"}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -676,7 +676,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                         </div>
                     )}
 
-                    {/* FINANCE LIFECYCLE: STRATEGIC COMMAND TIMELINE */}
+                    {/* Finance Status Roadmap */}
                     <div className="relative bg-[#111827]/40 backdrop-blur-md border border-white/5 rounded-2xl p-6 md:p-8 overflow-hidden shadow-2xl group/timeline">
                         {/* Scanning Light Effect */}
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/5 to-transparent -translate-x-full group-hover/timeline:translate-x-full transition-transform duration-[3000ms] ease-in-out"></div>
@@ -695,7 +695,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                             ></div>
 
                             {[
-                                { label: 'Enrollment', status: 'completed', icon: <CheckCircleIcon />, desc: 'Node Verified' },
+                                { label: 'Enrollment', status: 'completed', icon: <CheckCircleIcon />, desc: 'Record Verified' },
                                 { label: 'Year Activated', status: isCurrent || isPreview ? 'completed' : 'pending', icon: <ClockIcon />, desc: isCurrent ? 'Active Cycle' : 'Scheduled' },
                                 { label: 'Fee Configured', status: !isNotConfigured ? 'completed' : 'pending', icon: <DocumentTextIcon />, desc: !isNotConfigured ? 'Validated' : 'Queued' },
                                 { label: 'Ledger Generated', status: isCurrent && !isNotConfigured ? 'completed' : 'pending', icon: <UploadIcon />, desc: isCurrent && !isNotConfigured ? 'Immutable' : 'Locked' },
@@ -782,13 +782,13 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile }) => {
                                             />
                                         </div>
                                         <span className="text-[10px] font-black text-amber-500/60 uppercase tracking-widest leading-none">
-                                            {financeDetail?.summary?.sync_progress || 25}% Forensic Match
+                                            {financeDetail?.summary?.sync_progress || 25}% Verified Match
                                         </span>
                                     </div>
 
                                     <p className="text-slate-400 text-sm md:text-base leading-relaxed max-w-xl mx-auto mb-8">
                                         <span className="block font-bold text-white/90">
-                                            Institutional mapping for <span className="text-amber-500">{selectedStudent?.display_name}</span> is currently in the verification pipeline.
+                                            Record for <span className="text-amber-500">{selectedStudent?.display_name}</span> is currently being processed.
                                         </span>
                                     </p>
 

@@ -141,7 +141,7 @@ const InfoRow: React.FC<{ label: string; value: string | null | undefined; icon:
                 </p>
                 {onEdit && (!value || value === '—') && (
                     <span className="text-[9px] font-black text-indigo-400/40 uppercase tracking-widest bg-indigo-500/5 px-2 py-0.5 rounded border border-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Fix Protocol
+                        Resolve Issue
                     </span>
                 )}
             </div>
@@ -212,7 +212,7 @@ const DigitalIdCard: React.FC<{ student: StudentForAdmin; onNavigate?: (tab: Tab
                     <p className="text-sm font-bold text-white/80 uppercase font-mono">Session 2024-25</p>
                 </div>
                 <div className="space-y-1.5 text-right">
-                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em]">Registry Node</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.25em]">Record ID</p>
                     {student.assigned_class_name ? (
                         <p className="text-sm font-bold text-white/80 uppercase tracking-tight">{student.assigned_class_name}</p>
                     ) : (
@@ -540,7 +540,7 @@ const GuardianCard: React.FC<{
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 shadow-lg shadow-amber-500/5">
                     <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
                     <span className="text-[7px] font-black text-amber-500 uppercase tracking-widest whitespace-nowrap">
-                        Registry: Admission
+                        Source: Admission
                     </span>
                 </div>
             </div>
@@ -564,13 +564,13 @@ const GuardianCard: React.FC<{
                     </div>
 
                     <div className="group/item">
-                        <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Digital Contact Protocols</p>
+                        <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.25em] mb-3 group-hover/item:text-indigo-400/50 transition-colors">Digital Contact Details</p>
                         <div className="space-y-3">
                             <div className="flex items-center gap-3.5 group/contact cursor-pointer">
                                 <div className="p-2 bg-white/5 rounded-xl text-white/30 group-hover/contact:bg-indigo-500/10 group-hover/contact:text-indigo-400 transition-all border border-white/5">
                                     <MailIcon className="w-4 h-4" />
                                 </div>
-                                <p className="text-sm text-white/60 font-medium group-hover/contact:text-white transition-colors uppercase tracking-tight">{data.email || 'PROTOCOL_MISSING'}</p>
+                                <p className="text-sm text-white/60 font-medium group-hover/contact:text-white transition-colors uppercase tracking-tight">{data.email || 'NOT_DEFINED'}</p>
                             </div>
                             <div className="flex items-center gap-3.5 group/contact cursor-pointer">
                                 <div className="p-2 bg-white/5 rounded-xl text-white/30 group-hover/contact:bg-indigo-500/10 group-hover/contact:text-indigo-400 transition-all border border-white/5">
@@ -612,7 +612,7 @@ const GuardianCard: React.FC<{
                 <h5 className="text-xl font-black text-white/60 mb-3 tracking-tight">No Guardian Linked</h5>
                 <p className="text-[11px] text-white/30 leading-relaxed max-w-[240px] mb-10 font-bold uppercase tracking-wider">
                     {isPrimary
-                        ? 'Initialize primary contact protocols to enable emergency broadcasting and academic node updates.'
+                        ? 'Initialize primary contact information to enable emergency broadcasting and academic record updates.'
                         : 'Add a secondary guardian for redundant contact links and improved institutional safety.'
                     }
                 </p>
@@ -728,11 +728,11 @@ const GuardianEditModal: React.FC<{
                                 <EditIcon className="w-5 h-5" />
                             </div>
                             <h3 className="font-black text-2xl text-white tracking-tight uppercase">
-                                {type === 'primary' ? 'Primary' : 'Secondary'} Guardian Registry
+                                {type === 'primary' ? 'Primary' : 'Secondary'} Guardian Details
                             </h3>
                         </div>
                         <p className="text-white/30 text-[10px] font-black uppercase tracking-[0.2em] ml-1">
-                            Update spatial registry and contact protocols
+                            Update contact information and details
                         </p>
                     </div>
                     <button
@@ -863,7 +863,7 @@ const GuardianEditModal: React.FC<{
                             className="px-12 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.5rem] text-[11px] font-black shadow-2xl shadow-indigo-600/20 hover:shadow-indigo-600/40 flex items-center gap-3 transition-all uppercase tracking-[0.3em] hover:-translate-y-1 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                            {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-4 h-4" /> Finalize Registry</>}
+                            {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-4 h-4" /> Finalize Profile</>}
                         </button>
                     </div>
                 </form>
@@ -1485,7 +1485,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
                         {/* Core Registry Section */}
                         <p className="hidden lg:block px-6 text-[9px] font-black text-white/30 uppercase tracking-[0.25em] mb-4 mt-2">
-                            Registry Modules
+                            Personal Details
                         </p>
                         <div className="flex flex-row lg:flex-col gap-1.5 min-w-max">
                             <TabButton id="overview" label="Overview" icon={<ActivityIcon className="w-4 h-4" />} active={activeTab === 'overview'} onClick={setActiveTab} />
@@ -1641,7 +1641,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                             <div className="pt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                                                 <div className="flex items-center gap-4 mb-8">
                                                     <div className="h-px bg-white/5 flex-grow"></div>
-                                                    <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Managed Enrollment Protocol</h3>
+                                                    <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Managed Enrollment Task</h3>
                                                     <div className="h-px bg-white/5 flex-grow"></div>
                                                 </div>
 
@@ -1659,8 +1659,8 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                             </div>
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                                 {[
-                                                                    { label: 'Identity Protocol', status: 'complete', desc: 'Demographic synchronization secured' },
-                                                                    { label: 'Admission Link', status: admissionRecord ? 'complete' : 'pending', desc: 'Vault registration record' },
+                                                                    { label: 'Identity Verification', status: 'complete', desc: 'Demographic synchronization secured' },
+                                                                    { label: 'Admission Link', status: admissionRecord ? 'complete' : 'pending', desc: 'Admission record' },
                                                                     { label: 'Document Portfolio', status: docs.length > 0 ? (docs.every((d: any) => d.status === 'Verified') ? 'complete' : 'warning') : 'pending', desc: 'Verification of credentials' },
                                                                     { label: 'Academic Placement', status: syncedStudent.assigned_class_id ? 'complete' : 'pending', desc: 'Final segment assignment' }
                                                                 ].map((step, idx) => (
@@ -2157,7 +2157,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                         <h2 className="text-3xl font-black text-white tracking-tight">Guardian Management</h2>
                                                     </div>
                                                     <p className="text-sm text-white/40 leading-relaxed font-medium">
-                                                        Centralized control for student guardianship protocols. Manage primary contacts, backup emergency links, and synchronize household identification data.
+                                                        Centralized control for student guardianship. Manage primary contacts, backup emergency links, and synchronize household identification data.
                                                     </p>
                                                 </div>
 
@@ -2183,13 +2183,13 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
                                                                     // Trigger a local refresh
                                                                     await fetchData();
-                                                                    console.log('Identity Protocol Synchronized');
+                                                                    console.log('Identity Record Synchronized');
                                                                 }
                                                             }}
                                                             className="group flex items-center gap-3 px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/20 transition-all duration-300"
                                                         >
                                                             <RefreshIcon className="w-4 h-4 group-hover:rotate-180 transition-transform duration-700" />
-                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Sync Identity Protocol</span>
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Sync Identity Record</span>
                                                         </button>
                                                     )}
                                                 </div>
@@ -2542,7 +2542,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     <div className="p-2 bg-white/5 rounded-lg border border-white/10">
                                                         <FileTextIcon className="w-5 h-5 text-white/60" />
                                                     </div>
-                                                    <h3 className="text-lg font-black text-white tracking-tight">Documentation Vault</h3>
+                                                    <h3 className="text-lg font-black text-white tracking-tight">Documents</h3>
                                                 </div>
                                                 <button className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 hover:-translate-y-0.5 flex items-center gap-2">
                                                     <PlusIcon className="w-4 h-4" /> Request Document
@@ -2584,7 +2584,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
                                                     <h4 className="text-[11px] font-black text-white/40 uppercase tracking-[0.3em]">Supporting Evidence</h4>
                                                     <div className="h-px bg-white/5 flex-grow"></div>
                                                     <span className="px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-widest rounded">
-                                                        Protocol Suites
+                                                        System Modules
                                                     </span>
                                                 </div>
                                                 <div className="space-y-3">
@@ -2866,7 +2866,7 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
 
                                                 {/* Quick Actions List */}
                                                 <div className="p-5 bg-[#0c0e12] border border-white/5 rounded-2xl">
-                                                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-4">Quick Protocols</h4>
+                                                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] mb-4">Quick Actions</h4>
                                                     <div className="space-y-2">
                                                         <button className="w-full text-left px-4 py-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 flex items-center justify-between group transition-all">
                                                             <span className="text-[10px] font-black text-white/60 group-hover:text-white uppercase tracking-widest">Send Fee Rerminder</span>

@@ -17,9 +17,9 @@ const GovernanceActions: React.FC = () => {
     const [confirmAction, setConfirmAction] = useState<'restrict' | 'suspend' | 'expel' | null>(null);
 
     const actions: ActionNode[] = [
-        { id: 'restrict', title: 'Restrict Access (Temporary)', description: 'Limit node accessibility to core institutional functions.', level: 'Tier 1', icon: <AlertTriangleIcon className="w-4 h-4" /> },
-        { id: 'suspend', title: 'Institutional Suspension', description: 'Immediate gateway lockdown. All sessions invalidated.', level: 'Tier 2', icon: <ShieldAlertIcon className="w-4 h-4" /> },
-        { id: 'expel', title: 'Permanent Revocation', description: 'Final resignation protocols and immutable record archival.', level: 'Critical', icon: <TrashIcon className="w-4 h-4" /> }
+        { id: 'restrict', title: 'Restrict Access (Temporary)', description: 'Limit account access to core functions.', level: 'Tier 1', icon: <AlertTriangleIcon className="w-4 h-4" /> },
+        { id: 'suspend', title: 'Account Suspension', description: 'Immediate access lockdown. All sessions will be signed out.', level: 'Tier 2', icon: <ShieldAlertIcon className="w-4 h-4" /> },
+        { id: 'expel', title: 'Permanently Delete', description: 'Move record to permanent archive and delete access.', level: 'Critical', icon: <TrashIcon className="w-4 h-4" /> }
     ];
 
     return (
@@ -33,8 +33,8 @@ const GovernanceActions: React.FC = () => {
                     <div key={action.id} className="p-5 bg-black/10 border border-white/5 rounded-xl flex items-center justify-between transition-all hover:border-white/10">
                         <div className="flex items-center gap-5">
                             <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${action.id === 'restrict' ? 'bg-amber-500/5 border-amber-500/10 text-amber-500' :
-                                    action.id === 'suspend' ? 'bg-orange-500/5 border-orange-500/10 text-orange-500' :
-                                        'bg-red-500/5 border-red-500/10 text-red-500'
+                                action.id === 'suspend' ? 'bg-orange-500/5 border-orange-500/10 text-orange-500' :
+                                    'bg-red-500/5 border-red-500/10 text-red-500'
                                 }`}>
                                 {action.icon}
                             </div>
@@ -75,10 +75,10 @@ const GovernanceActions: React.FC = () => {
                         >
                             <div className="space-y-4">
                                 <h4 className="text-[16px] font-bold text-white uppercase tracking-tight flex items-center gap-3">
-                                    <AlertTriangleIcon className="w-5 h-5 text-red-500" /> Confirm Handshake
+                                    <AlertTriangleIcon className="w-5 h-5 text-red-500" /> Confirm Action
                                 </h4>
                                 <p className="text-[12px] font-medium text-white/40 leading-relaxed italic">
-                                    Executing the <span className="text-white font-bold">{confirmAction.toUpperCase()}</span> protocol will permanently alter this institutional record. Administrative override is required.
+                                    Executing the <span className="text-white font-bold">{confirmAction.toUpperCase()}</span> process will update this record. Administrative approval is required.
                                 </p>
                             </div>
 
@@ -88,8 +88,8 @@ const GovernanceActions: React.FC = () => {
                                     className="w-full p-4 bg-black/40 border border-white/5 rounded-xl text-[11px] text-white focus:ring-1 focus:ring-red-500/30 outline-none h-24 resize-none italic"
                                 />
                                 <div className="flex gap-4">
-                                    <button onClick={() => setConfirmAction(null)} className="flex-1 py-3 border border-white/10 rounded-xl text-[10px] font-bold text-white/40 uppercase tracking-widest hover:bg-white/5 transition-all">Abort</button>
-                                    <button className="flex-1 py-3 bg-red-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-red-600/20">Authorize & Execute</button>
+                                    <button onClick={() => setConfirmAction(null)} className="flex-1 py-3 border border-white/10 rounded-xl text-[10px] font-bold text-white/40 uppercase tracking-widest hover:bg-white/5 transition-all">Cancel</button>
+                                    <button className="flex-1 py-3 bg-red-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-red-600/20">Confirm & Apply</button>
                                 </div>
                             </div>
                         </motion.div>

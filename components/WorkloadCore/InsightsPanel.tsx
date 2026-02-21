@@ -34,7 +34,7 @@ const InsightsPanel: React.FC = () => {
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
                 <p className="text-[11px] font-medium text-white/30 leading-relaxed uppercase tracking-tight italic">
-                    All pedagogical nodes operating within authorized saturation parameters.
+                    All teachers operating within authorized workload parameters.
                 </p>
             </InsightModule>
 
@@ -47,7 +47,7 @@ const InsightsPanel: React.FC = () => {
                     {[
                         'Reallocate 2 units to Sector-B',
                         'Optimize Tuesday Peak Gap',
-                        'Sync with Peer Node ALPHA'
+                        'Sync with Secondary System'
                     ].map((text, i) => (
                         <li key={i} className="flex gap-3 items-start">
                             <div className="w-1 h-1 rounded-full bg-primary/40 mt-1.5 shrink-0" />
@@ -59,7 +59,7 @@ const InsightsPanel: React.FC = () => {
 
             <InsightModule
                 title="Strategy Actions"
-                subtitle="Procedural Protocol"
+                subtitle="School Procedure"
                 icon={<ActivityIcon className="w-4 h-4" />}
             >
                 <button className="w-full py-4 bg-primary/10 border border-primary/20 rounded-xl text-[10px] font-black text-primary uppercase tracking-[0.3em] hover:bg-primary/20 transition-all shadow-inner">

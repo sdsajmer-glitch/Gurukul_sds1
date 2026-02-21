@@ -92,7 +92,7 @@ const AuthPage: React.FC = () => {
                         <div className="text-[10px] text-white/15 font-black uppercase tracking-[0.6em] flex items-center gap-4">
                             <span>&copy; 2026 Universepi OS</span>
                             <span className="w-1.5 h-px bg-white/10"></span>
-                            <span>Protocol Node 9.7.2</span>
+                            <span>Version 9.7.2</span>
                         </div>
                         <div className="flex gap-8 opacity-20 hover:opacity-100 transition-opacity duration-500">
                             {/* Visual cues for institutional reliability */}
@@ -105,12 +105,12 @@ const AuthPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Right Column: Auth Node */}
+            {/* Right Column: Authentication */}
             <div className="w-full lg:w-[40%] flex flex-col relative overflow-y-auto bg-bg-obsidian custom-scrollbar h-screen z-20 shadow-[-20px_0_60px_rgba(0,0,0,0.5)]">
                 <div className="absolute top-6 right-6 z-30 flex items-center gap-3">
                     <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
                         <ShieldCheckIcon className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Protocol Secured</span>
+                        <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Secure Connection</span>
                     </div>
                     <ThemeSwitcher />
                 </div>
@@ -130,7 +130,7 @@ const AuthPage: React.FC = () => {
                                     </div>
                                     <h3 className="text-3xl font-sans font-bold text-white mb-4 tracking-tight">Account Created</h3>
                                     <p className="text-white/50 mb-10 text-base leading-relaxed font-sans">
-                                        Your account has been successfully set up. A verification email has been sent to <strong className="text-white">{userEmail}</strong>.
+                                        Your account has been successfully created. A verification email has been sent to <strong className="text-white">{userEmail}</strong>.
                                     </p>
                                     <button
                                         onClick={() => { setSignupSuccess(false); setView('login'); }}

@@ -640,7 +640,7 @@ const ClassesTab: React.FC<ClassesTabProps> = ({ branchId, profile }) => {
                         <div className="w-2 h-8 bg-primary rounded-full"></div>
                         <h1 className="text-4xl font-black text-foreground tracking-tighter uppercase italic">Academic Command</h1>
                     </motion.div>
-                    <p className="text-muted-foreground font-medium text-lg max-w-xl leading-relaxed">System-wide structural orchestration of grades, sections, and faculty assignments.</p>
+                    <p className="text-muted-foreground font-medium text-lg max-w-xl leading-relaxed">System-wide structural management of grades, sections, and faculty assignments.</p>
                 </div>
 
                 <div className="flex flex-wrap gap-3">

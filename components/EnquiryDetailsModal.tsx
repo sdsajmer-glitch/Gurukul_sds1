@@ -18,13 +18,13 @@ const AlertCircleIcon = ({ className }: { className?: string }) => <svg xmlns="h
 const UserGroupIcon = ({ className }: { className?: string }) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-3.121-3.122 6.124 6.124 0 00-6.125 0 4.125 4.125 0 00-3.121 3.122 9.337 9.337 0 004.121.952 9.38 9.38 0 002.625-.372z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 110-6 3 3 0 010 6z" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.38 18.93a5.077 5.077 0 013.119-3.441 5.3 5.3 0 013.626 0 5.173 5.173 0 013.119 3.441" /><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 10.5a2.25 2.25 0 110-4.5 2.25 2.25 0 010 4.5z" /></svg>;
 
 const PROTOCOL_STAGES: { id: EnquiryStatus; label: string; description: string }[] = [
-    { id: 'NEW', label: 'Identity Initialized', description: 'New inbound enquiry node' },
-    { id: 'ENQUIRY_ACTIVE', label: 'Active Pipeline', description: 'Under active institutional review' },
-    { id: 'ENQUIRY_VERIFIED', label: 'Verified Uplink', description: 'Documentation and identity verified' },
-    { id: 'ENQUIRY_IN_REVIEW', label: 'Strategic Evaluation', description: 'Academic alignment in progress' },
-    { id: 'ENQUIRY_CONTACTED', label: 'Stakeholder Dialogue', description: 'Direct communication established' },
-    { id: 'ENQUIRY_REJECTED', label: 'Protocol Terminated', description: 'Identity node archived' },
-    { id: 'ENQUIRY_CONVERTED' as any, label: 'Promoted to Admission', description: 'Final vault promotion successful' }
+    { id: 'NEW', label: 'Enquiry Received', description: 'Initial enquiry record' },
+    { id: 'ENQUIRY_ACTIVE', label: 'Active', description: 'Record is under review' },
+    { id: 'ENQUIRY_VERIFIED', label: 'Verified', description: 'All details verified' },
+    { id: 'ENQUIRY_IN_REVIEW', label: 'In Review', description: 'Reviewing academic details' },
+    { id: 'ENQUIRY_CONTACTED', label: 'Contacted', description: 'Contacted the applicant' },
+    { id: 'ENQUIRY_REJECTED', label: 'Rejected', description: 'Record rejected' },
+    { id: 'ENQUIRY_CONVERTED' as any, label: 'Admitted', description: 'Successfully moved to admissions' }
 ];
 
 interface EnquiryDetailsModalProps {
@@ -101,7 +101,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
         if (sending) return;
         setSending(true);
         try {
-            // [A] Identity Promotion Protocol
+            // [A] Admission Process
             if (status === 'ENQUIRY_CONVERTED' as any) {
                 const res = await EnquiryService.convertToAdmission(String(enquiry.id));
                 if (res.success) {
@@ -113,8 +113,8 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                 }
             }
 
-            // [B] Standard Lifecycle Transition
-            await EnquiryService.updateStatus(String(enquiry.id), status, `Status transitioned to ${status}`);
+            // [B] Status Update
+            await EnquiryService.updateStatus(String(enquiry.id), status, `Status updated to ${status}`);
             await fetchTimeline();
             onUpdate();
         } catch (e: any) {
@@ -176,20 +176,20 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                         </div>
                         <div className="space-y-1">
                             <h2 className="text-3xl sm:text-4xl font-serif font-black text-white leading-none tracking-tighter uppercase flex items-baseline">
-                                {enquiry.applicant_name} <span className="text-indigo-500/40 font-light italic ml-4 lowercase text-xl sm:text-2xl">Identity Profile.</span>
+                                {enquiry.applicant_name} <span className="text-indigo-500/40 font-light italic ml-4 lowercase text-xl sm:text-2xl">Profile.</span>
                             </h2>
                             <div className="flex items-center gap-4 opacity-40">
-                                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Node Protocol: {String(enquiry.id).slice(0, 8)}</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Reference ID: {String(enquiry.id).slice(0, 8)}</span>
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-                                <span className="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em] px-2 py-0.5 rounded border border-emerald-500/20">Verified Uplink Active</span>
+                                <span className="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em] px-2 py-0.5 rounded border border-emerald-500/20">Active Session</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-6 relative z-10">
                         <div className="hidden lg:flex flex-col items-end mr-4">
-                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Enquiry Source</span>
-                            <span className="text-xs font-bold text-white/60 tracking-tight">{enquiry.source || 'Direct Gateway Transmission'}</span>
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Source</span>
+                            <span className="text-xs font-bold text-white/60 tracking-tight">{enquiry.source || 'Direct Entry'}</span>
                         </div>
                         <button
                             onClick={onClose}
@@ -233,7 +233,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                                             <div className="px-6 py-2.5 rounded-full bg-indigo-500/5 border border-indigo-500/10 flex items-center gap-4 group/chip hover:bg-indigo-500/10 transition-colors">
                                                                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
                                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400/80">
-                                                                    {item.details.status || item.details.message?.split(':')[1]?.trim() || 'Registry Activity Synchronized'}
+                                                                    {item.details.status || item.details.message?.split(':')[1]?.trim() || 'Database Sync'}
                                                                 </span>
                                                                 <span className="text-[9px] text-white/10 font-mono italic opacity-0 group-hover/chip:opacity-100 transition-opacity">
                                                                     {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -289,7 +289,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                             <form onSubmit={handleSend} className="max-w-4xl mx-auto group">
                                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-5 text-[10px] font-black text-white/10 tracking-[0.5em] uppercase pointer-events-none group-focus-within:text-indigo-400 group-focus-within:tracking-[0.6em] transition-all duration-700">
                                     <div className="w-12 h-px bg-white/[0.02] group-focus-within:bg-indigo-500/20 transition-all" />
-                                    <span>Authorized Uplink Terminal</span>
+                                    <span>Official Communication</span>
                                     <div className="w-12 h-px bg-white/[0.02] group-focus-within:bg-indigo-500/20 transition-all" />
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 p-2.5 sm:p-3.5 bg-white/[0.02] border border-white/5 rounded-[2rem] sm:rounded-[3rem] focus-within:border-indigo-500/30 transition-all shadow-inner backdrop-blur-xl group-focus-within:shadow-[0_0_50px_rgba(79,70,229,0.05)]">
@@ -297,7 +297,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                         type="text"
                                         value={newMessage}
                                         onChange={e => setNewMessage(e.target.value)}
-                                        placeholder="Compose institutional dispatch..."
+                                        placeholder="Type a message..."
                                         disabled={loading || sending}
                                         className="flex-1 bg-transparent px-6 sm:px-10 py-4 sm:py-5 text-white placeholder:text-white/10 outline-none text-base sm:text-lg font-medium normal-case"
                                     />
@@ -318,7 +318,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                         {/* 1. Progressive Lifecycle Narrative */}
                         <section>
                             <div className="flex items-center justify-between mb-10">
-                                <h3 className="text-[11px] font-black uppercase text-white/30 tracking-[0.5em]">Protocol Status</h3>
+                                <h3 className="text-[11px] font-black uppercase text-white/30 tracking-[0.5em]">Status Tracker</h3>
                                 <div className="flex items-center gap-2">
                                     <div className="w-1 h-1 rounded-full bg-indigo-500 animate-ping" />
                                     <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest italic">Live Tracking</span>
@@ -355,7 +355,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                                     {st.label}
                                                 </span>
                                                 <span className="text-[8px] font-bold text-white/20 uppercase mt-1 tracking-widest">
-                                                    {isActive ? 'Current Protocol State' : st.description}
+                                                    {isActive ? 'Current Status' : st.description}
                                                 </span>
                                             </div>
                                         </div>
@@ -365,7 +365,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
 
                             {/* Institutional Authority Controls */}
                             <div className="space-y-6">
-                                <h3 className="text-[9px] font-black uppercase text-indigo-400/40 tracking-[0.4em]">Administrative Commands</h3>
+                                <h3 className="text-[9px] font-black uppercase text-indigo-400/40 tracking-[0.4em]">Actions</h3>
 
                                 <div className="grid grid-cols-2 gap-3">
                                     {[
@@ -401,7 +401,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                         {sending ? <Spinner size="sm" /> : (
                                             <>
                                                 <ZapIcon className="w-4 h-4" />
-                                                PROMOTE TO ADMISSION
+                                                ADMIT CANDIDATE
                                             </>
                                         )}
                                     </button>
@@ -413,7 +413,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                         className="w-full py-5 rounded-2xl bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(16,185,129,0.1)]"
                                     >
                                         <ShieldCheckIcon className="w-4 h-4 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                                        IDENTITY ARCHIVED IN VAULT
+                                        RECORD MOVED TO ADMISSIONS
                                     </button>
                                 )}
                             </div>
@@ -423,7 +423,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
 
                         {/* 2. Decision Intelligence Panels */}
                         <section className="space-y-8">
-                            <h3 className="text-[11px] font-black uppercase text-white/30 tracking-[0.5em]">Node Metadata</h3>
+                            <h3 className="text-[11px] font-black uppercase text-white/30 tracking-[0.5em]">Applicant Details</h3>
 
                             {/* Academic Alignment Display */}
                             <div className="space-y-6">
@@ -463,7 +463,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                                 <PremiumAvatar name={enquiry.parent_name} size="md" className="rounded-2xl border border-white/10 shadow-xl" />
                                             </div>
                                             <div className="min-w-0">
-                                                <span className="text-[9px] font-black text-indigo-500/60 uppercase tracking-[0.3em] block mb-1">Primary Parent / Guardian</span>
+                                                <span className="text-[9px] font-black text-indigo-500/60 uppercase tracking-[0.3em] block mb-1">Parent / Guardian</span>
                                                 <p className="text-xl font-bold text-white tracking-tight leading-none truncate">{enquiry.parent_name}</p>
                                             </div>
                                         </div>
@@ -489,10 +489,10 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                     <div className="space-y-4">
                                         <h3 className="text-[9px] font-black uppercase text-white/10 tracking-[0.4em] mb-4">Contact Uplinks</h3>
                                         {[
-                                            { label: 'Primary Verified Email', val: enquiry.parent_email, id: 'email' },
-                                            { label: 'Primary Mobile Node', val: enquiry.parent_phone, id: 'phone' },
-                                            { label: 'Secondary Email Link', val: enquiry.secondary_parent_email, id: 'sec_email' },
-                                            { label: 'Secondary Mobile Node', val: enquiry.secondary_parent_phone, id: 'sec_phone' }
+                                            { label: 'Email', val: enquiry.parent_email, id: 'email' },
+                                            { label: 'Mobile', val: enquiry.parent_phone, id: 'phone' },
+                                            { label: 'Secondary Email', val: enquiry.secondary_parent_email, id: 'sec_email' },
+                                            { label: 'Secondary Mobile', val: enquiry.secondary_parent_phone, id: 'sec_phone' }
                                         ].map(it => it.val && (
                                             <div key={it.id} className="group/meta flex items-center justify-between p-5 rounded-2xl hover:bg-white/[0.03] transition-all border border-transparent hover:border-white/5">
                                                 <div className="min-w-0">
@@ -519,7 +519,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="text-right">
-                                        <span className="text-[8px] font-black text-white/10 uppercase block">Node Index</span>
+                                        <span className="text-[8px] font-black text-white/10 uppercase block">Reference Index</span>
                                         <span className="text-[10px] font-mono font-black text-white/30">ID-{enquiry.branch_id || '01'}</span>
                                     </div>
                                 </div>
@@ -551,9 +551,9 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                     </div>
 
                                     <div className="space-y-4">
-                                        <h4 className="text-4xl font-serif font-black text-white uppercase tracking-tighter">Vault Promotion Protocol</h4>
+                                        <h4 className="text-4xl font-serif font-black text-white uppercase tracking-tighter">Confirm Admission</h4>
                                         <p className="text-white/40 text-lg font-medium font-serif italic max-w-lg mx-auto">
-                                            "You are about to securely transfer this applicant's identity core to the Admission Vault. This action is irreversible and will initialize official enrollment procedures."
+                                            "You are about to transfer this applicant's profile to Admissions. This action will initialize official enrollment procedures."
                                         </p>
                                     </div>
 
@@ -566,7 +566,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                             'Confirm applicant eligibility for target grade.',
                                             'Verify all communication history is logged.',
                                             'Initialize parent notification dispatch.',
-                                            'Release identity node from temporary enquiry registry.'
+                                            'Release record from preliminary enquiry list.'
                                         ].map((text, i) => (
                                             <div key={i} className="flex items-start gap-4 text-sm font-medium text-white/60">
                                                 <ShieldCheckIcon className="w-5 h-5 text-white/10 shrink-0 mt-0.5" />
@@ -580,7 +580,7 @@ export default function EnquiryDetailsModal({ enquiry, onClose, onUpdate, onNavi
                                             onClick={() => setShowConfirmPromote(false)}
                                             className="flex-1 py-6 rounded-2xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-black text-[11px] uppercase tracking-[0.4em] transition-all border border-white/5"
                                         >
-                                            Abort Protocol
+                                            Cancel
                                         </button>
                                         <button
                                             onClick={handleConvert}

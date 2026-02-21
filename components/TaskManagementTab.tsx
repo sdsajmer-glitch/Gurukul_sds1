@@ -117,7 +117,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
             const { error } = await supabase.from('admin_tasks').update({ status: newStatus }).eq('id', task.id);
             if (error) throw error;
         } catch (err) {
-            fetchTasks(); // Protocol Rollback
+            fetchTasks(); // Operation Rollback
         }
     };
 
@@ -171,13 +171,13 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                 <div className="space-y-6">
                     <div className="flex items-center gap-4">
                         <div className={`h-2.5 w-2.5 rounded-full ${isRealtimeActive ? 'bg-emerald-500 shadow-[0_0_12px_#10b981]' : 'bg-red-500 shadow-[0_0_12px_#ef4444]'} animate-pulse`}></div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">{isRealtimeActive ? 'Node Sync Active' : 'Registry Handshake Pending'}</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">{isRealtimeActive ? 'Sync Active' : 'Verification Pending'}</span>
                     </div>
                     <h2 className="text-4xl md:text-7xl font-serif font-black text-white tracking-tighter uppercase leading-none">
                         Task <span className="text-white/20 italic font-medium lowercase">orchestrator.</span>
                     </h2>
                     <p className="text-[16px] md:text-xl text-white/40 font-medium leading-relaxed font-serif italic border-l-2 border-white/5 pl-8 max-w-2xl">
-                        Autonomous institutional orchestration node. Synchronizing duty cycles across branch layers.
+                        System Task Coordinator. Synchronizing academic cycles across branch layers.
                     </p>
                 </div>
                 <div className="flex items-center gap-4 w-full md:w-auto">
@@ -325,7 +325,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
 
                 {/* Visual Footer */}
                 <div className="p-12 border-t border-white/5 bg-black/40 text-center relative z-10">
-                    <span className="text-[10px] font-black text-white/5 uppercase tracking-[1em] select-none pointer-events-none">Institutional Protocol v24.4 Governance Matrix</span>
+                    <span className="text-[10px] font-black text-white/5 uppercase tracking-[1em] select-none pointer-events-none">Institutional Standard v24.4</span>
                 </div>
             </div>
 
@@ -362,7 +362,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                                         type="text" value={newTask.title}
                                         onChange={e => setNewTask({ ...newTask, title: e.target.value.toUpperCase() })}
                                         className="w-full h-20 px-10 bg-black/40 border border-white/5 rounded-[1.8rem] text-xl font-black text-white focus:border-primary/50 focus:ring-[15px] focus:ring-primary/5 outline-none transition-all placeholder:text-white/5 font-mono tracking-widest shadow-inner"
-                                        placeholder="E.G. LEDGER_SYNC_PROTOCOL_B4"
+                                        placeholder="E.G. LEDGER_SYNC_B4"
                                     />
                                 </div>
 
@@ -407,7 +407,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                                 </div>
 
                                 <div className="space-y-5">
-                                    <label className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em] ml-2">Handshake Deadline</label>
+                                    <label className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em] ml-2">Deadline</label>
                                     <input
                                         type="date" value={newTask.due_date}
                                         onChange={e => setNewTask({ ...newTask, due_date: e.target.value })}
@@ -423,7 +423,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                                     disabled={loading || !newTask.title}
                                     className="w-full md:w-auto px-16 py-7 bg-primary text-primary-foreground font-black text-[11px] uppercase tracking-[0.5em] rounded-[2.2rem] shadow-[0_32px_64px_-16px_rgba(var(--primary),0.6)] hover:bg-primary/90 transition-all transform active:scale-95 disabled:opacity-20 flex items-center justify-center gap-5 ring-[12px] ring-primary/5 group"
                                 >
-                                    {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-6 h-6 group-hover:rotate-12 transition-transform duration-500" /> Deploy Protocol</>}
+                                    {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-6 h-6 group-hover:rotate-12 transition-transform duration-500" /> Save Task</>}
                                 </button>
                             </footer>
                         </motion.div>

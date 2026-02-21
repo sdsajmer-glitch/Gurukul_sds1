@@ -36,18 +36,18 @@ const EmploymentRegistry: React.FC<EmploymentRegistryProps> = ({
                     <div className="p-2.5 bg-primary/10 rounded-xl text-primary ring-1 ring-primary/20 shadow-lg">
                         <BriefcaseIcon className="w-5 h-5" />
                     </div>
-                    <h3 className="text-[14px] font-bold text-white uppercase tracking-wider">Employment Registry</h3>
+                    <h3 className="text-[14px] font-bold text-white uppercase tracking-wider">Professional Details</h3>
                 </div>
-                <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Operational Node</span>
+                <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Staff Status</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
-                <DataField label="Institutional Identifier" value={employeeId} meta="FACULTY_NODE_ID" />
-                <DataField label="Operational Deployment" value={department} meta="ACADEMIC_SECTOR" />
-                <DataField label="Structural Designation" value={designation} meta="HIERARCHY_RANK" />
-                <DataField label="Registry Timestamp" value={joiningDate} meta="DEPLO_TIMESTAMP" />
-                <DataField label="Engagement Protocol" value={employmentType} meta="CONTRACT_STRAT" />
-                <DataField label="Classification" value="Standard Faculty" meta="NODE_CLASS" />
+                <DataField label="Employee ID" value={employeeId} meta="FACULTY_ID" />
+                <DataField label="Department" value={department} meta="DEPARTMENT" />
+                <DataField label="Designation" value={designation} meta="RANK" />
+                <DataField label="Joining Date" value={joiningDate} meta="JOIN_DATE" />
+                <DataField label="Employment Type" value={employmentType} meta="CONTRACT" />
+                <DataField label="Staff Category" value="Standard Faculty" meta="FACULTY_CLASS" />
             </div>
         </div>
     );

@@ -111,7 +111,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ schoolProfile, cu
                                             </span>
                                         ) : (
                                             <span className="flex items-center gap-2 text-[9px] font-bold text-accent-warning uppercase tracking-[0.2em] bg-accent-warning/5 px-4 py-2 rounded-full border border-accent-warning/10 backdrop-blur-md">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-accent-warning animate-pulse shadow-[0_0_8px_rgba(var(--accent-warning-rgb),0.5)]"></div> Handshake Pending
+                                                <div className="w-1.5 h-1.5 rounded-full bg-accent-warning animate-pulse shadow-[0_0_8px_rgba(var(--accent-warning-rgb),0.5)]"></div> Verification Pending
                                             </span>
                                         )
                                     )}

@@ -8,7 +8,7 @@ const supabaseServiceKey = (import.meta as any).env?.VITE_SUPABASE_SERVICE_ROLE_
 export const STORAGE_KEY = 'school_v15_auth_session';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("Critical Configuration Error: Supabase credentials missing from institutional node.");
+    console.error("Configuration Error: Supabase credentials missing from application.");
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -37,11 +37,11 @@ export const supabaseAdmin = supabaseServiceKey
     : supabase;
 
 /**
- * Institutional Error Protocol v3.5
+ * Global Error Handler
  * Translates low-level SQL/API/Network errors into actionable user guidance.
  */
 export const formatError = (err: any): string => {
-    if (!err) return "Synchronization error.";
+    if (!err) return "An unexpected error occurred.";
     if (typeof err === 'string') return err;
 
     // Extract base message
@@ -50,29 +50,29 @@ export const formatError = (err: any): string => {
 
     // 0. Network / Connectivity Check
     if (lowerMsg.includes('failed to fetch')) {
-        return "Network Protocol Failure: Unable to reach the institutional cloud. Please verify your internet connection or check if the Supabase project is active/unpaused.";
+        return "Connection Error: Unable to reach the server. Please verify your internet connection.";
     }
 
     // 1. Storage Specific Errors - CRITICAL for user configuration
     if (lowerMsg.includes('bucket not found') || lowerMsg.includes('storage bucket')) {
-        return "Storage Protocol Failure: The required storage bucket is missing. REQUIRED SETUP: 1. Go to Supabase Dashboard -> Storage. 2. Ensure 'profiles', 'documents', and 'expenses' buckets exist. 3. Set access to 'Public'.";
+        return "Storage Error: The required storage folder is missing. Please contact support or ensure 'profiles', 'documents', and 'expenses' buckets exist in the storage settings.";
     }
 
     // 2. Schema Specific Errors (Category Constraint)
     if (lowerMsg.includes('column "category"') && lowerMsg.includes('not-null')) {
-        return "Schema Desync: Your database registry has an outdated constraint. Please apply the latest v25.0.3 migration in schema.txt to synchronize the ledger.";
+        return "Database Error: The system records are out of sync. Please update the application to the latest version.";
     }
 
     // 3. General Postgres Mappings
     const code = err.code;
-    if (code === '42703') return `Attribute Desync: ${msg}. Re-apply latest schema.txt.`;
-    if (code === '23502') return `Data Integrity Fault: Mandatory parameter missing. Check input context.`;
-    if (code === 'P0001') return msg || "Custom validation protocol rejected the payload.";
+    if (code === '42703') return `Database error: ${msg}. Please refresh the page.`;
+    if (code === '23502') return `Input Error: Mandatory field missing. Please check your data.`;
+    if (code === 'P0001') return msg || "Validation error: check your input.";
 
     try {
         const stringified = JSON.stringify(err, Object.getOwnPropertyNames(err));
-        return stringified && stringified !== '{}' ? msg || stringified : msg || "Identity Handshake Protocol Exception.";
+        return stringified && stringified !== '{}' ? msg || stringified : msg || "An unexpected error occurred.";
     } catch (e) {
-        return msg || "Identity Handshake Protocol Exception.";
+        return msg || "An unexpected error occurred.";
     }
 };

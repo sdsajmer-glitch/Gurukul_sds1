@@ -127,7 +127,7 @@ const OverviewTab: React.FC<{ profile?: UserProfile; setActiveComponent?: (id: s
                                 Greetings, <span className="text-white/40 italic font-medium">{profile?.display_name?.split(' ')[0] || 'Guardian'}</span>
                             </h1>
                             <p className="text-[15px] text-white/40 leading-relaxed font-medium mt-6 border-l border-white/10 pl-8 max-w-lg">
-                                System status remains nominal. Institutional network reports stable connectivity. All identity processes are currently synchronized.
+                                System status is active. All records are currently up to date.
                             </p>
                         </div>
                     </div>
@@ -147,24 +147,24 @@ const OverviewTab: React.FC<{ profile?: UserProfile; setActiveComponent?: (id: s
             {/* 2. CONSOLE METRICS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <ConsoleMetric
-                    title="Registered Nodes"
+                    title="Students"
                     value={stats.total_applications}
                     icon={<UsersIcon className="w-5 h-5" />}
                     subtitle="Children"
                     variant="primary"
                 />
                 <ConsoleMetric
-                    title="Verification Queue"
+                    title="Pending Review"
                     value={stats.pending_applications}
                     icon={<ClockIcon className="w-5 h-5" />}
                     subtitle="Pending"
                     colorClass="text-amber-500"
                 />
                 <ConsoleMetric
-                    title="Identity Clearance"
+                    title="Verified Records"
                     value={stats.approved_applications}
                     icon={<CheckCircleIcon className="w-5 h-5" />}
-                    subtitle="Sealed"
+                    subtitle="Confirmed"
                     colorClass="text-emerald-500"
                 />
             </div>
@@ -183,12 +183,12 @@ const OverviewTab: React.FC<{ profile?: UserProfile; setActiveComponent?: (id: s
                             <GraduationCapIcon className="w-6 h-6" />
                         </div>
                         <div className="text-right">
-                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-1">Academic Pulse</p>
+                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-1">Academic Progress</p>
                             <p className="text-2xl font-black text-white tracking-tighter uppercase">89.4% <span className="text-xs text-indigo-400/60 ml-2">↑ 4.2%</span></p>
                         </div>
                     </div>
                     <p className="text-[13px] text-white/30 font-medium leading-relaxed italic mb-0">
-                        Proprietary analytics indicate stable intellectual growth across <span className="text-white/60 font-bold">5 critical subjects</span>. Term Assessment targets reached early.
+                        Academic analytics indicate stable growth across <span className="text-white/60 font-bold">5 critical subjects</span>. Term Assessment targets reached early.
                     </p>
                 </motion.div>
 
@@ -241,9 +241,9 @@ const OverviewTab: React.FC<{ profile?: UserProfile; setActiveComponent?: (id: s
                                             <DocumentTextIcon className="w-7 h-7" />
                                         </div>
                                         <div>
-                                            <p className="text-xl font-bold text-white tracking-tight">Handshake Authentication</p>
+                                            <p className="text-xl font-bold text-white tracking-tight">Action Required</p>
                                             <p className="text-[14px] text-white/30 mt-1.5 font-medium leading-relaxed max-w-md italic">
-                                                Security clearance requires artifact synchronization for <span className="text-amber-500 font-bold">{stats.pending_applications} active node(s)</span>.
+                                                Verification requires document synchronization for <span className="text-amber-500 font-bold">{stats.pending_applications} student(s)</span>.
                                             </p>
                                         </div>
                                     </div>
@@ -273,9 +273,9 @@ const OverviewTab: React.FC<{ profile?: UserProfile; setActiveComponent?: (id: s
                     <h3 className="text-[14px] font-bold text-white/40 uppercase tracking-widest px-2">Console Shortcuts</h3>
                     <div className="grid grid-cols-1 gap-3">
                         {[
-                            { title: "Register Sibling", icon: <PlusIcon className="w-4 h-4" />, id: 'My Children', desc: 'Initialize node' },
-                            { title: "Verification Vault", icon: <DocumentTextIcon className="w-4 h-4" />, id: 'Documents', desc: 'Manage assets' },
-                            { title: "Broadcast Inbox", icon: <CommunicationIcon className="w-4 h-4" />, id: 'Messages', desc: 'System feed' }
+                            { title: "Register Sibling", icon: <PlusIcon className="w-4 h-4" />, id: 'My Children', desc: 'New Registration' },
+                            { title: "Documents", icon: <DocumentTextIcon className="w-4 h-4" />, id: 'Documents', desc: 'Manage documents' },
+                            { title: "Notifications", icon: <CommunicationIcon className="w-4 h-4" />, id: 'Messages', desc: 'View updates' }
                         ].map(link => (
                             <button
                                 key={link.title}
@@ -302,7 +302,7 @@ const OverviewTab: React.FC<{ profile?: UserProfile; setActiveComponent?: (id: s
                 variants={{ hidden: { opacity: 0 }, visible: { opacity: 0.1 } }}
                 className="pt-12 border-t border-white/[0.04] flex justify-center"
             >
-                <p className="text-[11px] font-black uppercase tracking-[0.6em] text-white">Institutional Operating System • v9.5.1 Deployment</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.6em] text-white">School Management System • v9.5.1 Deployment</p>
             </motion.div>
         </motion.div>
     );

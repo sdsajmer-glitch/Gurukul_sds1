@@ -14,8 +14,8 @@ interface TimelineEvent {
 }
 
 const mockTimeline: TimelineEvent[] = [
-    { id: '1', type: 'academic', title: 'Academic Registry Recalibrated', description: 'Grade 12_C subject mapping finalized and synchronized with primary core.', timestamp: '12m ago', status: 'SYNCHRONIZED' },
-    { id: '2', type: 'compliance', title: 'Governance Artifact Verified', description: 'Institutional contract renewal documents verified by Central HR Authority.', timestamp: '4h ago', status: 'VERIFIED' },
+    { id: '1', type: 'academic', title: 'Academic Records Updated', description: 'Grade 12_C subject mapping finalized and synchronized with primary system.', timestamp: '12m ago', status: 'SUCCESS' },
+    { id: '2', type: 'compliance', title: 'Compliance Document Verified', description: 'Institutional contract renewal documents verified by Central HR Authority.', timestamp: '4h ago', status: 'VERIFIED' },
     { id: '3', type: 'admin', title: 'Node Security Reset', description: 'Teacher portal password recalibrated via Administrative Terminal Alpha-4.', timestamp: '6h ago', status: 'SECURED' },
     { id: '4', type: 'system', title: 'Syllabus Milestone Logged', description: 'Advanced Physics Module-3 completion detected and logged for evaluative scoring.', timestamp: 'Yesterday', status: 'MILESTONE' },
     { id: '5', type: 'academic', title: 'Biometric Access Logged', description: 'Successful authentication at Campus Alpha Sector-2.', timestamp: 'Yesterday', status: 'LOGGED' }
@@ -82,9 +82,9 @@ const ActivityTimeline: React.FC = () => {
                                                 {event.status}
                                             </span>
                                             <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border shadow-2xl ${event.type === 'academic' ? 'bg-primary/5 text-primary border-primary/20' :
-                                                    event.type === 'compliance' ? 'bg-emerald-500/5 text-emerald-500 border-emerald-500/20' :
-                                                        event.type === 'admin' ? 'bg-amber-500/5 text-amber-500 border-amber-500/20' :
-                                                            'bg-violet-500/5 text-violet-400 border-violet-500/20'
+                                                event.type === 'compliance' ? 'bg-emerald-500/5 text-emerald-500 border-emerald-500/20' :
+                                                    event.type === 'admin' ? 'bg-amber-500/5 text-amber-500 border-amber-500/20' :
+                                                        'bg-violet-500/5 text-violet-400 border-violet-500/20'
                                                 }`}>
                                                 {event.type}
                                             </span>

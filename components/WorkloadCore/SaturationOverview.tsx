@@ -29,7 +29,7 @@ const SaturationOverview: React.FC<SaturationOverviewProps> = ({ hours, max, uni
                 {/* Left: Capacity Meter */}
                 <div className="col-span-12 lg:col-span-7 space-y-4">
                     <div className="flex justify-between items-end mb-2">
-                        <p className="text-[11px] font-black text-white uppercase tracking-[0.3em]">Node Capacity Meter</p>
+                        <p className="text-[11px] font-black text-white uppercase tracking-[0.3em]">Workload Monitor</p>
                         <span className={`text-[12px] font-bold tracking-tighter ${isCritical ? 'text-red-500' : 'text-emerald-500'}`}>
                             {percentage.toFixed(1)}% / 100%
                         </span>

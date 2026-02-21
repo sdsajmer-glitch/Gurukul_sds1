@@ -117,7 +117,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
             }
         } catch (err: any) {
             console.error("Student fetch error:", err);
-            setError("Identity Roster isolation active.");
+            setError("Failed to load students.");
         }
     }, [selectedStudentId]);
 
@@ -175,7 +175,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
         return (
             <div className="flex flex-col items-center justify-center py-40">
                 <Spinner size="lg" className="text-indigo-500" />
-                <p className="text-[10px] font-black uppercase text-white/20 mt-8 tracking-[0.4em] animate-pulse">Synchronizing Academic Magnitude</p>
+                <p className="text-[10px] font-black uppercase text-white/20 mt-8 tracking-[0.4em] animate-pulse">Loading Academic History</p>
             </div>
         );
     }
@@ -216,7 +216,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
                         >
                             <PremiumAvatar name={selectedStudent?.display_name || 'Select'} src={selectedStudent?.profile_photo_url} size="sm" />
                             <div className="text-left">
-                                <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Institutional Node</p>
+                                <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Student</p>
                                 <h2 className="text-sm font-black text-white group-hover:text-indigo-400 transition-colors uppercase tracking-widest">{selectedStudent?.display_name || 'Scanning...'}</h2>
                                 <p className="text-[10px] text-indigo-400/60 font-medium uppercase tracking-tighter">{selectedStudent?.grade} • Section A</p>
                             </div>
@@ -288,7 +288,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
                         disabled={downloadingReport}
                         className="p-3 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-2xl text-indigo-400 transition-all active:scale-95"
                     >
-                        {downloadingReport ? <Spinner size="xs" color="text-indigo-400" /> : <DownloadIcon className="w-5 h-5" />}
+                        {downloadingReport ? <Spinner size="sm" className="text-indigo-400" /> : <DownloadIcon className="w-5 h-5" />}
                     </button>
                 </div>
             </div>
@@ -319,7 +319,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
                 {/* 2. SUBJECT PERFORMANCE GRID (8 COLS) */}
                 <div className="lg:col-span-8 space-y-6">
                     <div className="flex items-center justify-between px-2">
-                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-white/20">Learning Matrix</h3>
+                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-white/20">Learning Progress</h3>
                         <span className="text-[9px] font-bold text-indigo-400 uppercase bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/10">Active Subjects</span>
                     </div>
 
@@ -355,7 +355,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
 
                     {/* 3. ASSESSMENT TIMELINE */}
                     <div className="pt-8 space-y-6">
-                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-white/20">Assessment Intelligence</h3>
+                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-white/20">Exams & Assessments</h3>
                         <div className="space-y-3">
                             {(intel?.exams || []).map((exam, i) => (
                                 <div key={i} className="flex items-center justify-between p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.04] transition-all">
@@ -390,8 +390,8 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
                     <div className="bg-[#111827] border border-white/5 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
                         <div className="flex justify-between items-center mb-8">
                             <div>
-                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30">Presence Pulse</h3>
-                                <p className="text-[10px] text-emerald-400 font-bold uppercase mt-1">Institutional Integrity OK</p>
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30">Attendance Profile</h3>
+                                <p className="text-[10px] text-emerald-400 font-bold uppercase mt-1">Attendance records up to date.</p>
                             </div>
                             <HeatmapIcon className="w-5 h-5 text-emerald-500/40" />
                         </div>
@@ -423,7 +423,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
                     {/* 4. ASSIGNMENT TRACKER */}
                     <div className="bg-[#111827] border border-white/5 rounded-3xl p-8 shadow-2xl">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30">Task Registry</h3>
+                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30">Assignments</h3>
                             <span className="text-[10px] font-black text-amber-400">{intel?.overview?.assignments_pending || 0} Pending</span>
                         </div>
                         <div className="space-y-4">
@@ -453,7 +453,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
                     {/* 6. TEACHER COMMUNICATION PANEL */}
                     <div className="bg-[#111827] border border-white/5 rounded-3xl p-8 shadow-2xl">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30">Strategic Remarks</h3>
+                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/30">Teacher Remarks</h3>
                             <MailIcon className="w-4 h-4 text-white/20" />
                         </div>
                         <div className="space-y-6">
@@ -487,10 +487,10 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ profile, initialStudentId }
                     <div className="p-6 bg-white/5 rounded-full mb-8">
                         <InfoIcon className="w-12 h-12 text-white/10" />
                     </div>
-                    <h4 className="text-xl font-black text-white uppercase tracking-widest mb-4">Node Isolation Active</h4>
+                    <h4 className="text-xl font-black text-white uppercase tracking-widest mb-4">No Academic Data</h4>
                     <p className="text-white/20 text-sm max-w-md mx-auto leading-relaxed">
-                        Subjects and assessment modules have not yet been mapped for this institutional lifecycle.
-                        Please contact the administrator for curriculum synchronization.
+                        Subjects and assessment modules have not yet been recorded for this academic year.
+                        Please contact the office for curriculum updates.
                     </p>
                 </div>
             )}

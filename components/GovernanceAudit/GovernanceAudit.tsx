@@ -23,7 +23,7 @@ const GovernanceAudit: React.FC<GovernanceAuditProps> = ({ teacher }) => {
                 <div className="space-y-1">
                     <div className="flex items-center gap-3 opacity-40">
                         <div className="w-8 h-px bg-primary/40" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Archives & Vault</span>
+                        <span className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Archives & Records</span>
                     </div>
                     <h2 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Governance <span className="text-white/20 italic font-medium">Audit.</span></h2>
                     <p className="text-[11px] font-bold text-white/30 uppercase tracking-[0.2em]">Institutional Stewardship, Compliance Matrix & Immutable Ledger</p>

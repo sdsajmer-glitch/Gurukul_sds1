@@ -50,7 +50,7 @@ const LedgerEvidenceModal: React.FC<LedgerEvidenceModalProps> = ({ expense, onCl
         try {
             // PROTOCOL: Using Signed URL for robust artifact retrieval and forced download
             const signedUrl = await StorageService.getSignedUrl(BUCKETS.EXPENSES, expense.invoice.storage_path);
-            
+
             const link = document.createElement('a');
             link.href = signedUrl;
             link.download = expense.invoice.file_name || `PROOF_EXP_${expense.id}.pdf`;
@@ -92,25 +92,25 @@ const LedgerEvidenceModal: React.FC<LedgerEvidenceModalProps> = ({ expense, onCl
                 }
             `}</style>
 
-            <motion.div 
+            <motion.div
                 id="ledger-evidence-artifact"
                 initial={{ opacity: 0, scale: 0.98, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-[#0d0f14] w-full max-w-4xl rounded-[3rem] shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] border border-white/10 flex flex-col overflow-hidden ring-1 ring-white/5" 
+                className="bg-[#0d0f14] w-full max-w-4xl rounded-[3rem] shadow-[0_64px_128px_-24px_rgba(0,0,0,1)] border border-white/10 flex flex-col overflow-hidden ring-1 ring-white/5"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header Context */}
                 <div className="p-8 border-b border-white/5 bg-white/[0.02] flex justify-between items-center no-print">
                     <div className="flex items-center gap-5">
                         <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500 border border-emerald-500/20 shadow-inner">
-                            <ShieldCheckIcon className="w-6 h-6"/>
+                            <ShieldCheckIcon className="w-6 h-6" />
                         </div>
                         <div>
                             <h3 className="text-xl font-serif font-black text-white uppercase tracking-tight leading-none">Ledger Evidence</h3>
                             <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Validated Institutional General Ledger Posting</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2.5 rounded-xl hover:bg-white/5 text-white/40 hover:text-white transition-all"><XIcon className="w-6 h-6"/></button>
+                    <button onClick={onClose} className="p-2.5 rounded-xl hover:bg-white/5 text-white/40 hover:text-white transition-all"><XIcon className="w-6 h-6" /></button>
                 </div>
 
                 <div className="p-10 md:p-16 overflow-y-auto custom-scrollbar flex-grow space-y-12">
@@ -120,11 +120,11 @@ const LedgerEvidenceModal: React.FC<LedgerEvidenceModalProps> = ({ expense, onCl
                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em]">Transaction Identifier</span>
                             <div className="flex items-center gap-4">
                                 <h2 className="text-4xl font-mono font-black text-white tracking-tighter">EXP-{expense.id}</h2>
-                                <button 
+                                <button
                                     onClick={handleCopyId}
                                     className={`p-2 rounded-lg transition-all no-print ${copied ? 'bg-emerald-500 text-white' : 'bg-white/5 text-white/20 hover:text-white hover:bg-white/10'}`}
                                 >
-                                    {copied ? <CheckCircleIcon className="w-4 h-4"/> : <CopyIcon className="w-4 h-4"/>}
+                                    {copied ? <CheckCircleIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
                                 </button>
                             </div>
                             <p className="text-sm font-medium text-white/40 font-serif italic">{expense.description}</p>
@@ -138,7 +138,7 @@ const LedgerEvidenceModal: React.FC<LedgerEvidenceModalProps> = ({ expense, onCl
                     {/* Double Entry Table */}
                     <div className="space-y-6">
                         <h4 className="text-[11px] font-black uppercase text-white/30 tracking-[0.3em] flex items-center gap-3 px-2">
-                            <ActivityIcon className="w-4 h-4 opacity-30"/> Post-Reconciliation Registry
+                            <ActivityIcon className="w-4 h-4 opacity-30" /> Post-Reconciliation Registry
                         </h4>
                         <div className="bg-black/40 rounded-[2rem] border border-white/5 overflow-hidden shadow-inner print-border">
                             <table className="w-full text-left text-sm whitespace-nowrap">
@@ -177,20 +177,20 @@ const LedgerEvidenceModal: React.FC<LedgerEvidenceModalProps> = ({ expense, onCl
 
                     {/* Metadata Footer */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
-                         <div className="space-y-1.5">
+                        <div className="space-y-1.5">
                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Temporal Node</p>
                             <p className="text-sm font-bold text-white/80 uppercase">{new Date(expense.expense_date).toLocaleDateString(undefined, { dateStyle: 'full' })}</p>
-                         </div>
-                         <div className="space-y-1.5">
+                        </div>
+                        <div className="space-y-1.5">
                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Clearing Method</p>
                             <p className="text-sm font-bold text-white/80 uppercase">{expense.payment_method || 'ELECTRONIC_CLEARING'}</p>
-                         </div>
-                         <div className="space-y-1.5">
-                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Handshake Authority</p>
+                        </div>
+                        <div className="space-y-1.5">
+                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Authorized By</p>
                             <p className="text-sm font-bold text-emerald-500 uppercase flex items-center gap-2">
-                                <ShieldCheckIcon className="w-3.5 h-3.5"/> Verified Audit Path
+                                <ShieldCheckIcon className="w-3.5 h-3.5" /> Verified Audit Path
                             </p>
-                         </div>
+                        </div>
                     </div>
                 </div>
 
@@ -200,14 +200,14 @@ const LedgerEvidenceModal: React.FC<LedgerEvidenceModalProps> = ({ expense, onCl
                         <span className="text-[9px] font-black uppercase tracking-widest">Sealed Ledger Artifact</span>
                     </div>
                     <div className="flex gap-4">
-                        <button 
+                        <button
                             onClick={handlePrint}
                             className="p-4 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-2xl transition-all border border-transparent hover:border-white/10 active:scale-95"
                             title="Print Ledger Evidence"
                         >
-                            <PrinterIcon className="w-5 h-5"/>
+                            <PrinterIcon className="w-5 h-5" />
                         </button>
-                        <button 
+                        <button
                             onClick={handleDownloadProof}
                             disabled={downloading}
                             className="px-8 py-4 bg-primary text-white font-black text-xs uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
@@ -215,7 +215,7 @@ const LedgerEvidenceModal: React.FC<LedgerEvidenceModalProps> = ({ expense, onCl
                             {downloading ? (
                                 <Spinner size="sm" className="text-white" />
                             ) : (
-                                <DownloadIcon className="w-5 h-5 group-hover:translate-y-0.5 transition-transform"/>
+                                <DownloadIcon className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
                             )}
                             Download Proof
                         </button>

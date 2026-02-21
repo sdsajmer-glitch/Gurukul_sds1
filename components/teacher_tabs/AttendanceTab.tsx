@@ -140,8 +140,8 @@ const AttendanceTab: FunctionComponentWithIcon<{}> = () => {
         >
             <div className="flex flex-col xl:flex-row justify-between xl:items-end gap-8 border-b border-border pb-10">
                 <div>
-                    <h2 className="text-4xl font-black text-foreground tracking-tighter uppercase italic italic">Presence Registry</h2>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em] mt-2 opacity-60">Temporal Attendance Verification Protocol</p>
+                    <h2 className="text-4xl font-black text-foreground tracking-tighter uppercase italic italic">Attendance Records</h2>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em] mt-2 opacity-60">Daily Attendance Records</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-6">
                     <div className="bg-muted/30 p-2 rounded-[1.5rem] border border-border flex flex-wrap items-center gap-4">
@@ -172,7 +172,7 @@ const AttendanceTab: FunctionComponentWithIcon<{}> = () => {
                         disabled={!hasChanges || isSaving}
                         className="bg-foreground text-background font-black text-[10px] uppercase tracking-[0.3em] py-5 px-10 rounded-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-30 shadow-2xl relative overflow-hidden group"
                     >
-                        <span className="relative z-10">{isSaving ? <Spinner size="sm" className="text-background" /> : 'Commit registry'}</span>
+                        <span className="relative z-10">{isSaving ? <Spinner size="sm" className="text-background" /> : 'Save records'}</span>
                         <div className="absolute inset-0 bg-primary/20 translate-y-full group-hover:translate-y-0 transition-transform"></div>
                     </button>
                 </div>

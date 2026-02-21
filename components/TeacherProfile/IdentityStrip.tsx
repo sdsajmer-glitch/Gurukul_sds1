@@ -44,7 +44,7 @@ const IdentityStrip: React.FC<IdentityStripProps> = ({ teacher }) => {
 
             <div className="flex items-center gap-10">
                 <div className="hidden lg:flex flex-col items-end gap-1">
-                    <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Node Sync Status</span>
+                    <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">System Sync Status</span>
                     <div className="flex items-center gap-2">
                         <RefreshCwIcon className="w-3.5 h-3.5 text-emerald-500 animate-spin-slow" />
                         <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Live Uplink Active</span>
@@ -56,7 +56,7 @@ const IdentityStrip: React.FC<IdentityStripProps> = ({ teacher }) => {
                 <div className="flex flex-col items-end gap-1">
                     <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">System Pulse</span>
                     <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">
-                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} CYCLE_NODE
+                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} SYSTEM_CLOCK
                     </span>
                 </div>
 

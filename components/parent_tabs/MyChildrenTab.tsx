@@ -83,7 +83,7 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, onNavi
         return (
             <div className="flex flex-col items-center justify-center py-40">
                 <Spinner size="lg" className="text-primary" />
-                <p className="text-[11px] font-black uppercase text-white/20 mt-8 tracking-[0.4em] animate-pulse">Syncing Family Ledger</p>
+                <p className="text-[11px] font-black uppercase text-white/20 mt-8 tracking-[0.4em] animate-pulse">Syncing Family Records</p>
             </div>
         );
     }
@@ -94,13 +94,13 @@ const MyChildrenTab: React.FC<MyChildrenTabProps> = ({ onManageDocuments, onNavi
                 <div className="max-w-2xl">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary/60"></div>
-                        <span className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">Institutional Roster</span>
+                        <span className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">Family Records</span>
                     </div>
                     <h2 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tighter uppercase leading-[0.9] mb-6">
-                        Family <span className="opacity-100 font-serif text-primary">Nodes.</span>
+                        Family <span className="opacity-100 font-serif text-primary">Profiles.</span>
                     </h2>
                     <p className="text-white/40 text-[14px] leading-relaxed max-w-lg">
-                        Manage all your children's profiles, track their academic integrity, and access secure institutional records from a single centralized hub.
+                        Manage all your children's profiles, track their academic performance, and access secure school records from a single centralized hub.
                     </p>
                 </div>
 

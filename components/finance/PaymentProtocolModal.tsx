@@ -42,7 +42,7 @@ const PaymentProtocolModal: React.FC<PaymentProtocolModalProps> = ({
             onSuccess();
         } catch (err) {
             console.error("Protocol Initialization Failure:", err);
-            alert("Failed to initialize protocol node. Ensure branch ID sync is valid.");
+            alert("Failed to save settings. Ensure branch ID sync is valid.");
         } finally {
             setLoading(false);
         }
@@ -76,8 +76,8 @@ const PaymentProtocolModal: React.FC<PaymentProtocolModalProps> = ({
                                     <SecurityIcon className="w-8 h-8" />
                                 </div>
                                 <div>
-                                    <h2 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Initialize <span className="text-amber-500">Protocol</span></h2>
-                                    <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.5em] mt-1">Institutional Late Fee Matrix v1.0</p>
+                                    <h2 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Late Fee <span className="text-amber-500">Settings</span></h2>
+                                    <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.5em] mt-1">Institutional Late Fee Rules v1.0</p>
                                 </div>
                             </div>
                         </div>
@@ -86,7 +86,7 @@ const PaymentProtocolModal: React.FC<PaymentProtocolModalProps> = ({
                         <form onSubmit={handleSubmit} className="p-10 space-y-8">
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Protocol Identifer</label>
+                                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Settings Name</label>
                                     <input
                                         required
                                         type="text"
@@ -123,7 +123,7 @@ const PaymentProtocolModal: React.FC<PaymentProtocolModalProps> = ({
 
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Penalty Archetype</label>
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Penalty Type</label>
                                         <div className="flex bg-white/[0.03] p-1.5 rounded-2xl border border-white/5">
                                             <button
                                                 type="button"
@@ -169,7 +169,7 @@ const PaymentProtocolModal: React.FC<PaymentProtocolModalProps> = ({
                                     className="flex-1 px-10 py-5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-black text-[10px] uppercase tracking-[0.4em] rounded-2xl transition-all flex items-center justify-center gap-3 shadow-2xl shadow-amber-900/40"
                                 >
                                     {loading ? <VersionIcon className="w-4 h-4 animate-spin" /> : <PlusIcon className="w-4 h-4" />}
-                                    Commit Protocol Node
+                                    Save Settings
                                 </button>
                             </div>
                         </form>

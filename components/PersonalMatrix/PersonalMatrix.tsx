@@ -22,12 +22,12 @@ const PersonalMatrix: React.FC<PersonalMatrixProps> = ({ teacher, onUpdate }) =>
             {/* 🌑 LAYER 1: IDENTITY HEADER */}
             <PersonalIdentityHeader
                 name={teacher.display_name}
-                facultyCode={teacher.employee_id || `FAC-${teacher.id.slice(0, 4)}`}
-                status={teacher.is_active ? 'Active Node' : 'Suspended'}
+                facultyCode={teacher.details?.employee_id || `FAC-${teacher.id.slice(0, 4)}`}
+                status={teacher.is_active ? 'Active' : 'Suspended'}
                 avatarUrl={teacher.details?.profile_picture_url}
             />
 
-            {/* 🌑 LAYER 2: KPI INTELLIGENCE STRIP */}
+            {/* Performance Overview */}
             <PersonalKPIStrip
                 age={34}
                 tenure={12}
@@ -55,7 +55,7 @@ const PersonalMatrix: React.FC<PersonalMatrixProps> = ({ teacher, onUpdate }) =>
                         />
                     </div>
 
-                    {/* Liaison Connectivity Card */}
+                    {/* Contact Information Card */}
                     <div className="transition-all duration-300 hover:translate-y-[-4px]">
                         <LiaisonConnectivity
                             email={teacher.email}
@@ -74,35 +74,35 @@ const PersonalMatrix: React.FC<PersonalMatrixProps> = ({ teacher, onUpdate }) =>
                         <div className="transition-all duration-300 hover:translate-y-[-4px]">
                             <GovernanceSnapshot
                                 lastModified="Today, 14:20"
-                                complianceStatus="CleanNode"
-                                securityLevel="Tier-1 Alpha"
-                                attendanceTrend="98.5% Stable"
+                                complianceStatus="Verified"
+                                securityLevel="Standard"
+                                attendanceTrend="98.5% (Steady)"
                             />
                         </div>
 
                         {/* Additional Info / Institutional Notes */}
                         <div className="p-8 bg-primary/[0.02] border border-primary/10 rounded-2xl space-y-4">
                             <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Institutional Notes</h4>
-                            <p className="text-[11px] font-medium text-white/30 leading-relaxed italic">
-                                "Subject node exhibits exceptional pedagogical stability and consistent institutional contribution across multi-department grids."
+                            <p className="text-11px font-medium text-white/30 leading-relaxed italic">
+                                "Demonstrates consistent professional performance and institutional contribution across all departments."
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* 🌑 COMPLIANCE FOOTER */}
+            {/* Footer */}
             <div className="flex flex-col md:flex-row items-center justify-between px-6 pt-10 border-t border-white/5 gap-6 opacity-30 group">
                 <div className="flex items-center gap-6">
-                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Global Matrix ID: {teacher.id.split('-')[0].toUpperCase()}-NX-01</p>
+                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">System ID: {teacher.id.split('-')[0].toUpperCase()}-NX-01</p>
                     <div className="w-px h-4 bg-white/10 hidden md:block" />
-                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Data Policy: GDPR-SEC-ALPHA</p>
+                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Data Policy: GDPR Compliant</p>
                 </div>
                 <div className="flex gap-10">
-                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Security Signature: {teacher.id.slice(0, 8).toUpperCase()}</p>
+                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Authorization Code: {teacher.id.slice(0, 8).toUpperCase()}</p>
                     <div className="flex items-center gap-2">
                         <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                        <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Synchronized</p>
+                        <p className="text-[9px] font-bold text-white uppercase tracking-[0.5em]">Connected</p>
                     </div>
                 </div>
             </div>

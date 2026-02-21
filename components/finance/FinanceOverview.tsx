@@ -398,7 +398,7 @@ const FinanceOverview: React.FC<FinanceOverviewProps> = ({
                                     </div>
                                     <div>
                                         <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Institutional CFO Oracle</h4>
-                                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-[0.6em] mt-2 italic">Neural Financial Synthesis Node</p>
+                                        <p className="text-[9px] font-black text-primary/60 uppercase tracking-[0.6em] mt-2 italic">Financial Analytics</p>
                                     </div>
                                 </div>
                                 <div className="min-h-[80px]">

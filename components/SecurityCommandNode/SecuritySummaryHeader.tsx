@@ -43,7 +43,7 @@ const SecuritySummaryHeader: React.FC<SecuritySummaryHeaderProps> = ({
                     icon={<ShieldCheckIcon className="w-3.5 h-3.5" />}
                 />
                 <SummaryMiniCard
-                    label="MFA Protocol"
+                    label="MFA Verification"
                     value={mfaEnabled ? 'ENFORCED' : 'DISABLED'}
                     color={mfaEnabled ? 'text-emerald-500' : 'text-white/30'}
                     icon={<LockIcon className="w-3.5 h-3.5" />}

@@ -39,20 +39,20 @@ const BiologicalRegistry: React.FC<BiologicalRegistryProps> = ({
                     <UserIcon className="w-5 h-5" />
                 </div>
                 <div className="space-y-0.5">
-                    <h3 className="text-[14px] font-bold text-white uppercase tracking-wider">Biological Registry</h3>
-                    <p className="text-[9px] font-medium text-white/20 uppercase tracking-widest">Validated Identity Core</p>
+                    <h3 className="text-[14px] font-bold text-white uppercase tracking-wider">Personal Details</h3>
+                    <p className="text-[9px] font-medium text-white/20 uppercase tracking-widest">Identity Records</p>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 gap-x-10 gap-y-1 items-start flex-grow">
-                <BioField label="Primary Forename" value={firstName} meta="BIO_LEGAL_FIRST" />
-                <BioField label="Primary Surname" value={lastName} meta="BIO_LEGAL_LAST" />
-                <BioField label="Natal Timestamp" value={dob} meta="TEMPORAL_ORIGIN" />
+                <BioField label="First Name" value={firstName} meta="LEGAL_FIRST" />
+                <BioField label="Last Name" value={lastName} meta="LEGAL_LAST" />
+                <BioField label="Date of Birth" value={dob} meta="DOB" />
                 <BioField label="Assigned Gender" value={gender} meta="BIO_AXIS" />
-                <BioField label="Geopolitical Node" value={nationality} meta="NATIONALITY" />
+                <BioField label="Nationality" value={nationality} meta="ORIGIN" />
                 <BioField label="Vital Group" value={bloodGroup} meta="SEROLOGY" />
-                <BioField label="Linguistic Protocol" value={languages} meta="COMM_DEXTERITY" />
-                <BioField label="Social Matrix" value={religion} meta="CULTURAL_NODE" />
+                <BioField label="Linguistic Preference" value={languages} meta="COMM_DEXTERITY" />
+                <BioField label="Religion" value={religion} meta="IDENTITY" />
             </div>
         </div>
     );

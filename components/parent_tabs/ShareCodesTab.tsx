@@ -45,10 +45,10 @@ const TOKENS = {
 };
 
 const statusMap: { [key: string]: { label: string; color: string; bg: string; border: string } } = {
-    'Active': { label: 'PROVISIONED', color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/10' },
+    'Active': { label: 'ACTIVE', color: 'text-emerald-400', bg: 'bg-emerald-500/5', border: 'border-emerald-500/10' },
     'Redeemed': { label: 'VERIFIED', color: 'text-indigo-400', bg: 'bg-indigo-500/5', border: 'border-indigo-500/10' },
-    'Revoked': { label: 'TERMINATED', color: 'text-rose-400', bg: 'bg-rose-500/5', border: 'border-rose-500/10' },
-    'Expired': { label: 'TIMED_OUT', color: 'text-white/20', bg: 'bg-white/5', border: 'border-white/5' },
+    'Revoked': { label: 'REVOKED', color: 'text-rose-400', bg: 'bg-rose-500/5', border: 'border-rose-500/10' },
+    'Expired': { label: 'EXPIRED', color: 'text-white/20', bg: 'bg-white/5', border: 'border-white/5' },
 };
 
 // --- SUB-COMPONENTS ---
@@ -72,7 +72,7 @@ const CodeDigit: React.FC<{ char: string; active: boolean; size?: 'sm' | 'lg' }>
     );
 };
 
-const RegistryCard: React.FC<{
+const AccessCard: React.FC<{
     code: ShareCode & { profile_photo_url?: string | null };
     onRevoke: (id: number) => void;
     onCopy: (text: string, id: string) => void;
@@ -99,7 +99,7 @@ const RegistryCard: React.FC<{
                     />
                     <div className="flex flex-col">
                         <h4 className="text-[13px] font-black text-white uppercase tracking-wider line-clamp-1">{code.applicant_name}</h4>
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mt-0.5">{code.code_type} PROTOCOL</p>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mt-0.5">{code.code_type} Record</p>
                     </div>
                 </div>
                 <div className={`shrink-0 px-3 py-1.5 rounded-lg border ${status.bg} ${status.border} ${status.color} text-[9px] font-black uppercase tracking-widest`}>
@@ -109,7 +109,7 @@ const RegistryCard: React.FC<{
 
             <button
                 onClick={() => onCopy(code.code, String(code.id))}
-                aria-label={`Copy protocol for ${code.applicant_name}`}
+                aria-label={`Copy code for ${code.applicant_name}`}
                 className={`flex items-center justify-between p-5 mb-8 bg-[#050608] border border-white/5 rounded-2xl group/code focus:ring-2 focus:ring-primary/20 outline-none transition-all ${TOKENS.action}`}
             >
                 <div className="flex items-baseline gap-2 overflow-hidden px-1">
@@ -212,7 +212,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    // Intelligent Defaulting: Auto-choose protocol based on node status, but allow override
+    // Intelligent Defaulting: Auto-choose access level based on status, but allow override
     useEffect(() => {
         const selected = myApplications.find(a => String(a.id) === selectedAdmission);
         if (selected?.source_type && !generatedCode) {
@@ -239,12 +239,12 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
 
             // Handle Application-Level Logic Error from RPC
             if (data && typeof data === 'object' && 'success' in data && !data.success) {
-                throw new Error(data.message || 'Protocol generation failed');
+                throw new Error(data.message || 'Generation failed');
             }
 
             const codeValue = typeof data === 'string' ? data : (data?.code || data?.p_code);
 
-            if (!codeValue) throw new Error('Protocol returned invalid signature');
+            if (!codeValue) throw new Error('Generation returned invalid signature');
 
             setGeneratedCode(codeValue);
             setPurpose('');
@@ -259,7 +259,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
 
     const handleRevokeCode = async (id: number) => {
         // Safe Pattern: Confirm before revoke
-        if (confirm('TERMINATE PROTOCOL: Revoke this provision key immediately?')) {
+        if (confirm('REVOKE CODE: Revoke this access key immediately?')) {
             const { error } = await supabase.rpc('revoke_my_share_code', { p_code_id: id });
             if (error) alert(formatError(error));
             else await fetchData();
@@ -281,7 +281,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
         return (
             <div className="flex flex-col items-center justify-center py-48 gap-8">
                 <Spinner size="lg" className="text-primary" />
-                <p className={TOKENS.text.label}>Initializing Matrix...</p>
+                <p className={TOKENS.text.label}>Initializing Records...</p>
             </div>
         );
     }
@@ -294,13 +294,13 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                 <div className="space-y-4">
                     <div className="flex items-center gap-3">
                         <div className="h-[2px] w-12 bg-primary/40 rounded-full" />
-                        <span className={TOKENS.text.label}>Secure Orchestration</span>
+                        <span className={TOKENS.text.label}>Secure Management</span>
                     </div>
                     <h1 className={TOKENS.text.h1}>
-                        Access <span className="text-white/20 italic font-medium">Protocols.</span>
+                        Access <span className="text-white/20 italic font-medium">Codes.</span>
                     </h1>
                     <p className={TOKENS.text.body}>
-                        Govern and manage encrypted access layers for institutional identity infrastructure.
+                        Manage secure access for school admissions and enquiries.
                     </p>
                 </div>
 
@@ -310,7 +310,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                         className="px-8 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-white transition-all group flex items-center gap-3 active:scale-95 shadow-xl"
                     >
                         <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
-                        Sync Registry
+                        Sync Records
                     </button>
                     <div className="hidden lg:block h-10 w-px bg-white/10" />
                     <div className="hidden lg:flex flex-col items-end opacity-20">
@@ -330,8 +330,8 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                 <KeyIcon className="w-6 h-6" />
                             </div>
                             <div>
-                                <h3 className="text-base font-black text-white uppercase tracking-widest">Provision Key</h3>
-                                <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] mt-0.5">Initialize Identity Node</p>
+                                <h3 className="text-base font-black text-white uppercase tracking-widest">Access Key</h3>
+                                <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] mt-0.5">Generate Share Code</p>
                             </div>
                         </div>
 
@@ -341,7 +341,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                 <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
                                     <AlertTriangleIcon className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                                     <div>
-                                        <h4 className="text-xs font-black text-rose-400 uppercase tracking-wider">Protocol Error</h4>
+                                        <h4 className="text-xs font-black text-rose-400 uppercase tracking-wider">Error</h4>
                                         <p className="text-xs text-rose-400/80 font-medium leading-relaxed mt-1">{error}</p>
                                     </div>
                                 </div>
@@ -349,7 +349,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
 
                             {/* 1. Target Selector */}
                             <div className="space-y-4">
-                                <label className={TOKENS.text.label}>1. Select Target Node</label>
+                                <label className={TOKENS.text.label}>1. Select Student</label>
                                 <div className="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
                                     {myApplications.map(app => (
                                         <button
@@ -389,7 +389,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
 
                             {/* 2. Protocol Layer */}
                             <div className="space-y-4">
-                                <label className={TOKENS.text.label}>2. Access Protocol Layer</label>
+                                <label className={TOKENS.text.label}>2. Access Type</label>
                                 <div className="grid grid-cols-2 gap-4">
                                     <button
                                         type="button"
@@ -409,7 +409,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                     </button>
                                 </div>
                                 <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest text-center">
-                                    Protocol layer auto-determined by status • Override available
+                                    Access level auto-determined by status • Override available
                                 </p>
                             </div>
 
@@ -428,7 +428,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                     {generating ? <Spinner size="sm" className="text-white" /> : <><ShieldCheckIcon className="w-5 h-5" /> Authorize & Seal</>}
                                 </button>
                                 <p className="text-[9px] text-white/10 font-bold uppercase tracking-[0.2em] text-center mt-6 selection:bg-transparent">
-                                    Secure Transmission protocol enabled
+                                    Secure transmission enabled
                                 </p>
                             </div>
                         </form>
@@ -467,7 +467,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                             </motion.div>
                                         </div>
                                         <h2 className={TOKENS.text.h1}>
-                                            Identity <span className="text-white/20 italic font-medium">Provisioned.</span>
+                                            Access <span className="text-white/20 italic font-medium">Enabled.</span>
                                         </h2>
                                         <p className="text-emerald-500/50 text-[10px] font-black uppercase tracking-[0.5em] animate-pulse">Transmission Secured & Signed</p>
                                     </div>
@@ -476,7 +476,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                         onClick={() => copyToClipboard(generatedCode, 'hero')}
                                         className="w-full bg-[#050608] border border-white/10 rounded-[2.5rem] p-12 md:p-20 relative group/cipher cursor-pointer hover:border-primary/20 transition-all duration-700 shadow-inner flex flex-col items-center gap-12 overflow-hidden"
                                     >
-                                        <p className={TOKENS.text.label}>Protocol Provision Key</p>
+                                        <p className={TOKENS.text.label}>Access Key</p>
 
                                         <div className="grid grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3 justify-center">
                                             {generatedCode.split('').map((char, i) => (
@@ -488,7 +488,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                             {copiedCodeId === 'hero' ? (
                                                 <><CheckCircleIcon className="w-4 h-4 text-emerald-500" /> Identity Copied</>
                                             ) : (
-                                                <><CopyIcon className="w-4 h-4" /> Seal & Copy Protocol</>
+                                                <><CopyIcon className="w-4 h-4" /> Copy Access Code</>
                                             )}
                                         </div>
                                     </div>
@@ -496,7 +496,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                     <div className="grid grid-cols-2 gap-12 text-left w-full border-t border-white/5 pt-12">
                                         <div className="space-y-1">
                                             <p className={TOKENS.text.label}>Binding Scope</p>
-                                            <p className="text-xl font-black text-white uppercase tracking-tighter truncate max-w-[240px]">{selectedChild?.applicant_name || 'Registry Node'}</p>
+                                            <p className="text-xl font-black text-white uppercase tracking-tighter truncate max-w-[240px]">{selectedChild?.applicant_name || 'Select Child'}</p>
                                         </div>
                                         <div className="space-y-1 text-right">
                                             <p className={TOKENS.text.label}>Validation Epoch</p>
@@ -517,7 +517,7 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                     <div className="space-y-3">
                                         <h3 className={`${TOKENS.text.h3} text-3xl`}>Protocol <span className="text-white/5 italic font-medium">Idle.</span></h3>
                                         <p className="text-xs text-white/30 font-serif italic max-w-xs mx-auto leading-relaxed">
-                                            Select target node and protocol layer to initialize authentication.
+                                            Select a student and access type to generate code.
                                         </p>
                                     </div>
                                 </motion.div>
@@ -533,8 +533,8 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                                     <SearchIcon className="w-5 h-5" />
                                 </div>
                                 <div className="space-y-1">
-                                    <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none">Registry Ledger</h3>
-                                    <p className="text-[10px] font-bold text-white/10 uppercase tracking-[0.3em] underline decoration-primary/20">Historical Authorization Log</p>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none">Access Ledger</h3>
+                                    <p className="text-[10px] font-bold text-white/10 uppercase tracking-[0.3em] underline decoration-primary/20">Historical Sharing Log</p>
                                 </div>
                             </div>
                             <div className="px-5 py-2 rounded-full bg-white/[0.03] border border-white/10 text-[10px] font-black uppercase tracking-widest text-white/40">
@@ -551,12 +551,12 @@ export default function ShareCodesTab({ onNavigate }: ShareCodesTabProps) {
                         ) : codes.length === 0 ? (
                             <div className="py-32 border-2 border-dashed border-white/5 rounded-[4rem] flex flex-col items-center justify-center text-center gap-8 bg-white/[0.01]">
                                 <GlobeIcon className="w-12 h-12 text-white/5" />
-                                <p className="text-[10px] font-black text-white/10 uppercase tracking-[1em]">Ledger Archive Empty</p>
+                                <p className="text-[10px] font-black text-white/10 uppercase tracking-[1em]">Ledger Empty</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
                                 {codes.map(code => (
-                                    <RegistryCard
+                                    <AccessCard
                                         key={code.id}
                                         code={code}
                                         onRevoke={handleRevokeCode}

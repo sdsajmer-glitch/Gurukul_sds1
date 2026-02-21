@@ -34,7 +34,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onForgotPasswor
                 return;
             }
         } catch (err: any) {
-            setError("Connectivity Protocol Failure: " + formatError(err));
+            setError("Connection Failed: " + formatError(err));
             setLoading(false);
         }
     };

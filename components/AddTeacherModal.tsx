@@ -413,10 +413,10 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ onClose, onSuccess, b
                     <div>
                         <div className="flex items-center gap-3 opacity-30 mb-2">
                             <div className="w-6 h-[1px] bg-primary"></div>
-                            <span className="text-[9px] font-black uppercase tracking-[0.4em]">Node Provisioning</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.4em]">Access Setup</span>
                         </div>
                         <h2 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Faculty Onboarding.</h2>
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mt-1">{STEPS[currentStep]} Matrix Handshake</p>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mt-1">{STEPS[currentStep]} Verification</p>
                     </div>
                     <button onClick={onClose} className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 text-white/20 hover:text-white transition-all border border-white/5"><XIcon className="w-5 h-5" /></button>
                 </div>

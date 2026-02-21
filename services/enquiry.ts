@@ -6,7 +6,7 @@ import { supabase, formatError } from './supabase';
  */
 export const EnquiryService = {
     /**
-     * Verifies an enquiry code and integrates the identity node into the Enquiry Desk.
+     * Verifies an enquiry code and links the enquiry to the system.
      */
     async verifyAndLinkEnquiry(code: string, branchId: number | null) {
         try {
@@ -22,7 +22,7 @@ export const EnquiryService = {
             });
 
             if (error) throw error;
-            if (!data.success) throw new Error(data.message || "Invalid or expired enquiry token.");
+            if (!data.success) throw new Error(data.message || "Invalid or expired enquiry code.");
 
             return {
                 success: true,
@@ -38,11 +38,11 @@ export const EnquiryService = {
     },
 
     /**
-     * Updates an enquiry's status using a secure system-level protocol.
+     * Updates an enquiry's status using a standard update process.
      */
     async updateStatus(enquiryId: string, status: string, notes?: string | null) {
         try {
-            if (!enquiryId) throw new Error("Node ID required for status update.");
+            if (!enquiryId) throw new Error("Enquiry ID required for update.");
 
             const { data, error } = await supabase.rpc('admin_update_enquiry_status', {
                 p_enquiry_id: enquiryId,
@@ -50,7 +50,7 @@ export const EnquiryService = {
                 p_notes: notes || null
             });
             if (error) throw error;
-            if (data && !data.success) throw new Error(data.message || data.error || "Update protocol rejected.");
+            if (data && !data.success) throw new Error(data.message || data.error || "Update failed.");
 
             return { success: true };
         } catch (err) {
@@ -61,18 +61,18 @@ export const EnquiryService = {
     },
 
     /**
-     * Finalizes the enquiry stage and promotes the node to the Admission Vault.
+     * Finalizes the enquiry stage and creates an admission record.
      */
     async convertToAdmission(enquiryId: string) {
         try {
-            if (!enquiryId) throw new Error("Node ID required for conversion.");
+            if (!enquiryId) throw new Error("Enquiry ID required for conversion.");
 
             const { data, error } = await supabase.rpc('convert_enquiry_to_admission', {
                 p_enquiry_id: enquiryId
             });
 
             if (error) throw error;
-            if (!data.success) throw new Error(data.message || "Enrollment conversion rejected.");
+            if (!data.success) throw new Error(data.message || "Admission process failed.");
 
             return {
                 success: true,

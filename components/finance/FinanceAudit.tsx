@@ -107,7 +107,7 @@ const FinanceAudit: React.FC<{ branchId: number | null }> = ({ branchId }) => {
         <div className="py-60 flex flex-col items-center justify-center space-y-8">
             <Spinner size="lg" className="text-primary" />
             <div className="flex flex-col items-center gap-2">
-                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] city-lights-text">Secure Handshake Protocol</p>
+                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] city-lights-text">Secure Verification</p>
                 <p className="text-[10px] text-white/10 uppercase tracking-widest font-mono">Loading Immutable Ledger</p>
             </div>
         </div>

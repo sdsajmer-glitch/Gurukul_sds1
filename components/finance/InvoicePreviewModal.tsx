@@ -116,7 +116,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ invoice, onCl
                         ) : (
                             <div className="text-center opacity-20 space-y-4">
                                 <ShieldCheckIcon className="w-20 h-20 mx-auto" />
-                                <p className="font-serif italic text-lg">Identity Handshake Failure: Artifact unreachable.</p>
+                                <p className="font-serif italic text-lg">Verification Failure: Document unreachable.</p>
                             </div>
                         )}
                     </div>

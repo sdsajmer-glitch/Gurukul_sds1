@@ -299,9 +299,9 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
         let color = 'bg-white/10';
         let label = 'Offline';
 
-        if (status === 'Present') { color = 'bg-emerald-500 shadow-[0_0_12px_#10b981]'; label = 'Synchronized'; }
-        if (status === 'Absent') { color = 'bg-red-500 shadow-[0_0_12px_#ef4444]'; label = 'Signal Lost'; }
-        if (status === 'Late') { color = 'bg-amber-500 shadow-[0_0_12px_#f59e0b]'; label = 'Delayed Sync'; }
+        if (status === 'Present') { color = 'bg-emerald-500 shadow-[0_0_12px_#10b981]'; label = 'Present'; }
+        if (status === 'Absent') { color = 'bg-red-500 shadow-[0_0_12px_#ef4444]'; label = 'Absent'; }
+        if (status === 'Late') { color = 'bg-amber-500 shadow-[0_0_12px_#f59e0b]'; label = 'Late'; }
 
         return (
             <div className="flex flex-col items-center gap-2 group/attend">
@@ -366,7 +366,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                         <WorkflowIcon className="w-4 h-4 opacity-40 group-hover:opacity-100" /> Process Guide
                     </button>
                     <button onClick={() => setIsAiAuditOpen(true)} className="flex items-center gap-3 px-6 py-3 bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-2xl backdrop-blur-md">
-                        <SparklesIcon className="w-4 h-4" /> AI Audit Protocol
+                        <SparklesIcon className="w-4 h-4" /> AI Audit
                     </button>
                 </div>
             </motion.div>
@@ -423,23 +423,23 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                                 </select>
                                             </div>
                                             <div className="space-y-3">
-                                                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest pl-2">Designation Matrix</label>
+                                                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest pl-2">Designation</label>
                                                 <select value={filters.designation} onChange={e => setFilters({ ...filters, designation: e.target.value })} className="w-full h-14 px-6 rounded-xl bg-black/40 border border-white/5 text-white text-xs font-bold focus:border-primary/40 outline-none appearance-none transition-all cursor-pointer">
                                                     <option value="">ALL DESIGNATIONS</option>
                                                     {designations.map(d => <option key={d} value={d as string}>{d?.toUpperCase()}</option>)}
                                                 </select>
                                             </div>
                                             <div className="space-y-3">
-                                                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest pl-2">Employment Protocol</label>
+                                                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest pl-2">Employment Type</label>
                                                 <select value={filters.employmentType} onChange={e => setFilters({ ...filters, employmentType: e.target.value })} className="w-full h-14 px-6 rounded-xl bg-black/40 border border-white/5 text-white text-xs font-bold focus:border-primary/40 outline-none appearance-none transition-all cursor-pointer">
-                                                    <option value="">ALL PROTOCOLS</option>
+                                                    <option value="">ALL TYPES</option>
                                                     <option value="Full-time">FULL-TIME</option>
                                                     <option value="Part-time">PART-TIME</option>
                                                     <option value="Contract">CONTRACT</option>
                                                 </select>
                                             </div>
                                             <div className="space-y-3">
-                                                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest pl-2">Activation Cycle</label>
+                                                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest pl-2">Joining Year</label>
                                                 <select value={filters.joiningYear} onChange={e => setFilters({ ...filters, joiningYear: e.target.value })} className="w-full h-14 px-6 rounded-xl bg-black/40 border border-white/5 text-white text-xs font-bold focus:border-primary/40 outline-none appearance-none transition-all cursor-pointer">
                                                     <option value="">ALL YEARS</option>
                                                     {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -487,7 +487,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                                 { id: 'transfer', label: 'Transfer', icon: <TransferIcon className="w-4 h-4" /> },
                                             ].map(action => (
                                                 <button key={action.id} onClick={() => handleBulkAction(action.id as BulkActionType)} className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-white/40 hover:text-white hover:bg-white/5 transition-all">
-                                                    {action.icon} {action.label}
+                                                    {action.icon} {(action.label === 'Assign Dept' ? 'Department' : action.label === 'Assign Sub' ? 'Subject' : action.label)}
                                                 </button>
                                             ))}
                                         </div>
@@ -497,7 +497,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                             <DownloadIcon className="w-4 h-4" /> EXPORT
                                         </button>
                                         <button className="px-6 py-3 bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-500/20 active:scale-95 transition-all flex items-center gap-2">
-                                            <TrashIcon className="w-4 h-4" /> PURGE
+                                            <TrashIcon className="w-4 h-4" /> DELETE
                                         </button>
                                     </div>
                                 </motion.div>
@@ -512,7 +512,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                     <div className="w-32 h-32 bg-white/[0.01] border-2 border-dashed border-white/5 rounded-[3rem] flex items-center justify-center mb-10">
                                         <UsersIcon className="w-16 h-16 opacity-10" />
                                     </div>
-                                    <p className="font-serif italic text-3xl uppercase tracking-[0.3em] mb-4 text-white/20">Registry Silent.</p>
+                                    <p className="font-serif italic text-3xl uppercase tracking-[0.3em] mb-4 text-white/20">No Records found.</p>
                                     <p className="text-[11px] font-black uppercase tracking-[0.5em] text-white/5 mb-10">NO TEACHERS MATCH THE CURRENT FILTER</p>
                                     <button onClick={() => { setSearchTerm(''); setQuickFilter('All'); setFilters(INITIAL_FILTERS); }} className="px-12 py-5 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] transition-all active:scale-95 shadow-2xl">RECALIBRATE FILTERS</button>
                                 </div>
@@ -525,11 +525,11 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                                     <input type="checkbox" className="w-5 h-5 rounded border-white/10 bg-white/5 text-primary focus:ring-primary/20 cursor-pointer" checked={selectedIds.size > 0 && selectedIds.size === paginatedTeachers.length} onChange={handleSelectAll} />
                                                 </th>
                                                 <th className="p-10 cursor-pointer group" onClick={() => handleSort('name')}>TEACHER {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                                <th className="p-10">CONTACT MATRIX</th>
-                                                <th className="p-10">EMPLOYEE_ID</th>
-                                                <th className="p-10">DEPARTMENT_BLOCK</th>
-                                                <th className="p-10 text-center">INTEGRITY</th>
-                                                <th className="p-10">PROTOCOL_STATUS</th>
+                                                <th className="p-10">CONTACT DETAILS</th>
+                                                <th className="p-10">EMPLOYEE ID</th>
+                                                <th className="p-10">DEPARTMENT</th>
+                                                <th className="p-10 text-center">STATUS</th>
+                                                <th className="p-10">EMPLOYMENT STATUS</th>
                                                 <th className="p-10 text-right pr-16 tracking-widest uppercase text-center opacity-20">ACTIONS</th>
                                             </tr>
                                         </thead>
@@ -562,7 +562,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                                             <div>
                                                                 <p className="font-serif font-black text-white text-[24px] group-hover:text-primary transition-colors uppercase tracking-tight leading-none mb-3">{teacher.display_name}</p>
                                                                 <div className="flex items-center gap-3">
-                                                                    <span className="text-[10px] text-primary/60 font-black uppercase tracking-[0.4em] bg-primary/5 px-2.5 py-1 rounded-lg border border-primary/10 transition-colors">{teacher.details?.designation || 'FACULTY_MASTER'}</span>
+                                                                    <span className="text-[10px] text-primary/60 font-black uppercase tracking-[0.4em] bg-primary/5 px-2.5 py-1 rounded-lg border border-primary/10 transition-colors">{teacher.details?.designation || 'FACULTY MEMBER'}</span>
                                                                     <div className="w-1 h-1 rounded-full bg-white/10"></div>
                                                                     <span className="text-[10px] font-mono text-white/15 uppercase tracking-[0.2em] font-bold">TCH_{teacher.id.substring(0, 6).toUpperCase()}</span>
                                                                 </div>
@@ -573,7 +573,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                                         <div className="flex flex-col gap-3">
                                                             <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-wider text-white/30 group-hover:text-white/60 transition-colors">
                                                                 <MailIcon className="w-4 h-4 opacity-40" />
-                                                                <span className="truncate max-w-[200px]" title={teacher.email || ''}>{teacher.email || 'NULL_EMAIL'}</span>
+                                                                <span className="truncate max-w-[200px]" title={teacher.email || ''}>{teacher.email || 'NO EMAIL'}</span>
                                                             </div>
                                                             {teacher.phone && (
                                                                 <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-wider text-white/30 group-hover:text-white/60 transition-colors">
@@ -615,7 +615,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                             <div className="p-10 border-t border-white/[0.04] bg-[#0d0f14]/50 flex flex-col md:flex-row justify-between items-center gap-8">
                                 <div className="flex items-center gap-10">
                                     <div className="flex items-center gap-4 bg-black/40 px-6 py-3 rounded-2xl border border-white/5">
-                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Matrix Scope</span>
+                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Rows per page</span>
                                         <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="bg-transparent text-white text-[12px] font-black outline-none cursor-pointer">
                                             <option value={10}>10</option>
                                             <option value={25}>25</option>

@@ -28,16 +28,16 @@ const SecurityCommandNode: React.FC<SecurityCommandNodeProps> = ({ teacher }) =>
                 <div className="space-y-1">
                     <div className="flex items-center gap-3 opacity-40">
                         <div className="w-8 h-px bg-primary/40" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Governance Protocol</span>
+                        <span className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Security Management</span>
                     </div>
-                    <h2 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Security <span className="text-white/20 italic font-medium">Protocol.</span></h2>
-                    <p className="text-[11px] font-bold text-white/30 uppercase tracking-[0.2em]">Command-Level Access Management & Handshake Intelligence</p>
+                    <h2 className="text-3xl font-serif font-black text-white uppercase tracking-tighter">Security.</h2>
+                    <p className="text-[11px] font-bold text-white/30 uppercase tracking-[0.2em]">Manage administrative access and login history.</p>
                 </div>
 
                 <div className="flex items-center gap-4 bg-white/[0.02] border border-white/5 rounded-xl px-5 py-3 shadow-inner">
                     <div className="flex flex-col text-right">
-                        <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">Procedural Status</span>
-                        <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">Compliance_Verified</span>
+                        <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">System Status</span>
+                        <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">System Verified</span>
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
                         <ActivityIcon className="w-4 h-4" />
@@ -71,8 +71,8 @@ const SecurityCommandNode: React.FC<SecurityCommandNodeProps> = ({ teacher }) =>
                         <AuthenticationMatrix
                             lastPasswordChange="Jan 12, 2024"
                             failedAttempts={0}
-                            onResetCredentials={() => alert('Administrative rotation handshake initiated.')}
-                            onSuspendGateway={() => alert('Institutional gateway suspension protocol authorized.')}
+                            onResetCredentials={() => alert('Credential reset initiated.')}
+                            onSuspendGateway={() => alert('System access suspension authorized.')}
                         />
                     </div>
 
@@ -98,7 +98,7 @@ const SecurityCommandNode: React.FC<SecurityCommandNodeProps> = ({ teacher }) =>
                         >
                             <div className="flex items-center gap-4">
                                 <ActivityIcon className="w-4 h-4 text-white/20 group-hover:text-primary transition-colors" />
-                                <h4 className="text-[13px] font-bold text-white uppercase tracking-wider">Forensic Log Audit</h4>
+                                <h4 className="text-[13px] font-bold text-white uppercase tracking-wider">Security Logs</h4>
                             </div>
                             <motion.div
                                 animate={{ rotate: isMobileTimelineOpen ? 180 : 0 }}
@@ -124,9 +124,9 @@ const SecurityCommandNode: React.FC<SecurityCommandNodeProps> = ({ teacher }) =>
                 </div>
             </div>
 
-            {/* Compliance Footer Metadata */}
+            {/* Footer Metadata */}
             <div className="flex items-center justify-between px-6 opacity-20 pt-8 border-t border-white/5">
-                <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">Node Cluster: AS-WEST-882 / VER: 9.099</p>
+                <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">System Version: 9.099</p>
                 <div className="flex gap-10">
                     <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">GDPR / NIST COMPLIANT</p>
                     <p className="text-[9px] font-bold text-white uppercase tracking-[0.4em]">Audit Signature: {teacher.id.slice(0, 12).toUpperCase()}</p>

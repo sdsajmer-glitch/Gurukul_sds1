@@ -152,15 +152,7 @@ const ChildProfileCard: React.FC<ChildProfileCardProps> = ({ child, onEdit, onMa
 
                 {/* Actions Footer */}
                 <div className="mt-auto grid grid-cols-4 gap-2 border-t border-white/5 pt-6">
-                    <Tooltip content="Manage Documents & Records">
-                        <button
-                            onClick={onManageDocuments}
-                            className="w-full h-full flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] hover:text-white text-white/40 transition-all active:scale-95 group/btn"
-                        >
-                            <DocumentTextIcon className="w-5 h-5 group-hover/btn:text-blue-400 transition-colors" />
-                            <span className="text-[9px] font-bold uppercase tracking-wider">Vault</span>
-                        </button>
-                    </Tooltip>
+                    <span className="text-[9px] font-bold uppercase tracking-wider">Documents</span>
 
                     <Tooltip content="Financial Status & Fees">
                         <button

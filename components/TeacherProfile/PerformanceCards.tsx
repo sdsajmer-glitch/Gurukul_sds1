@@ -75,8 +75,8 @@ const PerformanceCards: React.FC = () => {
                     <div className="space-y-4">
                         {[
                             { label: 'Institutional Contract', status: 'Compliant' },
-                            { label: 'Training Protocol', status: '92% Certified' },
-                            { label: 'Documentation Vault', status: 'Archive_Stable' }
+                            { label: 'Staff Training', status: '92% Certified' },
+                            { label: 'Documentation', status: 'Archive_Stable' }
                         ].map((item, i) => (
                             <div key={i} className="flex justify-between items-center p-6 bg-black/40 rounded-2xl border border-white/5 hover:border-emerald-500/20 transition-all cursor-default">
                                 <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">{item.label}</span>
@@ -88,7 +88,7 @@ const PerformanceCards: React.FC = () => {
                         ))}
                     </div>
 
-                    <p className="text-[10px] font-black italic text-white/10 uppercase tracking-[0.2em] text-center pt-4">Last Governance Audit: NodeCycle_0226</p>
+                    <p className="text-[10px] font-black italic text-white/10 uppercase tracking-[0.2em] text-center pt-4">Last Governance Audit: CYCLE_0226</p>
                 </div>
             </MatrixCard>
 
@@ -129,7 +129,7 @@ const PerformanceCards: React.FC = () => {
                             <p className="text-[11px] font-black text-white/60 uppercase tracking-widest">Institutional Pulse Normal</p>
                         </div>
                         <p className="text-[10px] text-white/20 uppercase leading-relaxed font-bold tracking-widest">
-                            No critical workload saturation detected in current node cycles. Capacity for specialized institutional projects remains high.
+                            No critical workload saturation detected in current academic cycles. Capacity for specialized institutional projects remains high.
                         </p>
                     </div>
                 </div>

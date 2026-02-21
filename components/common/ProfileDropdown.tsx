@@ -178,7 +178,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                 <div className="hidden md:flex flex-col items-start text-left mr-1">
                     <span className="text-xs font-bold text-white leading-tight max-w-[120px] truncate">{profile.display_name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[9px] font-black text-white/30 max-w-[120px] truncate uppercase tracking-widest leading-none">{profile.role || 'Provisioning'}</span>
+                        <span className="text-[9px] font-black text-white/30 max-w-[120px] truncate uppercase tracking-widest leading-none">{profile.role || 'Guest'}</span>
                     </div>
                 </div>
                 <ChevronDownIcon className={`h-3 w-3 text-white/20 transition-transform duration-500 ${isOpen ? 'rotate-180 text-primary opacity-100' : ''}`} />
@@ -262,7 +262,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ profile, onSignOut, o
                                         </div>
                                     )}
 
-                                    {/* UNLINKED SCOPES (Provisioning Paths) - hidden for branch-admin-email-restricted users */}
+                                    {/* UNLINKED SCOPES (Access Paths) - hidden for branch-admin-email-restricted users */}
                                     {!isBranchAdminEmailMatch && registerableScopes.length > 0 && (
                                         <div className="p-4 pt-2 border-t border-white/5 mt-4 bg-black/40 pb-6">
                                             <p className="px-5 py-5 text-[10px] font-black text-white/20 uppercase tracking-[0.3em] flex items-center gap-2">

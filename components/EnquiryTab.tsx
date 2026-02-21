@@ -23,7 +23,7 @@ const STATUS_CONFIG: Record<string, { label: string, style: string }> = {
     'ENQUIRY_IN_REVIEW': { label: 'In Review', style: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
     'ENQUIRY_CONTACTED': { label: 'Contacted', style: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
     'ENQUIRY_REJECTED': { label: 'Rejected', style: 'text-rose-400 bg-rose-400/10 border-rose-400/20' },
-    'ENQUIRY_CONVERTED': { label: 'Promoted', style: 'text-teal-400 bg-teal-400/10 border-teal-400/20' },
+    'ENQUIRY_CONVERTED': { label: 'Admitted', style: 'text-teal-400 bg-teal-400/10 border-teal-400/20' },
 };
 
 interface EnquiryTabProps {
@@ -47,7 +47,7 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
             if (error) throw error;
             setEnquiries(data || []);
         } catch (err: any) {
-            console.error("Registry Sync Failure:", err);
+            console.error("Database Sync Error:", err);
         } finally {
             setLoading(false);
         }
@@ -83,14 +83,14 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                 <div className="space-y-6">
                     <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-                        <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Official Institutional Registry</span>
+                        <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Official Records</span>
                     </div>
                     <div>
                         <h2 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tighter uppercase leading-[0.85]">
-                            Enquiry <span className="opacity-20 font-light italic">Desk.</span>
+                            Enquiries.
                         </h2>
                         <p className="text-white/40 text-sm md:text-lg font-serif italic max-w-xl mt-6 border-l border-white/10 pl-8">
-                            Centralized command for identity verification, institutional handshakes, and promotion workflows. Authorized personnel only.
+                            Verify and manage student enquiries through the official admissions channel.
                         </p>
                     </div>
                 </div>
@@ -104,7 +104,7 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                             onClick={() => onNavigate('Code Verification')}
                             className="flex-grow md:flex-none h-16 px-10 bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-indigo-900/20 hover:bg-indigo-500 hover:scale-[1.02] active:scale-95 transition-all border border-indigo-400/20 flex items-center justify-center gap-4"
                         >
-                            <ZapIcon className="w-5 h-5" /> Initialize Verification
+                            <ZapIcon className="w-5 h-5" /> Verify Code
                         </button>
                     )}
                 </div>
@@ -112,9 +112,9 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
 
             {/* 2. Intelligence Metrics (Glass Pattern) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatusCard title="Registry Volume" value={stats.total} label="Total Nodes" icon={<TerminalIcon />} color="text-indigo-400" />
-                <StatusCard title="Verified Stream" value={stats.verified} label="Secure States" icon={<ShieldCheckIcon />} color="text-emerald-400" />
-                <StatusCard title="Active Protocol" value={stats.active} label="Processing" icon={<UserGroupIcon />} color="text-blue-400" />
+                <StatusCard title="Total Enquiries" value={stats.total} label="All Records" icon={<TerminalIcon />} color="text-indigo-400" />
+                <StatusCard title="Verified" value={stats.verified} label="Verified Enquiries" icon={<ShieldCheckIcon />} color="text-emerald-400" />
+                <StatusCard title="Active" value={stats.active} label="In Progress" icon={<UserGroupIcon />} color="text-blue-400" />
             </div>
 
             {/* 3. The Control Hub (Filter/Search) */}
@@ -123,14 +123,14 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                     <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-indigo-500 transition-colors" />
                     <input
                         type="text"
-                        placeholder="Search Identity Node (Name or ID)..."
+                        placeholder="Search by name or ID..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="w-full bg-black/40 border border-white/5 rounded-[1.8rem] pl-16 pr-8 py-4 text-white placeholder:text-white/10 outline-none text-sm transition-all focus:bg-black/60 font-medium"
                     />
                 </div>
                 <div className="flex p-1 bg-black/40 rounded-[1.8rem] border border-white/5 overflow-x-auto no-scrollbar max-w-full">
-                    <FilterButton active={!filterStatus} onClick={() => setFilterStatus('')} label="Active Stream" />
+                    <FilterButton active={!filterStatus} onClick={() => setFilterStatus('')} label="View All" />
                     {Object.keys(STATUS_CONFIG).map(st => (
                         <FilterButton key={st} active={filterStatus === st} onClick={() => setFilterStatus(st)} label={STATUS_CONFIG[st].label} />
                     ))}
@@ -145,17 +145,17 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-white/[0.01] border-b border-white/[0.03]">
                             <tr>
-                                <th className="p-10 pl-14 text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Identity Node</th>
-                                <th className="p-10 text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Placement</th>
-                                <th className="p-10 text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Protocol Status</th>
-                                <th className="p-10 text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Timestamp</th>
-                                <th className="p-10 pr-14 text-right text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Action</th>
+                                <th className="p-10 pl-14 text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Applicant</th>
+                                <th className="p-10 text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Grade</th>
+                                <th className="p-10 text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Status</th>
+                                <th className="p-10 text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Date</th>
+                                <th className="p-10 pr-14 text-right text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">View</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.02]">
                             <AnimatePresence mode="popLayout">
                                 {filteredEnquiries.length === 0 ? (
-                                    <tr><td colSpan={5} className="p-40 text-center opacity-10 flex flex-col items-center justify-center scale-150"><TerminalIcon className="w-12 h-12 mb-4" /><span className="text-[10px] font-black uppercase tracking-[0.8em]">Registry Silent</span></td></tr>
+                                    <tr><td colSpan={5} className="p-40 text-center opacity-10 flex flex-col items-center justify-center scale-150"><TerminalIcon className="w-12 h-12 mb-4" /><span className="text-[10px] font-black uppercase tracking-[0.8em]">No Records</span></td></tr>
                                 ) : (
                                     filteredEnquiries.map((enq, idx) => (
                                         <motion.tr
@@ -177,8 +177,8 @@ const EnquiryTab: React.FC<EnquiryTabProps> = ({ branchId, onNavigate }) => {
                                             </td>
                                             <td className="p-8">
                                                 <div className="px-4 py-2 rounded-xl bg-white/[0.02] border border-white/5 inline-flex flex-col">
-                                                    <span className="text-[8px] font-black italic text-white/10 uppercase mb-0.5">Enrolled Targeting</span>
-                                                    <span className="text-sm font-black text-white/60">Grade {enq.grade}</span>
+                                                    <span className="text-[8px] font-black italic text-white/10 uppercase mb-0.5">Application For</span>
+                                                    <span className="text-sm font-black text-white/60">Class {enq.grade}</span>
                                                 </div>
                                             </td>
                                             <td className="p-8">

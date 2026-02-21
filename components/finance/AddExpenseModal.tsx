@@ -89,7 +89,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onSave, bran
         try {
             // PROTOCOL: branchId must be validated to avoid RLS/FK faults
             if (branchId === null || branchId === undefined) {
-                throw new Error("Handshake Failure: No active branch context detected.");
+                throw new Error("Operation failed: No active branch context detected.");
             }
 
             const numericAmount = parseFloat(formData.amount);
@@ -215,7 +215,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onSave, bran
                                         <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-transparent"></div>
                                         <div className="flex items-center gap-4 relative z-10">
                                             <AlertTriangleIcon className="w-6 h-6 text-red-500 shrink-0" />
-                                            <p className="text-[10px] font-black uppercase text-red-500 tracking-[0.4em]">Handshake Protocol Violation</p>
+                                            <p className="text-[10px] font-black uppercase text-red-500 tracking-[0.4em]">Security Violation</p>
                                         </div>
                                         <p className="text-sm font-medium text-red-400 leading-relaxed uppercase tracking-tight relative z-10">{error}</p>
                                     </div>
@@ -327,8 +327,8 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onSave, bran
                                     type="submit"
                                     disabled={loading || !isFormValid}
                                     className={`relative w-full md:w-auto min-w-[320px] h-24 text-[12px] font-black uppercase tracking-[0.4em] rounded-[2.5rem] transition-all transform active:scale-95 disabled:opacity-20 flex items-center justify-center gap-6 ring-[12px] group shadow-[0_32px_64px_-16px_rgba(var(--primary),0.6)] overflow-hidden ${isFormValid
-                                            ? 'bg-primary text-white hover:bg-[#8B5CF6] ring-primary/5 shadow-primary/20'
-                                            : 'bg-white/5 text-white/20 cursor-not-allowed grayscale border border-white/5 ring-transparent'
+                                        ? 'bg-primary text-white hover:bg-[#8B5CF6] ring-primary/5 shadow-primary/20'
+                                        : 'bg-white/5 text-white/20 cursor-not-allowed grayscale border border-white/5 ring-transparent'
                                         }`}
                                 >
                                     {loading ? <Spinner size="sm" className="text-white" /> : <><ShieldCheckIcon className="w-6 h-6 group-hover:scale-110 transition-transform" /> COMMIT_FISCAL_ALLOCATION</>}

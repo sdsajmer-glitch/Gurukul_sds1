@@ -245,7 +245,7 @@ const DocumentCard: React.FC<{
                             <div className="p-6 border-b border-white/5 flex items-center justify-between bg-black/20">
                                 <div>
                                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">
-                                        <LockIcon className="w-3 h-3" /> Secure Artifact Panel
+                                        <LockIcon className="w-3 h-3" /> Secure Document Panel
                                     </div>
                                     <h3 className="text-lg font-bold text-white tracking-tight">{req.document_name}</h3>
                                 </div>
@@ -263,7 +263,7 @@ const DocumentCard: React.FC<{
                                             {isVerified ? "This document has been verified by the institutional authority. Cryptographic locks are active." :
                                                 isRejected ? "This document was rejected. Please review the reason below and upload a corrected version." :
                                                     isSubmitted ? "Document is currently under review by the administration. Security locks are active." :
-                                                        "Awaiting secure upload. Ensure file is clear and legible before provisioning."}
+                                                        "Awaiting secure upload. Ensure file is clear and legible before uploading."}
                                         </p>
                                     </div>
                                 </div>
@@ -285,7 +285,7 @@ const DocumentCard: React.FC<{
                                 {hasFileRecord ? (
                                     <div className="space-y-4">
                                         <div className="p-4 rounded-2xl bg-black border border-white/5">
-                                            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-4">Metadata Analysis</p>
+                                            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-4">Document Details</p>
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center text-xs">
                                                     <span className="text-white/40">File Name</span>
@@ -324,7 +324,7 @@ const DocumentCard: React.FC<{
                                         <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 mb-4">
                                             <UploadIcon className="w-8 h-8" />
                                         </div>
-                                        <p className="text-sm font-bold text-white mb-2">No Artifact Present</p>
+                                        <p className="text-sm font-bold text-white mb-2">No Document Present</p>
                                         <p className="text-xs text-white/40 mb-6">Upload a clear, high-quality document to fulfill this requirement.</p>
                                         <Button variant="primary" className="w-full" onClick={() => fileInputRef.current?.click()}>
                                             Upload Securely
@@ -573,7 +573,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
     if (loading) return (
         <div className="py-40 flex flex-col items-center justify-center gap-6">
             <Spinner size="lg" className="text-primary" />
-            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 animate-pulse">Initialising Security Protocol</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 animate-pulse">Loading Secure Records</p>
         </div>
     );
 
@@ -594,12 +594,12 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                     </div>
                     <div>
                         <div className="flex items-center gap-3 mb-1">
-                            <h2 className="text-xl font-bold text-white tracking-tight uppercase">Security Vault</h2>
+                            <h2 className="text-xl font-bold text-white tracking-tight uppercase">Security Archives</h2>
                             <div className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Connected
                             </div>
                         </div>
-                        <p className="text-[11px] text-white/40">All files are encrypted using AES-256 vault standard encryption. Access is controlled by secure RBAC policies.</p>
+                        <p className="text-[11px] text-white/40">All files are encrypted using AES-256 standard encryption. Access is controlled by secure policies.</p>
                     </div>
                 </div>
 
@@ -608,7 +608,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                         <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                         <input
                             type="text"
-                            placeholder="Search Vault..."
+                            placeholder="Search Records..."
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             className="w-full sm:w-64 h-11 bg-white/[0.03] border border-white/10 rounded-xl pl-10 pr-4 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary/50 transition-all placeholder:text-white/20"
@@ -650,7 +650,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                                 <PremiumAvatar src={node.profilePhotoUrl} name={node.applicantName} size="sm" className={clsx("shrink-0 transition-opacity", !isSelected && "opacity-60")} />
                                 <div className="text-left flex-1 min-w-0">
                                     <div className="text-sm font-bold text-white truncate">{node.applicantName}</div>
-                                    <div className="text-[10px] text-white/40 uppercase tracking-widest">Node ID: {node.admissionId.substring(0, 8)}</div>
+                                    <div className="text-[10px] text-white/40 uppercase tracking-widest">Student ID: {node.admissionId.substring(0, 8)}</div>
                                 </div>
                                 <div className={clsx("w-2 h-2 rounded-full", isSelected ? "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)]" : "bg-white/10")}></div>
                             </button>
@@ -659,7 +659,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                 </div>
             ) : (
                 <div className="text-center py-20 rounded-3xl border border-dashed border-white/5 bg-[#0b0c10]/40">
-                    <p className="text-white/30 font-medium">No valid identity nodes found in your roster.</p>
+                    <p className="text-white/30 font-medium">No students found.</p>
                 </div>
             )}
 
@@ -745,7 +745,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
                             <div className="p-16 rounded-3xl border border-dashed border-white/5 bg-[#0b0c10]/40 text-center">
                                 <FileTextIcon className="w-12 h-12 text-white/10 mx-auto mb-4" />
                                 <p className="text-white/40 font-medium text-sm">
-                                    {activeNode.requirements.length === 0 ? "No document requirements assigned to this node." : "No documents found for this query."}
+                                    {activeNode.requirements.length === 0 ? "No document requirements assigned to this student." : "No documents found for this query."}
                                 </p>
                             </div>
                         ) : (

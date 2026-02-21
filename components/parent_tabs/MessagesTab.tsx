@@ -68,7 +68,7 @@ export default function MessagesTab() {
         return (
             <div className="h-full flex flex-col items-center justify-center space-y-6 bg-[#08080a]">
                 <Spinner size="lg" className="text-indigo-500 opacity-20" />
-                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/10 italic">Synchronizing Governance Nodes...</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/10 italic">Loading conversation history...</span>
             </div>
         );
     }
@@ -96,9 +96,9 @@ export default function MessagesTab() {
                             </h2>
                         </div>
                         <div className="flex items-center gap-3 opacity-40 ml-4">
-                            <span className="text-[8px] font-black uppercase tracking-[0.4em]">Official Registry Gateway</span>
+                            <span className="text-[8px] font-black uppercase tracking-[0.4em]">Official Message Center</span>
                             <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[8px] font-black uppercase text-emerald-400/80 tracking-[0.2em] px-2 py-0.5 rounded border border-emerald-500/20">Secured Uplink</span>
+                            <span className="text-[8px] font-black uppercase text-emerald-400/80 tracking-[0.2em] px-2 py-0.5 rounded border border-emerald-500/20">Secure Connection</span>
                         </div>
                     </div>
                 </div>
@@ -117,7 +117,7 @@ export default function MessagesTab() {
                                 </div>
                             ))}
                         </div>
-                        <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">+8 Verified Authorities</span>
+                        <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">+8 Staff Members</span>
                     </div>
                 </div>
             </header>
@@ -129,7 +129,7 @@ export default function MessagesTab() {
                     viewMode === 'stream' && "hidden md:flex"
                 )}>
                     <div className="px-6 py-4 flex items-center justify-between border-b border-white/[0.02] bg-white/[0.01]">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/10 italic">Secure Node Ledger</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/10 italic">Message History</span>
                         <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] animate-pulse" />
                             <span className="text-[8px] font-black uppercase tracking-widest text-white/20">Active Session</span>
@@ -183,8 +183,8 @@ export default function MessagesTab() {
                             ) : (
                                 <EmptyState
                                     title="Broadcast Stream"
-                                    subtitle="Institutional communication gateway initialized."
-                                    description="This channel serves as the verified bridge for one-to-many official announcements. Once an authority transmits a broadcast, it will appear here in chronological order with full cryptographic auditing."
+                                    subtitle="School communication gateway initialized."
+                                    description="This channel serves as the verified bridge for official announcements. All broadcasts are recorded for future reference."
                                     icon={<MegaphoneIcon className="w-12 h-12" />}
                                 />
                             )
@@ -199,8 +199,8 @@ export default function MessagesTab() {
                             ) : (
                                 <EmptyState
                                     title="Enquiry Channel"
-                                    subtitle="Private communication node awaiting selection."
-                                    description="Active handshakes and direct enquiries with institutional authorities are managed here. Select a verified node from the ledger to resume secure communication."
+                                    subtitle="Select an enquiry to view messages."
+                                    description="Direct messages regarding enquiries and admissions are managed here. Select an enquiry to resume communication."
                                     icon={<ShieldCheckIcon className="w-12 h-12" />}
                                 />
                             )
@@ -419,7 +419,7 @@ function EnquiryHandshake({ enquiry, refresh, onBack }: { enquiry: MyEnquiry; re
                                             <div className="absolute inset-x-0 top-1/2 h-[1px] bg-white/[0.04]" />
                                             <div className="relative px-5 py-1.5 rounded-full bg-[#08080a] border border-white/[0.08] flex items-center gap-2.5">
                                                 <div className="w-1 h-1 rounded-full bg-indigo-500/60 shadow-[0_0_8px_rgba(99,102,241,0.4)]" />
-                                                <span className="text-[8px] font-black uppercase tracking-[0.25em] text-white/30">{item.details.status || 'Registry Sync'}</span>
+                                                <span className="text-[8px] font-black uppercase tracking-[0.25em] text-white/30">{item.details.status || 'System Notification'}</span>
                                             </div>
                                         </div>
                                     );
@@ -434,7 +434,7 @@ function EnquiryHandshake({ enquiry, refresh, onBack }: { enquiry: MyEnquiry; re
                                     >
                                         {!isGrouped && (
                                             <div className={clsx("flex items-center gap-3 mb-2 px-1", isMe ? "flex-row-reverse" : "flex-row")}>
-                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">{isMe ? 'Verified Parent' : 'Institutional Authority'}</span>
+                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20">{isMe ? 'Verified Parent' : 'School Staff'}</span>
                                                 <span className="text-[9px] font-mono text-white/5 opacity-50">{formatShortTime(item.created_at)}</span>
                                             </div>
                                         )}
@@ -508,11 +508,11 @@ function EnquiryHandshake({ enquiry, refresh, onBack }: { enquiry: MyEnquiry; re
                 </section>
 
                 <section className="space-y-5">
-                    <h5 className="text-[9px] font-black uppercase text-white/20 tracking-[0.4em]">Node Metadata</h5>
+                    <h5 className="text-[9px] font-black uppercase text-white/20 tracking-[0.4em]">Enquiry Details</h5>
                     <div className="grid gap-3">
-                        <MetaRow label="Academic Deck" value={enquiry.grade} />
-                        <MetaRow label="Governance Branch" value={enquiry.branch_name || 'Main Registry'} />
-                        <MetaRow label="Identity Node" value={String(enquiry.id).slice(0, 12).toUpperCase()} />
+                        <MetaRow label="Grade" value={enquiry.grade} />
+                        <MetaRow label="Branch" value={enquiry.branch_name || 'Main Office'} />
+                        <MetaRow label="ID" value={String(enquiry.id).slice(0, 12).toUpperCase()} />
                     </div>
                 </section>
 
@@ -582,7 +582,7 @@ function EmptyState({ title, subtitle, description, icon }: any) {
                     </p>
                     <div className="flex items-center gap-3 py-3 px-6 rounded-full bg-white/[0.03] border border-white/[0.05] opacity-30 grayscale">
                         <ShieldCheckIcon className="w-4 h-4" />
-                        <span className="text-[9px] font-black uppercase tracking-widest text-white/60">P2M Encryption Layer Verified</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Secure Connection Verified</span>
                     </div>
                 </div>
             </div>

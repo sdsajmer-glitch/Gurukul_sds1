@@ -138,7 +138,7 @@ const PricingSelectionPage: React.FC<PricingSelectionPageProps> = ({ onComplete,
                         </p>
 
                         <div className="space-y-5 mb-12 flex-grow">
-                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] mb-2">Included Protocols</p>
+                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] mb-2">Included Features</p>
                             {plan.features.map((feature, idx) => (
                                 <div key={idx} className="flex items-start gap-3 group/item">
                                     <div className={`mt-1 w-5 h-5 rounded-lg flex items-center justify-center transition-colors ${plan.recommended ? 'bg-primary/20 text-primary' : 'bg-white/5 text-muted-foreground group-hover/item:text-primary group-hover/item:bg-primary/10'}`}>

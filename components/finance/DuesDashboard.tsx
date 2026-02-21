@@ -64,7 +64,7 @@ const DuesDashboard: React.FC<{ data: DuesDashboardData }> = ({ data }) => {
                     <div className="absolute inset-0 bg-gradient-to-br from-red-500/[0.03] to-transparent pointer-events-none"></div>
                     <div className="flex justify-between items-start mb-12">
                         <div className="space-y-2">
-                            <h3 className="text-[11px] font-black text-white/20 uppercase tracking-[0.6em] ml-1">Forensic Overdue</h3>
+                            <h3 className="text-[11px] font-black text-white/20 uppercase tracking-[0.6em] ml-1">Total Overdue</h3>
                             <div className="w-10 h-0.5 bg-red-500/30"></div>
                         </div>
                         <div className="p-5 bg-red-500/10 rounded-2xl text-red-500 border border-red-500/20 group-hover:scale-110 transition-transform duration-700 shadow-2xl shadow-red-500/10"><AlarmClockIcon className="w-7 h-7" /></div>
@@ -76,7 +76,7 @@ const DuesDashboard: React.FC<{ data: DuesDashboardData }> = ({ data }) => {
                     <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
                     <div className="flex justify-between items-start mb-12">
                         <div className="space-y-2">
-                            <h3 className="text-[11px] font-black text-white/20 uppercase tracking-[0.6em] ml-1">Exposure Nodes</h3>
+                            <h3 className="text-[11px] font-black text-white/20 uppercase tracking-[0.6em] ml-1">Overdue Accounts</h3>
                             <div className="w-10 h-0.5 bg-white/20"></div>
                         </div>
                         <div className="p-5 bg-white/5 rounded-2xl text-white/40 border border-white/10 group-hover:rotate-[-12deg] transition-transform duration-700 shadow-2xl"><UsersIcon className="w-7 h-7" /></div>
@@ -103,12 +103,12 @@ const DuesDashboard: React.FC<{ data: DuesDashboardData }> = ({ data }) => {
                     </div>
                 </div>
                 <div className="flex items-center gap-8 w-full md:w-auto">
-                    <button onClick={() => alert('RECALL_STRATEGY_INITIALIZED')} className="flex-1 md:flex-none h-16 px-14 rounded-2xl text-[11px] font-black uppercase text-white/20 hover:text-white hover:bg-white/5 border border-white/5 transition-all tracking-[0.5em] active:scale-95">
+                    <button onClick={() => alert('REMINDERS_SCHEDULED')} className="flex-1 md:flex-none h-16 px-14 rounded-2xl text-[11px] font-black uppercase text-white/20 hover:text-white hover:bg-white/5 border border-white/5 transition-all tracking-[0.5em] active:scale-95">
                         Schedule Reminders
                     </button>
-                    <button onClick={() => alert(`ALERT_WAVE_DISPATCHED_TO_${data.overdue_student_count}_NODES`)} className="flex-1 md:flex-none h-16 px-16 bg-red-600/10 text-red-500 font-black text-[11px] uppercase tracking-[0.6em] rounded-2xl shadow-3xl shadow-red-500/10 hover:bg-red-600 hover:text-white transition-all transform active:scale-95 border border-red-500/20 group/alert ring-4 ring-red-500/5">
+                    <button onClick={() => alert(`REMINDERS_SENT_TO_${data.overdue_student_count}_STUDENTS`)} className="flex-1 md:flex-none h-16 px-16 bg-red-600/10 text-red-500 font-black text-[11px] uppercase tracking-[0.6em] rounded-2xl shadow-3xl shadow-red-500/10 hover:bg-red-600 hover:text-white transition-all transform active:scale-95 border border-red-500/20 group/alert ring-4 ring-red-500/5">
                         <div className="flex items-center gap-4">
-                            Dispatch Recall Alerts <BellIcon className="w-5 h-5 group-hover/alert:animate-bounce" />
+                            Send Reminders <BellIcon className="w-5 h-5 group-hover/alert:animate-bounce" />
                         </div>
                     </button>
                 </div>
@@ -122,8 +122,8 @@ const DuesDashboard: React.FC<{ data: DuesDashboardData }> = ({ data }) => {
                 <div className="bg-white/[0.01] p-12 rounded-[4rem] border border-white/10 shadow-3xl relative overflow-hidden flex flex-col group/registry">
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent"></div>
                     <div className="space-y-2 mb-12">
-                        <h4 className="text-[11px] font-black text-red-500/40 uppercase tracking-[0.6em] ml-1">Critical Exposure</h4>
-                        <p className="text-2xl font-serif font-black text-white uppercase tracking-tight">Priority Recall Registry</p>
+                        <h4 className="text-[11px] font-black text-red-500/40 uppercase tracking-[0.6em] ml-1">Highest Overdue Accounts</h4>
+                        <p className="text-2xl font-serif font-black text-white uppercase tracking-tight">Action Required</p>
                     </div>
                     <div className="space-y-6 overflow-y-auto max-h-[350px] custom-scrollbar pr-3">
                         {data.highest_dues_students.length > 0 ? data.highest_dues_students.map((student, idx) => (
@@ -140,16 +140,16 @@ const DuesDashboard: React.FC<{ data: DuesDashboardData }> = ({ data }) => {
                             </div>
                         )) : <div className="pt-24 text-center space-y-6 opacity-20">
                             <UsersIcon className="w-16 h-16 mx-auto" />
-                            <p className="text-[11px] font-black uppercase tracking-[0.4em]">No Delinquent Nodes Detected</p>
+                            <p className="text-[11px] font-black uppercase tracking-[0.4em]">No Overdue Accounts</p>
                         </div>}
                     </div>
                     <div className="mt-8 pt-10 border-t border-white/5">
                         <div className="flex justify-between items-center text-[10px] font-black text-white/10 uppercase tracking-[0.4em]">
                             <div className="flex items-center gap-3">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                Registry Integrity
+                                Data Status
                             </div>
-                            <span className="text-emerald-500/60 font-mono tracking-widest">SECURE_SYNCED</span>
+                            <span className="text-emerald-500/60 font-mono tracking-widest">SYNCED</span>
                         </div>
                     </div>
                 </div>

@@ -20,7 +20,7 @@ const SendIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 const RefreshIcon: React.FC<React.SVGProps<SVGSVGElement> & { onClick?: () => void }> = (props) => (
-     <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor">
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.18-3.185m-3.181 9.348a8.25 8.25 0 00-11.664 0l-3.18 3.185m3.181-9.348l-3.18-3.183a8.25 8.25 0 00-11.664 0l-3.18 3.185" />
     </svg>
 );
@@ -31,13 +31,13 @@ const ClockIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-const ROLE_ICONS_MAP: Record<string, React.FC<{className?: string}>> = {
+const ROLE_ICONS_MAP: Record<string, React.FC<{ className?: string }>> = {
     [BuiltInRoles.PARENT_GUARDIAN]: ParentIcon,
     [BuiltInRoles.STUDENT]: StudentIcon,
     [BuiltInRoles.TEACHER]: TeacherIcon,
     [BuiltInRoles.TRANSPORT_STAFF]: TransportIcon,
     [BuiltInRoles.ECOMMERCE_OPERATOR]: CartIcon,
-    'default': ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+    'default': ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
 };
 
 const TEMPLATES = [
@@ -47,11 +47,11 @@ const TEMPLATES = [
 
 const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = ({ currentUserId }) => {
     const { roles } = useRoles();
-    
+
     const [selectedRoles, setSelectedRoles] = useState<Set<Role>>(new Set());
     const [targetType, setTargetType] = useState<'roles' | 'class'>('roles');
     const [selectedClass, setSelectedClass] = useState<string>('');
-    
+
     const [history, setHistory] = useState<Communication[]>([]);
     const [classes, setClasses] = useState<SchoolClass[]>([]);
     const [loading, setLoading] = useState({ sending: false, fetching: true, classes: false });
@@ -106,12 +106,12 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
         e.preventDefault();
         setErrorMessage(null);
         setSuccessMessage(null);
-        
+
         if (!subject.trim() || !body.trim()) {
-             setErrorMessage('Please enter a subject and message body.');
-             return;
+            setErrorMessage('Please enter a subject and message body.');
+            return;
         }
-        
+
         let criteria = {};
         let recipients: string[] = [];
 
@@ -129,7 +129,7 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
             }
             const className = classes.find(c => c.id.toString() === selectedClass)?.name;
             criteria = { type: 'class', value: selectedClass, label: className };
-            recipients = [BuiltInRoles.PARENT_GUARDIAN, BuiltInRoles.STUDENT]; 
+            recipients = [BuiltInRoles.PARENT_GUARDIAN, BuiltInRoles.STUDENT];
         }
 
         setLoading(prev => ({ ...prev, sending: true }));
@@ -152,7 +152,7 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
             await fetchHistory();
             setTimeout(() => setSuccessMessage(null), 3000);
         } catch (err: any) {
-            setErrorMessage(`Protocol Failure: ${err.message || "Communication link lost."}`);
+            setErrorMessage(`Failed: ${err.message || "Connection lost."}`);
         } finally {
             setLoading(prev => ({ ...prev, sending: false }));
         }
@@ -194,7 +194,7 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                     <h3 className="font-bold text-lg text-foreground">Compose Message</h3>
                     <p className="text-xs text-muted-foreground mt-1">Send class updates or alerts to parents.</p>
                 </div>
-                
+
                 <form onSubmit={handleSendMessage} className="flex-grow flex flex-col overflow-hidden">
                     <div className="p-5 flex-grow flex flex-col space-y-5 overflow-y-auto custom-scrollbar">
                         <div className="space-y-3">
@@ -218,7 +218,7 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                                         {communicationRoles.map(role => (
                                             <label key={role} className={`cursor-pointer border rounded-full px-3 py-1.5 text-xs font-medium transition-all select-none flex items-center gap-1 ${selectedRoles.has(role) ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'}`}>
                                                 <input type="checkbox" className="hidden" checked={selectedRoles.has(role)} onChange={() => toggleRole(role)} />
-                                                {selectedRoles.has(role) && <CheckCircleIcon className="w-3 h-3"/>}
+                                                {selectedRoles.has(role) && <CheckCircleIcon className="w-3 h-3" />}
                                                 {role}
                                             </label>
                                         ))}
@@ -226,9 +226,9 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                                 </div>
                             ) : (
                                 <div>
-                                    <select 
-                                        value={selectedClass} 
-                                        onChange={e => setSelectedClass(e.target.value)} 
+                                    <select
+                                        value={selectedClass}
+                                        onChange={e => setSelectedClass(e.target.value)}
                                         className="w-full input-premium"
                                     >
                                         <option value="" disabled>Select a Class...</option>
@@ -239,11 +239,11 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                         </div>
 
                         <div>
-                             <label className="text-sm font-semibold text-foreground mb-1.5 block">Use Template (Optional)</label>
-                             <select onChange={handleTemplateSelect} defaultValue="" className="w-full input-premium">
-                                 <option value="" disabled>Select a template...</option>
-                                 {TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                             </select>
+                            <label className="text-sm font-semibold text-foreground mb-1.5 block">Use Template (Optional)</label>
+                            <select onChange={handleTemplateSelect} defaultValue="" className="w-full input-premium">
+                                <option value="" disabled>Select a template...</option>
+                                {TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
                         </div>
 
                         <div>
@@ -251,8 +251,8 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                                 <label className="text-sm font-semibold text-foreground">Subject</label>
                                 <span className={`text-xs ${subject.length > 100 ? 'text-red-500' : 'text-muted-foreground'}`}>{subject.length}/128</span>
                             </div>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 maxLength={128}
                                 value={subject}
                                 onChange={e => setSubject(e.target.value)}
@@ -264,7 +264,7 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                         <div className="flex-grow flex flex-col">
                             <label className="text-sm font-semibold text-foreground mb-1.5">Message</label>
                             <div className="relative flex-grow min-h-[150px]">
-                                <textarea 
+                                <textarea
                                     value={body}
                                     onChange={e => setBody(e.target.value)}
                                     placeholder="Type your message here..."
@@ -275,28 +275,28 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                     </div>
 
                     <div className="p-5 border-t border-border bg-muted/10">
-                         {errorMessage && (
+                        {errorMessage && (
                             <div className="mb-3 p-3 bg-red-500/10 text-red-500 rounded-lg text-sm border border-red-500/20 animate-in shake duration-300">
-                               {errorMessage}
+                                {errorMessage}
                             </div>
                         )}
                         {successMessage && (
                             <div className="mb-3 p-3 bg-green-500/10 text-green-500 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 border border-green-500/20">
-                                <CheckCircleIcon className="w-4 h-4"/> {successMessage}
+                                <CheckCircleIcon className="w-4 h-4" /> {successMessage}
                             </div>
                         )}
-                        
+
                         <div className="flex items-center justify-between mb-3">
-                             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest truncate max-w-[200px]">
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest truncate max-w-[200px]">
                                 {getRecipientSummary()}
-                             </span>
+                            </span>
                         </div>
-                        <button 
+                        <button
                             type="submit"
-                            disabled={loading.sending} 
+                            disabled={loading.sending}
                             className="w-full py-4 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
                         >
-                            {loading.sending ? <Spinner size="sm" className="text-white"/> : <><SendIcon className="w-4 h-4" /> Send Message</>}
+                            {loading.sending ? <Spinner size="sm" className="text-white" /> : <><SendIcon className="w-4 h-4" /> Send Message</>}
                         </button>
                     </div>
                 </form>
@@ -310,23 +310,23 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                         <RefreshIcon className="w-5 h-5" />
                     </button>
                 </div>
-                
+
                 <div className="flex-grow overflow-y-auto p-5 space-y-4 bg-muted/5 custom-scrollbar">
                     {loading.fetching && history.length === 0 ? (
-                        <div className="flex justify-center py-20"><Spinner size="lg" className="text-primary"/></div>
+                        <div className="flex justify-center py-20"><Spinner size="lg" className="text-primary" /></div>
                     ) : history.length === 0 ? (
                         <div className="text-center py-24 text-muted-foreground opacity-40">
-                             <MegaphoneIcon className="w-12 h-12 mx-auto mb-4" />
+                            <MegaphoneIcon className="w-12 h-12 mx-auto mb-4" />
                             <p className="font-bold text-lg">No history detected.</p>
                         </div>
                     ) : (
                         history.map((msg) => {
-                             const isClassTarget = msg.target_criteria && msg.target_criteria.type === 'class';
-                             const PrimaryRole = !isClassTarget && (msg.recipients && Array.isArray(msg.recipients) && msg.recipients[0]) ? msg.recipients[0] : 'default';
-                             const IconComp = ROLE_ICONS_MAP[PrimaryRole] || ROLE_ICONS_MAP['default'];
-                             const recipients = msg.recipients || [];
-                             
-                             return (
+                            const isClassTarget = msg.target_criteria && msg.target_criteria.type === 'class';
+                            const PrimaryRole = !isClassTarget && (msg.recipients && Array.isArray(msg.recipients) && msg.recipients[0]) ? msg.recipients[0] : 'default';
+                            const IconComp = ROLE_ICONS_MAP[PrimaryRole] || ROLE_ICONS_MAP['default'];
+                            const recipients = msg.recipients || [];
+
+                            return (
                                 <div key={msg.id} className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow group relative animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-start gap-4">
                                         <div className="p-3 rounded-full bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -335,16 +335,15 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                                         <div className="flex-grow min-w-0">
                                             <div className="flex justify-between items-start">
                                                 <h4 className="font-bold text-foreground truncate pr-2 text-base">{msg.subject}</h4>
-                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
-                                                    msg.status === 'Sent' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
-                                                    msg.status === 'Delivered' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
-                                                    'bg-red-500/10 text-red-600 border-red-500/20'
-                                                }`}>
+                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${msg.status === 'Sent' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
+                                                        msg.status === 'Delivered' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
+                                                            'bg-red-500/10 text-red-600 border-red-500/20'
+                                                    }`}>
                                                     {msg.status}
                                                 </span>
                                             </div>
                                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{msg.body}</p>
-                                            
+
                                             <div className="mt-3 pt-3 border-t border-border flex flex-wrap justify-between items-center gap-2">
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                     {isClassTarget ? (
@@ -371,7 +370,7 @@ const CommunicationTab: FunctionComponentWithIcon<{ currentUserId: string }> = (
                     )}
                 </div>
             </div>
-            
+
             <style>{`
                 .input-premium { display: block; width: 100%; padding: 0.6rem 0.8rem; border: 1px solid hsl(var(--input)); border-radius: 0.5rem; background-color: hsl(var(--background)); color: hsl(var(--foreground)); transition: all 0.2s; font-size: 0.9rem; }
                 .input-premium:focus { outline: none; border-color: hsl(var(--primary)); box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2); }

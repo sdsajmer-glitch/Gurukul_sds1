@@ -109,7 +109,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
     useEffect(() => {
         const checkEligibility = async () => {
             try {
-                // Identity Handshake: Verify if email exists in Institutional Registry
+                // Verification: Verify if email exists in School Records
                 const { data, error } = await supabase.rpc('check_branch_admin_eligibility');
                 console.log('Institutional Registry Sync:', data);
 
@@ -121,7 +121,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                     if (data.eligible && !hasAutoTriggered) {
                         setHasAutoTriggered(true);
 
-                        // Handshake Orchestration: Short delay so the user understands the identity context
+                        // Processing: Short delay so the user understands the context
                         setTimeout(() => {
                             console.log('Verified Institutional Identity Detected. Orchestrating redirect...');
                             handleRoleClick(BuiltInRoles.SCHOOL_ADMINISTRATION as Role);
@@ -285,7 +285,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
 
 
                                     <div className={`mt-10 inline-flex items-center gap-3 px-10 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-xl transition-all ${createLoading ? 'bg-primary/70 animate-pulse cursor-wait' : 'bg-primary hover:scale-105 shadow-primary/25'}`}>
-                                        {createLoading ? 'Provisioning Hub...' : 'Get Started'}
+                                        {createLoading ? 'Setting up...' : 'Get Started'}
                                     </div>
                                 </div>
                             </button>
@@ -302,7 +302,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
 
                                     {joinSuccess ? (
                                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                            <p className="text-emerald-600 font-bold text-lg mb-2">Handshake Secured!</p>
+                                            <p className="text-emerald-600 font-bold text-lg mb-2">Verified!</p>
                                             <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-xs mx-auto">
                                                 Linking your identity to the branch node. Initializing workstation...
                                             </p>
@@ -350,7 +350,7 @@ const RoleSelectionPage: React.FC<RoleSelectionPageProps> = ({ onRoleSelect, onC
                                 </div>
 
                                 <p className="text-[9px] text-muted-foreground/30 uppercase tracking-[0.3em] mt-8 font-black text-center">
-                                    Institutional Handshake Gateway
+                                    School Access Gateway
                                 </p>
                             </div>
                         </div>

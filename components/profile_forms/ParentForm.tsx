@@ -315,7 +315,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-black text-white/60 uppercase tracking-[0.2em] italic">Auxiliary Guardian</h3>
-                                    <p className="text-[10px] text-white/20 font-bold uppercase tracking-[0.15em] mt-1">Optional Emergency Protocol</p>
+                                    <p className="text-[10px] text-white/20 font-bold uppercase tracking-[0.15em] mt-1">Optional Emergency Contact</p>
                                 </div>
                             </div>
                             <span className="px-4 py-2 rounded-full border border-white/5 bg-white/[0.02] text-[9px] font-black uppercase tracking-[0.2em] text-white/20">Optional</span>
@@ -482,7 +482,7 @@ const ParentForm: React.FC<FormProps> = ({ formData, handleChange, activeTab, is
                 </div>
             </div>
 
-            {/* Mapping Protocol */}
+            {/* Data Mapping */}
             <div className="bg-[#0f1115]/80 backdrop-blur border border-white/5 rounded-[3.5rem] p-10 hover:border-white/10 transition-colors">
                 <div className="flex items-center gap-4 mb-10 pb-6 border-b border-white/5">
                     <div className="h-2 w-2 rounded-full bg-indigo-400 shadow-[0_0_15px_rgba(129,140,248,0.8)]" />

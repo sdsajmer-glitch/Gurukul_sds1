@@ -38,18 +38,18 @@ const BioRegistry: React.FC<BioRegistryProps> = ({
                     <div className="p-2.5 bg-primary/10 rounded-xl text-primary ring-1 ring-primary/20 shadow-lg">
                         <UserIcon className="w-5 h-5" />
                     </div>
-                    <h3 className="text-[14px] font-bold text-white uppercase tracking-wider">Biological Registry</h3>
+                    <h3 className="text-[14px] font-bold text-white uppercase tracking-wider">Personal Details</h3>
                 </div>
-                <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Identity Core</span>
+                <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Profile Record</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
-                <DataField label="Primary Forename" value={firstName} meta="BIO_LEGAL_FIRST" />
-                <DataField label="Primary Surname" value={lastName} meta="BIO_LEGAL_LAST" />
-                <DataField label="Natal Timestamp (DOB)" value={dob} meta="TEMPORAL_ORIGIN" />
-                <DataField label="Sovereign Nationality" value={nationality} meta="GEOPOLITICAL_NODE" />
-                <DataField label="Linguistic Protocols" value={languages} meta="COMM_DEXTERITY" />
-                <DataField label="Assigned Gender" value="Male" meta="BIOLOGICAL_AXIS" />
+                <DataField label="First Name" value={firstName} meta="Legal Name" />
+                <DataField label="Last Name" value={lastName} meta="Legal Name" />
+                <DataField label="Date of Birth" value={dob} meta="Verified" />
+                <DataField label="Nationality" value={nationality} meta="Identity" />
+                <DataField label="Languages" value={languages} meta="Communication" />
+                <DataField label="Gender" value="Male" meta="Profile" />
             </div>
         </div>
     );

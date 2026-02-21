@@ -55,7 +55,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                     setIsStrictReadOnly(false);
                 }
             } catch (e) {
-                console.error('Identity handshake failed:', e);
+                console.error('Identity check failed:', e);
             }
         };
         checkIdentityContext();
@@ -430,7 +430,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
 
                 // Show success message
                 setError(null);
-                setSuccess(isEditMode ? "Profile metrics updated successfully" : "Setup protocol completed successfully");
+                setSuccess(isEditMode ? "Profile metrics updated successfully" : "Setup completed successfully");
 
                 // Trigger parent update with a slight delay to allow the "Wow" animation to finish
                 console.log('Scheduling onComplete()...');
@@ -489,7 +489,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                             <div className="flex items-center justify-center gap-2">
                                 <div className="px-4 py-1.5 bg-primary/10 rounded-full border border-primary/20 flex items-center gap-2.5 backdrop-blur-md">
                                     <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                                    <span className="text-[9px] font-black text-primary uppercase tracking-[0.25em]">{role} Node</span>
+                                    <span className="text-[9px] font-black text-primary uppercase tracking-[0.25em]">{role} Profile</span>
                                 </div>
                             </div>
                         </div>
@@ -516,7 +516,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                                     ${activeTab === 'details' ? 'text-white' : 'text-white/20 hover:text-white/40'}`}
                             >
                                 <UserIcon className={`w-4 h-4 transition-all duration-500 ${activeTab === 'details' ? 'text-primary scale-110' : 'opacity-40 grayscale'}`} />
-                                Core Registry
+                                Core Details
                             </button>
                             <button
                                 type="button"
@@ -525,7 +525,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                                     ${activeTab === 'contact' ? 'text-white' : 'text-white/20 hover:text-white/40'}`}
                             >
                                 <PhoneIcon className={`w-4 h-4 transition-all duration-500 ${activeTab === 'contact' ? 'text-primary scale-110' : 'opacity-40 grayscale'}`} />
-                                Contact & Node
+                                Contact Info
                             </button>
                         </div>
                     </div>
@@ -573,7 +573,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                                     <div className="flex items-center gap-4 py-3 px-8 bg-white/[0.03] rounded-2xl border border-white/10 shadow-inner">
                                         <Spinner size="sm" className="text-primary" />
                                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50">
-                                            Handshaking Command Center...
+                                            Connecting...
                                         </span>
                                     </div>
                                     <div className="space-y-2 w-full max-w-[200px]">
@@ -585,7 +585,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                                                 className="h-full bg-gradient-to-r from-primary to-emerald-500"
                                             />
                                         </div>
-                                        <p className="text-[8px] font-black text-white/10 uppercase tracking-[0.4em]">Protocol Sync Complete</p>
+                                        <p className="text-[8px] font-black text-white/10 uppercase tracking-[0.4em]">Profile Synced</p>
                                     </div>
                                 </div>
                             </div>
@@ -631,7 +631,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                             <div className="bg-black/20 rounded-xl p-4 border border-white/5">
                                 <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                    Node Management
+                                    Administrator
                                 </h4>
                                 <div className="space-y-2">
                                     <div className={`flex items-center gap-2 text-xs ${formData.admin_contact_name?.trim() ? 'text-emerald-400' : 'text-white/30'}`}>
@@ -715,7 +715,7 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                                         <ShieldCheckIcon className="w-8 h-8 text-primary" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Node Restricted Access</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Restricted Access</p>
                                         <p className="text-sm text-foreground/60 font-medium">You are an authorized administrator for <strong>{formData.school_name || 'your assigned branch'}</strong>.</p>
                                     </div>
                                 </div>
@@ -756,12 +756,12 @@ export const ProfileCreationPage: React.FC<ProfileCreationPageProps> = ({ profil
                         {saving ? (
                             <div className="flex items-center gap-3">
                                 <Spinner size="sm" />
-                                <span className="animate-pulse">Provisioning...</span>
+                                <span className="animate-pulse">Saving...</span>
                             </div>
                         ) : (
                             <div className="flex items-center justify-center gap-4">
                                 <ShieldCheckIcon className="w-5 h-5 group-hover:rotate-12 transition-transform duration-500" />
-                                <span>{isStrictReadOnly ? 'Node Restricted' : `Update ${role} Protocol`}</span>
+                                <span>{isStrictReadOnly ? 'Restricted' : `Save ${role} Profile`}</span>
                             </div>
                         )}
                     </button>

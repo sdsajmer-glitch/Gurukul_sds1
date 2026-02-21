@@ -48,7 +48,7 @@ const PaymentPlanProtocolCard: React.FC<ProtocolCardProps> = ({ protocols, onRef
                         </div>
                         <div>
                             <div className="flex items-center gap-3 mb-1">
-                                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Payment Plan Protocols</h3>
+                                <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Payment Plans</h3>
                                 <span className="px-2 py-0.5 rounded bg-purple-500/20 border border-purple-500/30 text-[10px] font-bold text-purple-400 uppercase tracking-widest">
                                     {protocols.length} Active
                                 </span>
@@ -63,7 +63,7 @@ const PaymentPlanProtocolCard: React.FC<ProtocolCardProps> = ({ protocols, onRef
                             className="hidden md:flex px-5 py-2.5 bg-white/[0.05] border border-white/10 hover:bg-purple-500 hover:text-black hover:border-purple-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all items-center gap-2 active:scale-95 z-10"
                         >
                             <PlusIcon className="w-4 h-4" />
-                            <span>Add Protocol</span>
+                            <span>Add Plan</span>
                         </button>
                         <div className={`w-10 h-10 rounded-full border border-white/10 flex items-center justify-center transition-transform duration-500 ${isExpanded ? 'rotate-180 bg-white/5' : 'rotate-0'}`}>
                             <ChevronDownIcon className="w-4 h-4 text-white/40" />
@@ -82,7 +82,7 @@ const PaymentPlanProtocolCard: React.FC<ProtocolCardProps> = ({ protocols, onRef
                         {protocols.length === 0 ? (
                             <div className="p-12 text-center border-2 border-dashed border-white/10 rounded-3xl">
                                 <CreditCardIcon className="w-12 h-12 text-white/20 mx-auto mb-4" />
-                                <h4 className="text-white font-bold text-lg mb-2">No Payment Protocols</h4>
+                                <h4 className="text-white font-bold text-lg mb-2">No Payment Plans</h4>
                                 <p className="text-white/40 text-sm mb-6">Define installment plans (Monthly, Quarterly, etc.) to offer flexibility.</p>
                                 <button
                                     onClick={handleNew}
@@ -140,7 +140,7 @@ const PaymentPlanProtocolCard: React.FC<ProtocolCardProps> = ({ protocols, onRef
                                                 onClick={() => handleEdit(protocol)}
                                                 className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white flex items-center gap-2 transition-colors"
                                             >
-                                                Configure Logic <ArrowRightIcon className="w-3 h-3" />
+                                                Configure Plan <ArrowRightIcon className="w-3 h-3" />
                                             </button>
                                         </div>
 

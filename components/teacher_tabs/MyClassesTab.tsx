@@ -128,7 +128,7 @@ const MyClassesTab: FunctionComponentWithIcon<MyClassesTabProps> = ({ currentUse
                                 </div>
                                 <div>
                                     <h3 className="font-black text-2xl text-foreground tracking-tight italic uppercase">{overviews.find(c => c.id === selectedClassId)?.name}</h3>
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1 opacity-60">Deep Management Protocol</p>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1 opacity-60">Advanced Management</p>
                                 </div>
                             </div>
                             <div className="flex bg-background border-2 border-border p-1.5 rounded-[1.5rem] shadow-inner">
@@ -165,7 +165,7 @@ const MyClassesTab: FunctionComponentWithIcon<MyClassesTabProps> = ({ currentUse
             {loading.details && (
                 <div className="flex flex-col items-center justify-center p-24 gap-6">
                     <Spinner size="lg" className="text-primary" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground animate-pulse">Syncing Interface Node...</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground animate-pulse">Syncing User Interface...</p>
                 </div>
             )}
 
@@ -295,7 +295,7 @@ const AssignmentsView: React.FC<{ details: TeacherClassDetails, onAdd: () => voi
                                     <p className="font-black text-2xl text-foreground tracking-tighter uppercase italic group-hover:text-primary transition-colors">{a.title}</p>
                                     <div className="flex items-center gap-3">
                                         <span className="text-[10px] font-black uppercase tracking-widest bg-primary/10 text-primary px-3 py-1 rounded-lg border border-primary/20">{a.subject}</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Task Node</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Assignment</span>
                                     </div>
                                 </div>
                                 <div className="text-right space-y-2">
@@ -358,7 +358,7 @@ const MaterialsView: React.FC<{ details: TeacherClassDetails, onAdd: () => void 
                             </div>
                             <div className="mt-8 pt-6 border-t border-border/60 flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                                 <span className="text-muted-foreground/40">Timestamp: {new Date(m.created_at).toLocaleDateString()}</span>
-                                <button className="text-primary hover:underline">Download Node</button>
+                                <button className="text-primary hover:underline">Download Material</button>
                             </div>
                         </motion.div>
                     ))}
@@ -434,7 +434,7 @@ const AddAssignmentModal: React.FC<{ classId: number, subjects: ClassSubject[], 
                             </div>
                             <div>
                                 <h3 className="font-black text-2xl text-foreground tracking-tighter uppercase italic italic">Deploy Task</h3>
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em] mt-1 opacity-60">Initialize Assignment Protocol</p>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em] mt-1 opacity-60">New Assignment</p>
                             </div>
                         </div>
                         <button type="button" onClick={onClose} className="p-4 rounded-full bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all transform hover:rotate-90 border border-white/5 relative z-10"><XIcon className="w-7 h-7" /></button>
@@ -492,12 +492,12 @@ const AddMaterialModal: React.FC<{ classId: number, subjects: ClassSubject[], on
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!file) { setError('Protocol Null: No source file selected.'); return; }
+        if (!file) { setError('Error: No source file selected.'); return; }
         setLoading(true);
         setError('');
 
         try {
-            if (!currentUserId) throw new Error("Authentication node offline.");
+            if (!currentUserId) throw new Error("Session invalid. Please login again.");
 
             const fileExt = file.name.split('.').pop()?.toLowerCase() || 'bin';
             const filePath = `${currentUserId}/${classId}-${Date.now()}.${fileExt}`;
@@ -553,7 +553,7 @@ const AddMaterialModal: React.FC<{ classId: number, subjects: ClassSubject[], on
                             </div>
                             <div>
                                 <h3 className="font-black text-2xl text-foreground tracking-tighter uppercase italic italic">Sync Intelligence</h3>
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em] mt-1 opacity-60">Upload Knowledge Node</p>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.4em] mt-1 opacity-60">Upload Resource</p>
                             </div>
                         </div>
                         <button type="button" onClick={onClose} className="p-4 rounded-full bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all transform hover:rotate-90 border border-white/5 relative z-10"><XIcon className="w-7 h-7" /></button>
@@ -562,7 +562,7 @@ const AddMaterialModal: React.FC<{ classId: number, subjects: ClassSubject[], on
                         {error && <p className="text-rose-600 bg-rose-500/10 p-5 rounded-2xl text-xs font-black uppercase tracking-widest border border-rose-500/20 italic">{error}</p>}
 
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground block ml-1">Node Designation</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground block ml-1">Title</label>
                             <input type="text" value={title} onChange={e => setTitle(e.target.value)} required className="w-full bg-muted/30 border-2 border-border rounded-2xl px-6 py-5 text-sm font-black focus:border-emerald-500 focus:ring-8 focus:ring-emerald-500/5 outline-none transition-all placeholder:text-muted-foreground/30 shadow-inner" placeholder="Enter Material Title..." />
                         </div>
 
@@ -573,17 +573,17 @@ const AddMaterialModal: React.FC<{ classId: number, subjects: ClassSubject[], on
 
                         <div className="space-y-4">
                             <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground block ml-1">Intel Summary</label>
-                            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-muted/30 border-2 border-border rounded-2xl px-6 py-5 text-sm font-black focus:border-emerald-500 focus:ring-8 focus:ring-emerald-500/5 outline-none transition-all placeholder:text-muted-foreground/30 shadow-inner" placeholder="Technical summary of the intelligence node..." />
+                            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-muted/30 border-2 border-border rounded-2xl px-6 py-5 text-sm font-black focus:border-emerald-500 focus:ring-8 focus:ring-emerald-500/5 outline-none transition-all placeholder:text-muted-foreground/30 shadow-inner" placeholder="Summary of the resource..." />
                         </div>
 
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground block ml-1">Source File Node</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground block ml-1">Attachment</label>
                             <div className="relative group">
                                 <input type="file" onChange={e => setFile(e.target.files ? e.target.files[0] : null)} required className="absolute inset-0 opacity-0 cursor-pointer z-20" />
                                 <div className="w-full bg-muted/30 border-4 border-dashed border-border rounded-[2rem] px-8 py-12 text-center group-hover:bg-emerald-500/[0.02] group-hover:border-emerald-500/40 transition-all shadow-inner">
                                     <UploadIcon className="w-10 h-10 mx-auto text-muted-foreground/30 mb-4 group-hover:scale-110 group-hover:text-emerald-500 transition-all" />
-                                    <p className="font-black text-sm text-foreground uppercase tracking-tight">{file ? file.name : 'Inject CSV/PDF/Binary Protocol'}</p>
-                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-2">{file ? `${(file.size / 1024).toFixed(1)} KB • Verified` : 'Click to select or drop knowledge node'}</p>
+                                    <p className="font-black text-sm text-foreground uppercase tracking-tight">{file ? file.name : 'Upload CSV/PDF Resources'}</p>
+                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-2">{file ? `${(file.size / 1024).toFixed(1)} KB • Verified` : 'Click to select or drop a file'}</p>
                                 </div>
                             </div>
                         </div>

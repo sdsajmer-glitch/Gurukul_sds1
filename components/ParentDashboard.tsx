@@ -33,7 +33,7 @@ const navItems = [
     { id: 'My Children', label: 'Children', icon: <StudentsIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Academics', label: 'Academics', icon: <AcademicCapIcon className="w-4 h-4 md:w-5 md:h-5" /> }, // Added
     { id: 'Finance', label: 'Finance', icon: <FinanceIcon className="w-4 h-4 md:w-5 md:h-5" /> },
-    { id: 'Documents', label: 'Vault', icon: <DocumentTextIcon className="w-4 h-4 md:w-5 md:h-5" /> },
+    { id: 'Documents', label: 'Documents', icon: <DocumentTextIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Messages', label: 'Inbox', icon: <CommunicationIcon className="w-4 h-4 md:w-5 md:h-5" /> },
     { id: 'Share Codes', label: 'Access', icon: <ReceiptIcon className="w-4 h-4 md:w-5 md:h-5" /> },
 ];
@@ -112,7 +112,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = ({ profile, onSelectRole
             </main>
 
             <footer className="py-10 border-t border-white/5 bg-black/20 text-center px-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/10">Institutional Matrix v9.5.1 Parent Node</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/10">Parent Portal</p>
             </footer>
 
             <style>{`

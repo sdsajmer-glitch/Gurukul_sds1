@@ -74,7 +74,7 @@ export const getAdminMenu = (isHeadOfficeAdmin: boolean, userRole: Role): MenuGr
             items: [
                 { id: 'Code Verification', label: 'Quick Verification', icon: <KeyIcon className="w-5 h-5" /> },
                 { id: 'Enquiries', label: 'Enquiry Desk', icon: <MailIcon className="w-5 h-5" /> },
-                { id: 'Admissions', label: 'Admission Vault', icon: <ClipboardListIcon className="w-5 h-5" /> },
+                { id: 'Admissions', label: 'Admission Records', icon: <ClipboardListIcon className="w-5 h-5" /> },
             ]
         },
         {

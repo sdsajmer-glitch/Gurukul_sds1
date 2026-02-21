@@ -74,7 +74,7 @@ const ComplianceDossier: React.FC<ComplianceDossierProps> = ({ teacher, onUpdate
                             <ShieldCheckIcon className="w-6 h-6" />
                         </div>
                         <div className="space-y-1">
-                            <h4 className="text-[14px] font-black text-white uppercase tracking-wider">Regulatory Handshake Established</h4>
+                            <h4 className="text-[14px] font-black text-white uppercase tracking-wider">Compliance Verified</h4>
                             <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] leading-relaxed italic">
                                 Background screenings, educational artifacts, and conduct certifications have been globally synchronized for this node.
                             </p>

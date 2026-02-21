@@ -106,7 +106,7 @@ const InfoRow: React.FC<{
                     onChange={(e) => onChange(e.target.value)}
                     className="w-full p-4 rounded-2xl border border-white/5 bg-black/40 text-sm font-bold text-white focus:ring-[12px] focus:ring-primary/5 focus:border-primary/40 outline-none transition-all appearance-none cursor-pointer"
                 >
-                    <option value="" className="bg-[#0d0f14]">Select Protocol...</option>
+                    <option value="" className="bg-[#0d0f14]">Select Option...</option>
                     {options.map(opt => <option key={opt} value={opt} className="bg-[#0d0f14]">{opt.toUpperCase()}</option>)}
                 </select>
             ) : (
@@ -121,13 +121,13 @@ const InfoRow: React.FC<{
         ) : (
             <div className="flex items-center gap-3">
                 <p className={`text-lg font-serif font-black text-white tracking-tight pl-1 ${!value ? 'opacity-10' : ''}`}>
-                    {value || 'DATA_SILENT'}
+                    {value || 'No Information'}
                 </p>
                 {readOnly && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-primary/5 text-[8px] font-black text-primary/40 uppercase tracking-widest border border-primary/10">CORE_SYSTEM</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-primary/5 text-[8px] font-black text-primary/40 uppercase tracking-widest border border-primary/10">System</span>
                 )}
                 {!value && !isEditing && (
-                    <span className="text-[8px] font-black text-amber-500/30 uppercase tracking-[0.2em] border border-amber-500/10 px-2 py-0.5 rounded-lg">SYNC_NEEDED</span>
+                    <span className="text-[8px] font-black text-amber-500/30 uppercase tracking-[0.2em] border border-amber-500/10 px-2 py-0.5 rounded-lg">Update Required</span>
                 )}
             </div>
         )}
@@ -304,7 +304,7 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200" onClick={onClose}>
             <div className="bg-background w-full max-w-6xl h-[92vh] rounded-[2.5rem] shadow-2xl border border-white/10 flex flex-col overflow-hidden relative ring-1 ring-black/5" onClick={e => e.stopPropagation()}>
 
-                {/* Institutional Header Section */}
+                {/* Header Section */}
                 <div className="p-10 border-b border-white/5 bg-white/[0.01] backdrop-blur-3xl flex flex-col md:flex-row justify-between items-center gap-10 flex-shrink-0 z-10 relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent pointer-events-none"></div>
 
@@ -329,11 +329,11 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                             <div className="flex items-center gap-4 mb-3">
                                 <h2 className="text-4xl font-serif font-black text-white uppercase tracking-tighter">{teacher.display_name}</h2>
                                 <span className={`px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border backdrop-blur-md shadow-2xl ${teacher.details?.employment_status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
-                                    {teacher.details?.employment_status || 'PROVISIONAL'}
+                                    {teacher.details?.employment_status || 'TEMPORARY'}
                                 </span>
                                 <div className="flex items-center gap-2 px-3 py-1 bg-white/[0.02] border border-white/5 rounded-lg">
                                     <div className="w-1 h-1 rounded-full bg-primary animate-pulse"></div>
-                                    <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">System Sync Active</span>
+                                    <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Connected</span>
                                 </div>
                             </div>
                             <p className="text-[11px] font-black text-white/40 uppercase tracking-[0.4em] flex items-center gap-4">
@@ -346,14 +346,14 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                                     <MailIcon className="w-3.5 h-3.5 opacity-40 group-hover/stat:text-primary transition-colors" /> {teacher.email}
                                 </div>
                                 <div className="flex items-center gap-2.5 text-[10px] font-black text-white/20 uppercase tracking-widest hover:text-white transition-colors cursor-pointer group/stat">
-                                    <PhoneIcon className="w-3.5 h-3.5 opacity-40 group-hover/stat:text-primary transition-colors" /> {teacher.phone || 'NO_UPLINK'}
+                                    <PhoneIcon className="w-3.5 h-3.5 opacity-40 group-hover/stat:text-primary transition-colors" /> {teacher.phone || 'No Contact'}
                                 </div>
-                                <div className="px-4 py-1.5 rounded-xl bg-white/5 text-white/40 font-mono text-[9px] font-bold border border-white/5 shadow-inner">REF_ID__{formData.employee_id || '---'}</div>
+                                <div className="px-4 py-1.5 rounded-xl bg-white/5 text-white/40 font-mono text-[9px] font-bold border border-white/5 shadow-inner">Reference ID: {formData.employee_id || '---'}</div>
                             </div>
                         </div>
                     </div>
                     <div className="flex gap-4">
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => alert('Neural Uplink Initiated...')} className="px-8 py-4 bg-primary text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-3">
+                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => alert('Messaging System Initialized...')} className="px-8 py-4 bg-primary text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-3">
                             <CommunicationIcon className="w-4 h-4" /> Message
                         </motion.button>
                         <button onClick={onClose} className="p-4 rounded-2xl hover:bg-white/5 text-white/20 hover:text-white transition-all border border-transparent hover:border-white/10 group"><XIcon className="w-7 h-7 group-hover:rotate-90 transition-transform duration-300" /></button>
@@ -364,20 +364,20 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                     {/* Command Sidebar Navigation */}
                     <div className="w-full md:w-80 bg-black/20 border-r border-white/5 flex-shrink-0 overflow-y-auto custom-scrollbar">
                         <nav className="p-6 space-y-1">
-                            <TabButton id="personal" label="Registry Profile" isHeader={true} activeId={activeTab} onClick={setActiveTab} icon={null} />
-                            <TabButton id="personal" label="Personal Matrix" activeId={activeTab} onClick={setActiveTab} icon={<UserIcon className="w-4 h-4" />} />
-                            <TabButton id="compliance" label="Compliance Dossier" activeId={activeTab} onClick={setActiveTab} icon={<BriefcaseIcon className="w-4 h-4" />} />
+                            <TabButton id="personal" label="Profile Overview" isHeader={true} activeId={activeTab} onClick={setActiveTab} icon={null} />
+                            <TabButton id="personal" label="Personal Profile" activeId={activeTab} onClick={setActiveTab} icon={<UserIcon className="w-4 h-4" />} />
+                            <TabButton id="compliance" label="Compliance Records" activeId={activeTab} onClick={setActiveTab} icon={<BriefcaseIcon className="w-4 h-4" />} />
 
-                            <TabButton id="personal" label="Academic Control" isHeader={true} activeId={activeTab} onClick={setActiveTab} icon={null} />
-                            <TabButton id="portfolio" label="Academic Portfolio" activeId={activeTab} onClick={setActiveTab} icon={<BookIcon className="w-4 h-4" />} />
-                            <TabButton id="response" label="Student Response" activeId={activeTab} onClick={setActiveTab} icon={<UsersIcon className="w-4 h-4" />} />
-                            <TabButton id="timetable" label="Live Timetable" activeId={activeTab} onClick={setActiveTab} icon={<TimetableIcon className="w-4 h-4" />} />
-                            <TabButton id="workload" label="Workload Core" activeId={activeTab} onClick={setActiveTab} icon={<ChartBarIcon className="w-4 h-4" />} />
+                            <TabButton id="personal" label="Academic Management" isHeader={true} activeId={activeTab} onClick={setActiveTab} icon={null} />
+                            <TabButton id="portfolio" label="Academic Records" activeId={activeTab} onClick={setActiveTab} icon={<BookIcon className="w-4 h-4" />} />
+                            <TabButton id="response" label="Student Feedback" activeId={activeTab} onClick={setActiveTab} icon={<UsersIcon className="w-4 h-4" />} />
+                            <TabButton id="timetable" label="Timetable" activeId={activeTab} onClick={setActiveTab} icon={<TimetableIcon className="w-4 h-4" />} />
+                            <TabButton id="workload" label="Workload Management" activeId={activeTab} onClick={setActiveTab} icon={<ChartBarIcon className="w-4 h-4" />} />
 
-                            <TabButton id="personal" label="Archives & Vault" isHeader={true} activeId={activeTab} onClick={setActiveTab} icon={null} />
-                            <TabButton id="governance" label="Governance & Audit" activeId={activeTab} onClick={setActiveTab} icon={<ActivityIcon className="w-4 h-4" />} />
-                            <TabButton id="vault" label="Document Vault" activeId={activeTab} onClick={setActiveTab} icon={<FileTextIcon className="w-4 h-4" />} />
-                            <TabButton id="security" label="Security Protocol" activeId={activeTab} onClick={setActiveTab} icon={<ShieldCheckIcon className="w-4 h-4" />} />
+                            <TabButton id="personal" label="Documents & Security" isHeader={true} activeId={activeTab} onClick={setActiveTab} icon={null} />
+                            <TabButton id="governance" label="Activity Log" activeId={activeTab} onClick={setActiveTab} icon={<ActivityIcon className="w-4 h-4" />} />
+                            <TabButton id="vault" label="Documents" activeId={activeTab} onClick={setActiveTab} icon={<FileTextIcon className="w-4 h-4" />} />
+                            <TabButton id="security" label="Security Settings" activeId={activeTab} onClick={setActiveTab} icon={<ShieldCheckIcon className="w-4 h-4" />} />
                         </nav>
                     </div>
 
@@ -427,8 +427,8 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                                     onMapRequest={() => setIsAssignModalOpen(true)}
                                     onUnmapRequest={(id, subjectName, className) => setConfirmationAction({
                                         type: 'unmap_subject',
-                                        title: 'UNLINK_PROTOCOL_INITIATED',
-                                        message: `Are you sure you want to decouple ${teacher.display_name} from ${subjectName} (${className})? This action will be archived in the governance log.`,
+                                        title: 'Subject Unlinked',
+                                        message: `Are you sure you want to decouple ${teacher.display_name} from ${subjectName} (${className})? This action will be archived in the activity log.`,
                                         targetId: id
                                     })}
                                 />
@@ -455,7 +455,7 @@ const TeacherDetailModal: React.FC<TeacherDetailModalProps> = ({ teacher, onClos
                                     teacher={teacher}
                                     docs={docs}
                                     loadingDocs={loadingDocs}
-                                    onArchiveClick={() => alert('Administrative archival protocol initiated.')}
+                                    onArchiveClick={() => alert('Document archived successfully.')}
                                 />
                             )}
 

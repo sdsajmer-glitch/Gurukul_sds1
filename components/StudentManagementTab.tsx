@@ -80,7 +80,7 @@ const KPICard: React.FC<{
                     )}
                 </div>
                 <div className="flex items-center justify-between mt-5 pt-5 border-t border-border/40">
-                    <p className="text-[9px] text-muted-foreground/30 font-bold uppercase tracking-[0.2em]">{description || 'Registry Analytics'}</p>
+                    <p className="text-[9px] text-muted-foreground/30 font-bold uppercase tracking-[0.2em]">{description || 'Analytics Overview'}</p>
                     <div className={`w-10 h-1 rounded-full bg-muted overflow-hidden`}>
                         <div className={`h-full bg-${colorBase}-500/30 w-1/4 group-hover:w-full transition-all duration-1000 ease-out`} />
                     </div>
@@ -391,7 +391,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                     color="bg-primary"
                     active={quickFilter === 'All'}
                     onClick={() => setQuickFilter('All')}
-                    description="Institutional registry total"
+                    description="Total school records"
                 />
                 <KPICard
                     title="Active Stream"
@@ -429,7 +429,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                     <div className="mx-10 mt-10 p-5 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-4 text-red-500 animate-in slide-in-from-top-2">
                         <AlertTriangleIcon className="w-6 h-6 shrink-0" />
                         <div className="space-y-1">
-                            <p className="text-xs font-black uppercase tracking-widest">Registry Protocol Error</p>
+                            <p className="text-xs font-black uppercase tracking-widest">Connection Error</p>
                             <p className="text-[11px] font-bold leading-relaxed">{error}</p>
                         </div>
                     </div>
@@ -486,7 +486,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                             <Spinner size="lg" className="text-primary scale-150" />
                             <div className="text-center space-y-2">
                                 <p className="text-[11px] font-black uppercase tracking-[0.8em] text-foreground animate-pulse">Syncing Unified Matrix</p>
-                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">Identity Handshake in progress</p>
+                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">Verification in progress</p>
                             </div>
                         </div>
                     ) : paginatedData.length === 0 ? (
@@ -498,7 +498,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                                     <StudentsIcon className="w-16 h-16 text-muted-foreground/10 group-hover:scale-110 transition-transform duration-700" />
                                 </div>
                             </div>
-                            <h3 className="text-4xl font-serif font-black text-foreground uppercase tracking-tighter mb-4 text-center">Registry Dark.</h3>
+                            <h3 className="text-4xl font-serif font-black text-foreground uppercase tracking-tighter mb-4 text-center">No Records.</h3>
                             <p className="text-[11px] font-black text-muted-foreground/40 uppercase tracking-[0.6em] mb-12 text-center">No active student nodes detected in local cluster</p>
                             <button
                                 onClick={() => setIsAddModalOpen(true)}
@@ -520,7 +520,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                                     </th>
                                     <th className="p-8">Guardian Context</th>
                                     <th className="p-8">Placement Status</th>
-                                    <th className="p-8 text-center">Protocol Status</th>
+                                    <th className="p-8 text-center">Status</th>
                                     <th className="p-8 text-right pr-12">Operations</th>
                                 </tr>
                             </thead>

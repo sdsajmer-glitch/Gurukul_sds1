@@ -68,7 +68,7 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
                 setError(data?.error || "Invalid or expired protocol token.");
             }
         } catch (err: any) {
-            console.error("Identity Handshake Error:", err);
+            console.error("Verification Error:", err);
             setError(formatError(err));
         } finally {
             setVerifying(false);
@@ -88,7 +88,7 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
             // to prevent "Invalid admission ID" errors.
             const admissionId = verifiedData.admission_id || (verifiedData as any).enquiry_id;
 
-            console.log("Handshake Trace:", {
+            console.log("Trace:", {
                 code_type: verifiedData.code_type,
                 id: verifiedData.id,
                 admission_id: admissionId,
@@ -96,7 +96,7 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
             });
 
             if (!admissionId || typeof admissionId !== 'string') {
-                console.error("Identity Handshake Failure: admission_id is missing or invalid in verifiedData:", verifiedData);
+                console.error("Verification Failure: admission_id is missing or invalid in verifiedData:", verifiedData);
                 throw new Error('Identity Violation: Missing or invalid node ID in protocol payload.');
             }
 
@@ -141,7 +141,7 @@ const CodeVerificationTab: React.FC<CodeVerificationTabProps> = ({ branchId, onN
                     </div>
                 </div>
                 <h2 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tighter uppercase mb-4">Quick <span className="text-white/20 italic">Verification.</span></h2>
-                <p className="text-white/40 text-lg md:text-xl max-w-2xl mx-auto font-medium italic">Resolve identity handshakes using secure cryptographic tokens.</p>
+                <p className="text-white/40 text-lg md:text-xl max-w-2xl mx-auto font-medium italic">Verify identity using secure official tokens.</p>
             </div>
 
             <div className="max-w-2xl mx-auto px-4">

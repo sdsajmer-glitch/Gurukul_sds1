@@ -385,7 +385,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
         }
     };
 
-    const handleFinalizeHandshake = async () => {
+    const handleFinalizeRegistration = async () => {
         setLoading(true);
         try {
             await onSave();
@@ -449,7 +449,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                                 </div>
                             )}
 
-                            {/* Privacy Handshake / Consent Checkpoint */}
+                            {/* Privacy Consent / Checkpoint */}
                             <div className={clsx(
                                 "p-6 md:p-8 rounded-[2rem] border transition-all duration-700 relative overflow-hidden group/consent",
                                 isConsentActive
@@ -712,7 +712,7 @@ const ChildRegistrationModal: React.FC<ChildRegistrationModalProps> = ({ child, 
                             </p>
                         </div>
                         <button
-                            onClick={handleFinalizeHandshake}
+                            onClick={handleFinalizeRegistration}
                             className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-widest text-white transition-all"
                         >
                             Close Protocol

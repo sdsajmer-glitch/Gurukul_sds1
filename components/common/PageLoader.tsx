@@ -11,10 +11,10 @@ const BOOT_LOGS = [
     "Establishing secure institutional node...",
     "Synchronizing identity matrix...",
     "Decrypting governance protocols...",
-    "Resolving administrative node hierarchy...",
+    "Loading school structure...",
     "Initializing high-fidelity analytics...",
     "Securing encrypted data streams...",
-    "Verifying institutional handshake..."
+    "Verifying secure connection..."
 ];
 
 const PageLoader: React.FC<PageLoaderProps> = ({ label, sublabel }) => {
@@ -115,7 +115,7 @@ const PageLoader: React.FC<PageLoaderProps> = ({ label, sublabel }) => {
                     <div className="flex items-center gap-4">
                         <span className="text-[8px] font-mono font-black text-white/10 uppercase tracking-[0.4em]">Node Cluster: 24.2.5</span>
                         <div className="w-1 h-1 rounded-full bg-white/5"></div>
-                        <span className="text-[8px] font-mono font-black text-white/10 uppercase tracking-[0.4em]">Status: HANDSHAKE_OK</span>
+                        <span className="text-[8px] font-mono font-black text-white/10 uppercase tracking-[0.4em]">Status: CONNECTION_OK</span>
                     </div>
                 </div>
             </motion.div>

@@ -76,7 +76,7 @@ const AcademicControlPanel: React.FC<AcademicControlPanelProps> = ({
                             <div className="flex justify-between items-baseline px-2">
                                 <h5 className="text-5xl font-serif font-black text-white">
                                     {workloadHours} <span className="text-2xl text-white/10 ml-2 font-sans font-medium tracking-normal">/ {maxLoad}</span>
-                                    <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.3em] ml-6">Accumulated Node Hours</span>
+                                    <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.3em] ml-6">Accumulated Working Hours</span>
                                 </h5>
                             </div>
                         </div>
@@ -89,7 +89,7 @@ const AcademicControlPanel: React.FC<AcademicControlPanelProps> = ({
                                 <div>
                                     <p className="text-[11px] font-black text-white uppercase tracking-widest mb-1">Risk Profile</p>
                                     <p className="text-[10px] text-white/30 uppercase leading-relaxed font-bold tracking-widest">
-                                        {hasOverload ? 'Burnout risk detected. Reallocation protocol advised.' : 'Node operating within institutional safety margins.'}
+                                        {hasOverload ? 'Burnout risk detected. Workload reallocation advised.' : 'Profiles operating within institutional safety margins.'}
                                     </p>
                                 </div>
                             </div>
@@ -126,7 +126,7 @@ const AcademicControlPanel: React.FC<AcademicControlPanelProps> = ({
                             </div>
                             <div className="flex gap-6 relative z-10">
                                 <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={onAddMapping} className="px-10 py-5 bg-primary text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-3xl shadow-primary/20">Initialize First Map</motion.button>
-                                <button className="px-10 py-5 bg-white/5 text-white/40 font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl hover:bg-white/10 transition-all border border-white/5">Protocol Guidelines</button>
+                                <button className="px-10 py-5 bg-white/5 text-white/40 font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl hover:bg-white/10 transition-all border border-white/5">Guidelines</button>
                             </div>
                         </div>
                     ) : (
@@ -157,7 +157,7 @@ const AcademicControlPanel: React.FC<AcademicControlPanelProps> = ({
                                             <div className="w-1.5 h-1.5 rounded-full bg-white/5" />
                                             <div className="flex items-center gap-2.5">
                                                 <ClockIcon className="w-4 h-4 text-white/20" />
-                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{map.credits || 4} Node_Hrs</span>
+                                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{map.credits || 4} Hrs/Week</span>
                                             </div>
                                         </div>
                                     </div>

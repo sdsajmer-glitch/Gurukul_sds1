@@ -78,11 +78,11 @@ const AdmissionsTab: React.FC<{ branchId?: number | null, onNavigate?: (comp: st
                 <div>
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-                        <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Integrated Lifecycle Registry</span>
+                        <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em]">Official Records</span>
                     </div>
-                    <h2 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tighter uppercase leading-none">Admission <span className="opacity-20 font-light italic">Vault.</span></h2>
+                    <h2 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tighter uppercase leading-none">Admissions.</h2>
                     <p className="text-white/40 text-sm md:text-lg mt-6 italic font-serif leading-relaxed border-l border-white/10 pl-6 max-w-xl">
-                        Operational intelligence for promoted identities and formal enrollment nodes.
+                        Manage student admissions and enrollment records.
                     </p>
                 </div>
                 <button
@@ -102,7 +102,7 @@ const AdmissionsTab: React.FC<{ branchId?: number | null, onNavigate?: (comp: st
                             <p className="text-sm font-bold text-red-200/70 mt-1">{fetchError}</p>
                         </div>
                     </div>
-                    <button onClick={fetchApplicants} className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95">Retry Protocol</button>
+                    <button onClick={fetchApplicants} className="px-6 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95">Retry</button>
                 </div>
             )}
 
@@ -117,7 +117,7 @@ const AdmissionsTab: React.FC<{ branchId?: number | null, onNavigate?: (comp: st
                         >
                             <FilterIcon className="w-4 h-4 text-white/20 group-hover:text-primary transition-colors" />
                             <span className="text-[11px] font-black uppercase text-white/60 tracking-[0.2em] flex-grow text-left">
-                                {filterStatus === 'All' ? 'GLOBAL ROSTER' : filterStatus}
+                                {filterStatus === 'All' ? 'VIEW ALL' : filterStatus}
                             </span>
                             <ChevronDownIcon className={`w-4 h-4 text-white/20 transition-transform duration-500 ${isFilterOpen ? 'rotate-180 text-primary' : ''}`} />
                         </button>
@@ -136,20 +136,20 @@ const AdmissionsTab: React.FC<{ branchId?: number | null, onNavigate?: (comp: st
                                             onClick={() => { setFilterStatus(status); setIsFilterOpen(false); }}
                                             className={`w-full text-left px-6 py-4 rounded-[1.2rem] text-[10px] font-black uppercase tracking-[0.3em] transition-all ${filterStatus === status ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-white/20 hover:text-white hover:bg-white/5'}`}
                                         >
-                                            {status === 'All' ? 'FULL LEDGER' : status === 'Approved' ? 'ADMITTED' : status}
+                                            {status === 'All' ? 'ALL RECORDS' : status === 'Approved' ? 'ADMITTED' : status}
                                         </button>
                                     ))}
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
-                    <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.4em]">{filteredApps.length} Identities Identified</span>
+                    <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.4em]">{filteredApps.length} Records Found</span>
                 </div>
 
                 {loading ? (
                     <div className="flex flex-col justify-center items-center py-40 gap-6">
                         <Spinner size="lg" className="text-primary" />
-                        <p className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em] animate-pulse">Syncing Lifecycle Ledger</p>
+                        <p className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em] animate-pulse">Syncing Database...</p>
                     </div>
                 ) : filteredApps.length === 0 && !fetchError ? (
                     <div className="py-40 text-center flex flex-col items-center gap-8 animate-in fade-in duration-1000">
@@ -157,9 +157,9 @@ const AdmissionsTab: React.FC<{ branchId?: number | null, onNavigate?: (comp: st
                             <DocumentTextIcon className="w-10 h-10 text-white/5" />
                         </div>
                         <div className="max-w-sm mx-auto">
-                            <h3 className="text-xl font-serif font-black text-white/20 uppercase tracking-widest mb-4">Registry <span className="italic opacity-50">Standby.</span></h3>
+                            <h3 className="text-xl font-serif font-black text-white/20 uppercase tracking-widest mb-4">No Records Found</h3>
                             <p className="text-xs text-white/10 leading-relaxed italic font-serif">
-                                No records matched the current protocol filters. Verify an <strong className="text-white/30">Admission Code</strong> in Quick Verification to Provision new nodes.
+                                No records matched the current filters. Verify an <strong className="text-white/30">Admission Code</strong> in Quick Verification to add new records.
                             </p>
                         </div>
                     </div>
@@ -168,10 +168,10 @@ const AdmissionsTab: React.FC<{ branchId?: number | null, onNavigate?: (comp: st
                         <table className="w-full text-left text-sm min-w-[900px]">
                             <thead className="bg-[#0c0d12]/40 text-[10px] font-black uppercase text-white/20 tracking-[0.3em] border-b border-white/[0.03]">
                                 <tr>
-                                    <th className="p-10 pl-14">Identity Node</th>
-                                    <th className="p-10">Registry Pulse</th>
-                                    <th className="p-10">Lifecycle Status</th>
-                                    <th className="p-10 text-right pr-14">Administrative Protocols</th>
+                                    <th className="p-10 pl-14">Student</th>
+                                    <th className="p-10">Date Recorded</th>
+                                    <th className="p-10">Status</th>
+                                    <th className="p-10 text-right pr-14">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/[0.02] relative z-10">
@@ -191,7 +191,7 @@ const AdmissionsTab: React.FC<{ branchId?: number | null, onNavigate?: (comp: st
                                                 <div className="min-w-0">
                                                     <p className="font-serif font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors text-[20px] leading-none mb-2">{app.applicant_name}</p>
                                                     <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] flex items-center gap-2">
-                                                        <span className="bg-white/5 px-2 py-0.5 rounded border border-white/5">Grade {app.grade} Node</span>
+                                                        <span className="bg-white/5 px-2 py-0.5 rounded border border-white/5">Grade {app.grade}</span>
                                                         {app.application_number && <span className="text-white/10 font-mono tracking-tighter">[{app.application_number}]</span>}
                                                     </p>
                                                 </div>
@@ -203,7 +203,7 @@ const AdmissionsTab: React.FC<{ branchId?: number | null, onNavigate?: (comp: st
                                                     <ClockIcon className="w-4 h-4 opacity-30" />
                                                     {new Date(app.registered_at || app.submitted_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
                                                 </div>
-                                                <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.2em] pl-7">Identity Recorded</span>
+                                                <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.2em] pl-7">Date Recorded</span>
                                             </div>
                                         </td>
                                         <td className="p-10">

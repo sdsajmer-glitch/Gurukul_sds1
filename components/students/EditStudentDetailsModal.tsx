@@ -532,10 +532,10 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 <ShieldCheckIcon className="w-4 h-4" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Restricted Access Protocol</p>
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Restricted Access</p>
                                 <p className="text-[11px] text-white/40 leading-relaxed font-medium">
                                     Your institutional role permits viewing the full profile.
-                                    However, modifications are restricted to <b>Enrollment Status</b> to ensure data integrity across the Parent Vault.
+                                    However, modifications are restricted to <b>Enrollment Status</b> to ensure data integrity across the Parent Records.
                                 </p>
                             </div>
                         </div>
@@ -552,7 +552,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                         </motion.div>
                     )}
 
-                    {/* Photo Management Protocol */}
+                    {/* Photo Management */}
                     <div className="flex flex-col items-center justify-center space-y-6 pb-4">
                         <div className="relative group/photo">
                             <motion.div
@@ -564,7 +564,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 ) : (
                                     <div className="flex flex-col items-center text-indigo-400/20 group-hover/photo:text-indigo-400/40 transition-colors">
                                         <CameraIcon className="w-12 h-12 mb-3" />
-                                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">No Identity Artifact</span>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">No Identity Document</span>
                                     </div>
                                 )}
                                 {uploading && (
@@ -629,7 +629,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 </div>
                             </div>
 
-                            <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} readOnly={isSchoolAdmin} placeholder={isSchoolAdmin ? "Protocol Missing" : "Legal Name"} />
+                            <FloatingInput label="Full Name" name="display_name" value={formData.display_name} onChange={handleChange} required icon={<UserIcon className="w-4 h-4" />} readOnly={isSchoolAdmin} placeholder={isSchoolAdmin ? "Not Provided" : "Legal Name"} />
                             <FloatingInput label="Student ID" name="student_id_number" value={formData.student_id_number} onChange={handleChange} icon={<div className="font-black text-[9px] border border-current rounded-sm px-1">SID</div>} readOnly={isSchoolAdmin} placeholder={isSchoolAdmin ? "Unassigned" : "SID-XXXX-XXXX"} />
 
                             <FloatingInput label="Grade / Class" name="grade" value={formData.grade} onChange={handleChange} required icon={<div className="font-black text-[9px]">G / C</div>} readOnly={isSchoolAdmin} placeholder={isSchoolAdmin ? "Not Placed" : "e.g. 10"} />
@@ -803,7 +803,7 @@ const EditStudentDetailsModal: React.FC<EditStudentDetailsModalProps> = ({ stude
                                 icon={<UsersIcon className="w-4 h-4" />}
                                 isLoading={isFetchingParent && !formData.parent_guardian_details}
                                 isAutoFilled={autoFilledFields.has('parent_guardian_details')}
-                                source={autoFilledFields.has('parent_guardian_details') ? (parentData?.found ? 'Parent Vault' : 'Registry') : undefined}
+                                source={autoFilledFields.has('parent_guardian_details') ? (parentData?.found ? 'Parent Records' : 'Registry') : undefined}
                                 readOnly={isSchoolAdmin}
                                 placeholder={isSchoolAdmin ? "Initializing Link..." : "Primary Guardian Name"}
                             />

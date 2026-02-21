@@ -19,7 +19,7 @@ const steps = [
         color: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400",
         items: [
             { id: 1, title: 'Master Architect', desc: 'Define grade-specific fee structures with periodic components.', icon: <BookIcon className="w-5 h-5" /> },
-            { id: 2, title: 'Ledger Handshake', desc: 'Assign structures to student nodes to initialize their debt registry.', icon: <KeyIcon className="w-5 h-5" /> },
+            { id: 2, title: 'Fee Setup', desc: 'Assign structures to student profiles to initialize their account.', icon: <KeyIcon className="w-5 h-5" /> },
         ]
     },
     {
@@ -63,7 +63,7 @@ const FinanceWorkflowGuide: React.FC<FinanceWorkflowGuideProps> = ({ onClose }) 
                             </div>
                             <h2 className="text-4xl font-serif font-black text-white tracking-tighter uppercase leading-none">EQUILIBRIUM <span className="text-white/20 italic">PROTOCOL.</span></h2>
                         </div>
-                        <p className="text-white/40 font-medium font-serif italic text-xl leading-relaxed max-w-2xl">End-to-End Institutional Capital Orchestration & Forensic Security Framework.</p>
+                        <p className="text-white/40 font-medium font-serif italic text-xl leading-relaxed max-w-2xl">End-to-End School Capital Management & Security Framework.</p>
                     </div>
                     <button
                         onClick={onClose}

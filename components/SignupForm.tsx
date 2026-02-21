@@ -16,7 +16,7 @@ interface SignupFormProps {
 /**
  * FIX: Use 'SignupFormProps' as the generic type for React.FC instead of 'SignupForm' 
  * to resolve the "refers to a value, but is being used as a type" error.
- * The component is now fully implemented with logic for identity provisioning via Supabase.
+ * The component is now fully implemented with logic for account creation via Supabase.
  */
 const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) => {
     const [displayName, setDisplayName] = useState('');
@@ -50,7 +50,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
 
             onSuccess(email);
         } catch (err: any) {
-            setError("Provisioning Protocol Failure: " + formatError(err));
+            setError("Signup Failed: " + formatError(err));
             setLoading(false);
         }
     };

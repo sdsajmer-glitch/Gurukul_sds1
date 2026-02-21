@@ -24,7 +24,7 @@ const SentimentRegistry: React.FC = () => {
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center px-4 mb-2">
-                <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Sentiment Registry</h3>
+                <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Student Feedback</h3>
                 <div className="flex gap-4">
                     <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Positive</span>
                     <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Critical</span>

@@ -322,7 +322,7 @@ export default function ShareCodesTab() {
                                             onClick={() => handleShareCode(generatedCode)}
                                             className="flex-1 py-4 rounded-xl text-xs font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white transition-all flex items-center justify-center gap-3 border border-white/10"
                                         >
-                                            <ShareIcon className="w-5 h-5" /> Share Protocol
+                                            <ShareIcon className="w-5 h-5" /> Share Code
                                         </button>
                                     </div>
                                     <p className="text-[9px] text-white/10 text-center mt-8 uppercase tracking-[0.2em] font-black italic">Temporal Validity: 24 Hours • Atomic Single Use</p>

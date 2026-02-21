@@ -93,7 +93,7 @@ const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ onRefresh, branchId
         setIsProcessing(true);
         try {
             const { data: userData } = await supabase.auth.getUser();
-            if (!userData.user) throw new Error("Security credentials node lost.");
+            if (!userData.user) throw new Error("Authentication error: Please log in again.");
 
             const { error: rpcError } = await supabase.rpc('admin_audit_expense', {
                 p_expense_id: confirmAction.id,
@@ -121,18 +121,18 @@ const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ onRefresh, branchId
             <header className="mb-24 flex flex-col md:flex-row justify-between items-start md:items-end gap-12 relative">
                 <div className="space-y-8">
                     <h1 className="text-8xl md:text-[12rem] font-black text-white/[0.01] tracking-tighter uppercase leading-none select-none absolute -top-20 -left-12 pointer-events-none">
-                        REGISTRY
+                        EXPENSES
                     </h1>
                     <div className="relative z-10">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
-                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Capital Control Module</span>
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em]">Expense Module</span>
                         </div>
                         <h2 className="text-6xl md:text-8xl font-serif font-black text-white tracking-tighter uppercase leading-[0.85]">
-                            Expenditure <span className="text-white/20 italic font-medium lowercase">Nexus.</span>
+                            Expense <span className="text-white/20 italic font-medium lowercase">dashboard.</span>
                         </h2>
                         <p className="text-sm md:text-xl text-white/40 font-medium font-serif italic mt-8 border-l-2 border-primary/20 pl-10 max-w-2xl leading-relaxed">
-                            Institutional high-fidelity spend tracking, synchronized approval logic, and forensic audit confidence for the modern academy.
+                            Track school expenses, manage approvals, and maintain accurate financial records.
                         </p>
                     </div>
                 </div>
@@ -142,7 +142,7 @@ const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ onRefresh, branchId
                         onClick={() => setIsAddModalOpen(true)}
                         className="relative flex-grow md:flex-none h-20 px-16 bg-primary text-white font-black text-[12px] uppercase tracking-[0.4em] rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(var(--primary),0.6)] hover:bg-[#8B5CF6] transition-all transform active:scale-95 flex items-center justify-center gap-5 ring-[12px] ring-primary/5 group overflow-hidden border border-white/10"
                     >
-                        <PlusIcon className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" /> Record Payload
+                        <PlusIcon className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" /> Record Expense
                         <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 overflow-hidden"><motion.div className="h-full bg-white/40" animate={{ x: ['-100%', '100%'] }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }} /></div>
                     </button>
                 </div>
@@ -155,7 +155,7 @@ const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ onRefresh, branchId
                     <SearchIcon className="absolute left-10 top-1/2 -translate-y-1/2 h-7 w-7 text-white/10 group-focus-within/search:text-primary transition-all duration-700" />
                     <input
                         type="text"
-                        placeholder="SEARCH_DISBURSEMENTS_OR_IDENTIFIERS..."
+                        placeholder="SEARCH EXPENSES OR VENDORS..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value.toUpperCase())}
                         className="w-full h-24 pl-24 pr-10 bg-black/40 border border-white/5 rounded-[2.5rem] text-[15px] font-black text-white focus:bg-black/60 focus:ring-[15px] focus:ring-primary/5 outline-none transition-all placeholder:text-white/5 tracking-[0.3em] font-mono shadow-inner uppercase"
@@ -169,7 +169,7 @@ const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ onRefresh, branchId
                             onChange={e => setFilterCategory(e.target.value)}
                             className="h-24 px-12 bg-black/60 border border-white/5 rounded-[2rem] text-[10px] font-black uppercase text-white/30 focus:text-primary outline-none cursor-pointer tracking-[0.4em] shadow-2xl transition-all hover:bg-black w-full min-w-[240px] appearance-none"
                         >
-                            <option value="All" className="bg-[#0c0d12]">All_Categories</option>
+                            <option value="All" className="bg-[#0c0d12]">All Categories</option>
                             {categories.map(c => <option key={c.id} value={c.id} className="bg-[#0c0d12]">{c.name.toUpperCase()}</option>)}
                         </select>
                         <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none text-white/10 group-focus-within/cat:text-primary transition-colors">
@@ -183,10 +183,10 @@ const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ onRefresh, branchId
                             onChange={e => setFilterStatus(e.target.value)}
                             className="h-24 px-12 bg-black/60 border border-white/5 rounded-[2rem] text-[10px] font-black uppercase text-white/30 focus:text-primary outline-none cursor-pointer tracking-[0.4em] shadow-2xl transition-all hover:bg-black w-full min-w-[240px] appearance-none"
                         >
-                            <option value="All" className="bg-[#0c0d12]">Active_Roster</option>
-                            <option value="Pending" className="bg-[#0c0d12]">Queue:Pending</option>
-                            <option value="Approved" className="bg-[#0c0d12]">Vault:Approved</option>
-                            <option value="Rejected" className="bg-[#0c0d12]">Flagged_Nodes</option>
+                            <option value="All" className="bg-[#0c0d12]">All Statuses</option>
+                            <option value="Pending" className="bg-[#0c0d12]">Pending</option>
+                            <option value="Approved" className="bg-[#0c0d12]">Approved</option>
+                            <option value="Rejected" className="bg-[#0c0d12]">Rejected</option>
                         </select>
                         <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none text-white/10 group-focus-within/status:text-primary transition-colors">
                             <ChevronDownIcon className="w-5 h-5" />
@@ -204,8 +204,8 @@ const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ onRefresh, branchId
                             <Spinner size="lg" className="text-primary" />
                         </div>
                         <div className="space-y-4">
-                            <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tighter">Establishing Connectivity</h4>
-                            <p className="text-white/10 text-[10px] font-black uppercase tracking-[0.8em] animate-pulse">Synchronizing Capital Ledger...</p>
+                            <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tighter">Loading Expenses</h4>
+                            <p className="text-white/10 text-[10px] font-black uppercase tracking-[0.8em] animate-pulse">Synchronizing records...</p>
                         </div>
                     </div>
                 ) : filteredExpenses.length === 0 ? (
@@ -214,8 +214,8 @@ const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ onRefresh, branchId
                             <ClockIcon className="w-20 h-20 text-white/5" />
                         </div>
                         <div className="space-y-6">
-                            <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter">Registry Standby</h3>
-                            <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/20">No matching capital nodes found in current cycle</p>
+                            <h3 className="text-4xl font-serif font-black text-white uppercase tracking-tighter">No Expenses Found</h3>
+                            <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/20">No matching expenses found in current cycle.</p>
                         </div>
                     </div>
                 ) : (
@@ -293,11 +293,11 @@ const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ onRefresh, branchId
                         isOpen={!!confirmAction}
                         onClose={() => setConfirmAction(null)}
                         onConfirm={handleExecuteAudit}
-                        title={confirmAction.status === 'Approved' ? 'Authorize Sync' : 'Flag Payload'}
+                        title={confirmAction.status === 'Approved' ? 'Approve Expense' : 'Reject Expense'}
                         message={confirmAction.status === 'Approved' ?
-                            "Confirming this transaction will synchronize the capital magnitude with the general ledger. This action is immutable." :
-                            "Flagging this entry will remove it from the verification queue and alert the reporting accountant for forensic review."}
-                        confirmText={`Execute ${confirmAction.status}`}
+                            "Are you sure you want to approve this expense? This action cannot be undone." :
+                            "Are you sure you want to reject this expense? It will be sent back for review."}
+                        confirmText={confirmAction.status}
                         variant={confirmAction.status === 'Approved' ? 'primary' : 'destructive'}
                         loading={isProcessing}
                     />

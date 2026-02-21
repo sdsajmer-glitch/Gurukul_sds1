@@ -319,7 +319,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
         <div className="min-h-screen bg-black flex items-center justify-center">
             <div className="flex flex-col items-center gap-6">
                 <Spinner />
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.6em] animate-pulse">Synchronizing Student Nodes...</p>
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.6em] animate-pulse">Loading Profile...</p>
             </div>
         </div>
     );
@@ -339,8 +339,8 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     <AlertTriangleIcon className="w-10 h-10 text-red-500 animate-pulse" />
                 </div>
 
-                <h2 className="text-[10px] font-black text-red-500 uppercase tracking-[0.8em] mb-6">Critical System Desync</h2>
-                <h3 className="text-4xl lg:text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-10">Registry Conflict</h3>
+                <h2 className="text-[10px] font-black text-red-500 uppercase tracking-[0.8em] mb-6">Database Conflict</h2>
+                <h3 className="text-4xl lg:text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none mb-10">Error Detected</h3>
 
                 <div className="bg-black/40 border border-white/5 rounded-[2rem] p-10 mb-10 text-left relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-6 opacity-[0.03]">
@@ -389,13 +389,13 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         onClick={() => window.location.reload()}
                         className="w-full sm:w-auto px-12 py-5 bg-white text-black hover:bg-red-500 hover:text-white transition-all rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95"
                     >
-                        Retry Protocol
+                        Retry
                     </button>
                     <button
                         onClick={onBack}
                         className="w-full sm:w-auto px-12 py-5 bg-white/5 border border-white/5 text-white/40 hover:text-white transition-all rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.4em]"
                     >
-                        Abort Handshake
+                        Cancel
                     </button>
                 </div>
             </motion.div>
@@ -420,12 +420,12 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:bg-white/10 group-hover:border-white/20 transition-all">
                             <ArrowRightIcon className="w-5 h-5 rotate-180" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em]">Registry Exit</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em]">Back</span>
                     </button>
 
                     <div className="flex items-center gap-6 relative">
                         <div className="text-right hidden sm:block">
-                            <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">Observation Plane</p>
+                            <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">Academic Year</p>
                             <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">{accountData.cycle_name || 'LOADING_CYCLE...'}</p>
                         </div>
                         <button
@@ -502,28 +502,28 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     </div>
                 </div>
 
-                {/* Layer 2 – Registry KPIs Cluster */}
+                {/* Layer 2 – KPI Cluster */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard
-                        title="Total Liability"
+                        title="Total Billed"
                         value={formatCurrency(totalAssigned, viewCurrency)}
                         icon={<ActivityIcon className="w-6 h-6" />}
                         variant="neutral"
                     />
                     <StatCard
-                        title="Settled Capital"
+                        title="Total Paid"
                         value={formatCurrency(totalPaid, viewCurrency)}
                         icon={<ShieldCheckIcon className="w-6 h-6" />}
                         variant="success"
                     />
                     <StatCard
-                        title="Total Arrears"
+                        title="Outstanding Balance"
                         value={formatCurrency(outstanding, viewCurrency)}
                         icon={<AlertTriangleIcon className="w-6 h-6" />}
                         variant={outstanding > 0 ? "warning" : "success"}
                     />
                     <StatCard
-                        title="Next Due Magnitude"
+                        title="Next Due Amount"
                         value={accountData.next_due_amount ? formatCurrency(accountData.next_due_amount, viewCurrency) : '---'}
                         subValue={accountData.next_due_date ? `Due: ${new Date(accountData.next_due_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}` : 'Settled'}
                         icon={<CreditCardIcon className="w-6 h-6" />}
@@ -542,11 +542,11 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         <div className="flex justify-between items-start mb-12 relative z-10">
                             <div>
                                 <div className="flex items-center gap-3 mb-2">
-                                    <span className="px-2.5 py-0.5 bg-primary/10 text-primary text-[8px] font-black uppercase tracking-[0.2em] rounded border border-primary/20">Protocol Node</span>
-                                    <span className="text-[9px] text-white/10 font-black uppercase tracking-[0.3em]">Institutional Deployment</span>
+                                    <span className="px-2.5 py-0.5 bg-primary/10 text-primary text-[8px] font-black uppercase tracking-[0.2em] rounded border border-primary/20">Settings</span>
+                                    <span className="text-[9px] text-white/10 font-black uppercase tracking-[0.3em]">Assigned Structure</span>
                                 </div>
                                 <h3 className="text-5xl font-serif font-black text-white uppercase tracking-tighter leading-none group-hover:text-primary transition-colors duration-500">
-                                    {assignedStructure?.name || 'UNINITIALIZED_PROTOCOL'}
+                                    {assignedStructure?.name || 'NO_STRUCTURE_ASSIGNED'}
                                 </h3>
                             </div>
                             <div className="text-right">
@@ -574,9 +574,9 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                     <div className="w-20 h-20 bg-white/[0.03] rounded-3xl border border-white/5 flex items-center justify-center mb-8 shadow-inner group-hover/init:scale-110 transition-transform duration-700">
                                         <BookIcon className="w-10 h-10 text-white/10 group-hover/init:text-primary transition-colors duration-500" />
                                     </div>
-                                    <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight mb-4 group-hover/init:text-primary transition-colors">Protocol Not Linked</h4>
+                                    <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight mb-4 group-hover/init:text-primary transition-colors">No Fee Structure Assigned</h4>
                                     <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] leading-relaxed mb-10">
-                                        This student node is currently in standby. Initialize the fee structure to map institutional data based on their current grade profile.
+                                        This student is currently unassigned. Initialize the fee structure to map fees based on their current grade.
                                     </p>
                                     <button
                                         onClick={handleMapGenesisProtocol}
@@ -585,11 +585,11 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                     >
                                         {mappingInProgress ? (
                                             <span className="flex items-center gap-3">
-                                                <RefreshCwIcon className="w-4 h-4 animate-spin" /> SYNCHRONIZING_MATRIX...
+                                                <RefreshCwIcon className="w-4 h-4 animate-spin" /> INITIALIZING...
                                             </span>
                                         ) : (
                                             <span className="flex items-center gap-3">
-                                                INITIALIZE PROTOCOL <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                                                INITIALIZE FEES <ArrowRightIcon className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
                                             </span>
                                         )}
                                     </button>
@@ -623,9 +623,9 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         <div className="mt-10 pt-8 border-t border-white/5 flex justify-between items-center relative z-10">
                             <div className="flex gap-12">
                                 <div className="space-y-1">
-                                    <p className="text-[8px] font-black text-white/10 uppercase tracking-widest">Registry Status</p>
+                                    <p className="text-[8px] font-black text-white/10 uppercase tracking-widest">Status</p>
                                     <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${accountData.is_standby ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                        {accountData.is_standby ? 'STANDBY_MODE' : 'SYNCHRONIZED'}
+                                        {accountData.is_standby ? 'UNASSIGNED' : 'ACTIVE'}
                                     </p>
                                 </div>
                                 {assignedStructure && (
@@ -635,12 +635,12 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                         className="flex items-center gap-3 text-[9px] font-black text-white/20 hover:text-primary transition-all uppercase tracking-widest group/remap"
                                     >
                                         <RefreshCwIcon className={`w-3.5 h-3.5 group-hover/remap:rotate-180 transition-transform ${mappingInProgress ? 'animate-spin' : ''}`} />
-                                        REMAP MATRIX
+                                        UPDATE FEES
                                     </button>
                                 )}
                             </div>
                             <div className="flex items-center gap-6">
-                                <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Matrix: <span className="text-white/40 select-all">FULL MATRIX</span></p>
+                                <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.4em]">Status: <span className="text-white/40 select-all">ASSIGNED</span></p>
                                 <ArrowRightIcon className="w-4 h-4 text-white/10" />
                             </div>
                         </div>
@@ -654,8 +654,8 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
 
                         <div className="relative z-10 flex flex-col h-full">
                             <div className="mb-10">
-                                <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Financial Velocity Flow</h4>
-                                <p className="text-[9px] font-black text-primary/40 uppercase tracking-[0.4rem] mt-3">Active Reconciliation Trajectory</p>
+                                <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tight">Payment Flow</h4>
+                                <p className="text-[9px] font-black text-primary/40 uppercase tracking-[0.4rem] mt-3">Current Status</p>
                             </div>
 
                             <div className="flex-1 space-y-10 relative">
@@ -683,7 +683,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
 
                             <div className="mt-12 p-6 bg-white/[0.02] border border-white/5 rounded-[2rem]">
                                 <div className="flex justify-between items-center mb-4">
-                                    <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Collection Velocity</p>
+                                    <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Recovery Rate</p>
                                     <p className="text-xl font-serif font-black text-emerald-500 italic leading-none">{recoveryRate.toFixed(1)}%</p>
                                 </div>
                                 <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
@@ -712,7 +712,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                     <div className="p-3.5 bg-primary rounded-2xl text-white shadow-2xl ring-1 ring-white/10 group-hover:bg-white group-hover:text-primary transition-all duration-500">
                                         <SparklesIcon className="w-5 h-5" />
                                     </div>
-                                    <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight leading-none">Financial Intelligence Oracle</h3>
+                                    <h3 className="text-2xl font-serif font-black text-white uppercase tracking-tight leading-none">Financial Insights</h3>
                                 </div>
                                 <p className="text-2xl font-serif italic text-white/90 leading-tight tracking-tight border-l-2 border-primary/30 pl-8 transition-colors group-hover:text-white">
                                     {aiInsight}
@@ -729,8 +729,8 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         <div className="relative z-10 flex flex-col h-full justify-between">
                             <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <h4 className="text-xl font-serif font-black text-white uppercase tracking-tight">Institutional Integrity Node</h4>
-                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Index Analysis</p>
+                                    <h4 className="text-xl font-serif font-black text-white uppercase tracking-tight">Account Health</h4>
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-2">Score</p>
                                 </div>
                                 <div className="text-6xl font-serif font-black text-emerald-500 tabular-nums">
                                     {accountData.integrity_score}%
@@ -742,8 +742,8 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                     <p className="text-sm font-serif font-black text-white uppercase">{accountData.integrity_score > 80 ? 'HIGH' : 'MODERATE'}</p>
                                 </div>
                                 <div className="bg-white/[0.03] border border-white/5 p-6 rounded-2xl space-y-1 group-hover:bg-white/[0.05] transition-all">
-                                    <p className="text-[8px] font-black text-primary/60 uppercase tracking-widest leading-none">Protocol</p>
-                                    <p className="text-sm font-serif font-black text-white uppercase">ACTIVE_PROTOCOL</p>
+                                    <p className="text-[8px] font-black text-primary/60 uppercase tracking-widest leading-none">Structure</p>
+                                    <p className="text-sm font-serif font-black text-white uppercase">ACTIVE</p>
                                 </div>
                             </div>
                         </div>
@@ -755,10 +755,10 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                     <div className="p-10 lg:p-14 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
                         <div className="group/title">
                             <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tight group-hover/title:text-primary transition-colors flex items-center gap-4">
-                                Deep Ledger Registry
+                                Payment History
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                             </h3>
-                            <p className="text-[10px] font-black text-white/25 uppercase tracking-[0.5em] mt-3">Full Transactional Audit & Historical Vector Stream</p>
+                            <p className="text-[10px] font-black text-white/25 uppercase tracking-[0.5em] mt-3">Complete record of transactions</p>
                         </div>
                         <div className="flex gap-4 w-full md:w-auto">
                             <div className="relative group flex-1">
@@ -771,7 +771,7 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                                     className="pl-14 pr-8 py-4 bg-black/40 border border-white/5 rounded-2xl text-[10px] font-black text-white outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 uppercase tracking-widest transition-all w-full md:w-64"
                                 />
                             </div>
-                            <button className="px-10 py-4 bg-primary text-white hover:bg-white hover:text-black transition-all rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl active:translate-y-0.5">Record Settlement</button>
+                            <button onClick={() => setIsPaymentModalOpen(true)} className="px-10 py-4 bg-primary text-white hover:bg-white hover:text-black transition-all rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl active:translate-y-0.5">Record Payment</button>
                         </div>
                     </div>
 
@@ -779,9 +779,9 @@ const StudentFinanceDetailView: React.FC<StudentFinanceDetailViewProps> = ({ stu
                         <table className="w-full text-left whitespace-nowrap">
                             <thead className="bg-black/40 text-[10px] font-black text-white/20 uppercase tracking-[0.4em] border-b border-white/5">
                                 <tr>
-                                    <th className="p-10 pl-14 font-black">Transaction Matrix</th>
-                                    <th className="p-10 font-black">Event Identifier</th>
-                                    <th className="p-10 font-black">Protocol Node</th>
+                                    <th className="p-10 pl-14 font-black">Transaction Details</th>
+                                    <th className="p-10 font-black">Transaction ID</th>
+                                    <th className="p-10 font-black">Status</th>
                                     <th className="p-10 text-right font-black">Debit</th>
                                     <th className="p-10 text-right font-black">Credit</th>
                                     <th className="p-10 text-right pr-14 font-black">Running Balance</th>
