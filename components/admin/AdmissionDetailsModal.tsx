@@ -22,7 +22,6 @@ import { RefreshCwIcon } from '../icons/RefreshCwIcon';
 import StudentProfileModal from '../students/StudentProfileModal';
 import { StudentForAdmin } from '../../types';
 import { ChevronDownIcon } from '../icons/ChevronDownIcon';
-import { AdmissionsListTable } from './AdmissionsListTable';
 import { ENROLLMENT_FIX_SQL } from '../../utils/sqlFixScript';
 import clsx from 'clsx';
 
@@ -54,6 +53,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     const [studentData, setStudentData] = useState<StudentForAdmin | null>(null);
     const [seedingDocs, setSeedingDocs] = useState(false);
     const [activeTab, setActiveTab] = useState<'identity' | 'vault'>('vault');
+    const [showDBErrorPopup, setShowDBErrorPopup] = useState(false);
 
     const isMounted = useRef(true);
     const hasSeeded = useRef(false);

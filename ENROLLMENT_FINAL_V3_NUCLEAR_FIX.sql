@@ -110,6 +110,12 @@ BEGIN
     END IF;
 END $$;
 
+-- ═══ THE ULTIMATE NUCLEAR FIX: CREATE A VIEW FOR ALIASING ═══
+-- This completely prevents the "relation public.fee_structures does not exist"
+-- error by providing a backward-compatible view for ANY missed triggers or functions.
+CREATE OR REPLACE VIEW public.fee_structures AS 
+SELECT * FROM public.finance_fee_structures;
+
 -- ==========================================================================================
 -- PHASE 3: RECONCILIATION ENGINE (REBUILT - Zero legacy table references)
 -- ==========================================================================================
