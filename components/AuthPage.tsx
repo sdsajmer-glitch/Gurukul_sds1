@@ -59,8 +59,7 @@ const AuthPage: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-2xl font-serif font-black tracking-[0.3em] text-white uppercase opacity-100">Universepi</span>
-                            <span className="text-[10px] font-black tracking-[0.5em] text-primary/60 uppercase -mt-1 ml-1">OS Registry</span>
+                            <span className="text-xl font-sans font-bold tracking-wider text-white">Universepi</span>
                         </div>
                     </div>
 
@@ -70,9 +69,9 @@ const AuthPage: React.FC = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         >
-                            <h1 className="text-[5rem] xl:text-[7rem] 2xl:text-[8.5rem] font-serif font-black leading-[0.9] mb-12 tracking-[-0.03em] uppercase text-white">
-                                Unified <br />
-                                <span className="text-white/40 italic font-light tracking-[-0.05em] block translate-x-12">Identity.</span>
+                            <h1 className="text-4xl sm:text-5xl font-sans font-bold leading-tight mb-6 tracking-tight text-white">
+                                Welcome to <br />
+                                <span className="text-white/40 font-light block pr-4">Universepi.</span>
                             </h1>
                         </motion.div>
 
@@ -83,8 +82,8 @@ const AuthPage: React.FC = () => {
                             className="relative"
                         >
                             <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-primary/50 via-primary/20 to-transparent"></div>
-                            <p className="text-xl xl:text-2xl text-text-tertiary leading-relaxed font-serif italic max-w-lg pl-12 tracking-tight">
-                                The high-fidelity administrative operating system for <span className="text-white">next-generation institutional orchestration</span>.
+                            <p className="text-lg xl:text-xl text-text-tertiary leading-relaxed font-sans max-w-lg pl-6">
+                                Manage your school operations in one <span className="text-white">unified platform</span>.
                             </p>
                         </motion.div>
                     </div>
@@ -129,15 +128,15 @@ const AuthPage: React.FC = () => {
                                     <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner border border-emerald-500/20">
                                         <CheckCircleIcon animate className="w-10 h-10" />
                                     </div>
-                                    <h3 className="text-3xl font-serif font-black text-white mb-4 tracking-tighter uppercase leading-none">Identity Provisioned.</h3>
-                                    <p className="text-white/50 mb-10 text-sm leading-relaxed font-serif italic">
-                                        Your node has been initialized. A verification cipher has been dispatched to <strong className="text-white">{userEmail}</strong>.
+                                    <h3 className="text-3xl font-sans font-bold text-white mb-4 tracking-tight">Account Created</h3>
+                                    <p className="text-white/50 mb-10 text-base leading-relaxed font-sans">
+                                        Your account has been successfully set up. A verification email has been sent to <strong className="text-white">{userEmail}</strong>.
                                     </p>
                                     <button
                                         onClick={() => { setSignupSuccess(false); setView('login'); }}
-                                        className="w-full h-14 flex items-center justify-center py-3.5 px-8 rounded-2xl text-[10px] font-black text-white bg-primary hover:bg-primary/90 transition-all transform active:scale-95 uppercase tracking-[0.4em] shadow-xl shadow-primary/20"
+                                        className="w-full h-12 flex items-center justify-center py-3 px-6 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-all transform active:scale-95 shadow-md hover:shadow-lg"
                                     >
-                                        Return to Terminal
+                                        Sign In
                                     </button>
                                 </motion.div>
                             ) : (

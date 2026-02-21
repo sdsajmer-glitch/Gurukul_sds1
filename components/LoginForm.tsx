@@ -57,13 +57,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onForgotPasswor
                         <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                         <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
                     </div>
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Institutional Gateway</span>
+                    <span className="text-xs font-semibold text-white/60 tracking-wider">Secure Access</span>
                 </div>
-                <h2 className="text-[2.75rem] sm:text-5xl font-serif font-black text-white tracking-[-0.02em] leading-none uppercase">
-                    Initialize<span className="text-primary italic">.</span>
+                <h2 className="text-3xl sm:text-4xl font-sans font-bold text-white tracking-tight">
+                    Sign In
                 </h2>
-                <p className="text-text-tertiary text-sm font-medium tracking-tight leading-relaxed max-w-[280px] mx-auto italic font-serif opacity-80">
-                    Access the administrative cluster via your <span className="text-white/60">verified credential node</span>.
+                <p className="text-text-tertiary text-base font-normal max-w-[280px] mx-auto mt-3">
+                    Enter your credentials to access your account.
                 </p>
             </div>
 
@@ -95,20 +95,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onForgotPasswor
                             autoComplete="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="peer block w-full h-[72px] pl-16 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-[3px] focus:ring-primary/20 focus:border-primary/40 focus:bg-white/[0.06] transition-all duration-500 font-sans tracking-wide shadow-inner"
-                            placeholder="Institutional Identity"
+                            className="peer block w-full h-14 pl-14 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-xl text-base text-white placeholder-transparent focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all duration-300 font-sans shadow-sm"
+                            placeholder="Email Address"
                             id="email_input"
                         />
                         <label
                             htmlFor="email_input"
-                            className="absolute left-16 top-1/2 -translate-y-1/2 text-sm font-medium text-white/25 uppercase tracking-[0.1em] peer-placeholder-shown:text-white/20 peer-focus:-top-2 peer-focus:left-6 peer-focus:text-[10px] peer-focus:text-primary peer-focus:font-black peer-focus:tracking-[0.2em] peer-focus:bg-[#12131A] peer-focus:px-2 peer-focus:rounded-md peer-focus:translate-y-0 transition-all duration-500 pointer-events-none"
+                            className="absolute left-14 top-1/2 -translate-y-1/2 text-sm text-text-muted peer-placeholder-shown:text-text-tertiary peer-focus:-top-2 peer-focus:left-4 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-[#0C0D12] peer-focus:px-2 rounded transition-all duration-300 pointer-events-none"
                         >
                             Email Address
                         </label>
-                        {/* Terminology clarification helper */}
-                        <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-0 peer-focus:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
-                            <span className="text-[9px] font-black text-primary/40 uppercase tracking-widest">Identity Node</span>
-                        </div>
                     </div>
 
                     {/* Password Input */}
@@ -123,15 +119,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onForgotPasswor
                             autoComplete="current-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="peer block w-full h-[72px] pl-16 pr-16 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-[3px] focus:ring-primary/20 focus:border-primary/40 focus:bg-white/[0.06] transition-all duration-500 font-sans tracking-widest shadow-inner"
-                            placeholder="Access Cipher"
+                            className="peer block w-full h-14 pl-14 pr-12 bg-white/[0.03] border border-white/[0.08] rounded-xl text-base text-white placeholder-transparent focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all duration-300 font-sans shadow-sm"
+                            placeholder="Password"
                             id="password_input"
                         />
                         <label
                             htmlFor="password_input"
-                            className="absolute left-16 top-1/2 -translate-y-1/2 text-sm font-medium text-white/25 uppercase tracking-[0.1em] peer-placeholder-shown:text-white/20 peer-focus:-top-2 peer-focus:left-6 peer-focus:text-[10px] peer-focus:text-primary peer-focus:font-black peer-focus:tracking-[0.2em] peer-focus:bg-[#12131A] peer-focus:px-2 peer-focus:rounded-md peer-focus:translate-y-0 transition-all duration-500 pointer-events-none"
+                            className="absolute left-14 top-1/2 -translate-y-1/2 text-sm text-text-muted peer-placeholder-shown:text-text-tertiary peer-focus:-top-2 peer-focus:left-4 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-[#0C0D12] peer-focus:px-2 rounded transition-all duration-300 pointer-events-none"
                         >
-                            Access Key
+                            Password
                         </label>
                         <button
                             type="button"
@@ -147,9 +143,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onForgotPasswor
                         <button
                             type="button"
                             onClick={onForgotPassword}
-                            className="text-[10px] font-black text-white/30 hover:text-primary transition-all tracking-[0.15em] uppercase"
+                            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
                         >
-                            Lost Access Key?
+                            Forgot Password?
                         </button>
                     </div>
                 </div>
@@ -158,22 +154,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onForgotPasswor
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-[72px] flex items-center justify-center rounded-2xl shadow-[0_20px_40px_-10px_rgba(139,92,246,0.3)] text-xs font-black text-white bg-primary hover:bg-[#9D5BF0] focus:outline-none focus:ring-[6px] focus:ring-primary/10 transition-all transform hover:-translate-y-1 active:scale-[0.97] disabled:opacity-50 uppercase tracking-[0.4em] relative overflow-hidden group"
+                        className="w-full h-14 flex items-center justify-center rounded-xl shadow-md text-sm font-semibold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-[#0C0D12] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 disabled:hover:translate-y-0"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
                         {loading ? (
                             <Spinner size="md" className="text-white" />
                         ) : (
-                            <span className="flex items-center gap-4">
-                                <LockIcon className="h-4 w-4 opacity-40" />
-                                Confirm Identity Node
+                            <span className="flex items-center gap-2">
+                                Sign In
                             </span>
                         )}
                     </button>
 
                     <div className="flex items-center justify-center gap-3 opacity-30 group-hover:opacity-50 transition-opacity duration-700">
                         <div className="h-px w-8 bg-white/20"></div>
-                        <span className="text-[8px] font-black uppercase tracking-[0.5em] whitespace-nowrap">AES-256 Encrypted & Audited</span>
+                        <span className="text-xs font-medium text-text-muted">Secure Connection</span>
                         <div className="h-px w-8 bg-white/20"></div>
                     </div>
                 </div>
@@ -182,9 +176,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup, onForgotPasswor
             <div className="text-center relative z-10 border-t border-white/[0.03] pt-10">
                 <button
                     onClick={onSwitchToSignup}
-                    className="text-[10px] font-black text-white/25 hover:text-white transition-all tracking-[0.25em] uppercase hover:tracking-[0.35em]"
+                    className="text-sm font-medium text-text-tertiary hover:text-white transition-colors"
                 >
-                    Provision New Access
+                    New here? Create an account
                 </button>
             </div>
         </motion.div>

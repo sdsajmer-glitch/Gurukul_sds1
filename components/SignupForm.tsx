@@ -61,13 +61,13 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
 
             <div className="text-center space-y-4 relative z-10">
                 <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/5 mb-2 backdrop-blur-md">
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Identity Provisioning</span>
+                    <span className="text-xs font-semibold text-white/60 tracking-wider">Join Universepi</span>
                 </div>
-                <h2 className="text-[2.75rem] sm:text-5xl font-serif font-black text-white tracking-[-0.02em] leading-none uppercase">
-                    Provision<span className="text-primary italic">.</span>
+                <h2 className="text-3xl sm:text-4xl font-sans font-bold text-white tracking-tight">
+                    Create Account
                 </h2>
-                <p className="text-text-tertiary text-sm font-medium tracking-tight leading-relaxed max-w-[280px] mx-auto italic font-serif opacity-80">
-                    Initialize your <span className="text-white/60">institutional identity node</span> on the registry.
+                <p className="text-text-tertiary text-base font-normal max-w-[280px] mx-auto mt-3">
+                    Sign up to access the school portal.
                 </p>
             </div>
 
@@ -93,15 +93,15 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
                             required
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
-                            className="peer block w-full h-[72px] pl-16 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-[3px] focus:ring-primary/20 focus:border-primary/40 focus:bg-white/[0.06] transition-all duration-500 font-sans tracking-wide shadow-inner"
-                            placeholder="Legal Handle"
+                            className="peer block w-full h-14 pl-14 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-xl text-base text-white placeholder-transparent focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all duration-300 font-sans shadow-sm"
+                            placeholder="Full Name"
                             id="handle_input"
                         />
                         <label
                             htmlFor="handle_input"
-                            className="absolute left-16 top-1/2 -translate-y-1/2 text-sm font-medium text-white/25 uppercase tracking-[0.1em] peer-placeholder-shown:text-white/20 peer-focus:-top-2 peer-focus:left-6 peer-focus:text-[10px] peer-focus:text-primary peer-focus:font-black peer-focus:tracking-[0.2em] peer-focus:bg-[#12131A] peer-focus:px-2 peer-focus:rounded-md peer-focus:translate-y-0 transition-all duration-500 pointer-events-none"
+                            className="absolute left-14 top-1/2 -translate-y-1/2 text-sm text-text-muted peer-placeholder-shown:text-text-tertiary peer-focus:-top-2 peer-focus:left-4 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-[#0C0D12] peer-focus:px-2 rounded transition-all duration-300 pointer-events-none"
                         >
-                            Full Identity Name
+                            Full Name
                         </label>
                     </div>
 
@@ -114,15 +114,15 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="peer block w-full h-[72px] pl-16 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-[3px] focus:ring-primary/20 focus:border-primary/40 focus:bg-white/[0.06] transition-all duration-500 font-sans tracking-wide shadow-inner"
-                            placeholder="Communication Uplink"
+                            className="peer block w-full h-14 pl-14 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-xl text-base text-white placeholder-transparent focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all duration-300 font-sans shadow-sm"
+                            placeholder="Email Address"
                             id="email_signup"
                         />
                         <label
                             htmlFor="email_signup"
-                            className="absolute left-16 top-1/2 -translate-y-1/2 text-sm font-medium text-white/25 uppercase tracking-[0.1em] peer-placeholder-shown:text-white/20 peer-focus:-top-2 peer-focus:left-6 peer-focus:text-[10px] peer-focus:text-primary peer-focus:font-black peer-focus:tracking-[0.2em] peer-focus:bg-[#12131A] peer-focus:px-2 peer-focus:rounded-md peer-focus:translate-y-0 transition-all duration-500 pointer-events-none"
+                            className="absolute left-14 top-1/2 -translate-y-1/2 text-sm text-text-muted peer-placeholder-shown:text-text-tertiary peer-focus:-top-2 peer-focus:left-4 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-[#0C0D12] peer-focus:px-2 rounded transition-all duration-300 pointer-events-none"
                         >
-                            Institutional Email
+                            Email Address
                         </label>
                     </div>
 
@@ -135,15 +135,15 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="peer block w-full h-[72px] pl-16 pr-16 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-[3px] focus:ring-primary/20 focus:border-primary/40 focus:bg-white/[0.06] transition-all duration-500 font-sans tracking-widest shadow-inner"
-                            placeholder="Cipher Key"
+                            className="peer block w-full h-14 pl-14 pr-12 bg-white/[0.03] border border-white/[0.08] rounded-xl text-base text-white placeholder-transparent focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all duration-300 font-sans shadow-sm"
+                            placeholder="Password"
                             id="password_signup"
                         />
                         <label
                             htmlFor="password_signup"
-                            className="absolute left-16 top-1/2 -translate-y-1/2 text-sm font-medium text-white/25 uppercase tracking-[0.1em] peer-placeholder-shown:text-white/20 peer-focus:-top-2 peer-focus:left-6 peer-focus:text-[10px] peer-focus:text-primary peer-focus:font-black peer-focus:tracking-[0.2em] peer-focus:bg-[#12131A] peer-focus:px-2 peer-focus:rounded-md peer-focus:translate-y-0 transition-all duration-500 pointer-events-none"
+                            className="absolute left-14 top-1/2 -translate-y-1/2 text-sm text-text-muted peer-placeholder-shown:text-text-tertiary peer-focus:-top-2 peer-focus:left-4 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-[#0C0D12] peer-focus:px-2 rounded transition-all duration-300 pointer-events-none"
                         >
-                            Provision Key
+                            Password
                         </label>
                         <button
                             type="button"
@@ -158,19 +158,18 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full h-[72px] flex items-center justify-center py-3.5 px-8 rounded-2xl shadow-[0_20px_40px_-10px_rgba(139,92,246,0.3)] text-xs font-black text-white bg-primary hover:bg-[#9D5BF0] focus:outline-none focus:ring-[6px] focus:ring-primary/10 transition-all transform hover:-translate-y-1 active:scale-[0.97] disabled:opacity-50 uppercase tracking-[0.4em] relative overflow-hidden group"
+                            className="w-full h-14 flex items-center justify-center rounded-xl shadow-md text-sm font-semibold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-[#0C0D12] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 disabled:hover:translate-y-0"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
-                            {loading ? <Spinner size="md" className="text-white" /> : 'Request Initialization'}
+                            {loading ? <Spinner size="md" className="text-white" /> : 'Create Account'}
                         </button>
                     </div>
                 </div>
             </form>
 
             <div className="text-center relative z-10 border-t border-white/[0.03] pt-10">
-                <p className="text-[10px] text-white/25 font-black uppercase tracking-[0.2em]">
-                    Existing Node?{' '}
-                    <button onClick={onSwitchToLogin} className="text-primary hover:text-[#9D5BF0] transition-all ml-2 underline underline-offset-8">Access Console</button>
+                <p className="text-sm font-medium text-text-tertiary hover:text-white transition-colors">
+                    Already have an account?{' '}
+                    <button type="button" onClick={onSwitchToLogin} className="text-primary hover:text-primary/80 transition-all ml-1 font-semibold">Sign In</button>
                 </p>
             </div>
         </div>

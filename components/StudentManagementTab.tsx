@@ -156,7 +156,7 @@ export const AddStudentModal: React.FC<{ onClose: () => void; onSave: () => void
                 <div className="flex justify-between items-start mb-10 relative z-10">
                     <div>
                         <h3 className="text-3xl font-serif font-black text-foreground uppercase tracking-tight">Register Node</h3>
-                        <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.4em] mt-2">Provisioning Identity Protocol</p>
+                        <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.4em] mt-2">Creating Student Account</p>
                     </div>
                     <button onClick={onClose} className="p-3 rounded-2xl bg-muted/40 hover:bg-muted/60 border border-border text-muted-foreground hover:text-foreground transition-all"><XIcon className="w-5 h-5" /></button>
                 </div>
@@ -223,7 +223,7 @@ export const AddStudentModal: React.FC<{ onClose: () => void; onSave: () => void
                     </div>
 
                     <div className="pt-8 border-t border-border flex items-center justify-between">
-                        <p className="text-[9px] text-muted-foreground/40 font-medium italic max-w-[200px]">Node will be provisioned with full identity and RLS clearance.</p>
+                        <p className="text-[9px] text-muted-foreground/40 font-medium italic max-w-[200px]">Account will be created with appropriate access.</p>
                         <div className="flex gap-4">
                             <button type="button" onClick={onClose} className="px-8 py-4 rounded-2xl text-[10px] font-black text-muted-foreground hover:text-foreground uppercase tracking-widest transition-all">Abort</button>
                             <button type="submit" disabled={loading} className="px-10 py-4 bg-primary text-primary-foreground font-black text-[10px] rounded-2xl shadow-2xl shadow-primary/30 hover:bg-primary/90 flex items-center gap-3 transition-all active:scale-95 uppercase tracking-[0.2em] disabled:opacity-50">
@@ -505,7 +505,7 @@ const StudentManagementTab: React.FC<StudentManagementTabProps> = ({ branchId })
                                 className="px-12 py-5 bg-primary text-white font-black text-[11px] uppercase tracking-[0.4em] rounded-2xl shadow-2xl hover:bg-primary/90 transition-all flex items-center gap-4 group"
                             >
                                 <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
-                                Provision First Node
+                                Create First Student
                             </button>
                         </div>
                     ) : (

@@ -17,7 +17,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) {
-            setError('Verification Target Required: Please specify identity uplink.');
+            setError('Please enter your email address.');
             return;
         }
         setLoading(true);
@@ -46,15 +46,15 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
                 <div className="w-20 h-20 bg-primary/10 text-primary rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner border border-primary/20">
                     <MailIcon className="w-10 h-10" />
                 </div>
-                <h3 className="text-3xl font-serif font-black text-white mb-4 tracking-tighter uppercase leading-none">Cipher Dispatched.</h3>
-                <p className="text-white/50 mb-10 text-sm leading-relaxed font-serif italic max-w-[280px] mx-auto">
-                    A recovery cipher has been transmitted to <strong className="text-white">{email}</strong>.
+                <h3 className="text-3xl font-sans font-bold text-white mb-4 tracking-tight">Email Sent</h3>
+                <p className="text-white/50 mb-10 text-base leading-relaxed font-sans max-w-[280px] mx-auto">
+                    A password reset link has been sent to <strong className="text-white">{email}</strong>.
                 </p>
                 <button
                     onClick={onBack}
-                    className="w-full h-14 flex items-center justify-center py-3.5 px-8 rounded-2xl text-[10px] font-black text-white bg-primary hover:bg-primary/90 transition-all transform active:scale-95 uppercase tracking-[0.4em] shadow-xl shadow-primary/20"
+                    className="w-full h-12 flex items-center justify-center py-3 px-6 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-all transform active:scale-95 shadow-md hover:shadow-lg"
                 >
-                    Return to Terminal
+                    Back to Sign In
                 </button>
             </motion.div>
         );
@@ -70,13 +70,13 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
 
             <div className="text-center space-y-4 relative z-10">
                 <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/5 mb-2 backdrop-blur-md">
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Identity Recovery</span>
+                    <span className="text-xs font-semibold text-white/60 tracking-wider">Account Recovery</span>
                 </div>
-                <h2 className="text-[2.75rem] sm:text-5xl font-serif font-black text-white tracking-[-0.02em] leading-none uppercase">
-                    Recovery<span className="text-primary italic">.</span>
+                <h2 className="text-3xl sm:text-4xl font-sans font-bold text-white tracking-tight">
+                    Forgot Password
                 </h2>
-                <p className="text-text-tertiary text-sm font-medium tracking-tight leading-relaxed max-w-[280px] mx-auto italic font-serif opacity-80">
-                    Initiate a <span className="text-white/60">credential bypass protocol</span> for your node.
+                <p className="text-text-tertiary text-base font-normal max-w-[280px] mx-auto mt-3">
+                    Enter your email to reset your password.
                 </p>
             </div>
 
@@ -104,15 +104,15 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="peer block w-full h-[72px] pl-16 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-base text-white placeholder-transparent focus:outline-none focus:ring-[3px] focus:ring-primary/20 focus:border-primary/40 focus:bg-white/[0.06] transition-all duration-500 font-sans tracking-wide shadow-inner"
-                        placeholder="Communication Uplink"
+                        className="peer block w-full h-14 pl-14 pr-6 bg-white/[0.03] border border-white/[0.08] rounded-xl text-base text-white placeholder-transparent focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all duration-300 font-sans shadow-sm"
+                        placeholder="Email Address"
                         id="reset_email"
                     />
                     <label
                         htmlFor="reset_email"
-                        className="absolute left-16 top-1/2 -translate-y-1/2 text-sm font-medium text-white/25 uppercase tracking-[0.1em] peer-placeholder-shown:text-white/20 peer-focus:-top-2 peer-focus:left-6 peer-focus:text-[10px] peer-focus:text-primary peer-focus:font-black peer-focus:tracking-[0.2em] peer-focus:bg-[#12131A] peer-focus:px-2 peer-focus:rounded-md peer-focus:translate-y-0 transition-all duration-500 pointer-events-none"
+                        className="absolute left-14 top-1/2 -translate-y-1/2 text-sm text-text-muted peer-placeholder-shown:text-text-tertiary peer-focus:-top-2 peer-focus:left-4 peer-focus:text-xs peer-focus:text-primary peer-focus:bg-[#0C0D12] peer-focus:px-2 rounded transition-all duration-300 pointer-events-none"
                     >
-                        Verified Email
+                        Email Address
                     </label>
                 </div>
 
@@ -120,10 +120,9 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-[72px] flex items-center justify-center rounded-2xl shadow-[0_20px_40px_-10px_rgba(139,92,246,0.3)] text-xs font-black text-white bg-primary hover:bg-[#9D5BF0] focus:outline-none focus:ring-[6px] focus:ring-primary/10 transition-all transform hover:-translate-y-1 active:scale-[0.97] disabled:opacity-50 uppercase tracking-[0.4em] relative overflow-hidden group"
+                        className="w-full h-14 flex items-center justify-center rounded-xl shadow-md text-sm font-semibold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-[#0C0D12] transition-all transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 disabled:hover:translate-y-0"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
-                        {loading ? <Spinner size="md" className="text-white" /> : 'Transmit Recovery Cipher'}
+                        {loading ? <Spinner size="md" className="text-white" /> : 'Reset Password'}
                     </button>
                 </div>
             </form>
@@ -132,9 +131,9 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
                 <button
                     type="button"
                     onClick={onBack}
-                    className="text-[10px] font-black text-white/25 hover:text-white transition-all tracking-[0.25em] uppercase hover:tracking-[0.35em]"
+                    className="text-sm font-medium text-text-tertiary hover:text-white transition-colors"
                 >
-                    Return to Console
+                    Back to Sign In
                 </button>
             </div>
         </motion.div>

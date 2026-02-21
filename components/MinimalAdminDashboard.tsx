@@ -129,7 +129,7 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
                         </div>
                         <div>
                             <span className="font-serif font-black text-white text-xl tracking-[0.1em] uppercase leading-none block">Universepi <span className="text-white/20 italic font-medium">OS</span></span>
-                            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mt-1.5 block">Executive Telemetry Hub</span>
+                            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mt-1.5 block">Executive Dashboard</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-6 pr-2">

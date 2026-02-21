@@ -72,7 +72,7 @@ const KPICard: React.FC<{ title: string; value: number | string; icon: React.Rea
             <h3 className="text-5xl font-serif font-black text-white tracking-tighter leading-none">{value}</h3>
 
             <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
-                <p className="text-[9px] text-white/10 font-bold uppercase tracking-[0.2em]">Institutional Faculty Node</p>
+                <p className="text-[9px] text-white/10 font-bold uppercase tracking-[0.2em]">Institutional Faculty</p>
                 <div className="w-10 h-1 rounded-full bg-white/5 overflow-hidden">
                     <div className="h-full bg-primary/30 w-1/3 group-hover:w-full transition-all duration-1000 ease-out" />
                 </div>
@@ -401,7 +401,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                         <UploadIcon className="w-4 h-4" /> Import
                                     </button>
                                     <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-4 px-10 py-5 bg-primary text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl hover:bg-primary/90 transition-all shadow-2xl shadow-primary/20 hover:-translate-y-1 active:scale-95">
-                                        <PlusIcon className="w-4 h-4" /> Add Node
+                                        <PlusIcon className="w-4 h-4" /> Add Teacher
                                     </button>
                                 </div>
                             </div>
@@ -416,7 +416,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                     >
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4 pb-4">
                                             <div className="space-y-3">
-                                                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest pl-2">Department Node</label>
+                                                <label className="text-[9px] font-black text-white/20 uppercase tracking-widest pl-2">Department</label>
                                                 <select value={filters.department} onChange={e => setFilters({ ...filters, department: e.target.value })} className="w-full h-14 px-6 rounded-xl bg-black/40 border border-white/5 text-white text-xs font-bold focus:border-primary/40 outline-none appearance-none transition-all cursor-pointer">
                                                     <option value="">ALL DEPARTMENTS</option>
                                                     {departments.map(d => <option key={d} value={d as string}>{d?.toUpperCase()}</option>)}
@@ -477,7 +477,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                     className="px-12 py-5 bg-primary/10 border-b border-primary/20 flex items-center justify-between sticky top-0 z-30 backdrop-blur-3xl"
                                 >
                                     <div className="flex items-center gap-8">
-                                        <span className="text-[11px] font-black text-primary uppercase tracking-[0.2em]">{selectedIds.size} NODES SELECTED</span>
+                                        <span className="text-[11px] font-black text-primary uppercase tracking-[0.2em]">{selectedIds.size} TEACHERS SELECTED</span>
                                         <div className="h-6 w-px bg-primary/20"></div>
                                         <div className="flex gap-4">
                                             {[
@@ -513,7 +513,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                         <UsersIcon className="w-16 h-16 opacity-10" />
                                     </div>
                                     <p className="font-serif italic text-3xl uppercase tracking-[0.3em] mb-4 text-white/20">Registry Silent.</p>
-                                    <p className="text-[11px] font-black uppercase tracking-[0.5em] text-white/5 mb-10">NO IDENTITY NODES MATCH THE CURRENT FILTER MATRIX</p>
+                                    <p className="text-[11px] font-black uppercase tracking-[0.5em] text-white/5 mb-10">NO TEACHERS MATCH THE CURRENT FILTER</p>
                                     <button onClick={() => { setSearchTerm(''); setQuickFilter('All'); setFilters(INITIAL_FILTERS); }} className="px-12 py-5 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] transition-all active:scale-95 shadow-2xl">RECALIBRATE FILTERS</button>
                                 </div>
                             ) : (
@@ -524,7 +524,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                                 <th className="p-10 pl-16 text-center w-24">
                                                     <input type="checkbox" className="w-5 h-5 rounded border-white/10 bg-white/5 text-primary focus:ring-primary/20 cursor-pointer" checked={selectedIds.size > 0 && selectedIds.size === paginatedTeachers.length} onChange={handleSelectAll} />
                                                 </th>
-                                                <th className="p-10 cursor-pointer group" onClick={() => handleSort('name')}>FACULTY NODE {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                                <th className="p-10 cursor-pointer group" onClick={() => handleSort('name')}>TEACHER {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                                 <th className="p-10">CONTACT MATRIX</th>
                                                 <th className="p-10">EMPLOYEE_ID</th>
                                                 <th className="p-10">DEPARTMENT_BLOCK</th>
@@ -564,7 +564,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                                                 <div className="flex items-center gap-3">
                                                                     <span className="text-[10px] text-primary/60 font-black uppercase tracking-[0.4em] bg-primary/5 px-2.5 py-1 rounded-lg border border-primary/10 transition-colors">{teacher.details?.designation || 'FACULTY_MASTER'}</span>
                                                                     <div className="w-1 h-1 rounded-full bg-white/10"></div>
-                                                                    <span className="text-[10px] font-mono text-white/15 uppercase tracking-[0.2em] font-bold">NODE_{teacher.id.substring(0, 6).toUpperCase()}</span>
+                                                                    <span className="text-[10px] font-mono text-white/15 uppercase tracking-[0.2em] font-bold">TCH_{teacher.id.substring(0, 6).toUpperCase()}</span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -623,7 +623,7 @@ const TeachersManagementTab: React.FC<TeachersManagementTabProps> = ({ profile, 
                                         </select>
                                     </div>
                                     <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">
-                                        Node Block {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, sortedTeachers.length)} of {sortedTeachers.length}
+                                        Page {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, sortedTeachers.length)} of {sortedTeachers.length}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-6">

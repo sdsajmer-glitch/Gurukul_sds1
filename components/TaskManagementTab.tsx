@@ -64,9 +64,9 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
         fetchTasks();
 
         const channel = supabase.channel(`task-orchestrator-${branchId || 'global'}`)
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
                 table: 'admin_tasks'
             }, (payload) => {
                 if (payload.eventType === 'INSERT') {
@@ -109,10 +109,10 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
 
     const handleToggleStatus = async (task: AdminTask) => {
         const newStatus = task.status === 'Todo' ? 'Completed' : 'Todo';
-        
+
         // Optimistic UI Reconciliation
         setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
-        
+
         try {
             const { error } = await supabase.from('admin_tasks').update({ status: newStatus }).eq('id', task.id);
             if (error) throw error;
@@ -136,7 +136,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const activeTasks = tasks.filter(t => t.status === 'Todo');
             const prompt = `Analyze institutional tasks: ${JSON.stringify(activeTasks)}. Predict node conflict risks and calculate the 'Institutional Health Factor'. Provide a 40-word executive directive for today. Tone: High-fidelity.`;
-            
+
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: prompt
@@ -151,8 +151,8 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
 
     const filteredTasks = useMemo(() => {
         return tasks.filter(t => {
-            const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                 t.description?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                t.description?.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesPriority = filterPriority === 'All' || t.priority === filterPriority;
             return matchesSearch && matchesPriority;
         }).sort((a, b) => {
@@ -165,7 +165,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
 
     return (
         <div className="space-y-10 animate-in fade-in duration-700 pb-32 max-w-[1400px] mx-auto pt-6 font-sans">
-            
+
             {/* Header / Connectivity Pulse */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 px-2">
                 <div className="space-y-6">
@@ -181,18 +181,18 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                     </p>
                 </div>
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                    <button 
+                    <button
                         onClick={handleAiAnalyze}
                         disabled={aiProcessing || tasks.length === 0}
                         className="h-16 px-10 bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 text-violet-400 rounded-2xl flex items-center justify-center gap-4 transition-all active:scale-95 disabled:opacity-20 shadow-2xl"
                     >
-                        {aiProcessing ? <Spinner size="sm" className="text-violet-400"/> : <><SparklesIcon className="w-5 h-5"/> Analyze Flow</>}
+                        {aiProcessing ? <Spinner size="sm" className="text-violet-400" /> : <><SparklesIcon className="w-5 h-5" /> Analyze Flow</>}
                     </button>
-                    <button 
+                    <button
                         onClick={() => setIsAdding(true)}
                         className="flex-grow md:flex-none h-16 px-12 bg-primary text-white font-black text-[11px] uppercase tracking-[0.3em] rounded-2xl shadow-[0_24px_48px_-12px_rgba(var(--primary),0.4)] hover:bg-primary/90 transition-all flex items-center justify-center gap-4 transform hover:-translate-y-1 active:scale-95 ring-8 ring-primary/5"
                     >
-                        <PlusIcon className="w-6 h-6"/> Provision Duty
+                        <PlusIcon className="w-6 h-6" /> Create Task
                     </button>
                 </div>
             </div>
@@ -200,7 +200,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
             {/* AI Intelligence Card */}
             <AnimatePresence>
                 {aiSuggestion && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: -20, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.98 }}
@@ -212,7 +212,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                                 <h4 className="text-[11px] font-black uppercase text-primary tracking-[0.5em]">Executive Strategic Directive</h4>
                                 <p className="text-2xl md:text-3xl text-white/80 font-serif italic leading-snug">"{aiSuggestion}"</p>
                             </div>
-                            <button onClick={() => setAiSuggestion(null)} className="p-4 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all"><XIcon className="w-6 h-6"/></button>
+                            <button onClick={() => setAiSuggestion(null)} className="p-4 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all"><XIcon className="w-6 h-6" /></button>
                         </div>
                     </motion.div>
                 )}
@@ -224,18 +224,18 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                 <div className="p-8 md:p-12 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row gap-10 justify-between items-center backdrop-blur-3xl sticky top-0 z-30">
                     <div className="relative w-full md:max-w-2xl group">
                         <SearchIcon className="absolute left-7 top-1/2 -translate-y-1/2 h-6 w-6 text-white/10 group-focus-within:text-primary transition-all duration-500" />
-                        <input 
-                            type="text" 
-                            placeholder="SEARCH DUTY REGISTRY..." 
+                        <input
+                            type="text"
+                            placeholder="SEARCH DUTY REGISTRY..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value.toUpperCase())}
                             className="w-full pl-16 pr-8 py-6 bg-black/40 border border-white/5 rounded-[1.8rem] text-[16px] font-black text-white focus:bg-black/60 focus:ring-[15px] focus:ring-primary/5 focus:border-primary/40 outline-none transition-all placeholder:text-white/5 tracking-widest shadow-inner font-mono"
                         />
                     </div>
-                    
+
                     <div className="flex bg-black/60 p-2 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar w-full md:w-auto shadow-2xl">
                         {['All', 'URGENT', 'HIGH', 'MEDIUM', 'LOW'].map(p => (
-                            <button 
+                            <button
                                 key={p}
                                 onClick={() => setFilterPriority(p)}
                                 className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.25em] transition-all duration-500 whitespace-nowrap ${filterPriority === p ? 'bg-primary/20 text-primary shadow-2xl ring-1 ring-white/10 scale-105 z-10' : 'text-white/20 hover:text-white/50'}`}
@@ -255,11 +255,11 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                         </div>
                     ) : filteredTasks.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-48 text-center opacity-40 animate-in fade-in duration-1000">
-                             <div className="w-32 h-32 bg-white/[0.01] rounded-[3.5rem] flex items-center justify-center mb-12 border-2 border-dashed border-white/5 shadow-inner">
+                            <div className="w-32 h-32 bg-white/[0.01] rounded-[3.5rem] flex items-center justify-center mb-12 border-2 border-dashed border-white/5 shadow-inner">
                                 <ChecklistIcon className="w-16 h-16 text-white/5" />
-                             </div>
-                             <h3 className="text-3xl font-serif font-black text-white/80 tracking-tighter uppercase leading-none mb-6">Board Silent.</h3>
-                             <p className="text-white/30 max-w-sm text-lg font-serif italic leading-relaxed">No high-impact duties detected for the current session parameters.</p>
+                            </div>
+                            <h3 className="text-3xl font-serif font-black text-white/80 tracking-tighter uppercase leading-none mb-6">Board Silent.</h3>
+                            <p className="text-white/30 max-w-sm text-lg font-serif italic leading-relaxed">No high-impact duties detected for the current session parameters.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-5 max-w-5xl mx-auto">
@@ -268,7 +268,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                                     const config = PRIORITY_CONFIG[task.priority];
                                     const isCompleted = task.status === 'Completed';
                                     return (
-                                        <motion.div 
+                                        <motion.div
                                             key={task.id}
                                             layout
                                             initial={{ opacity: 0, x: -20 }}
@@ -278,7 +278,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                                             className={`group/task relative p-8 md:p-10 rounded-[3rem] border transition-all duration-700 flex items-center justify-between gap-10 ${isCompleted ? 'bg-black/40 border-white/[0.02] opacity-30 grayscale' : 'bg-[#111319]/40 backdrop-blur-xl border-white/5 hover:border-primary/40 hover:bg-black/60 shadow-3xl'}`}
                                         >
                                             <div className="flex items-center gap-10 flex-grow min-w-0">
-                                                <button 
+                                                <button
                                                     onClick={() => handleToggleStatus(task)}
                                                     className={`flex-shrink-0 w-16 h-16 rounded-[1.5rem] border-2 transition-all duration-700 flex items-center justify-center relative overflow-hidden ${isCompleted ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_30px_#10b981]' : 'bg-transparent border-white/10 hover:border-primary group-hover/task:scale-110'}`}
                                                 >
@@ -288,31 +288,31 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                                                         <div className="w-2 h-2 rounded-full bg-white/5 group-hover/task:bg-primary transition-colors"></div>
                                                     )}
                                                 </button>
-                                                
+
                                                 <div className="min-w-0 flex-grow">
                                                     <div className="flex flex-wrap items-center gap-5 mb-4">
-                                                         <span className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-700 ${config.bg} ${config.color} ${config.border} ${config.glow}`}>
+                                                        <span className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-700 ${config.bg} ${config.color} ${config.border} ${config.glow}`}>
                                                             {config.label}
-                                                         </span>
-                                                         <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.4em]">{task.category} Node</span>
-                                                         {task.due_date && (
-                                                             <div className="flex items-center gap-3 text-[10px] font-mono font-black text-white/20 uppercase tracking-widest">
+                                                        </span>
+                                                        <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.4em]">{task.category} Node</span>
+                                                        {task.due_date && (
+                                                            <div className="flex items-center gap-3 text-[10px] font-mono font-black text-white/20 uppercase tracking-widest">
                                                                 <ClockIcon className="w-4 h-4 opacity-40" />
                                                                 {new Date(task.due_date).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
-                                                             </div>
-                                                         )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <h4 className={`text-2xl md:text-3xl font-black tracking-tight uppercase transition-all duration-700 leading-none ${isCompleted ? 'line-through text-white/20' : 'text-white group-hover/task:text-primary'}`}>{task.title}</h4>
                                                     <p className="text-[14px] text-white/30 mt-4 leading-relaxed font-medium line-clamp-1 italic font-serif group-hover/task:text-white/50 transition-colors">{task.description}</p>
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="flex items-center gap-4 opacity-0 group-hover/task:opacity-100 transition-all duration-500 translate-x-4 group-hover/task:translate-x-0">
-                                                <button 
+                                                <button
                                                     onClick={() => handleDeleteTask(task.id)}
                                                     className="p-6 rounded-[1.5rem] bg-red-500/5 hover:bg-red-500 text-red-500/40 hover:text-white transition-all border border-transparent hover:border-red-500/20 active:scale-90 shadow-2xl"
                                                 >
-                                                    <TrashIcon className="w-6 h-6"/>
+                                                    <TrashIcon className="w-6 h-6" />
                                                 </button>
                                             </div>
                                         </motion.div>
@@ -322,7 +322,7 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                         </div>
                     )}
                 </div>
-                
+
                 {/* Visual Footer */}
                 <div className="p-12 border-t border-white/5 bg-black/40 text-center relative z-10">
                     <span className="text-[10px] font-black text-white/5 uppercase tracking-[1em] select-none pointer-events-none">Institutional Protocol v24.4 Governance Matrix</span>
@@ -333,35 +333,35 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
             <AnimatePresence>
                 {isAdding && (
                     <div className="fixed inset-0 bg-black/95 backdrop-blur-2xl z-[200] flex items-center justify-center p-4 animate-in fade-in duration-500" onClick={() => setIsAdding(false)}>
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 40 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 40 }}
-                            className="bg-[#0c0d12] w-full max-w-2xl rounded-[4rem] shadow-[0_80px_160px_-24px_rgba(0,0,0,1)] border border-white/10 flex flex-col overflow-hidden max-h-[92vh] ring-1 ring-white/5" 
+                            className="bg-[#0c0d12] w-full max-w-2xl rounded-[4rem] shadow-[0_80px_160px_-24px_rgba(0,0,0,1)] border border-white/10 flex flex-col overflow-hidden max-h-[92vh] ring-1 ring-white/5"
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="p-12 border-b border-white/5 bg-white/[0.02] flex justify-between items-center relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent pointer-events-none opacity-40"></div>
                                 <div className="flex items-center gap-8 relative z-10">
                                     <div className="p-5 bg-primary/10 rounded-[1.8rem] text-primary shadow-inner border border-primary/20 ring-[12px] ring-primary/5">
-                                        <PlusIcon className="w-8 h-8"/>
+                                        <PlusIcon className="w-8 h-8" />
                                     </div>
                                     <div>
-                                        <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tight">Provision Duty</h3>
+                                        <h3 className="text-3xl font-serif font-black text-white uppercase tracking-tight">Create Task</h3>
                                         <p className="text-[10px] font-black text-white/20 tracking-[0.4em] mt-2">Initialize Lifecycle Node</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setIsAdding(false)} className="p-4 rounded-full hover:bg-white/5 text-white/20 hover:text-white transition-all"><XIcon className="w-10 h-10"/></button>
+                                <button onClick={() => setIsAdding(false)} className="p-4 rounded-full hover:bg-white/5 text-white/20 hover:text-white transition-all"><XIcon className="w-10 h-10" /></button>
                             </div>
 
                             <form onSubmit={handleCreateTask} className="p-12 space-y-12 overflow-y-auto custom-scrollbar flex-grow bg-transparent relative">
                                 <div className="space-y-5">
                                     <label className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em] ml-2">Duty Identifier</label>
-                                    <input 
+                                    <input
                                         required autoFocus
-                                        type="text" value={newTask.title} 
-                                        onChange={e => setNewTask({...newTask, title: e.target.value.toUpperCase()})}
-                                        className="w-full h-20 px-10 bg-black/40 border border-white/5 rounded-[1.8rem] text-xl font-black text-white focus:border-primary/50 focus:ring-[15px] focus:ring-primary/5 outline-none transition-all placeholder:text-white/5 font-mono tracking-widest shadow-inner" 
+                                        type="text" value={newTask.title}
+                                        onChange={e => setNewTask({ ...newTask, title: e.target.value.toUpperCase() })}
+                                        className="w-full h-20 px-10 bg-black/40 border border-white/5 rounded-[1.8rem] text-xl font-black text-white focus:border-primary/50 focus:ring-[15px] focus:ring-primary/5 outline-none transition-all placeholder:text-white/5 font-mono tracking-widest shadow-inner"
                                         placeholder="E.G. LEDGER_SYNC_PROTOCOL_B4"
                                     />
                                 </div>
@@ -370,9 +370,9 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                                     <div className="space-y-5">
                                         <label className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em] ml-2">Operational Rank</label>
                                         <div className="relative group">
-                                            <select 
-                                                value={newTask.priority} 
-                                                onChange={e => setNewTask({...newTask, priority: e.target.value as TaskPriority})}
+                                            <select
+                                                value={newTask.priority}
+                                                onChange={e => setNewTask({ ...newTask, priority: e.target.value as TaskPriority })}
                                                 className="w-full h-[72px] px-10 bg-black/40 border border-white/5 rounded-[1.8rem] text-[11px] font-black text-white outline-none appearance-none cursor-pointer uppercase tracking-[0.4em] shadow-inner transition-all hover:bg-black/60 focus:border-primary/40"
                                             >
                                                 <option value="URGENT">URGENT</option>
@@ -385,9 +385,9 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
                                     <div className="space-y-5">
                                         <label className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em] ml-2">Institutional Sector</label>
                                         <div className="relative group">
-                                            <select 
-                                                value={newTask.category} 
-                                                onChange={e => setNewTask({...newTask, category: e.target.value})}
+                                            <select
+                                                value={newTask.category}
+                                                onChange={e => setNewTask({ ...newTask, category: e.target.value })}
                                                 className="w-full h-[72px] px-10 bg-black/40 border border-white/5 rounded-[1.8rem] text-[11px] font-black text-white outline-none appearance-none cursor-pointer uppercase tracking-[0.4em] shadow-inner transition-all hover:bg-black/60 focus:border-primary/40"
                                             >
                                                 {CATEGORIES.map(c => <option key={c} value={c}>{c.toUpperCase()}</option>)}
@@ -398,32 +398,32 @@ const TaskManagementTab: React.FC<{ branchId?: number | null }> = ({ branchId })
 
                                 <div className="space-y-5">
                                     <label className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em] ml-2">Contextual Payload</label>
-                                    <textarea 
-                                        value={newTask.description} 
-                                        onChange={e => setNewTask({...newTask, description: e.target.value})}
-                                        className="w-full h-40 p-10 bg-black/40 border border-white/5 rounded-[2.5rem] text-[16px] text-white/70 focus:border-primary/50 focus:ring-[15px] focus:ring-primary/5 outline-none transition-all resize-none shadow-inner font-serif italic leading-relaxed" 
+                                    <textarea
+                                        value={newTask.description}
+                                        onChange={e => setNewTask({ ...newTask, description: e.target.value })}
+                                        className="w-full h-40 p-10 bg-black/40 border border-white/5 rounded-[2.5rem] text-[16px] text-white/70 focus:border-primary/50 focus:ring-[15px] focus:ring-primary/5 outline-none transition-all resize-none shadow-inner font-serif italic leading-relaxed"
                                         placeholder="Define the atomic parameters of this institutional duty..."
                                     />
                                 </div>
 
                                 <div className="space-y-5">
                                     <label className="text-[10px] font-black uppercase text-white/30 tracking-[0.4em] ml-2">Handshake Deadline</label>
-                                    <input 
-                                        type="date" value={newTask.due_date} 
-                                        onChange={e => setNewTask({...newTask, due_date: e.target.value})}
-                                        className="w-full h-[72px] px-10 bg-black/40 border border-white/5 rounded-[1.8rem] text-[11px] font-black text-white/50 outline-none uppercase tracking-[0.5em] transition-all hover:bg-black/60 focus:border-primary/40" 
+                                    <input
+                                        type="date" value={newTask.due_date}
+                                        onChange={e => setNewTask({ ...newTask, due_date: e.target.value })}
+                                        className="w-full h-[72px] px-10 bg-black/40 border border-white/5 rounded-[1.8rem] text-[11px] font-black text-white/50 outline-none uppercase tracking-[0.5em] transition-all hover:bg-black/60 focus:border-primary/40"
                                     />
                                 </div>
                             </form>
 
                             <footer className="p-12 border-t border-white/5 bg-black/40 flex flex-col md:flex-row justify-between items-center gap-8 relative z-30">
                                 <button type="button" onClick={() => setIsAdding(false)} className="text-[10px] font-black uppercase tracking-[0.5em] text-white/10 hover:text-white transition-all order-2 md:order-1">Abort Sequence</button>
-                                <button 
+                                <button
                                     onClick={handleCreateTask}
                                     disabled={loading || !newTask.title}
                                     className="w-full md:w-auto px-16 py-7 bg-primary text-primary-foreground font-black text-[11px] uppercase tracking-[0.5em] rounded-[2.2rem] shadow-[0_32px_64px_-16px_rgba(var(--primary),0.6)] hover:bg-primary/90 transition-all transform active:scale-95 disabled:opacity-20 flex items-center justify-center gap-5 ring-[12px] ring-primary/5 group"
                                 >
-                                    {loading ? <Spinner size="sm" className="text-white"/> : <><CheckCircleIcon className="w-6 h-6 group-hover:rotate-12 transition-transform duration-500"/> Deploy Protocol</>}
+                                    {loading ? <Spinner size="sm" className="text-white" /> : <><CheckCircleIcon className="w-6 h-6 group-hover:rotate-12 transition-transform duration-500" /> Deploy Protocol</>}
                                 </button>
                             </footer>
                         </motion.div>
