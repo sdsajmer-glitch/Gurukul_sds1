@@ -35,7 +35,7 @@ const NotFound: React.FC<NotFoundProps> = ({ redirectTo = '/' }) => {
                 {/* Expanding Outer Ring */}
                 <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ 
+                    animate={{
                         scale: [1, 1.3, 1],
                         opacity: [0.05, 0.2, 0.05]
                     }}
@@ -46,16 +46,16 @@ const NotFound: React.FC<NotFoundProps> = ({ redirectTo = '/' }) => {
                     }}
                     className="absolute w-32 h-32 bg-primary/30 rounded-full blur-3xl"
                 />
-                
+
                 {/* Sharp Inner Core */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 1.2 }}
                     className="relative w-14 h-14 rounded-full border border-white/5 flex items-center justify-center bg-white/[0.02] shadow-[inset_0_0_15px_rgba(255,255,255,0.02)]"
                 >
                     {/* Pulsing Core Node */}
-                    <motion.div 
+                    <motion.div
                         animate={{ opacity: [0.3, 1, 0.3], scale: [0.95, 1.05, 0.95] }}
                         transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
                         className="w-2.5 h-2.5 bg-primary rounded-full shadow-[0_0_20px_rgba(var(--primary),0.8)]"
@@ -101,13 +101,13 @@ const NotFound: React.FC<NotFoundProps> = ({ redirectTo = '/' }) => {
             </div>
 
             {/* Global Branding Subtitle */}
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0.1 }}
                 transition={{ delay: 2, duration: 2 }}
                 className="absolute bottom-12 text-[10px] font-black uppercase tracking-[0.6em] text-white select-none pointer-events-none"
             >
-                Gurukul OS • High Fidelity Governance
+                Universepi OS • High Fidelity Governance
             </motion.div>
         </div>
     );

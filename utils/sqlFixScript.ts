@@ -116,7 +116,7 @@ BEGIN
         IF v_user_id IS NULL THEN
             v_user_id := gen_random_uuid();
             INSERT INTO public.profiles (id,email,display_name,role,branch_id,profile_completed,is_active)
-            VALUES (v_user_id,'student.'||substring(v_user_id::text FROM 1 FOR 8)||'@gurukul.internal',v_applicant_name,'Student',v_branch_id,true,true);
+            VALUES (v_user_id,'student.'||substring(v_user_id::text FROM 1 FOR 8)||'@universepi.internal',v_applicant_name,'Student',v_branch_id,true,true);
         END IF;
         UPDATE public.admissions SET student_user_id=v_user_id WHERE id=p_admission_id;
     END IF;

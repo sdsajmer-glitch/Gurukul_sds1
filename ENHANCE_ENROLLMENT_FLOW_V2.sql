@@ -59,7 +59,7 @@ BEGIN
     IF v_user_id IS NULL THEN
         v_user_id := gen_random_uuid();
         -- Generate a unique virtual signature to avoid collisions with parents or other students
-        v_virtual_email := 'student.' || substring(v_user_id::text from 1 for 8) || '@gurukul.node';
+        v_virtual_email := 'student.' || substring(v_user_id::text from 1 for 8) || '@universepi.internal';
 
         INSERT INTO public.profiles (
             id, 

@@ -108,7 +108,7 @@ const FinanceWorkflowGuide: React.FC<FinanceWorkflowGuideProps> = ({ onClose }) 
                         <div className="relative z-10 flex-grow text-center md:text-left space-y-4">
                             <h4 className="font-serif font-black text-3xl text-white tracking-tighter uppercase">Registry Integrity Engine</h4>
                             <p className="text-lg text-white/30 leading-loose max-w-3xl font-serif italic">
-                                Gurukul OS utilizes a forensic reconciliation engine that rebuilds student ledger summary nodes on every settlement heartbeat. This ensures that billed vs paid vs outstanding values are always in perfect equilibrium with raw transaction data.
+                                Universepi OS utilizes a forensic reconciliation engine that rebuilds student ledger summary nodes on every settlement heartbeat. This ensures that billed vs paid vs outstanding values are always in perfect equilibrium with raw transaction data.
                             </p>
                         </div>
                     </div>

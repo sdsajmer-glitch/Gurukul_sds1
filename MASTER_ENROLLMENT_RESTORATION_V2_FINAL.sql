@@ -372,7 +372,7 @@ BEGIN
                 branch_id, profile_completed, is_active
             ) VALUES (
                 v_user_id,
-                'student.' || substring(v_user_id::text FROM 1 FOR 8) || '@gurukul.internal',
+                'student.' || substring(v_user_id::text FROM 1 FOR 8) || '@universepi.internal',
                 v_applicant_name,
                 'Student',
                 v_branch_id,

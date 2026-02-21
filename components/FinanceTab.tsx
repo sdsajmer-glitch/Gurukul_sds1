@@ -477,7 +477,7 @@ const FinanceTab: React.FC<FinanceTabProps> = ({ profile, branchId, branches }) 
                                     Report Issue
                                 </button>
                                 <button
-                                    onClick={() => window.open('mailto:admin@gurucool.com?subject=Finance%20Module%20Error&body=' + encodeURIComponent(error || ''), '_blank')}
+                                    onClick={() => window.open('mailto:admin@universepi.com?subject=Finance%20Module%20Error&body=' + encodeURIComponent(error || ''), '_blank')}
                                     className="w-full sm:w-auto px-6 py-4 bg-white/[0.04] border border-white/[0.06] text-white/50 hover:text-white hover:bg-white/[0.08] font-bold text-[11px] uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-[0.97] flex items-center justify-center gap-2"
                                 >
                                     Contact Admin

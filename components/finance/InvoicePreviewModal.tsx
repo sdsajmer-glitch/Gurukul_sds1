@@ -130,7 +130,7 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ invoice, onCl
 
                         <div className="relative z-10 space-y-10">
                             <div className="space-y-4">
-                                <h4 className="text-4xl font-serif font-black text-slate-900 uppercase tracking-tighter leading-[0.85]">GURUKUL <br />ACADEMY.</h4>
+                                <h4 className="text-4xl font-serif font-black text-slate-900 uppercase tracking-tighter leading-[0.85]">UNIVERSEPI <br />ACADEMY.</h4>
                                 <div className="space-y-1">
                                     <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Central Registry Node • HO_DEPLOY_24</p>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] pt-1">Validated by Fiscal Protocol v25.0</p>

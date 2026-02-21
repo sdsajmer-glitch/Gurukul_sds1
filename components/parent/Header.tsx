@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ profile, onSelectRole, onSignOut, onPro
         setLoading(true);
         try {
             const { data, error } = await supabase.rpc('get_my_messages');
-            
+
             if (error) {
                 console.warn("RPC: get_my_messages protocol fail.", error.message);
                 setNotifications([]);
@@ -50,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({ profile, onSelectRole, onSignOut, onPro
 
     useEffect(() => {
         fetchNotifications();
-        
+
         const channel = supabase
             .channel('public:communications')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'communications' }, () => {
@@ -75,14 +75,14 @@ const Header: React.FC<HeaderProps> = ({ profile, onSelectRole, onSignOut, onPro
                         <div className="p-2.5 bg-primary/10 rounded-xl transition-all duration-300 group-hover:bg-primary/20 group-hover:scale-105 border border-primary/20">
                             <SchoolIcon className="h-6 w-6 text-primary" />
                         </div>
-                        <span className="font-serif font-black text-2xl ml-4 hidden sm:block tracking-tight text-white uppercase group-hover:text-primary transition-colors">Gurukul</span>
+                        <span className="font-serif font-black text-2xl ml-4 hidden sm:block tracking-tight text-white uppercase group-hover:text-primary transition-colors">Universepi</span>
                     </div>
-                    
+
                     <div className="flex items-center gap-4 sm:gap-6 relative">
                         <ThemeSwitcher />
-                        
+
                         <div className="relative">
-                            <button 
+                            <button
                                 ref={notifButtonRef}
                                 onClick={toggleNotifications}
                                 className={`p-3 rounded-xl transition-all relative ${isNotifOpen ? 'bg-primary/10 text-primary border border-primary/20' : 'text-white/30 hover:text-white hover:bg-white/5 border border-transparent'}`}
@@ -93,8 +93,8 @@ const Header: React.FC<HeaderProps> = ({ profile, onSelectRole, onSignOut, onPro
                                     <span className="absolute top-2.5 right-2.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#08090a] animate-pulse"></span>
                                 )}
                             </button>
-                            
-                            <NotificationPopover 
+
+                            <NotificationPopover
                                 isOpen={isNotifOpen}
                                 onClose={() => setIsNotifOpen(false)}
                                 onViewAll={() => setIsNotifOpen(false)}
@@ -102,9 +102,9 @@ const Header: React.FC<HeaderProps> = ({ profile, onSelectRole, onSignOut, onPro
                                 isLoading={loading}
                             />
                         </div>
-                        
+
                         <div className="h-10 w-px bg-white/5 mx-1 hidden md:block"></div>
-                        
+
                         <ProfileDropdown
                             profile={profile}
                             onSignOut={onSignOut}

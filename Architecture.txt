@@ -1,5 +1,5 @@
 # ===============================================================================================
-#  GURUKUL OS - ENTERPRISE SCHOOL MANAGEMENT ARCHITECTURE
+#  UNIVERSEPI OS - ENTERPRISE SCHOOL MANAGEMENT ARCHITECTURE
 #  Version: 6.5.0 (AI-Optimized Build)
 #  Last Updated: December 16, 2025
 #  Platform: Multi-Tenant Cloud / Institutional Hub
@@ -8,7 +8,7 @@
 ## 🔹 1. SYSTEM ECOSYSTEM
 
 ### 1.1. Core Vision
-Gurukul OS is a high-density institutional operating system that bridges the gap between administrative overhead and pedagogical excellence. It utilizes a "Unified Identity" model where a single user can hold multiple roles (Parent, Teacher, Admin) across various institutional nodes.
+Universepi OS is a high-density institutional operating system that bridges the gap between administrative overhead and pedagogical excellence. It utilizes a "Unified Identity" model where a single user can hold multiple roles (Parent, Teacher, Admin) across various institutional nodes.
 
 ### 1.2. Technology Stack (v6.5)
 - **Frontend Core**: React 19 + TypeScript (ESM)
@@ -26,7 +26,7 @@ Gurukul OS is a high-density institutional operating system that bridges the gap
 ## 🔹 2. ARCHITECTURAL LAYERS
 
 ### 2.1. The "Handshake" Protocol (Branch Synchronization)
-Unlike traditional flat multi-tenancy, Gurukul uses an atomic handshake protocol:
+Unlike traditional flat multi-tenancy, Universepi uses an atomic handshake protocol:
 1. **Provisioning**: School Administration generates a 12-character time-bound Access Key (RPC: `generate_branch_access_key`).
 2. **Identity Mapping**: Branch Admins enter the key in the `Verification Center`.
 3. **Atomic Linking**: The system performs a single-transaction update (RPC: `verify_and_link_branch_admin`) that binds the user profile to the branch ID and activates the institutional node.

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- GURUKUL OS: FINANCE DATA DIAGNOSTIC & HEALING (v8.0)
+-- UNIVERSEPI OS: FINANCE DATA DIAGNOSTIC & HEALING (v8.0)
 -- 1. Identifies if children exist in admissions but not in student_parents
 -- 2. Validates if Enrolled students have student_user_id
 -- 3. FORCES synchronization for the current user
@@ -40,7 +40,7 @@ BEGIN
                 INSERT INTO public.profiles (id, email, display_name, role, branch_id, profile_completed)
                 VALUES (
                     gen_random_uuid(), 
-                    'student.' || LOWER(REPLACE(v_child.applicant_name, ' ', '.')) || '.' || floor(random()*1000)::text || '@gurukul.internal',
+                    'student.' || LOWER(REPLACE(v_child.applicant_name, ' ', '.')) || '.' || floor(random()*1000)::text || '@universepi.internal',
                     v_child.applicant_name,
                     'student',
                     (SELECT branch_id FROM public.admissions WHERE id = v_child.id),

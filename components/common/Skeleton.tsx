@@ -9,13 +9,13 @@ interface SkeletonBaseProps {
 
 const ShimmerOverlay = () => (
     <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <motion.div 
+        <motion.div
             initial={{ x: '-100%' }}
             animate={{ x: '100%' }}
-            transition={{ 
-                duration: 1.5, 
-                repeat: Infinity, 
-                ease: "linear" 
+            transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "linear"
             }}
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent"
         />
@@ -23,7 +23,7 @@ const ShimmerOverlay = () => (
 );
 
 /**
- * High-fidelity Skeletons for the Gurukul OS Design System
+ * High-fidelity Skeletons for the Universepi OS Design System
  */
 export const Skeleton = {
     Line: ({ className, variant = 'body', width = '75%', glow = false }: SkeletonBaseProps & { variant?: 'title' | 'body' | 'caption', width?: string }) => {
@@ -33,7 +33,7 @@ export const Skeleton = {
             caption: 'h-[12px]'
         };
         return (
-            <div 
+            <div
                 style={{ width }}
                 className={`relative bg-white/[0.02] rounded-[8px] overflow-hidden border border-white/[0.03] ${heightMap[variant]} ${glow ? 'shadow-[0_0_15px_rgba(var(--primary),0.1)] ring-1 ring-primary/10' : ''} ${className}`}
             >
@@ -56,7 +56,7 @@ export const Skeleton = {
     },
 
     Button: ({ className, width = '140px', glow = false }: SkeletonBaseProps & { width?: string }) => (
-        <div 
+        <div
             style={{ width }}
             className={`relative h-[52px] bg-white/[0.03] rounded-2xl overflow-hidden border border-white/[0.05] ${glow ? 'border-primary/20 shadow-lg' : ''} ${className}`}
         >

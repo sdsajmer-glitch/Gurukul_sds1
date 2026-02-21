@@ -59,7 +59,7 @@ const AuthPage: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-2xl font-serif font-black tracking-[0.3em] text-white uppercase opacity-100">Gurukul</span>
+                            <span className="text-2xl font-serif font-black tracking-[0.3em] text-white uppercase opacity-100">Universepi</span>
                             <span className="text-[10px] font-black tracking-[0.5em] text-primary/60 uppercase -mt-1 ml-1">OS Registry</span>
                         </div>
                     </div>
@@ -91,7 +91,7 @@ const AuthPage: React.FC = () => {
 
                     <div className="flex items-center justify-between">
                         <div className="text-[10px] text-white/15 font-black uppercase tracking-[0.6em] flex items-center gap-4">
-                            <span>&copy; 2026 Gurukul OS</span>
+                            <span>&copy; 2026 Universepi OS</span>
                             <span className="w-1.5 h-px bg-white/10"></span>
                             <span>Protocol Node 9.7.2</span>
                         </div>

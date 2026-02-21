@@ -75,7 +75,7 @@ BEGIN
         
         IF v_user_id IS NULL THEN
             v_user_id := gen_random_uuid();
-            v_virtual_email := 'student.' || substring(v_user_id::text from 1 for 8) || '@gurukul.node';
+            v_virtual_email := 'student.' || substring(v_user_id::text from 1 for 8) || '@universepi.internal';
             
             INSERT INTO public.profiles (id, email, display_name, role, branch_id, profile_completed, is_active)
             VALUES (v_user_id, v_virtual_email, v_applicant_name, 'Student', v_branch_id, true, true);

@@ -21,7 +21,7 @@ import ThemeSwitcher from './common/ThemeSwitcher';
 import { Skeleton, StatsSkeleton } from './common/Skeleton';
 
 const StatBox: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color: string; trend?: string }> = ({ title, value, icon, color, trend }) => (
-    <motion.div 
+    <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -5, scale: 1.01 }}
@@ -68,7 +68,7 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
                 supabase.from('admissions').select('*', { count: 'exact', head: true }).eq('status', 'Pending Review'),
                 supabase.from('document_requirements').select('*, admissions(applicant_name)').eq('status', 'Submitted').limit(5)
             ]);
-            
+
             const currentStats = {
                 students: std.count || 0,
                 teachers: tea.count || 0,
@@ -77,7 +77,7 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
             };
             setStats(currentStats);
             setPendingDocs(docs.data || []);
-            
+
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-preview',
@@ -102,8 +102,8 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
     }, [fetchTelemetry]);
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-IN', { 
-            style: 'currency', 
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
             currency: 'INR',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
@@ -120,7 +120,7 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
     return (
         <div className="min-h-screen bg-[#08090a] text-foreground font-sans selection:bg-primary/20 pb-32">
             <div className="max-w-[1800px] mx-auto p-6 md:p-12 lg:p-16 space-y-16 animate-in fade-in duration-1000 relative z-10">
-                
+
                 {/* Header Container */}
                 <div className="flex justify-between items-center bg-[#0d0f14]/90 p-4 rounded-[2.5rem] border border-white/5 shadow-2xl backdrop-blur-xl sticky top-6 z-50 ring-1 ring-white/10">
                     <div className="flex items-center gap-6 pl-4">
@@ -128,7 +128,7 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
                             <SchoolIcon className={`w-6 h-6 text-primary ${isRefreshing ? 'animate-spin' : ''}`} />
                         </div>
                         <div>
-                            <span className="font-serif font-black text-white text-xl tracking-[0.1em] uppercase leading-none block">Gurukul <span className="text-white/20 italic font-medium">OS</span></span>
+                            <span className="font-serif font-black text-white text-xl tracking-[0.1em] uppercase leading-none block">Universepi <span className="text-white/20 italic font-medium">OS</span></span>
                             <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] mt-1.5 block">Executive Telemetry Hub</span>
                         </div>
                     </div>
@@ -147,18 +147,18 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
                             <span className="text-[10px] font-black uppercase tracking-[0.6em] text-white/40">Identity Node Active</span>
                         </div>
                         <h1 className="text-7xl md:text-9xl font-serif font-black text-white tracking-tighter leading-[0.8] uppercase">
-                            Executive <br/> <span className="text-white/30 italic lowercase">oversight.</span>
+                            Executive <br /> <span className="text-white/30 italic lowercase">oversight.</span>
                         </h1>
                         <p className="text-xl text-white/40 font-medium font-serif italic max-w-xl leading-relaxed border-l-2 border-white/10 pl-10">
                             Unified analytical interface for institutional orchestration. High-fidelity tracking of node growth and fiscal synchronization.
                         </p>
                     </div>
-                    
+
                     <div className="xl:w-[460px] w-full">
                         {loading && !isRefreshing ? (
                             <Skeleton.Card className="bg-primary/5 border-primary/20 p-10 rounded-[3.5rem]" />
                         ) : aiInsight && (
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 className="bg-primary/5 border border-primary/20 p-10 rounded-[3.5rem] relative group overflow-hidden shadow-2xl"
@@ -176,10 +176,10 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
                     <StatsSkeleton />
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <StatBox title="Current Enrollment" value={stats.students} icon={<GraduationCapIcon className="w-8 h-8"/>} color="bg-blue-500" trend="+4.2%" />
+                        <StatBox title="Current Enrollment" value={stats.students} icon={<GraduationCapIcon className="w-8 h-8" />} color="bg-blue-500" trend="+4.2%" />
                         <StatBox title="Faculty Nodes" value={stats.teachers} icon={<TeacherIcon className="w-8 h-8" />} color="bg-emerald-500" />
-                        <StatBox title="Admission Queue" value={stats.applications} icon={<UsersIcon className="w-8 h-8"/>} color="bg-amber-500" trend="Action" />
-                        <StatBox title="Fiscal Stream" value={formatCurrency(stats.revenue)} icon={<FinanceIcon className="w-8 h-8"/>} color="bg-indigo-500" />
+                        <StatBox title="Admission Queue" value={stats.applications} icon={<UsersIcon className="w-8 h-8" />} color="bg-amber-500" trend="Action" />
+                        <StatBox title="Fiscal Stream" value={formatCurrency(stats.revenue)} icon={<FinanceIcon className="w-8 h-8" />} color="bg-indigo-500" />
                     </div>
                 )}
 
@@ -196,7 +196,7 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
                                 <RefreshIcon className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
                             </button>
                         </div>
-                        
+
                         <div className="space-y-4 relative z-10">
                             {loading && !isRefreshing ? (
                                 <div className="space-y-4">
@@ -210,8 +210,8 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
                                     <p className="uppercase font-black tracking-[0.5em] text-white text-sm">Registry Synchronized</p>
                                 </div>
                             ) : pendingDocs.map((doc, i) => (
-                                <motion.div 
-                                    key={doc.id} 
+                                <motion.div
+                                    key={doc.id}
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: i * 0.1 }}
@@ -219,26 +219,26 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
                                 >
                                     <div className="flex items-center gap-8">
                                         <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover/item:scale-110 transition-transform">
-                                            <DocumentTextIcon className="w-7 h-7"/>
+                                            <DocumentTextIcon className="w-7 h-7" />
                                         </div>
                                         <div>
                                             <p className="text-[18px] font-bold text-white uppercase tracking-wider">{doc.admissions?.applicant_name}</p>
                                             <p className="text-[10px] text-white/20 uppercase font-black mt-1.5">{doc.document_name} Handshake</p>
                                         </div>
                                     </div>
-                                    <ChevronRightIcon className="w-6 h-6 text-white/10 group-hover/item:text-primary group-hover:translate-x-1 transition-all"/>
+                                    <ChevronRightIcon className="w-6 h-6 text-white/10 group-hover/item:text-primary group-hover:translate-x-1 transition-all" />
                                 </motion.div>
                             ))}
                         </div>
                     </div>
-                    
+
                     {/* Security Activity Feed */}
                     <div className="lg:col-span-4 bg-[#0a0a0c] border border-white/10 rounded-[4.5rem] p-12 md:p-14 shadow-inner relative overflow-hidden flex flex-col group/security">
                         <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.5em] mb-16 flex items-center gap-4">
                             <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></div>
                             Security Stream
                         </h3>
-                        
+
                         <div className="space-y-12 flex-grow relative z-10">
                             {loading && !isRefreshing ? (
                                 <div className="space-y-12">
@@ -269,9 +269,9 @@ const MinimalAdminDashboard: React.FC<MinimalAdminDashboardProps> = ({ profile, 
                                 </div>
                             ))}
                         </div>
-                        
+
                         <div className="mt-12 pt-8 border-t border-white/5 text-center">
-                             <span className="text-[9px] font-black text-white/5 uppercase tracking-[0.5em]">Audit Trail v9.5.1 Deployment</span>
+                            <span className="text-[9px] font-black text-white/5 uppercase tracking-[0.5em]">Audit Trail v9.5.1 Deployment</span>
                         </div>
                     </div>
                 </div>

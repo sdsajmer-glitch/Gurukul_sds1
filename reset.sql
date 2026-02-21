@@ -72,6 +72,7 @@ DROP FUNCTION IF EXISTS public.upsert_transport_profile(uuid, text, text, text) 
 DROP FUNCTION IF EXISTS public.verify_and_link_branch_admin(text) CASCADE;
 
 -- Drop Tables (Comprehensive list)
+DROP VIEW IF EXISTS public.fee_structures CASCADE;
 DROP TABLE IF EXISTS
   academic_years,
   admin_tasks,
@@ -110,7 +111,6 @@ DROP TABLE IF EXISTS
   fee_components,
   fee_invoices,
   fee_payments,
-  fee_structures,
   finance_audit_trail,
   invoices,
   lesson_plan_resources,
@@ -2098,7 +2098,7 @@ $$;
 COMMIT;
 
 -- ===============================================================================================
--- GURUKUL OS - CORE MISSION-CRITICAL RPC REGISTRY
+-- UNIVERSEPI OS - CORE MISSION-CRITICAL RPC REGISTRY
 -- This file restores essential business logic functions for onboarding and role management.
 -- ===============================================================================================
 
