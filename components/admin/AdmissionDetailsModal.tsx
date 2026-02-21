@@ -717,6 +717,69 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                         )}
                     </section>
                 </main>
+
+                {/* ═══ STICKY FINALIZATION FOOTER ═══ */}
+                {finalizeState !== 'success' && (
+                    <footer className="border-t border-white/[0.03] bg-bg-card/80 backdrop-blur-xl px-8 py-4 flex items-center justify-between gap-6 sticky bottom-0 z-50">
+                        {/* Left: Compliance Status */}
+                        <div className="flex items-center gap-4">
+                            <div className={clsx(
+                                "w-2.5 h-2.5 rounded-full animate-pulse",
+                                allMandatoryVerified ? "bg-accent-success shadow-[0_0_10px_rgba(34,197,94,0.6)]" : "bg-accent-warning shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                            )} />
+                            <div>
+                                <p className={clsx(
+                                    "text-[10px] font-black uppercase tracking-[0.25em]",
+                                    allMandatoryVerified ? "text-accent-success" : "text-accent-warning"
+                                )}>
+                                    {allMandatoryVerified ? "Ready For Finalization" : "Awaiting Document Clearance"}
+                                </p>
+                                <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-0.5">
+                                    {allMandatoryVerified
+                                        ? "All mandatory artifacts verified. Enrollment protocol unlocked."
+                                        : `${mandatoryDocs.filter(d => d.status !== 'Verified').length} mandatory document(s) pending verification.`
+                                    }
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Right: Finalize Button */}
+                        <div className="flex items-center gap-3">
+                            {admission.status !== 'Enrolled' ? (
+                                <button
+                                    id="finalize-enrollment-btn"
+                                    onClick={handleFinalize}
+                                    disabled={finalizeState === 'processing'}
+                                    className={clsx(
+                                        "flex items-center gap-3 px-8 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 border",
+                                        finalizeState === 'processing'
+                                            ? "bg-white/5 border-white/10 text-white/20 cursor-not-allowed"
+                                            : allMandatoryVerified
+                                                ? "bg-accent-primary hover:bg-accent-primary/80 text-white border-transparent shadow-xl shadow-accent-primary/20"
+                                                : "bg-accent-warning/10 hover:bg-accent-warning text-accent-warning hover:text-white border-accent-warning/30 hover:border-transparent"
+                                    )}
+                                >
+                                    {finalizeState === 'processing' ? (
+                                        <>
+                                            <RefreshCwIcon className="w-4 h-4 animate-spin" />
+                                            Processing Identity...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ShieldCheckIcon className="w-4 h-4" />
+                                            Finalize Enrollment
+                                        </>
+                                    )}
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-3 px-8 py-3.5 rounded-xl bg-accent-success/10 border border-accent-success/20">
+                                    <ShieldCheckIcon className="w-4 h-4 text-accent-success" />
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-accent-success">Enrolled &amp; Secured</span>
+                                </div>
+                            )}
+                        </div>
+                    </footer>
+                )}
             </motion.div>
         </div>
     );
