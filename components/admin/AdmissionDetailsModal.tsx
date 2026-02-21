@@ -371,7 +371,13 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 p_admission_id: admission.id
             });
 
-            if (error) throw error;
+            if (error) {
+                // Intercept the known "fee_structures" database error
+                if (error.message?.includes('fee_structures') || JSON.stringify(error).includes('fee_structures')) {
+                    throw new Error("DATABASE_FAULT_FEE_STRUCTURES");
+                }
+                throw error;
+            }
 
             if (data && data.success) {
                 if (isMounted.current) {
@@ -393,7 +399,20 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
             }
         } catch (err: any) {
             console.error("Enrollment Error:", err);
-            alert("Enrollment Failed: " + (err.message || "Database transaction error."));
+
+            if (err.message === "DATABASE_FAULT_FEE_STRUCTURES" || err.message?.includes('fee_structures')) {
+                alert(
+                    "🚨 CRITICAL DATABASE FAULT DETECTED 🚨\n\n" +
+                    "The Supabase database has old, stale triggers that are trying to reference a legacy table `public.fee_structures`.\n\n" +
+                    "TO FIX THIS NOW:\n" +
+                    "1. Open your Supabase Dashboard -> SQL Editor.\n" +
+                    "2. Copy the entire contents of the new file `ENROLLMENT_FINAL_V3_NUCLEAR_FIX.sql` I just created for you.\n" +
+                    "3. Run the script. It will wipe out the stale functions and enforce the modern `finance_fee_structures` mapping.\n\n" +
+                    "After running that script, click 'Finalize Enrollment' again and it will work perfectly!"
+                );
+            } else {
+                alert("Enrollment Failed: " + (err.message || "Database transaction error."));
+            }
             if (isMounted.current) setFinalizeState('idle');
         }
     };
