@@ -438,19 +438,28 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
 
             const grouped: Record<string, GroupedRequirementData> = {};
 
-            (children || []).forEach((child: AdmissionApplication) => {
-                grouped[child.id] = {
+            (children || []).forEach((child: any) => {
+                const nodeData = {
                     admissionId: child.id,
-                    applicantName: child.applicant_name,
+                    applicantName: (child as any).applicant_name || (child as any).display_name || "Unknown", // Handle profile differences
                     profilePhotoUrl: child.profile_photo_url,
                     grade: child.grade,
                     requirements: []
                 };
+
+                grouped[child.id] = nodeData;
+                if (child.student_user_id && child.student_user_id !== child.id) {
+                    grouped[child.student_user_id] = nodeData;
+                }
             });
 
-            (reqs || []).forEach((req: RequirementWithDocs) => {
-                if (grouped[req.admission_id]) {
-                    grouped[req.admission_id].requirements.push(req);
+            (reqs || []).forEach((req: any) => {
+                // Use the frontend_mapped_id (student node override) or default admission_id
+                const nodeId = req.frontend_mapped_id || req.admission_id;
+                if (grouped[nodeId]) {
+                    if (!grouped[nodeId].requirements.some((r: any) => r.id === req.id)) {
+                        grouped[nodeId].requirements.push(req);
+                    }
                 }
             });
 
@@ -570,7 +579,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
 
     if (error) return <div className="p-6 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center font-bold">{error}</div>;
 
-    const navItems = Object.keys(groupedData).map(id => groupedData[id]);
+    const navItems = Object.values(groupedData).filter((v, i, a) => a.indexOf(v) === i);
 
     return (
         <div className="w-full mx-auto space-y-6 pb-32 animate-in fade-in duration-1000 max-w-[1400px]">

@@ -106,6 +106,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     const processDocsList = useCallback((rawDocs: any[]) => {
         const seen = new Set();
         const uniqueDocs = rawDocs.filter((d: any) => {
+            if (!d || !d.document_name) return false;
             const key = d.document_name.toLowerCase().trim();
             if (seen.has(key)) return false;
             seen.add(key);
@@ -129,7 +130,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
         combined.sort((a, b) => {
             if (a.is_mandatory && !b.is_mandatory) return -1;
             if (!a.is_mandatory && b.is_mandatory) return 1;
-            return a.document_name.localeCompare(b.document_name);
+            return (a.document_name || '').localeCompare(b.document_name || '');
         });
         return combined;
     }, [admission.id]);
@@ -188,6 +189,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
             if ((!data || data.length === 0) && !hasSeeded.current) {
                 const seeded = await seedMandatoryDocuments();
                 if (seeded) {
+                    hasSeeded.current = true; // Mark as seeded
                     // Re-fetch after seeding (use simple query)
                     const { data: freshReqs } = await supabase
                         .from('document_requirements')

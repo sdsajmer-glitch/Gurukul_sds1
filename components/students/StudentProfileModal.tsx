@@ -1131,20 +1131,29 @@ const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ student, onCl
             // 3. Parallel Fetch of Related Data
             const [
                 { data: parentRes },
-                { data: admissionRes },
+                admissionRes,
                 { data: enquiryRes },
                 { data: feeData },
                 { data: payHistory }
             ] = await Promise.all([
                 supabaseAdmin.rpc('get_linked_parent_for_student', { p_student_id: student.id }),
-                admissionId ? supabaseAdmin.from('admissions').select('*').eq('id', admissionId).maybeSingle() : Promise.resolve({ data: null }),
+                (async () => {
+                    if (admissionId) return supabaseAdmin.from('admissions').select('*').eq('id', admissionId).maybeSingle();
+                    // Fallback Search: Many enrolled students have admissions linked via student_user_id but not in student_profiles.admission_id
+                    return supabaseAdmin.from('admissions')
+                        .select('*')
+                        .eq('student_user_id', student.id)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                })(),
                 enquiryId ? supabaseAdmin.from('enquiries').select('*').eq('id', enquiryId).maybeSingle() : Promise.resolve({ data: null }),
                 supabaseAdmin.rpc('get_student_fee_summary', { p_student_id: student.id }),
                 supabaseAdmin.rpc('get_student_payment_history', { p_student_id: student.id })
             ]);
 
             // 4. Update State
-            const activeAdmission = admissionRes;
+            const activeAdmission = admissionRes.data;
             const activeEnquiry = enquiryRes;
             const profileData = profileRaw; // Use the single object directly, not an array wrapper
 
