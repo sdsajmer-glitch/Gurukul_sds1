@@ -22,6 +22,8 @@ import { RefreshCwIcon } from '../icons/RefreshCwIcon';
 import StudentProfileModal from '../students/StudentProfileModal';
 import { StudentForAdmin } from '../../types';
 import { ChevronDownIcon } from '../icons/ChevronDownIcon';
+import { AdmissionsListTable } from './AdmissionsListTable';
+import { ENROLLMENT_FIX_SQL } from '../../utils/sqlFixScript';
 import clsx from 'clsx';
 
 interface AdmissionDetailsModalProps {
@@ -401,15 +403,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
             console.error("Enrollment Error:", err);
 
             if (err.message === "DATABASE_FAULT_FEE_STRUCTURES" || err.message?.includes('fee_structures')) {
-                alert(
-                    "🚨 CRITICAL DATABASE FAULT DETECTED 🚨\n\n" +
-                    "The Supabase database has old, stale triggers that are trying to reference a legacy table `public.fee_structures`.\n\n" +
-                    "TO FIX THIS NOW:\n" +
-                    "1. Open your Supabase Dashboard -> SQL Editor.\n" +
-                    "2. Copy the entire contents of the new file `ENROLLMENT_FINAL_V3_NUCLEAR_FIX.sql` I just created for you.\n" +
-                    "3. Run the script. It will wipe out the stale functions and enforce the modern `finance_fee_structures` mapping.\n\n" +
-                    "After running that script, click 'Finalize Enrollment' again and it will work perfectly!"
-                );
+                setShowDBErrorPopup(true);
             } else {
                 alert("Enrollment Failed: " + (err.message || "Database transaction error."));
             }
@@ -484,323 +478,386 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     const statusColor = getStatusColor(admission.status);
 
     return (
-        <div className="fixed inset-0 z-[100] bg-bg-primary/95 backdrop-blur-3xl overflow-y-auto custom-scrollbar flex flex-col items-center">
-            {/* Main Console Container */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-[1440px] min-h-screen bg-bg-secondary border-x border-white/[0.03] flex flex-col shadow-2xl"
-            >
-                {/* ═══ ENTERPRISE HEADER REBUILD ═══ */}
-                <header className="px-8 py-6 border-b border-white/[0.03] bg-bg-card/50 sticky top-0 z-50 backdrop-blur-xl">
-                    <div className="flex items-center justify-between gap-8">
-                        {/* Student Identity Section */}
-                        <div className="flex items-center gap-6 min-w-0">
-                            <div className="relative">
-                                <PremiumAvatar
-                                    src={admission.profile_photo_url}
-                                    name={admission.applicant_name}
-                                    size="xl"
-                                    className="ring-4 ring-white/5 shadow-2xl"
-                                />
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-accent-success rounded-full border-4 border-bg-secondary flex items-center justify-center">
-                                    <ShieldCheckIcon className="w-3 h-3 text-white" />
-                                </div>
-                            </div>
-                            <div className="min-w-0">
-                                <div className="flex items-center gap-3 mb-1">
-                                    <h2 className="text-3xl font-black text-white tracking-tight uppercase truncate">{admission.applicant_name}</h2>
-                                    <span className={clsx("px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-current",
-                                        admission.status === 'Enrolled' ? "text-accent-success bg-accent-success/10" : "text-accent-warning bg-accent-warning/10"
-                                    )}>
-                                        {admission.status || 'PROSPECT'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-x-4 gap-y-1 flex-wrap">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Grade</span>
-                                        <span className="text-[11px] font-bold text-white/60">{admission.grade}</span>
-                                    </div>
-                                    <div className="w-1 h-1 rounded-full bg-white/10" />
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Reg ID</span>
-                                        <span className="text-[11px] font-mono text-white/60">{admission.application_number || 'PENDING'}</span>
-                                    </div>
-                                    <div className="w-1 h-1 rounded-full bg-white/10" />
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Parent</span>
-                                        <span className="text-[11px] font-bold text-white/60 truncate max-w-[150px]">{admission.parent_email}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Central Compliance Status - Quick View */}
-                        <div className="hidden xl:flex items-center gap-8 px-8 border-x border-white/[0.03]">
-                            <div className="text-center">
-                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Verified</p>
-                                <p className="text-xl font-black text-accent-success leading-none">{verifiedDocs}</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Missing</p>
-                                <p className="text-xl font-black text-accent-error leading-none">{docs.filter(d => d.status === 'Missing').length}</p>
-                            </div>
-                            <div className="w-px h-10 bg-white/5" />
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center justify-between gap-10">
-                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Compliance Score</span>
-                                    <span className="text-[11px] font-black text-accent-primary">{progressPercentage}%</span>
-                                </div>
-                                <div className="w-48 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${progressPercentage}%` }}
-                                        className="h-full bg-accent-primary shadow-[0_0_10px_rgba(139,92,246,0.3)]"
+        <>
+            <div className="fixed inset-0 z-[100] bg-bg-primary/95 backdrop-blur-3xl overflow-y-auto custom-scrollbar flex flex-col items-center">
+                {/* Main Console Container */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-[1440px] min-h-screen bg-bg-secondary border-x border-white/[0.03] flex flex-col shadow-2xl"
+                >
+                    {/* ═══ ENTERPRISE HEADER REBUILD ═══ */}
+                    <header className="px-8 py-6 border-b border-white/[0.03] bg-bg-card/50 sticky top-0 z-50 backdrop-blur-xl">
+                        <div className="flex items-center justify-between gap-8">
+                            {/* Student Identity Section */}
+                            <div className="flex items-center gap-6 min-w-0">
+                                <div className="relative">
+                                    <PremiumAvatar
+                                        src={admission.profile_photo_url}
+                                        name={admission.applicant_name}
+                                        size="xl"
+                                        className="ring-4 ring-white/5 shadow-2xl"
                                     />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Command Strip */}
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={fetchDocs}
-                                className="p-3 rounded-xl bg-white/[0.03] text-white/25 hover:text-white hover:bg-white/[0.06] transition-all border border-white/[0.05]"
-                            >
-                                <RefreshCwIcon className={clsx("w-5 h-5", loading && "animate-spin")} />
-                            </button>
-                            <button
-                                onClick={() => setIsRequestingDoc(true)}
-                                className="flex items-center gap-2 px-6 py-3 bg-accent-primary hover:bg-accent-primary/80 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl shadow-accent-primary/10 active:scale-95 border border-white/10"
-                            >
-                                <PlusIcon className="w-4 h-4" />
-                                Request Document
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/[0.06]"
-                            >
-                                <XIcon className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Secondary Navigation Strip */}
-                    <div className="flex items-center gap-1 mt-6 bg-bg-card p-1 rounded-xl border border-white/[0.03] w-fit">
-                        {[
-                            { key: 'vault' as const, label: 'Documentation Vault', icon: <ShieldCheckIcon className="w-4 h-4" /> },
-                            { key: 'identity' as const, label: 'Applicant Identity', icon: <UserIcon className="w-4 h-4" /> },
-                        ].map(tab => (
-                            <button
-                                key={tab.key}
-                                onClick={() => setActiveTab(tab.key)}
-                                className={clsx(
-                                    "flex items-center gap-2.5 px-6 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300",
-                                    activeTab === tab.key
-                                        ? "bg-accent-primary/20 text-accent-primary border border-accent-primary/20 shadow-lg shadow-accent-primary/5"
-                                        : "text-white/20 hover:text-white/40 border border-transparent"
-                                )}
-                            >
-                                {tab.icon}
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-                </header>
-
-                {/* ═══ MAIN BODY (GRID SYSTEM) ═══ */}
-                <main className="flex-grow grid grid-cols-12 overflow-hidden">
-                    {/* Left Sidebar / Meta Panel */}
-                    <aside className="col-span-12 lg:col-span-3 border-r border-white/[0.03] bg-bg-card/30 p-8 space-y-8 overflow-y-auto custom-scrollbar">
-                        <div>
-                            <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6">Vault Summary</h3>
-                            <div className="space-y-4">
-                                <SummaryBadge label="Total Artifacts" value={totalDocs} color="primary" />
-                                <SummaryBadge label="Verified Assets" value={verifiedDocs} color="success" />
-                                <SummaryBadge label="Pending Review" value={submittedDocs} color="warning" />
-                                <SummaryBadge label="Missing mandatory" value={docs.filter(d => d.status === 'Missing').length} color="error" />
-                            </div>
-                        </div>
-
-                        <div className="pt-8 border-t border-white/[0.03]">
-                            <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Security Protocol</h3>
-                            <div className="p-4 rounded-xl bg-accent-success/5 border border-accent-success/10 space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <ShieldCheckIcon className="w-4 h-4 text-accent-success" />
-                                    <span className="text-[10px] font-black text-accent-success uppercase tracking-widest">End-to-End Encrypted</span>
-                                </div>
-                                <p className="text-[9px] text-white/30 leading-relaxed uppercase tracking-wider font-bold">
-                                    All documents are audit-logged and stored in verified compliance nodes.
-                                </p>
-                            </div>
-                        </div>
-                    </aside>
-
-                    {/* Primary Content Area */}
-                    <section className="col-span-12 lg:col-span-9 overflow-y-auto custom-scrollbar p-8">
-                        {finalizeState === 'success' ? (
-                            <SuccessBanner provisionedData={provisionedData} />
-                        ) : loading ? (
-                            <div className="space-y-6 max-w-5xl mx-auto">
-                                <div className="h-32 bg-white/5 rounded-2xl animate-pulse" />
-                                <div className="space-y-3">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="h-16 bg-white/[0.03] rounded-xl animate-pulse" />
-                                    ))}
-                                </div>
-                            </div>
-                        ) : activeTab === 'vault' ? (
-                            <div className="space-y-8 max-w-5xl mx-auto">
-                                {docs.length === 0 ? (
-                                    <div className="py-20 flex flex-col items-center justify-center text-center gap-6 bg-bg-card/40 border border-dashed border-white/10 rounded-3xl">
-                                        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
-                                            <FileTextIcon className="w-10 h-10 text-white/10" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="text-xl font-bold text-white/40 uppercase tracking-widest">No Documents Found</h3>
-                                            <p className="text-sm text-white/20 max-w-xs mx-auto">
-                                                No document requirements have been initialized for this application node.
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={handleInitializeCompliance}
-                                            disabled={seedingDocs}
-                                            className="px-6 py-3 bg-accent-primary/10 hover:bg-accent-primary border border-accent-primary/20 text-accent-primary hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all gap-2 flex items-center"
-                                        >
-                                            {seedingDocs ? <RefreshCwIcon className="w-4 h-4 animate-spin" /> : <PlusIcon className="w-4 h-4" />}
-                                            Initialize Compliance Protocol
-                                        </button>
+                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-accent-success rounded-full border-4 border-bg-secondary flex items-center justify-center">
+                                        <ShieldCheckIcon className="w-3 h-3 text-white" />
                                     </div>
-                                ) : (
-                                    <>
-                                        {/* Horizontal Compliance Summary Strip */}
-                                        <div className="flex items-center justify-between gap-4 p-6 bg-bg-card/80 border border-white/[0.03] rounded-2xl shadow-xl">
-                                            <div className="flex items-center gap-12">
-                                                <div className="space-y-1">
-                                                    <p className="text-2xl font-black text-white leading-none">{totalDocs}</p>
-                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Total Required</p>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-2xl font-black text-accent-success leading-none">{verifiedDocs}</p>
-                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Verified</p>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-2xl font-black text-accent-warning leading-none">{submittedDocs}</p>
-                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Submitted</p>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-2xl font-black text-accent-error leading-none">{docs.filter(d => d.status === 'Missing').length}</p>
-                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Missing</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-6 pl-8 border-l border-white/[0.05]">
-                                                <div className="text-right space-y-1">
-                                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Overall Compliance</p>
-                                                    <p className="text-3xl font-black text-white leading-none tracking-tighter">{progressPercentage}%</p>
-                                                </div>
-                                                <div className="w-16 h-16 relative flex items-center justify-center">
-                                                    <svg className="w-full h-full -rotate-90">
-                                                        <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-white/5" />
-                                                        <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-accent-primary" strokeDasharray={176} strokeDashoffset={176 - (176 * progressPercentage) / 100} />
-                                                    </svg>
-                                                    <ShieldCheckIcon className="absolute w-5 h-5 text-accent-primary opacity-50" />
-                                                </div>
-                                            </div>
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <h2 className="text-3xl font-black text-white tracking-tight uppercase truncate">{admission.applicant_name}</h2>
+                                        <span className={clsx("px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-current",
+                                            admission.status === 'Enrolled' ? "text-accent-success bg-accent-success/10" : "text-accent-warning bg-accent-warning/10"
+                                        )}>
+                                            {admission.status || 'PROSPECT'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-x-4 gap-y-1 flex-wrap">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Grade</span>
+                                            <span className="text-[11px] font-bold text-white/60">{admission.grade}</span>
                                         </div>
-
-                                        {/* Accordion Categories */}
-                                        <div className="space-y-4">
-                                            {['Identity Documents', 'Academic Records', 'Financial Records', 'Medical Records', 'Compliance Artifacts'].map(catName => {
-                                                const catDocs = docs.filter(d => getDocumentCategory(d.document_name) === catName);
-                                                if (catDocs.length === 0 && catName === 'Compliance Artifacts') return null;
-                                                if (catDocs.length === 0) return null;
-                                                return (
-                                                    <DocumentCategoryAccordion
-                                                        key={catName}
-                                                        category={catName}
-                                                        docs={catDocs}
-                                                        onVerify={handleVerifyDoc}
-                                                        onReject={handleRejectDoc}
-                                                        onDownload={handleDownload}
-                                                        downloadingId={downloadingId}
-                                                    />
-                                                );
-                                            })}
+                                        <div className="w-1 h-1 rounded-full bg-white/10" />
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Reg ID</span>
+                                            <span className="text-[11px] font-mono text-white/60">{admission.application_number || 'PENDING'}</span>
                                         </div>
-                                    </>
-                                )}
+                                        <div className="w-1 h-1 rounded-full bg-white/10" />
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Parent</span>
+                                            <span className="text-[11px] font-bold text-white/60 truncate max-w-[150px]">{admission.parent_email}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        ) : (
-                            <IdentityTab admission={admission} />
-                        )}
-                    </section>
-                </main>
 
-                {/* ═══ STICKY FINALIZATION FOOTER ═══ */}
-                {finalizeState !== 'success' && (
-                    <footer className="border-t border-white/[0.03] bg-bg-card/80 backdrop-blur-xl px-8 py-4 flex items-center justify-between gap-6 sticky bottom-0 z-50">
-                        {/* Left: Compliance Status */}
-                        <div className="flex items-center gap-4">
-                            <div className={clsx(
-                                "w-2.5 h-2.5 rounded-full animate-pulse",
-                                allMandatoryVerified ? "bg-accent-success shadow-[0_0_10px_rgba(34,197,94,0.6)]" : "bg-accent-warning shadow-[0_0_10px_rgba(245,158,11,0.4)]"
-                            )} />
-                            <div>
-                                <p className={clsx(
-                                    "text-[10px] font-black uppercase tracking-[0.25em]",
-                                    allMandatoryVerified ? "text-accent-success" : "text-accent-warning"
-                                )}>
-                                    {allMandatoryVerified ? "Ready For Finalization" : "Awaiting Document Clearance"}
-                                </p>
-                                <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-0.5">
-                                    {allMandatoryVerified
-                                        ? "All mandatory artifacts verified. Enrollment protocol unlocked."
-                                        : `${mandatoryDocs.filter(d => d.status !== 'Verified').length} mandatory document(s) pending verification.`
-                                    }
-                                </p>
+                            {/* Central Compliance Status - Quick View */}
+                            <div className="hidden xl:flex items-center gap-8 px-8 border-x border-white/[0.03]">
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Verified</p>
+                                    <p className="text-xl font-black text-accent-success leading-none">{verifiedDocs}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Missing</p>
+                                    <p className="text-xl font-black text-accent-error leading-none">{docs.filter(d => d.status === 'Missing').length}</p>
+                                </div>
+                                <div className="w-px h-10 bg-white/5" />
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between gap-10">
+                                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Compliance Score</span>
+                                        <span className="text-[11px] font-black text-accent-primary">{progressPercentage}%</span>
+                                    </div>
+                                    <div className="w-48 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${progressPercentage}%` }}
+                                            className="h-full bg-accent-primary shadow-[0_0_10px_rgba(139,92,246,0.3)]"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Command Strip */}
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={fetchDocs}
+                                    className="p-3 rounded-xl bg-white/[0.03] text-white/25 hover:text-white hover:bg-white/[0.06] transition-all border border-white/[0.05]"
+                                >
+                                    <RefreshCwIcon className={clsx("w-5 h-5", loading && "animate-spin")} />
+                                </button>
+                                <button
+                                    onClick={() => setIsRequestingDoc(true)}
+                                    className="flex items-center gap-2 px-6 py-3 bg-accent-primary hover:bg-accent-primary/80 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl shadow-accent-primary/10 active:scale-95 border border-white/10"
+                                >
+                                    <PlusIcon className="w-4 h-4" />
+                                    Request Document
+                                </button>
+                                <button
+                                    onClick={onClose}
+                                    className="p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/[0.06]"
+                                >
+                                    <XIcon className="w-5 h-5" />
+                                </button>
                             </div>
                         </div>
 
-                        {/* Right: Finalize Button */}
-                        <div className="flex items-center gap-3">
-                            {admission.status !== 'Enrolled' ? (
+                        {/* Secondary Navigation Strip */}
+                        <div className="flex items-center gap-1 mt-6 bg-bg-card p-1 rounded-xl border border-white/[0.03] w-fit">
+                            {[
+                                { key: 'vault' as const, label: 'Documentation Vault', icon: <ShieldCheckIcon className="w-4 h-4" /> },
+                                { key: 'identity' as const, label: 'Applicant Identity', icon: <UserIcon className="w-4 h-4" /> },
+                            ].map(tab => (
                                 <button
-                                    id="finalize-enrollment-btn"
-                                    onClick={handleFinalize}
-                                    disabled={finalizeState === 'processing'}
+                                    key={tab.key}
+                                    onClick={() => setActiveTab(tab.key)}
                                     className={clsx(
-                                        "flex items-center gap-3 px-8 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 border",
-                                        finalizeState === 'processing'
-                                            ? "bg-white/5 border-white/10 text-white/20 cursor-not-allowed"
-                                            : allMandatoryVerified
-                                                ? "bg-accent-primary hover:bg-accent-primary/80 text-white border-transparent shadow-xl shadow-accent-primary/20"
-                                                : "bg-accent-warning/10 hover:bg-accent-warning text-accent-warning hover:text-white border-accent-warning/30 hover:border-transparent"
+                                        "flex items-center gap-2.5 px-6 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+                                        activeTab === tab.key
+                                            ? "bg-accent-primary/20 text-accent-primary border border-accent-primary/20 shadow-lg shadow-accent-primary/5"
+                                            : "text-white/20 hover:text-white/40 border border-transparent"
                                     )}
                                 >
-                                    {finalizeState === 'processing' ? (
-                                        <>
-                                            <RefreshCwIcon className="w-4 h-4 animate-spin" />
-                                            Processing Identity...
-                                        </>
+                                    {tab.icon}
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </header>
+
+                    {/* ═══ MAIN BODY (GRID SYSTEM) ═══ */}
+                    <main className="flex-grow grid grid-cols-12 overflow-hidden">
+                        {/* Left Sidebar / Meta Panel */}
+                        <aside className="col-span-12 lg:col-span-3 border-r border-white/[0.03] bg-bg-card/30 p-8 space-y-8 overflow-y-auto custom-scrollbar">
+                            <div>
+                                <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6">Vault Summary</h3>
+                                <div className="space-y-4">
+                                    <SummaryBadge label="Total Artifacts" value={totalDocs} color="primary" />
+                                    <SummaryBadge label="Verified Assets" value={verifiedDocs} color="success" />
+                                    <SummaryBadge label="Pending Review" value={submittedDocs} color="warning" />
+                                    <SummaryBadge label="Missing mandatory" value={docs.filter(d => d.status === 'Missing').length} color="error" />
+                                </div>
+                            </div>
+
+                            <div className="pt-8 border-t border-white/[0.03]">
+                                <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Security Protocol</h3>
+                                <div className="p-4 rounded-xl bg-accent-success/5 border border-accent-success/10 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <ShieldCheckIcon className="w-4 h-4 text-accent-success" />
+                                        <span className="text-[10px] font-black text-accent-success uppercase tracking-widest">End-to-End Encrypted</span>
+                                    </div>
+                                    <p className="text-[9px] text-white/30 leading-relaxed uppercase tracking-wider font-bold">
+                                        All documents are audit-logged and stored in verified compliance nodes.
+                                    </p>
+                                </div>
+                            </div>
+                        </aside>
+
+                        {/* Primary Content Area */}
+                        <section className="col-span-12 lg:col-span-9 overflow-y-auto custom-scrollbar p-8">
+                            {finalizeState === 'success' ? (
+                                <SuccessBanner provisionedData={provisionedData} />
+                            ) : loading ? (
+                                <div className="space-y-6 max-w-5xl mx-auto">
+                                    <div className="h-32 bg-white/5 rounded-2xl animate-pulse" />
+                                    <div className="space-y-3">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="h-16 bg-white/[0.03] rounded-xl animate-pulse" />
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : activeTab === 'vault' ? (
+                                <div className="space-y-8 max-w-5xl mx-auto">
+                                    {docs.length === 0 ? (
+                                        <div className="py-20 flex flex-col items-center justify-center text-center gap-6 bg-bg-card/40 border border-dashed border-white/10 rounded-3xl">
+                                            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
+                                                <FileTextIcon className="w-10 h-10 text-white/10" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-xl font-bold text-white/40 uppercase tracking-widest">No Documents Found</h3>
+                                                <p className="text-sm text-white/20 max-w-xs mx-auto">
+                                                    No document requirements have been initialized for this application node.
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={handleInitializeCompliance}
+                                                disabled={seedingDocs}
+                                                className="px-6 py-3 bg-accent-primary/10 hover:bg-accent-primary border border-accent-primary/20 text-accent-primary hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all gap-2 flex items-center"
+                                            >
+                                                {seedingDocs ? <RefreshCwIcon className="w-4 h-4 animate-spin" /> : <PlusIcon className="w-4 h-4" />}
+                                                Initialize Compliance Protocol
+                                            </button>
+                                        </div>
                                     ) : (
                                         <>
-                                            <ShieldCheckIcon className="w-4 h-4" />
-                                            Finalize Enrollment
+                                            {/* Horizontal Compliance Summary Strip */}
+                                            <div className="flex items-center justify-between gap-4 p-6 bg-bg-card/80 border border-white/[0.03] rounded-2xl shadow-xl">
+                                                <div className="flex items-center gap-12">
+                                                    <div className="space-y-1">
+                                                        <p className="text-2xl font-black text-white leading-none">{totalDocs}</p>
+                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Total Required</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-2xl font-black text-accent-success leading-none">{verifiedDocs}</p>
+                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Verified</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-2xl font-black text-accent-warning leading-none">{submittedDocs}</p>
+                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Submitted</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-2xl font-black text-accent-error leading-none">{docs.filter(d => d.status === 'Missing').length}</p>
+                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Missing</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-6 pl-8 border-l border-white/[0.05]">
+                                                    <div className="text-right space-y-1">
+                                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Overall Compliance</p>
+                                                        <p className="text-3xl font-black text-white leading-none tracking-tighter">{progressPercentage}%</p>
+                                                    </div>
+                                                    <div className="w-16 h-16 relative flex items-center justify-center">
+                                                        <svg className="w-full h-full -rotate-90">
+                                                            <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-white/5" />
+                                                            <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-accent-primary" strokeDasharray={176} strokeDashoffset={176 - (176 * progressPercentage) / 100} />
+                                                        </svg>
+                                                        <ShieldCheckIcon className="absolute w-5 h-5 text-accent-primary opacity-50" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Accordion Categories */}
+                                            <div className="space-y-4">
+                                                {['Identity Documents', 'Academic Records', 'Financial Records', 'Medical Records', 'Compliance Artifacts'].map(catName => {
+                                                    const catDocs = docs.filter(d => getDocumentCategory(d.document_name) === catName);
+                                                    if (catDocs.length === 0 && catName === 'Compliance Artifacts') return null;
+                                                    if (catDocs.length === 0) return null;
+                                                    return (
+                                                        <DocumentCategoryAccordion
+                                                            key={catName}
+                                                            category={catName}
+                                                            docs={catDocs}
+                                                            onVerify={handleVerifyDoc}
+                                                            onReject={handleRejectDoc}
+                                                            onDownload={handleDownload}
+                                                            downloadingId={downloadingId}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
                                         </>
                                     )}
-                                </button>
-                            ) : (
-                                <div className="flex items-center gap-3 px-8 py-3.5 rounded-xl bg-accent-success/10 border border-accent-success/20">
-                                    <ShieldCheckIcon className="w-4 h-4 text-accent-success" />
-                                    <span className="text-[11px] font-black uppercase tracking-widest text-accent-success">Enrolled &amp; Secured</span>
                                 </div>
+                            ) : (
+                                <IdentityTab admission={admission} />
                             )}
+                        </section>
+                    </main>
+
+                    {/* ═══ STICKY FINALIZATION FOOTER ═══ */}
+                    {finalizeState !== 'success' && (
+                        <footer className="border-t border-white/[0.03] bg-bg-card/80 backdrop-blur-xl px-8 py-4 flex items-center justify-between gap-6 sticky bottom-0 z-50">
+                            {/* Left: Compliance Status */}
+                            <div className="flex items-center gap-4">
+                                <div className={clsx(
+                                    "w-2.5 h-2.5 rounded-full animate-pulse",
+                                    allMandatoryVerified ? "bg-accent-success shadow-[0_0_10px_rgba(34,197,94,0.6)]" : "bg-accent-warning shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                                )} />
+                                <div>
+                                    <p className={clsx(
+                                        "text-[10px] font-black uppercase tracking-[0.25em]",
+                                        allMandatoryVerified ? "text-accent-success" : "text-accent-warning"
+                                    )}>
+                                        {allMandatoryVerified ? "Ready For Finalization" : "Awaiting Document Clearance"}
+                                    </p>
+                                    <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-0.5">
+                                        {allMandatoryVerified
+                                            ? "All mandatory artifacts verified. Enrollment protocol unlocked."
+                                            : `${mandatoryDocs.filter(d => d.status !== 'Verified').length} mandatory document(s) pending verification.`
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Right: Finalize Button */}
+                            <div className="flex items-center gap-3">
+                                {admission.status !== 'Enrolled' ? (
+                                    <button
+                                        id="finalize-enrollment-btn"
+                                        onClick={handleFinalize}
+                                        disabled={finalizeState === 'processing'}
+                                        className={clsx(
+                                            "flex items-center gap-3 px-8 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 border",
+                                            finalizeState === 'processing'
+                                                ? "bg-white/5 border-white/10 text-white/20 cursor-not-allowed"
+                                                : allMandatoryVerified
+                                                    ? "bg-accent-primary hover:bg-accent-primary/80 text-white border-transparent shadow-xl shadow-accent-primary/20"
+                                                    : "bg-accent-warning/10 hover:bg-accent-warning text-accent-warning hover:text-white border-accent-warning/30 hover:border-transparent"
+                                        )}
+                                    >
+                                        {finalizeState === 'processing' ? (
+                                            <>
+                                                <RefreshCwIcon className="w-4 h-4 animate-spin" />
+                                                Processing Identity...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ShieldCheckIcon className="w-4 h-4" />
+                                                Finalize Enrollment
+                                            </>
+                                        )}
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center gap-3 px-8 py-3.5 rounded-xl bg-accent-success/10 border border-accent-success/20">
+                                        <ShieldCheckIcon className="w-4 h-4 text-accent-success" />
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-accent-success">Enrolled &amp; Secured</span>
+                                    </div>
+                                )}
+                            </div>
+                        </footer>
+                    )}
+                </motion.div>
+            </div>
+
+            {/* CRITICAL DB FAULT ERROR MODAL */}
+            {showDBErrorPopup && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-red-50 border border-red-200 rounded-xl shadow-2xl max-w-2xl w-full p-6 text-red-900">
+                        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                            <span className="text-3xl">🚨</span> Critical Database Fault Detected
+                        </h2>
+
+                        <p className="mb-4 text-red-800 font-medium leading-relaxed">
+                            The Supabase Database has old, stale triggers that are trying to reference a legacy table <code className="bg-red-100 text-red-900 px-1 py-0.5 rounded">public.fee_structures</code> which no longer exists.
+                            <br /><br />
+                            We have generated the exact SQL script you need to run to eliminate these stale triggers and permanently fix enrollment!
+                        </p>
+
+                        <div className="bg-white rounded-lg p-5 border border-red-200 shadow-sm mb-6">
+                            <h3 className="font-bold text-red-900 mb-2">How to Fix This:</h3>
+                            <ol className="list-decimal pl-5 space-y-2 text-sm text-red-800">
+                                <li>Click the button below to copy the Nuclear Fix script.</li>
+                                <li>Open your <a href="https://supabase.com/dashboard/project/uakcydchamgtjbmcyfzi/sql/new" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold">Supabase SQL Editor</a> in a new tab.</li>
+                                <li>Paste the script into the text area.</li>
+                                <li>Click <strong>Run</strong> (or press Ctrl+Enter).</li>
+                                <li>Once it says "SUCCESS", close this popup and click "Finalize Enrollment" again!</li>
+                            </ol>
                         </div>
-                    </footer>
-                )}
-            </motion.div>
-        </div>
+
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(ENROLLMENT_FIX_SQL)
+                                        .then(() => alert("✅ SQL Script Copied to Clipboard!\n\nNow Go to the Supabase link and paste it in the SQL Editor, then click Run."))
+                                        .catch(() => alert("Could not copy automatically. Please refer to ENROLLMENT_FINAL_V3_NUCLEAR_FIX.sql manually."));
+                                }}
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                1. Copy Fix Script
+                            </button>
+
+                            <a
+                                href="https://supabase.com/dashboard/project/uakcydchamgtjbmcyfzi/sql/new"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 bg-black hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                2. Open Supabase
+                            </a>
+                        </div>
+
+                        <div className="mt-4 text-center">
+                            <button
+                                onClick={() => setShowDBErrorPopup(false)}
+                                className="text-red-500 hover:text-red-700 hover:underline font-medium text-sm"
+                            >
+                                I have run the script, close window
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 };
 
