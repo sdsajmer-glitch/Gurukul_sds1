@@ -75,15 +75,28 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     // ═══════════════════════════════════════════════════════════
     const seedMandatoryDocuments = useCallback(async () => {
         if (!admission.id || hasSeeded.current) return false;
-        hasSeeded.current = true;
         setSeedingDocs(true);
         try {
-            const records = STANDARD_MANDATORY.map(name => ({
-                admission_id: admission.id,
-                document_name: name,
-                is_mandatory: true,
-                status: 'Pending'
-            }));
+            // Check what already exists to avoid duplicates
+            const { data: existing } = await supabase
+                .from('document_requirements')
+                .select('document_name')
+                .eq('admission_id', admission.id);
+
+            const existingNames = (existing || []).map((d: any) => d.document_name.toLowerCase().trim());
+            const records = STANDARD_MANDATORY
+                .filter(name => !existingNames.includes(name.toLowerCase().trim()))
+                .map(name => ({
+                    admission_id: admission.id,
+                    document_name: name,
+                    is_mandatory: true,
+                    status: 'Pending'
+                }));
+
+            if (records.length === 0) {
+                hasSeeded.current = true;
+                return true; // All already exist
+            }
 
             const { error } = await supabase
                 .from('document_requirements')
@@ -93,6 +106,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                 console.error("Auto-seed error:", error);
                 return false;
             }
+            hasSeeded.current = true;
             return true;
         } catch (err) {
             console.error("Seed protocol failure:", err);
@@ -138,114 +152,66 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     const fetchDocs = useCallback(async () => {
         if (!admission.id) return;
         setLoading(true);
+        let fetchedDocs: any[] = [];
         try {
-            // Primary query: PostgREST resource embedding
-            const { data, error } = await supabase
+            // Step 1: Query requirements linked to this admission OR its parent enquiry
+            const { data: reqData, error: reqErr } = await supabase
                 .from('document_requirements')
-                .select('*, admission_documents!requirement_id(*)')
-                .eq('admission_id', admission.id)
+                .select('*')
+                .or(`admission_id.eq.${admission.id}${admission.enquiry_id ? ',enquiry_id.eq.' + admission.enquiry_id : ''}`)
                 .order('is_mandatory', { ascending: false });
 
-            if (error) {
-                console.warn("[Vault] Embedded query failed, trying fallback:", error.message);
-                // Fallback: Separate queries and manual join
-                const { data: reqData, error: reqErr } = await supabase
-                    .from('document_requirements')
-                    .select('*')
-                    .eq('admission_id', admission.id)
-                    .order('is_mandatory', { ascending: false });
-
-                if (reqErr) throw reqErr;
-
-                if (reqData && reqData.length > 0) {
-                    // Fetch admission_documents separately for each requirement
-                    const reqIds = reqData.map((r: any) => r.id);
-                    const { data: adDocs } = await supabase
-                        .from('admission_documents')
-                        .select('*')
-                        .in('requirement_id', reqIds);
-
-                    // Manual join
-                    const docsMap = new Map<number, any[]>();
-                    (adDocs || []).forEach((ad: any) => {
-                        const existing = docsMap.get(ad.requirement_id) || [];
-                        existing.push(ad);
-                        docsMap.set(ad.requirement_id, existing);
-                    });
-
-                    const joinedData = reqData.map((r: any) => ({
-                        ...r,
-                        admission_documents: docsMap.get(r.id) || []
-                    }));
-
-                    if (isMounted.current) {
-                        setDocs(processDocsList(joinedData));
-                    }
-                    return;
-                }
+            if (reqErr) {
+                console.warn("[Vault] Requirements query failed:", reqErr.message);
             }
 
-            // ═══ AUTO-SEED FIX: If DB has ZERO docs, seed them now ═══
-            if ((!data || data.length === 0) && !hasSeeded.current) {
-                const seeded = await seedMandatoryDocuments();
-                if (seeded) {
-                    hasSeeded.current = true; // Mark as seeded
-                    // Re-fetch after seeding (use simple query)
-                    const { data: freshReqs } = await supabase
-                        .from('document_requirements')
-                        .select('*')
-                        .eq('admission_id', admission.id)
-                        .order('is_mandatory', { ascending: false });
+            if (reqData && reqData.length > 0) {
+                // Step 2: Fetch admission_documents with uploader profiles
+                const reqIds = reqData.map((r: any) => r.id);
+                const { data: adDocs } = await supabase
+                    .from('admission_documents')
+                    .select('*, uploader:profiles(display_name, role)')
+                    .in('requirement_id', reqIds);
 
-                    if (freshReqs && freshReqs.length > 0) {
-                        const freshWithDocs = freshReqs.map((r: any) => ({ ...r, admission_documents: [] }));
-                        if (isMounted.current) setDocs(processDocsList(freshWithDocs));
-                    }
-                    return;
-                }
-            }
+                const docsMap = new Map<number, any[]>();
+                (adDocs || []).forEach((ad: any) => {
+                    const existing = docsMap.get(ad.requirement_id) || [];
+                    existing.push(ad);
+                    docsMap.set(ad.requirement_id, existing);
+                });
 
-            // Check if embed returned data but admission_documents are all null/empty
-            // This happens when PostgREST embed works for requirements but not for nested docs
-            let processedData = data || [];
-            if (processedData.length > 0) {
-                const allDocsEmpty = processedData.every((d: any) =>
-                    !d.admission_documents || d.admission_documents.length === 0
-                );
+                fetchedDocs = reqData.map((r: any) => ({
+                    ...r,
+                    admission_documents: docsMap.get(r.id) || []
+                }));
+            } else {
+                // Step 3: No documents found — auto-seed mandatory docs
+                if (!hasSeeded.current) {
+                    console.log("[Vault] No documents found, auto-seeding...");
+                    const seeded = await seedMandatoryDocuments();
+                    if (seeded) {
+                        // Re-fetch after successful seed
+                        const { data: freshReqs } = await supabase
+                            .from('document_requirements')
+                            .select('*')
+                            .eq('admission_id', admission.id)
+                            .order('is_mandatory', { ascending: false });
 
-                if (allDocsEmpty) {
-                    // Fallback: fetch admission_documents separately
-                    const reqIds = processedData.map((r: any) => r.id);
-                    const { data: adDocs } = await supabase
-                        .from('admission_documents')
-                        .select('*')
-                        .in('requirement_id', reqIds);
-
-                    if (adDocs && adDocs.length > 0) {
-                        const docsMap = new Map<number, any[]>();
-                        adDocs.forEach((ad: any) => {
-                            const existing = docsMap.get(ad.requirement_id) || [];
-                            existing.push(ad);
-                            docsMap.set(ad.requirement_id, existing);
-                        });
-
-                        processedData = processedData.map((r: any) => ({
-                            ...r,
-                            admission_documents: docsMap.get(r.id) || []
-                        }));
+                        if (freshReqs && freshReqs.length > 0) {
+                            fetchedDocs = freshReqs.map((r: any) => ({ ...r, admission_documents: [] }));
+                        }
                     }
                 }
-            }
-
-            if (isMounted.current) {
-                setDocs(processDocsList(processedData));
             }
         } catch (error) {
             console.error("Vault Sync Error:", error);
         } finally {
-            if (isMounted.current) setLoading(false);
+            if (isMounted.current) {
+                setDocs(processDocsList(fetchedDocs));
+                setLoading(false);
+            }
         }
-    }, [admission.id, seedMandatoryDocuments, processDocsList]);
+    }, [admission.id, admission.enquiry_id, seedMandatoryDocuments, processDocsList]);
 
     useEffect(() => {
         fetchDocs();
@@ -412,9 +378,43 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
         }
     };
 
+    // Helper: Create a Missing placeholder doc in DB and return the real ID
+    const ensureDocInDb = async (docId: number): Promise<number | null> => {
+        if (docId > 0) return docId; // Already in DB
+        // Find the doc in local state by its placeholder ID
+        const doc = docs.find(d => d.id === docId);
+        if (!doc) return null;
+        try {
+            const { data, error } = await supabase
+                .from('document_requirements')
+                .insert({
+                    admission_id: admission.id,
+                    document_name: doc.document_name,
+                    is_mandatory: doc.is_mandatory,
+                    status: 'Pending'
+                })
+                .select('id')
+                .single();
+
+            if (error) {
+                console.error("Failed to create doc in DB:", error);
+                return null;
+            }
+            return data?.id || null;
+        } catch (e) {
+            console.error("ensureDocInDb error:", e);
+            return null;
+        }
+    };
+
     const handleVerifyDoc = async (docId: number) => {
         try {
-            await supabase.from('document_requirements').update({ status: 'Verified' }).eq('id', docId);
+            const realId = await ensureDocInDb(docId);
+            if (!realId) {
+                alert("Could not create document record. Please try Initialize Compliance Protocol first.");
+                return;
+            }
+            await supabase.from('document_requirements').update({ status: 'Verified' }).eq('id', realId);
             fetchDocs();
         } catch (e) { console.error(e); }
     };
@@ -423,7 +423,12 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
         const reason = prompt("Enter rejection reason:");
         if (!reason) return;
         try {
-            await supabase.from('document_requirements').update({ status: 'Rejected', rejection_reason: reason }).eq('id', docId);
+            const realId = await ensureDocInDb(docId);
+            if (!realId) {
+                alert("Could not create document record. Please try Initialize Compliance Protocol first.");
+                return;
+            }
+            await supabase.from('document_requirements').update({ status: 'Rejected', rejection_reason: reason }).eq('id', realId);
             fetchDocs();
         } catch (e) { console.error(e); }
     };
@@ -467,7 +472,7 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                 />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-3 mb-1.5">
+                                <div className="flex items-center gap-3 mb-1.5 text-white/40">
                                     <motion.h2
                                         initial={{ x: -15, opacity: 0 }}
                                         animate={{ x: 0, opacity: 1 }}
@@ -485,22 +490,27 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
                                     <span className="text-[10px] font-mono text-white/20 bg-white/[0.03] px-2 py-1 rounded-md border border-white/[0.04] truncate max-w-[160px]">
                                         {admission.application_number || 'PENDING_REGISTRATION'}
                                     </span>
-                                    {admission.student_user_id && (
-                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/15 text-emerald-400 text-[9px] font-black uppercase tracking-[0.12em]">
-                                            <ShieldCheckIcon className="w-3 h-3" /> Provisioned
-                                        </span>
-                                    )}
-                                    {admission.status === 'Enrolled' && (
-                                        <button
-                                            onClick={() => setViewStudentProfile(true)}
-                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/15 text-indigo-400 text-[9px] font-black uppercase tracking-[0.12em] hover:bg-indigo-500/20 transition-all"
-                                        >
-                                            <UserIcon className="w-3 h-3" /> View Profile
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                         </div>
+
+                        <div className="hidden lg:flex flex-col items-end gap-2 shrink-0 pr-6 border-r border-white/5 mr-2">
+                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Compliance Status</p>
+                            <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                    <p className="text-lg font-black text-white leading-none">{verifiedDocs}/{totalDocs}</p>
+                                    <p className="text-[8px] font-bold text-white/30 uppercase mt-0.5">Verified</p>
+                                </div>
+                                <div className="w-12 h-12 relative flex items-center justify-center">
+                                    <svg className="w-full h-full -rotate-90">
+                                        <circle cx="24" cy="24" r="20" fill="transparent" stroke="currentColor" strokeWidth="4" className="text-white/5" />
+                                        <circle cx="24" cy="24" r="20" fill="transparent" stroke="currentColor" strokeWidth="4" className="text-indigo-500" strokeDasharray={126} strokeDashoffset={126 - (126 * progressPercentage) / 100} />
+                                    </svg>
+                                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-indigo-400">{progressPercentage}%</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <button
                             onClick={onClose}
                             className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/[0.06] shrink-0"
@@ -957,17 +967,17 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
                 <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                     {file ? (
                         <div className="flex items-center gap-1 bg-white/[0.03] p-1 rounded-lg border border-white/[0.05]">
-                            <button onClick={() => StorageService.getSignedUrl(BUCKETS.DOCUMENTS, file.storage_path).then(url => window.open(url, '_blank'))} className="p-2 text-white/20 hover:text-white hover:bg-white/5 rounded-lg transition-all"><EyeIcon className="w-3.5 h-3.5" /></button>
-                            <button onClick={onDownload} className="p-2 text-white/20 hover:text-white hover:bg-white/5 rounded-lg transition-all">{downloading ? <Spinner size="sm" /> : <DownloadIcon className="w-3.5 h-3.5" />}</button>
-                            {!isVerified && (
-                                <div className="flex gap-1 pl-1 border-l border-white/[0.06] ml-1">
-                                    <button onClick={onVerify} className="px-3 py-1.5 bg-emerald-600/15 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all border border-emerald-500/15">Verify</button>
-                                    <button onClick={onReject} className="px-3 py-1.5 bg-red-600/15 hover:bg-red-600 text-red-400 hover:text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all border border-red-500/15">Reject</button>
-                                </div>
-                            )}
+                            <button onClick={() => StorageService.getSignedUrl(BUCKETS.DOCUMENTS, file.storage_path).then(url => window.open(url, '_blank'))} className="p-2 text-white/20 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Preview"><EyeIcon className="w-3.5 h-3.5" /></button>
+                            <button onClick={onDownload} className="p-2 text-white/20 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Download">{downloading ? <Spinner size="sm" /> : <DownloadIcon className="w-3.5 h-3.5" />}</button>
                         </div>
                     ) : (
-                        <span className="text-[8px] font-black uppercase tracking-[0.12em] text-white/15 italic mr-2">Awaiting Upload</span>
+                        <span className="text-[8px] font-black uppercase tracking-[0.12em] text-white/15 italic mr-1">Awaiting Upload</span>
+                    )}
+                    {!isVerified && (
+                        <div className="flex gap-1">
+                            <button onClick={onVerify} className="px-3 py-1.5 bg-emerald-600/15 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all border border-emerald-500/15" title="Approve document">Verify</button>
+                            <button onClick={onReject} className="px-3 py-1.5 bg-red-600/15 hover:bg-red-600 text-red-400 hover:text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all border border-red-500/15" title="Reject document">Reject</button>
+                        </div>
                     )}
                     <ChevronDownIcon className={clsx("w-4 h-4 transition-all duration-400", expanded ? "rotate-180 text-white/40" : "text-white/10")} />
                 </div>
@@ -993,13 +1003,28 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
                             )}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-wider mb-1">Registry Note</p>
-                                    <p className="text-[11px] text-white/30 leading-relaxed italic">Required for institutional compliance and academic vetting.</p>
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-wider mb-2">Vault Audit Trail</p>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                            <p className="text-[10px] text-white/50 font-medium">
+                                                Requirement generated on {new Date(doc.created_at).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        {file && (
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                <p className="text-[10px] text-white/50 font-medium">
+                                                    Uploaded by <span className="text-indigo-400 font-bold">{file.uploader?.display_name || 'System'}</span> ({file.uploader?.role || 'User'})
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-wider">Timestamp</p>
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-wider">Last Activity</p>
                                     <span className="px-2.5 py-1 bg-white/[0.02] border border-white/[0.06] rounded-md text-[10px] font-mono text-white/25 italic">
-                                        {new Date(doc.created_at).toLocaleString([], { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        {file ? new Date(file.uploaded_at).toLocaleString([], { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                                     </span>
                                 </div>
                             </div>
