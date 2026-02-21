@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase, formatError } from '../../services/supabase';
 import { StorageService, BUCKETS } from '../../services/storage';
 import { UserProfile, DocumentRequirement as RequirementWithDocs, AdmissionApplication } from '../../types';
@@ -19,6 +18,8 @@ import { PaperClipIcon } from '../icons/PaperClipIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
 import { FileTextIcon } from '../icons/FileTextIcon';
 import { LockIcon } from '../icons/LockIcon';
+import { SearchIcon } from '../icons/SearchIcon';
+import { RefreshIcon } from '../icons/RefreshIcon';
 import clsx from 'clsx';
 
 // Design System Components
@@ -50,6 +51,23 @@ const formatFileSize = (bytes: number) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+const getDocumentCategory = (docName: string) => {
+    const lower = docName.toLowerCase();
+    if (lower.includes('birth') || lower.includes('photo') || lower.includes('address') || lower.includes('identity') || lower.includes('aadhar') || lower.includes('passport')) {
+        return 'Identity Documents';
+    }
+    if (lower.includes('transfer') || lower.includes('report') || lower.includes('mark') || lower.includes('academic')) {
+        return 'Academic Records';
+    }
+    if (lower.includes('fee') || lower.includes('receipt') || lower.includes('finance')) {
+        return 'Financial Documents';
+    }
+    if (lower.includes('medical') || lower.includes('health')) {
+        return 'Medical Records';
+    }
+    return 'Other Uploads';
+};
+
 // --- Sub-Components ---
 const DocumentCard: React.FC<{
     req: RequirementWithDocs;
@@ -59,7 +77,7 @@ const DocumentCard: React.FC<{
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isDownloading, setIsDownloading] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isPanelOpen, setIsPanelOpen] = useState(false); // For secure drawer
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,211 +139,291 @@ const DocumentCard: React.FC<{
     };
 
     return (
-        <Card
-            className={clsx(
-                "h-full relative overflow-hidden transition-all duration-500 rounded-[2rem]",
-                "bg-[#0d0f14] border-white/5 hover:border-white/10 shadow-2xl hover:shadow-primary/5 hover:-translate-y-1",
-                isDragOver && "ring-2 ring-primary bg-primary/[0.02]",
-                isVerified && "border-emerald-500/20"
-            )}
-        >
-            {/* Header / Security Badge */}
-            <div className="flex justify-between items-start mb-6 relative z-10">
-                <div className={clsx(
-                    "p-3 rounded-2xl border transition-all duration-500",
-                    isVerified ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
-                        isRejected ? "bg-red-500/10 border-red-500/20 text-red-500" :
-                            isPending ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
-                                "bg-white/[0.03] border-white/5 text-white/20"
-                )}>
-                    {isVerified ? <ShieldCheckIcon className="w-5 h-5" /> :
-                        isRejected ? <XIcon className="w-5 h-5" /> :
-                            <LockIcon className="w-5 h-5 opacity-40" />}
+        <>
+            <div
+                className={clsx(
+                    "flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-2xl border transition-all duration-300",
+                    "bg-[#0d0f14] hover:bg-white/[0.02] cursor-pointer group hover:border-white/20",
+                    isDragOver ? "ring-2 ring-primary bg-primary/[0.02] border-primary/30" : "border-white/5",
+                    isVerified && "bg-emerald-500/[0.02] border-emerald-500/10 hover:border-emerald-500/30"
+                )}
+                onClick={() => setIsPanelOpen(true)}
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
+                onDrop={handleDrop}
+            >
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className={clsx(
+                        "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-300 relative overflow-hidden",
+                        isVerified ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
+                            isRejected ? "bg-red-500/10 border-red-500/20 text-red-500" :
+                                isSubmitted ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
+                                    "bg-white/[0.05] border-white/5 text-white/30 group-hover:bg-white/[0.08]"
+                    )}>
+                        {isVerified && <div className="absolute inset-0 bg-emerald-500/20 shimmer-effect pointer-events-none"></div>}
+                        {isVerified ? <ShieldCheckIcon className="w-5 h-5 relative z-10" /> :
+                            isRejected ? <AlertTriangleIcon className="w-5 h-5 relative z-10" /> :
+                                hasFileRecord ? <FileTextIcon className="w-5 h-5 relative z-10" /> :
+                                    <LockIcon className="w-5 h-5 relative z-10 opacity-70" />}
+                    </div>
+
+                    <div className="flex-1 min-w-0 pr-4">
+                        <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-sm font-bold text-white truncate tracking-tight">{req.document_name}</h4>
+                            {isMandatory && <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" title="Required"></div>}
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-white/40 font-medium">
+                            {hasFileRecord ? (
+                                <>
+                                    <span className="flex items-center gap-1"><CheckCircleIcon className="w-3 h-3 text-emerald-500" /> AES-256</span>
+                                    <span className="w-1 h-1 rounded-full bg-white/10"></span>
+                                    <span>{new Date(docFile.created_at).toLocaleDateString()}</span>
+                                    <span className="w-1 h-1 rounded-full bg-white/10"></span>
+                                    <span>{formatFileSize(docFile.file_size || 0)}</span>
+                                </>
+                            ) : (
+                                <span>Awaiting Upload</span>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t border-white/5 md:border-none gap-4">
                     <div className={clsx(
-                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm",
+                        "px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border shrink-0",
                         isVerified ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
                             isRejected ? "bg-red-500/10 text-red-500 border-red-500/20" :
-                                isPending ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
+                                isSubmitted ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
                                     "bg-white/5 text-white/40 border-white/10"
                     )}>
                         {status}
                     </div>
-                    <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className={clsx(
-                            "w-8 h-8 rounded-full border border-white/10 flex items-center justify-center transition-all duration-300",
-                            isExpanded ? "bg-primary/20 border-primary/30 rotate-180" : "bg-white/5 hover:bg-white/10"
+
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {hasFileRecord ? (
+                            <>
+                                <button onClick={handleView} className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.1] border border-white/5 text-white/60 hover:text-white transition-colors">
+                                    <EyeIcon className="w-4 h-4" />
+                                </button>
+                                <button onClick={handleDownload} disabled={isDownloading} className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.1] border border-white/5 text-white/60 hover:text-white transition-colors">
+                                    <DownloadIcon className="w-4 h-4" />
+                                </button>
+                                {!isVerified && (
+                                    <button onClick={() => fileInputRef.current?.click()} className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary transition-colors">
+                                        <RefreshIcon className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </>
+                        ) : (
+                            <button onClick={() => fileInputRef.current?.click()} className="h-9 px-4 rounded-xl flex items-center justify-center bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest transition-colors gap-2">
+                                <UploadIcon className="w-3.5 h-3.5" /> Upload
+                            </button>
                         )}
-                    >
-                        <ChevronDownIcon className={clsx("w-4 h-4", isExpanded ? "text-primary" : "text-white/30")} />
-                    </button>
+                        <input ref={fileInputRef} type="file" className="hidden" onChange={e => handleFileSelect(e.target.files)} />
+                    </div>
                 </div>
-            </div>
 
-            {/* Title Section */}
-            <div className="relative z-10 mb-8">
-                <h4 className="text-[17px] font-bold text-white tracking-tight leading-tight mb-2 group-hover:text-primary transition-colors cursor-default">
-                    {req.document_name}
-                </h4>
-                <div className="flex items-center gap-2">
-                    <p className={clsx(
-                        "text-[10px] font-bold uppercase tracking-widest",
-                        isMandatory ? "text-primary/70" : "text-white/20"
-                    )}>
-                        {isMandatory ? 'Identity Essential' : 'Supporting Evidence'}
-                    </p>
-                    <div className="w-1 h-1 rounded-full bg-white/5"></div>
-                    <span className="text-[9px] text-white/10 font-medium">Encrypted Storage</span>
-                </div>
-            </div>
-
-            {/* Interaction Area (Always Visible Header) */}
-            <div className="relative z-10 flex flex-col h-full">
-                <AnimatePresence initial={false}>
-                    {isExpanded && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                            className="overflow-hidden"
-                        >
-                            <div className="pb-6 space-y-4">
-                                {req.notes_for_parent && (
-                                    <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl">
-                                        <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Instructions</p>
-                                        <p className="text-[11px] text-white/60 leading-relaxed italic">{req.notes_for_parent}</p>
-                                    </div>
-                                )}
-
-                                {isRejected && req.rejection_reason && (
-                                    <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-xl">
-                                        <p className="text-[9px] font-black text-red-500/40 uppercase tracking-[0.2em] mb-1">Rejection Reason</p>
-                                        <p className="text-[11px] text-red-400/80 leading-relaxed">{req.rejection_reason}</p>
-                                    </div>
-                                )}
-
-                                <div
-                                    className="relative"
-                                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                                    onDragLeave={(e) => { e.preventDefault(); setIsDragOver(false); }}
-                                    onDrop={handleDrop}
-                                >
-                                    {hasFileRecord ? (
-                                        <div className="space-y-4">
-                                            {/* Artifact Slot */}
-                                            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 flex items-center gap-4 group/file hover:bg-black/60 transition-all">
-                                                <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center text-white/20 group-hover/file:text-primary transition-colors">
-                                                    {docFile.mime_type?.includes('pdf') ? <FileTextIcon className="w-5 h-5" /> : <PaperClipIcon className="w-5 h-5" />}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-bold text-white/70 truncate uppercase tracking-wide">{docFile.file_name}</p>
-                                                    <p className="text-[9px] text-white/20 font-mono mt-1">{formatFileSize(docFile.file_size || 0)} • Verified Hash</p>
-                                                </div>
-                                            </div>
-
-                                            {/* High-Trust Action Bar */}
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <Button
-                                                    variant="secondary"
-                                                    className="h-12 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border-white/5 text-white/60 hover:text-white flex items-center justify-center gap-2 transition-all active:scale-95"
-                                                    onClick={handleView}
-                                                >
-                                                    <EyeIcon className="w-4 h-4" />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">Preview</span>
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    className="h-12 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border-white/5 text-white/60 hover:text-white flex items-center justify-center gap-2 transition-all active:scale-95"
-                                                    onClick={handleDownload}
-                                                    disabled={isDownloading}
-                                                >
-                                                    <DownloadIcon className="w-4 h-4" />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">Store</span>
-                                                </Button>
-                                            </div>
-
-                                            {!isVerified && (
-                                                <div className="pt-2">
-                                                    <button
-                                                        className="w-full h-10 text-[9px] font-black uppercase tracking-[0.25em] text-white/20 hover:text-primary transition-all flex items-center justify-center gap-3 border border-dashed border-white/5 rounded-xl hover:border-primary/30 hover:bg-primary/[0.02]"
-                                                        onClick={() => fileInputRef.current?.click()}
-                                                    >
-                                                        <UploadIcon className="w-3.5 h-3.5" /> Replace Artifact
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        // Secure Upload Zone
-                                        <div className="space-y-4">
-                                            {uploadProgress !== null ? (
-                                                <div className="bg-primary/5 p-6 rounded-[1.5rem] border border-primary/20 text-center animate-pulse">
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-3">Encrypting Node... {uploadProgress.toFixed(0)}%</p>
-                                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-primary" style={{ width: `${uploadProgress}%` }}></div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                    className="w-full group/upload cursor-pointer rounded-[1.5rem] border-2 border-dashed border-white/5 hover:border-primary/50 hover:bg-primary/[0.02] p-8 flex flex-col items-center justify-center gap-4 transition-all duration-700"
-                                                >
-                                                    <div className="w-14 h-14 rounded-2xl bg-white/[0.02] flex items-center justify-center group-hover/upload:bg-primary/10 transition-all duration-700">
-                                                        <UploadIcon className="w-6 h-6 text-white/10 group-hover/upload:text-primary transition-colors" />
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] group-hover/upload:text-white/60 transition-colors">Provision Artifact</span>
-                                                        <p className="text-[9px] text-white/5 mt-2 italic font-medium px-4 opacity-0 group-hover/upload:opacity-100 transition-opacity">Select an identity document for secure synchronization.</p>
-                                                    </div>
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {!isExpanded && (
-                    <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                        <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">
-                            {hasFileRecord ? "Artifact Provisioned" : "Awaiting Artifact"}
-                        </span>
-                        <button
-                            onClick={() => setIsExpanded(true)}
-                            className="text-[9px] font-black text-primary uppercase tracking-[0.2em] hover:underline"
-                        >
-                            Quick View
-                        </button>
+                {uploadProgress !== null && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5">
+                        <div className="h-full bg-primary animate-pulse" style={{ width: `${uploadProgress}%` }}></div>
                     </div>
                 )}
             </div>
 
-            {/* Error Logic */}
+            {/* Secure Drawer Modal */}
             <AnimatePresence>
-                {error && (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="absolute inset-x-4 bottom-4 bg-red-500 p-3 text-[10px] font-black uppercase tracking-widest text-center rounded-xl shadow-2xl z-50 flex items-center justify-between">
-                        <span>{error}</span>
-                        <button onClick={() => setError(null)} className="p-1 hover:bg-white/10 rounded-lg"><XIcon className="w-4 h-4" /></button>
-                    </motion.div>
+                {isPanelOpen && (
+                    <>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" onClick={() => setIsPanelOpen(false)} />
+                        <motion.div
+                            initial={{ x: '100%', opacity: 0.5 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: '100%', opacity: 0 }}
+                            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                            className="fixed right-0 top-0 bottom-0 w-full md:w-[480px] bg-[#0c0e12] border-l border-white/10 z-[60] shadow-2xl flex flex-col"
+                        >
+                            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-black/20">
+                                <div>
+                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">
+                                        <LockIcon className="w-3 h-3" /> Secure Artifact Panel
+                                    </div>
+                                    <h3 className="text-lg font-bold text-white tracking-tight">{req.document_name}</h3>
+                                </div>
+                                <button onClick={() => setIsPanelOpen(false)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 transition-colors">
+                                    <XIcon className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex items-start gap-4">
+                                    <ShieldCheckIcon className={clsx("w-6 h-6 shrink-0", isVerified ? "text-emerald-500" : "text-white/20")} />
+                                    <div>
+                                        <p className="text-sm font-bold text-white mb-1">Status: <span className={isVerified ? "text-emerald-500" : isRejected ? "text-red-500" : "text-amber-500"}>{status}</span></p>
+                                        <p className="text-[11px] text-white/50 leading-relaxed">
+                                            {isVerified ? "This document has been verified by the institutional authority. Cryptographic locks are active." :
+                                                isRejected ? "This document was rejected. Please review the reason below and upload a corrected version." :
+                                                    isSubmitted ? "Document is currently under review by the administration. Security locks are active." :
+                                                        "Awaiting secure upload. Ensure file is clear and legible before provisioning."}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {req.notes_for_parent && (
+                                    <div className="p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+                                        <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1.5">Institutional Guideline</p>
+                                        <p className="text-xs text-white/70 leading-relaxed italic">{req.notes_for_parent}</p>
+                                    </div>
+                                )}
+
+                                {isRejected && req.rejection_reason && (
+                                    <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl">
+                                        <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1.5">Rejection Reason</p>
+                                        <p className="text-xs text-red-400/80 leading-relaxed">{req.rejection_reason}</p>
+                                    </div>
+                                )}
+
+                                {hasFileRecord ? (
+                                    <div className="space-y-4">
+                                        <div className="p-4 rounded-2xl bg-black border border-white/5">
+                                            <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-4">Metadata Analysis</p>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-white/40">File Name</span>
+                                                    <span className="text-white/80 font-mono text-[10px] truncate max-w-[200px]" title={docFile.file_name}>{docFile.file_name}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-white/40">Size</span>
+                                                    <span className="text-white/80">{formatFileSize(docFile.file_size || 0)}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-white/40">Uploaded At</span>
+                                                    <span className="text-white/80">{new Date(docFile.created_at).toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-white/40">Encryption</span>
+                                                    <span className="text-emerald-500 font-mono text-[10px]">AES-256 (At Rest)</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-white/40">Required</span>
+                                                    <span className="text-white/80">{isMandatory ? 'Yes' : 'No'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Button variant="secondary" className="h-12 bg-white/[0.05] hover:bg-white/[0.1] border-white/5" onClick={handleView}>
+                                                <EyeIcon className="w-4 h-4 mr-2" /> Preview
+                                            </Button>
+                                            <Button variant="secondary" className="h-12 bg-white/[0.05] hover:bg-white/[0.1] border-white/5" onClick={handleDownload}>
+                                                <DownloadIcon className="w-4 h-4 mr-2" /> Store Securely
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-white/10 text-center">
+                                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 mb-4">
+                                            <UploadIcon className="w-8 h-8" />
+                                        </div>
+                                        <p className="text-sm font-bold text-white mb-2">No Artifact Present</p>
+                                        <p className="text-xs text-white/40 mb-6">Upload a clear, high-quality document to fulfill this requirement.</p>
+                                        <Button variant="primary" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                                            Upload Securely
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
-
-            <input ref={fileInputRef} type="file" className="hidden" onChange={e => handleFileSelect(e.target.files)} />
-        </Card>
+        </>
     );
 };
 
+const DocumentCategoryAccordion: React.FC<{
+    category: string;
+    reqs: RequirementWithDocs[];
+    onUpload: (file: File, reqId: number, admId: string, onProgress: (progress: number) => void) => Promise<void>;
+}> = ({ category, reqs, onUpload }) => {
+    const mandatoryReqs = reqs.filter(r => r.is_mandatory);
+    const uploadedMandatoryCount = mandatoryReqs.filter(r => ['Verified', 'Submitted', 'Uploaded', 'Reviewing', 'APPROVED'].includes(r.status || '')).length;
+    const isMissingMandatory = mandatoryReqs.length > 0 && uploadedMandatoryCount < mandatoryReqs.length;
+
+    // Auto-expand if missing mandatory docs
+    const [isOpen, setIsOpen] = useState(isMissingMandatory);
+
+    const percent = reqs.length === 0 ? 0 : Math.round(((reqs.filter(r => ['Verified', 'Submitted', 'Uploaded', 'Reviewing', 'APPROVED'].includes(r.status || '')).length) / reqs.length) * 100);
+
+    return (
+        <div className="bg-[#0b0c10]/40 border border-white/5 rounded-3xl overflow-hidden shadow-sm transition-colors hover:border-white/10 mb-6">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none"
+            >
+                <div className="flex items-center gap-4 flex-1">
+                    <div className={clsx(
+                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border",
+                        isMissingMandatory ? "bg-red-500/10 border-red-500/20 text-red-500" :
+                            percent === 100 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
+                                "bg-white/[0.05] border-white/5 text-white/40"
+                    )}>
+                        {isMissingMandatory ? <AlertTriangleIcon className="w-5 h-5" /> : (percent === 100 ? <ShieldCheckIcon className="w-5 h-5" /> : <FileTextIcon className="w-5 h-5" />)}
+                    </div>
+                    <div className="flex-1 max-w-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                            <h3 className="text-sm font-bold text-white tracking-wide">{category}</h3>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-white/40">
+                                {uploadedMandatoryCount}/{mandatoryReqs.length} Mandatory
+                            </div>
+                        </div>
+                        <div className="w-full bg-black/40 h-1.5 rounded-full overflow-hidden border border-white/5 relative">
+                            <div className={clsx(
+                                "h-full rounded-full transition-all duration-1000",
+                                isMissingMandatory ? "bg-amber-500" : (percent === 100 ? "bg-emerald-500" : "bg-primary")
+                            )} style={{ width: `${percent}%` }}></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4 ml-6 pl-4 border-l border-white/5">
+                    <div className="text-right hidden sm:block">
+                        <div className="text-xs font-bold text-white mb-0.5">{percent}% Complete</div>
+                        <div className="text-[10px] text-white/40 uppercase tracking-widest">{reqs.length} Documents</div>
+                    </div>
+                    <div className={clsx(
+                        "w-8 h-8 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center transition-transform duration-300",
+                        isOpen ? "rotate-180" : ""
+                    )}>
+                        <ChevronDownIcon className="w-4 h-4 text-white/50" />
+                    </div>
+                </div>
+            </button>
+            <AnimatePresence initial={false}>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                        className="overflow-hidden"
+                    >
+                        <div className="p-4 pt-0 space-y-3 border-t border-white/5 mt-2 bg-black/20">
+                            {reqs.map(req => (
+                                <DocumentCard key={req.id} req={req} onUpload={onUpload} />
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId, onClearFocus, setActiveComponent }) => {
     const [loading, setLoading] = useState(true);
     const [groupedData, setGroupedData] = useState<Record<string, GroupedRequirementData>>({});
-    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+    const [selectedAdmissionId, setSelectedAdmissionId] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     const fetchData = useCallback(async (isSilent = false) => {
@@ -369,27 +467,24 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
 
             if (!isSilent) {
                 if (focusOnAdmissionId && grouped[focusOnAdmissionId]) {
-                    setExpandedIds(new Set([focusOnAdmissionId]));
+                    setSelectedAdmissionId(focusOnAdmissionId);
                     onClearFocus();
+                } else if (Object.keys(grouped).length > 0 && !selectedAdmissionId) {
+                    setSelectedAdmissionId(Object.keys(grouped)[0]);
                 }
-                // Auto-expand removed as per user request (Start Collapsed)
-                // else if (Object.keys(grouped).length > 0 && expandedIds.size === 0) {
-                //     setExpandedIds(new Set([Object.keys(grouped)[0]]));
-                // }
             }
         } catch (err: any) {
             setError(formatError(err));
         } finally {
             if (!isSilent) setLoading(false);
         }
-    }, [profile.id, focusOnAdmissionId, onClearFocus]);
+    }, [profile.id, focusOnAdmissionId, onClearFocus, selectedAdmissionId]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
     const handleUpload = async (file: File, reqId: number, admId: string, onProgress: (progress: number) => void) => {
         if (!profile.id) throw new Error("Identity context missing.");
 
-        // Simulating upload progress for better UX
         const interval = setInterval(() => {
             onProgress(Math.random() * 50 + 20);
         }, 300);
@@ -422,150 +517,237 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
         }
     };
 
-    const toggleExpand = (id: string) => {
-        setExpandedIds(prev => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
+    const activeNode = selectedAdmissionId ? groupedData[selectedAdmissionId] : null;
+
+    const filteredRequirements = useMemo(() => {
+        if (!activeNode) return [];
+        if (!searchQuery.trim()) return activeNode.requirements;
+        const q = searchQuery.toLowerCase();
+        return activeNode.requirements.filter(r => r.document_name.toLowerCase().includes(q));
+    }, [activeNode, searchQuery]);
+
+    const requirementsByCategory = useMemo(() => {
+        const categories: Record<string, RequirementWithDocs[]> = {};
+        filteredRequirements.forEach(req => {
+            const cat = getDocumentCategory(req.document_name);
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push(req);
         });
-    };
+        return categories;
+    }, [filteredRequirements]);
+
+    const activeNodeStats = useMemo(() => {
+        if (!activeNode) return { total: 0, verified: 0, pending: 0, isCompleted: false, percent: 0, uploadedMandatoryCount: 0, mandatoryTotal: 0 };
+        const reqs = activeNode.requirements;
+
+        if (reqs.length === 0) {
+            return { total: 0, verified: 0, pending: 0, isCompleted: false, percent: 0, uploadedMandatoryCount: 0, mandatoryTotal: 0 };
+        }
+
+        const mandatoryReqs = reqs.filter(r => r.is_mandatory);
+        const uploadedMandatoryCount = mandatoryReqs.filter(r => ['Verified', 'Submitted', 'Uploaded', 'Reviewing', 'APPROVED'].includes(r.status || '')).length;
+        const mandatoryTotal = mandatoryReqs.length;
+        const MIN_REQUIRED_DOCS = 3;
+
+        const calcMandatoryTotal = Math.max(mandatoryTotal, MIN_REQUIRED_DOCS);
+        const isCompleted = uploadedMandatoryCount >= MIN_REQUIRED_DOCS && uploadedMandatoryCount >= mandatoryTotal;
+        const percent = Math.min(100, Math.round((uploadedMandatoryCount / calcMandatoryTotal) * 100));
+
+        return {
+            total: reqs.length,
+            verified: reqs.filter(r => r.status === 'Verified' || r.status === 'APPROVED').length,
+            pending: reqs.filter(r => r.status === 'Pending').length,
+            isCompleted, percent, uploadedMandatoryCount, mandatoryTotal: calcMandatoryTotal
+        };
+    }, [activeNode]);
 
     if (loading) return (
         <div className="py-40 flex flex-col items-center justify-center gap-6">
             <Spinner size="lg" className="text-primary" />
-            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 animate-pulse">Synchronizing Security Vault</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 animate-pulse">Initialising Security Protocol</p>
         </div>
     );
 
     if (error) return <div className="p-6 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center font-bold">{error}</div>;
 
+    const navItems = Object.keys(groupedData).map(id => groupedData[id]);
+
     return (
-        <div className="max-w-6xl mx-auto space-y-12 pb-32 animate-in fade-in duration-1000">
-            {/* Page Header */}
-            <div className="text-center md:text-left mb-16 border-l-2 border-primary/20 pl-8 md:pl-12 py-2">
-                <div className="flex items-center gap-3 mb-4 justify-center md:justify-start">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">Security Protocol</span>
+        <div className="w-full mx-auto space-y-6 pb-32 animate-in fade-in duration-1000 max-w-[1400px]">
+
+            {/* LAYER 1: VAULT CONTROL BAR */}
+            <div className="bg-[#0b0c10] border border-white/5 rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+
+                <div className="flex items-center gap-6 z-10">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center shrink-0">
+                        <LockIcon className="w-8 h-8 text-primary opacity-80" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <h2 className="text-xl font-bold text-white tracking-tight uppercase">Security Vault</h2>
+                            <div className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Connected
+                            </div>
+                        </div>
+                        <p className="text-[11px] text-white/40">All files are encrypted using AES-256 vault standard encryption. Access is controlled by secure RBAC policies.</p>
+                    </div>
                 </div>
-                <h2 className="text-4xl md:text-5xl font-serif font-black text-white tracking-tighter uppercase leading-none">
-                    Artifact <span className="opacity-30 font-normal">Vault.</span>
-                </h2>
-                <p className="text-white/40 text-[15px] leading-relaxed mt-6 max-w-lg italic font-serif">
-                    Securely manage and synchronize institutional identity documents within a certified environment.
-                </p>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 z-10">
+                    <div className="relative">
+                        <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                        <input
+                            type="text"
+                            placeholder="Search Vault..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full sm:w-64 h-11 bg-white/[0.03] border border-white/10 rounded-xl pl-10 pr-4 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary/50 transition-all placeholder:text-white/20"
+                        />
+                    </div>
+                    {/* Add visual space for health stats */}
+                    {activeNode && (
+                        <div className="flex items-center gap-4 px-4 h-11 bg-white/[0.02] border border-white/5 rounded-xl">
+                            <div className="text-center">
+                                <span className="block text-[10px] text-white/30 uppercase tracking-widest">Vault Health</span>
+                                <span className={clsx("text-xs font-bold", activeNodeStats.isCompleted ? "text-emerald-500" : (activeNodeStats.uploadedMandatoryCount === 0 ? "text-red-500" : "text-amber-500"))}>
+                                    {activeNodeStats.percent}%
+                                </span>
+                            </div>
+                            <div className="w-px h-6 bg-white/10"></div>
+                            <div className="text-center">
+                                <span className="block text-[10px] text-white/30 uppercase tracking-widest">Documents</span>
+                                <span className="text-xs font-bold text-white">{activeNodeStats.total}</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Enrolled Identities Selector */}
-            <div className="space-y-8">
-                {Object.keys(groupedData).map(admId => {
-                    const node = groupedData[admId];
-                    const isExpanded = expandedIds.has(admId);
-                    const verifiedCount = node.requirements.filter(r => ['Verified', 'Submitted', 'Uploaded', 'Reviewing', 'APPROVED'].includes(r.status || '')).length;
-                    const total = node.requirements.length;
-                    const percent = total > 0 ? Math.round((verifiedCount / total) * 100) : 0;
-
-                    return (
-                        <div key={admId} className={clsx(
-                            "group overflow-hidden rounded-[2.5rem] transition-all duration-700 border shadow-2xl",
-                            isExpanded ? "bg-[#0c0e12] border-white/10 ring-1 ring-white/5" : "bg-[#0c0e12]/60 border-white/5 hover:border-white/10"
-                        )}>
-                            {/* Enrollment Header */}
-                            <div
-                                onClick={() => toggleExpand(admId)}
+            {/* LAYER 2: HORIZONTAL STUDENT SELECTOR */}
+            {navItems.length > 0 ? (
+                <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-none items-stretch">
+                    {navItems.map(node => {
+                        const isSelected = selectedAdmissionId === node.admissionId;
+                        return (
+                            <button
+                                key={node.admissionId}
+                                onClick={() => setSelectedAdmissionId(node.admissionId)}
                                 className={clsx(
-                                    "relative p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 cursor-pointer transition-all duration-700",
-                                    isExpanded ? "bg-white/[0.02]" : "hover:bg-white/[0.01]"
+                                    "flex items-center gap-4 px-4 py-3 rounded-2xl border transition-all duration-300 min-w-[240px]",
+                                    isSelected ? "bg-primary/[0.05] border-primary/30 ring-1 ring-primary/20 shadow-lg" : "bg-[#0b0c10]/60 border-white/5 hover:border-white/10 hover:bg-[#0b0c10]"
                                 )}
                             >
-                                <div className="flex items-center gap-8 w-full md:w-auto z-10">
-                                    <div className="relative">
-                                        <div className={clsx(
-                                            "absolute -inset-2 rounded-2xl blur-xl transition-all duration-700 opacity-0 group-hover:opacity-20",
-                                            percent === 100 ? "bg-emerald-500" : "bg-primary"
-                                        )}></div>
-                                        <PremiumAvatar src={node.profilePhotoUrl} name={node.applicantName} size="md" className="w-20 h-20 rounded-2xl shadow-2xl relative z-10 grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700" />
+                                <PremiumAvatar src={node.profilePhotoUrl} name={node.applicantName} size="sm" className={clsx("shrink-0 transition-opacity", !isSelected && "opacity-60")} />
+                                <div className="text-left flex-1 min-w-0">
+                                    <div className="text-sm font-bold text-white truncate">{node.applicantName}</div>
+                                    <div className="text-[10px] text-white/40 uppercase tracking-widest">Node ID: {node.admissionId.substring(0, 8)}</div>
+                                </div>
+                                <div className={clsx("w-2 h-2 rounded-full", isSelected ? "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)]" : "bg-white/10")}></div>
+                            </button>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="text-center py-20 rounded-3xl border border-dashed border-white/5 bg-[#0b0c10]/40">
+                    <p className="text-white/30 font-medium">No valid identity nodes found in your roster.</p>
+                </div>
+            )}
+
+            {/* LAYER 3: DOCUMENT GRID SECTION */}
+            {activeNode && (
+                <div className="flex flex-col lg:flex-row gap-8 items-start">
+
+                    {/* LEFT COLUMN: Security Summary Panel (Desktop) */}
+                    <div className="w-full lg:w-80 shrink-0 space-y-6 hidden lg:block">
+                        <div className="p-6 rounded-3xl bg-[#0b0c10] border border-white/5 shadow-xl">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">Security Summary</h3>
+
+                            <div className="space-y-5">
+                                <div className="flex items-center justify-between pb-4 border-b border-white/5">
+                                    <div className="flex items-center gap-2">
+                                        <LockIcon className="w-4 h-4 text-emerald-500" />
+                                        <span className="text-xs text-white/60">Encryption Status</span>
                                     </div>
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h3 className="text-2xl font-bold text-white tracking-tight">{node.applicantName}</h3>
-                                            {percent === 100 && <ShieldCheckIcon className="w-4 h-4 text-emerald-500" />}
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">Grade {node.grade} • Institutional Node</p>
-                                            <div className="w-1 h-1 rounded-full bg-white/5"></div>
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-1.5 w-24 bg-black/40 rounded-full overflow-hidden border border-white/5 shadow-inner">
-                                                    <div className={clsx(
-                                                        "h-full rounded-full transition-all duration-1000",
-                                                        percent === 100 ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]"
-                                                    )} style={{ width: `${percent}%` }}></div>
-                                                </div>
-                                                <span className="text-[10px] font-black text-white/40">{percent}% Synchronized</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <span className="text-xs font-bold text-emerald-500">Active</span>
                                 </div>
 
-                                <div className="flex items-center gap-6 z-10">
-                                    <div className="text-right hidden md:block">
-                                        <div className="flex items-center justify-end gap-2 mb-1">
-                                            <LockIcon className="w-3 h-3 text-white/10" />
-                                            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Vault Status</span>
-                                        </div>
-                                        <span className={clsx(
-                                            "text-[10px] font-black uppercase tracking-[0.15em]",
-                                            percent === 100 ? "text-emerald-500" : "text-white/60"
-                                        )}>
-                                            {percent === 100 ? 'Verified Account' : 'Action Required'}
+                                <div className="flex items-center justify-between pb-4 border-b border-white/5">
+                                    <div className="flex items-center gap-2">
+                                        <ShieldCheckIcon className={clsx("w-4 h-4", activeNodeStats.isCompleted ? "text-emerald-500" : "text-amber-500")} />
+                                        <span className="text-xs text-white/60">Compliance Score</span>
+                                    </div>
+                                    <span className={clsx("text-xs font-bold", activeNodeStats.isCompleted ? "text-emerald-500" : "text-amber-500")}>
+                                        {activeNodeStats.percent}%
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between pb-4 border-b border-white/5">
+                                    <div className="flex items-center gap-2">
+                                        <RefreshIcon className="w-4 h-4 text-white/40" />
+                                        <span className="text-xs text-white/60">Pending Verification</span>
+                                    </div>
+                                    <span className="text-xs font-bold text-white">{activeNodeStats.pending}</span>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangleIcon className={clsx("w-4 h-4", activeNodeStats.uploadedMandatoryCount < activeNodeStats.mandatoryTotal ? "text-red-500" : "text-white/20")} />
+                                        <span className="text-xs text-white/60">Missing Required</span>
+                                    </div>
+                                    <span className={clsx("text-xs font-bold", activeNodeStats.uploadedMandatoryCount < activeNodeStats.mandatoryTotal ? "text-red-500" : "text-white/20")}>
+                                        {Math.max(0, activeNodeStats.mandatoryTotal - activeNodeStats.uploadedMandatoryCount)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: Document Grid */}
+                    <div className="flex-1 w-full space-y-8">
+                        {/* Mobile Security Strip (inline above categories) */}
+                        <div className="block lg:hidden">
+                            <div className="p-4 rounded-2xl bg-[#0b0c10] border border-white/5 flex items-center justify-between shadow-sm">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-0.5">Compliance</span>
+                                    <span className={clsx("text-sm font-bold", activeNodeStats.isCompleted ? "text-emerald-500" : "text-amber-500")}>
+                                        {activeNodeStats.percent}% Complete
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                        <span className="block text-[9px] text-white/30 uppercase tracking-wider">Missing</span>
+                                        <span className={clsx("text-xs font-bold", (activeNodeStats.mandatoryTotal - activeNodeStats.uploadedMandatoryCount > 0) ? "text-red-500" : "text-white/20")}>
+                                            {Math.max(0, activeNodeStats.mandatoryTotal - activeNodeStats.uploadedMandatoryCount)}
                                         </span>
                                     </div>
-                                    <div className={clsx(
-                                        "w-12 h-12 rounded-2xl border border-white/5 flex items-center justify-center transition-all duration-500 bg-white/[0.03]",
-                                        isExpanded && "rotate-180 bg-primary/10 border-primary/20"
-                                    )}>
-                                        <ChevronDownIcon className={clsx("w-5 h-5", isExpanded ? "text-primary" : "text-white/20")} />
+                                    <div className="w-px h-6 bg-white/10"></div>
+                                    <div className="text-right">
+                                        <span className="block text-[9px] text-white/30 uppercase tracking-wider">Pending</span>
+                                        <span className="text-xs font-bold text-white">
+                                            {activeNodeStats.pending}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Artifact Grid Content */}
-                            <AnimatePresence>
-                                {isExpanded && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-                                    >
-                                        <div className="border-t border-white/5 bg-black/20 p-8 md:p-12">
-                                            {node.requirements.length === 0 ? (
-                                                <div className="text-center py-20 bg-white/[0.01] rounded-[2rem] border border-dashed border-white/5">
-                                                    <div className="w-16 h-16 rounded-2xl bg-white/[0.02] flex items-center justify-center mx-auto mb-6">
-                                                        <FileTextIcon className="w-8 h-8 text-white/10" />
-                                                    </div>
-                                                    <p className="text-white/20 text-sm font-medium italic">No document requirements have been assigned to this node yet.</p>
-                                                </div>
-                                            ) : (
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                                    {node.requirements.map(req => (
-                                                        <DocumentCard key={req.id} req={req} onUpload={handleUpload} />
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
                         </div>
-                    );
-                })}
-            </div>
 
-            {Object.keys(groupedData).length === 0 && !loading && (
-                <div className="text-center py-32 rounded-[3rem] border-2 border-dashed border-white/5 bg-[#0c0e12]/40">
-                    <PlusIcon className="w-12 h-12 text-white/5 mx-auto mb-6" />
-                    <p className="text-white/20 font-medium italic text-lg tracking-tight">No active identity nodes found in your roster.</p>
+                        {filteredRequirements.length === 0 ? (
+                            <div className="p-16 rounded-3xl border border-dashed border-white/5 bg-[#0b0c10]/40 text-center">
+                                <FileTextIcon className="w-12 h-12 text-white/10 mx-auto mb-4" />
+                                <p className="text-white/40 font-medium text-sm">
+                                    {activeNode.requirements.length === 0 ? "No document requirements assigned to this node." : "No documents found for this query."}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {Object.entries(requirementsByCategory).map(([category, reqs]) => (
+                                    <DocumentCategoryAccordion key={category} category={category} reqs={reqs} onUpload={handleUpload} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                 </div>
             )}
         </div>
@@ -573,4 +755,3 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ profile, focusOnAdmissionId
 };
 
 export default DocumentsTab;
-
