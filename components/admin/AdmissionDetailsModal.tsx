@@ -56,14 +56,34 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     const isMounted = useRef(true);
     const hasSeeded = useRef(false);
 
+    // Derived Categorization
+    const getDocumentCategory = (docName: string) => {
+        const lower = docName.toLowerCase();
+        if (lower.includes('birth') || lower.includes('photo') || lower.includes('address') || lower.includes('identity') || lower.includes('aadhar') || lower.includes('passport')) {
+            return 'Identity Documents';
+        }
+        if (lower.includes('transfer') || lower.includes('report') || lower.includes('mark') || lower.includes('academic')) {
+            return 'Academic Records';
+        }
+        if (lower.includes('fee') || lower.includes('receipt') || lower.includes('finance')) {
+            return 'Financial Documents';
+        }
+        if (lower.includes('medical') || lower.includes('health')) {
+            return 'Medical Records';
+        }
+        return 'Compliance Artifacts';
+    };
+
+    const categories = Array.from(new Set(docs.map(d => getDocumentCategory(d.document_name))));
+
     const totalDocs = docs.length;
     const verifiedDocs = docs.filter(d => d.status === 'Verified').length;
-    const mandatoryDocs = docs.filter(d => d.is_mandatory);
-    const supportingDocs = docs.filter(d => !d.is_mandatory);
-    const allMandatoryVerified = mandatoryDocs.length > 0 && mandatoryDocs.every(d => d.status === 'Verified');
-    const progressPercentage = totalDocs > 0 ? Math.round((verifiedDocs / totalDocs) * 100) : 0;
+    const submittedDocs = docs.filter(d => d.status === 'Submitted').length;
     const pendingDocs = docs.filter(d => d.status === 'Pending' || d.status === 'Missing').length;
     const rejectedDocs = docs.filter(d => d.status === 'Rejected').length;
+    const mandatoryDocs = docs.filter(d => d.is_mandatory);
+    const allMandatoryVerified = mandatoryDocs.length > 0 && mandatoryDocs.every(d => d.status === 'Verified');
+    const progressPercentage = totalDocs > 0 ? Math.round((verifiedDocs / totalDocs) * 100) : 0;
 
     useEffect(() => {
         return () => { isMounted.current = false; };
@@ -445,586 +465,452 @@ const AdmissionDetailsModal: React.FC<AdmissionDetailsModalProps> = ({ admission
     const statusColor = getStatusColor(admission.status);
 
     return (
-        <div
-            className="fixed inset-0 bg-black/90 backdrop-blur-2xl flex items-center justify-center z-[200] p-3 sm:p-6 animate-in fade-in duration-500"
-            onClick={onClose}
-        >
-            <div
-                className="bg-[#06080d] w-full max-w-6xl rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_0_120px_rgba(0,0,0,0.6)] border border-white/[0.06] flex flex-col max-h-[96vh] sm:max-h-[92vh] overflow-hidden relative"
-                onClick={e => e.stopPropagation()}
+        <div className="fixed inset-0 z-[100] bg-bg-primary/95 backdrop-blur-3xl overflow-y-auto custom-scrollbar flex flex-col items-center">
+            {/* Main Console Container */}
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-[1440px] min-h-screen bg-bg-secondary border-x border-white/[0.03] flex flex-col shadow-2xl"
             >
-                {/* ═══ Ambient Background Glow ═══ */}
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/[0.03] blur-[150px] rounded-full -mr-72 -mt-72 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/[0.02] blur-[120px] rounded-full -ml-64 -mb-64 pointer-events-none" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-indigo-500/[0.01] blur-[200px] rounded-full pointer-events-none" />
-
-                {/* ═══ HEADER ═══ */}
-                <div className="p-5 sm:p-7 border-b border-white/[0.04] bg-gradient-to-r from-white/[0.01] to-transparent backdrop-blur-md relative z-10">
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-                            <div className="relative hidden xs:block">
-                                <div className={`absolute inset-0 bg-${statusColor}-500/20 blur-xl rounded-full animate-pulse`} />
+                {/* ═══ ENTERPRISE HEADER REBUILD ═══ */}
+                <header className="px-8 py-6 border-b border-white/[0.03] bg-bg-card/50 sticky top-0 z-50 backdrop-blur-xl">
+                    <div className="flex items-center justify-between gap-8">
+                        {/* Student Identity Section */}
+                        <div className="flex items-center gap-6 min-w-0">
+                            <div className="relative">
                                 <PremiumAvatar
                                     src={admission.profile_photo_url}
                                     name={admission.applicant_name}
-                                    size="lg"
-                                    className="relative z-10 ring-2 ring-white/10 shadow-2xl"
+                                    size="xl"
+                                    className="ring-4 ring-white/5 shadow-2xl"
                                 />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-3 mb-1.5 text-white/40">
-                                    <motion.h2
-                                        initial={{ x: -15, opacity: 0 }}
-                                        animate={{ x: 0, opacity: 1 }}
-                                        className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight truncate"
-                                        title={admission.applicant_name}
-                                    >
-                                        {admission.applicant_name}
-                                    </motion.h2>
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-accent-success rounded-full border-4 border-bg-secondary flex items-center justify-center">
+                                    <ShieldCheckIcon className="w-3 h-3 text-white" />
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[9px] font-black uppercase tracking-[0.15em] text-white/40">
-                                        <div className="w-1 h-1 rounded-full bg-indigo-400" />
-                                        Grade {admission.grade}
+                            </div>
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <h2 className="text-3xl font-black text-white tracking-tight uppercase truncate">{admission.applicant_name}</h2>
+                                    <span className={clsx("px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-current",
+                                        admission.status === 'Enrolled' ? "text-accent-success bg-accent-success/10" : "text-accent-warning bg-accent-warning/10"
+                                    )}>
+                                        {admission.status || 'PROSPECT'}
                                     </span>
-                                    <span className="text-[10px] font-mono text-white/20 bg-white/[0.03] px-2 py-1 rounded-md border border-white/[0.04] truncate max-w-[160px]">
-                                        {admission.application_number || 'PENDING_REGISTRATION'}
-                                    </span>
+                                </div>
+                                <div className="flex items-center gap-x-4 gap-y-1 flex-wrap">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Grade</span>
+                                        <span className="text-[11px] font-bold text-white/60">{admission.grade}</span>
+                                    </div>
+                                    <div className="w-1 h-1 rounded-full bg-white/10" />
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Reg ID</span>
+                                        <span className="text-[11px] font-mono text-white/60">{admission.application_number || 'PENDING'}</span>
+                                    </div>
+                                    <div className="w-1 h-1 rounded-full bg-white/10" />
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Parent</span>
+                                        <span className="text-[11px] font-bold text-white/60 truncate max-w-[150px]">{admission.parent_email}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="hidden lg:flex flex-col items-end gap-2 shrink-0 pr-6 border-r border-white/5 mr-2">
-                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Compliance Status</p>
-                            <div className="flex items-center gap-3">
-                                <div className="text-right">
-                                    <p className="text-lg font-black text-white leading-none">{verifiedDocs}/{totalDocs}</p>
-                                    <p className="text-[8px] font-bold text-white/30 uppercase mt-0.5">Verified</p>
+                        {/* Central Compliance Status - Quick View */}
+                        <div className="hidden xl:flex items-center gap-8 px-8 border-x border-white/[0.03]">
+                            <div className="text-center">
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Verified</p>
+                                <p className="text-xl font-black text-accent-success leading-none">{verifiedDocs}</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Missing</p>
+                                <p className="text-xl font-black text-accent-error leading-none">{docs.filter(d => d.status === 'Missing').length}</p>
+                            </div>
+                            <div className="w-px h-10 bg-white/5" />
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between gap-10">
+                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Compliance Score</span>
+                                    <span className="text-[11px] font-black text-accent-primary">{progressPercentage}%</span>
                                 </div>
-                                <div className="w-12 h-12 relative flex items-center justify-center">
-                                    <svg className="w-full h-full -rotate-90">
-                                        <circle cx="24" cy="24" r="20" fill="transparent" stroke="currentColor" strokeWidth="4" className="text-white/5" />
-                                        <circle cx="24" cy="24" r="20" fill="transparent" stroke="currentColor" strokeWidth="4" className="text-indigo-500" strokeDasharray={126} strokeDashoffset={126 - (126 * progressPercentage) / 100} />
-                                    </svg>
-                                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-indigo-400">{progressPercentage}%</span>
+                                <div className="w-48 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${progressPercentage}%` }}
+                                        className="h-full bg-accent-primary shadow-[0_0_10px_rgba(139,92,246,0.3)]"
+                                    />
                                 </div>
                             </div>
                         </div>
 
-                        <button
-                            onClick={onClose}
-                            className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/[0.06] shrink-0"
-                            aria-label="Close modal"
-                        >
-                            <XIcon className="w-5 h-5" />
-                        </button>
+                        {/* Command Strip */}
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={fetchDocs}
+                                className="p-3 rounded-xl bg-white/[0.03] text-white/25 hover:text-white hover:bg-white/[0.06] transition-all border border-white/[0.05]"
+                            >
+                                <RefreshCwIcon className={clsx("w-5 h-5", loading && "animate-spin")} />
+                            </button>
+                            <button
+                                onClick={() => setIsRequestingDoc(true)}
+                                className="flex items-center gap-2 px-6 py-3 bg-accent-primary hover:bg-accent-primary/80 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl shadow-accent-primary/10 active:scale-95 border border-white/10"
+                            >
+                                <PlusIcon className="w-4 h-4" />
+                                Request Document
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/30 hover:text-white transition-all hover:rotate-90 duration-500 border border-white/[0.06]"
+                            >
+                                <XIcon className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
 
-                    {/* ═══ Tab Navigation ═══ */}
-                    <div className="flex items-center gap-1 mt-4 bg-white/[0.02] p-1 rounded-xl border border-white/[0.04] w-fit">
+                    {/* Secondary Navigation Strip */}
+                    <div className="flex items-center gap-1 mt-6 bg-bg-card p-1 rounded-xl border border-white/[0.03] w-fit">
                         {[
-                            { key: 'vault' as const, label: 'Documentation Vault', icon: <ShieldCheckIcon className="w-3.5 h-3.5" />, count: totalDocs },
-                            { key: 'identity' as const, label: 'Applicant Identity', icon: <UserIcon className="w-3.5 h-3.5" />, count: null },
+                            { key: 'vault' as const, label: 'Documentation Vault', icon: <ShieldCheckIcon className="w-4 h-4" /> },
+                            { key: 'identity' as const, label: 'Applicant Identity', icon: <UserIcon className="w-4 h-4" /> },
                         ].map(tab => (
                             <button
                                 key={tab.key}
                                 onClick={() => setActiveTab(tab.key)}
                                 className={clsx(
-                                    "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300",
+                                    "flex items-center gap-2.5 px-6 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300",
                                     activeTab === tab.key
-                                        ? "bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 shadow-lg shadow-indigo-500/5"
-                                        : "text-white/25 hover:text-white/50 border border-transparent"
+                                        ? "bg-accent-primary/20 text-accent-primary border border-accent-primary/20 shadow-lg shadow-accent-primary/5"
+                                        : "text-white/20 hover:text-white/40 border border-transparent"
                                 )}
                             >
                                 {tab.icon}
-                                <span className="hidden sm:inline">{tab.label}</span>
-                                {tab.count !== null && (
-                                    <span className={clsx("px-1.5 py-0.5 rounded text-[8px]", activeTab === tab.key ? "bg-indigo-500/30 text-indigo-300" : "bg-white/5 text-white/20")}>
-                                        {tab.count}
-                                    </span>
-                                )}
+                                {tab.label}
                             </button>
                         ))}
                     </div>
-                </div>
+                </header>
 
-                {/* ═══ BODY ═══ */}
-                <div className="flex-grow overflow-y-auto custom-scrollbar relative z-10">
-                    {/* ═══ Success Banner ═══ */}
-                    <AnimatePresence>
-                        {finalizeState === 'success' && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                className="m-6 sm:m-8 p-10 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 rounded-[2rem] flex flex-col items-center gap-5 text-center shadow-3xl backdrop-blur-3xl relative overflow-hidden"
-                            >
-                                <motion.div
-                                    initial={{ rotate: -10, scale: 0 }}
-                                    animate={{ rotate: 0, scale: 1 }}
-                                    transition={{ type: "spring", damping: 12 }}
-                                    className="w-20 h-20 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-[0_0_60px_rgba(16,185,129,0.3)] ring-2 ring-emerald-500/40"
-                                >
-                                    <CheckCircleIcon className="w-10 h-10 text-emerald-500" />
-                                </motion.div>
-                                <div className="space-y-2">
-                                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Enrollment Finalized</h3>
-                                    <p className="text-emerald-500 font-mono tracking-[0.4em] text-lg">SID: {provisionedData?.student_id_number}</p>
-                                    <p className="text-white/40 text-sm font-medium max-w-lg mx-auto leading-relaxed mt-3 italic">
-                                        Registry node successfully initialized. Student profile is now active.
-                                    </p>
+                {/* ═══ MAIN BODY (GRID SYSTEM) ═══ */}
+                <main className="flex-grow grid grid-cols-12 overflow-hidden">
+                    {/* Left Sidebar / Meta Panel */}
+                    <aside className="col-span-12 lg:col-span-3 border-r border-white/[0.03] bg-bg-card/30 p-8 space-y-8 overflow-y-auto custom-scrollbar">
+                        <div>
+                            <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6">Vault Summary</h3>
+                            <div className="space-y-4">
+                                <SummaryBadge label="Total Artifacts" value={totalDocs} color="primary" />
+                                <SummaryBadge label="Verified Assets" value={verifiedDocs} color="success" />
+                                <SummaryBadge label="Pending Review" value={submittedDocs} color="warning" />
+                                <SummaryBadge label="Missing mandatory" value={docs.filter(d => d.status === 'Missing').length} color="error" />
+                            </div>
+                        </div>
+
+                        <div className="pt-8 border-t border-white/[0.03]">
+                            <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Security Protocol</h3>
+                            <div className="p-4 rounded-xl bg-accent-success/5 border border-accent-success/10 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheckIcon className="w-4 h-4 text-accent-success" />
+                                    <span className="text-[10px] font-black text-accent-success uppercase tracking-widest">End-to-End Encrypted</span>
                                 </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                <p className="text-[9px] text-white/30 leading-relaxed uppercase tracking-wider font-bold">
+                                    All documents are audit-logged and stored in verified compliance nodes.
+                                </p>
+                            </div>
+                        </div>
+                    </aside>
 
-                    {finalizeState !== 'success' && (
-                        <div className="p-5 sm:p-8">
-                            {/* ═══ VAULT TAB ═══ */}
-                            {activeTab === 'vault' && (
-                                <div className="space-y-6">
-                                    {/* Vault Status Metrics */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                        <VaultMetricCard label="Total Artifacts" value={totalDocs} color="indigo" />
-                                        <VaultMetricCard label="Verified" value={verifiedDocs} color="emerald" />
-                                        <VaultMetricCard label="Pending" value={pendingDocs} color="amber" />
-                                        <VaultMetricCard label="Rejected" value={rejectedDocs} color="red" />
+                    {/* Primary Content Area */}
+                    <section className="col-span-12 lg:col-span-9 overflow-y-auto custom-scrollbar p-8">
+                        {finalizeState === 'success' ? (
+                            <SuccessBanner provisionedData={provisionedData} />
+                        ) : activeTab === 'vault' ? (
+                            <div className="space-y-8 max-w-5xl mx-auto">
+                                {/* Horizontal Compliance Summary Strip */}
+                                <div className="flex items-center justify-between gap-4 p-6 bg-bg-card/80 border border-white/[0.03] rounded-2xl shadow-xl">
+                                    <div className="flex items-center gap-12">
+                                        <div className="space-y-1">
+                                            <p className="text-2xl font-black text-white leading-none">{totalDocs}</p>
+                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Total Required</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-2xl font-black text-accent-success leading-none">{verifiedDocs}</p>
+                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Verified</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-2xl font-black text-accent-warning leading-none">{submittedDocs}</p>
+                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Submitted</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-2xl font-black text-accent-error leading-none">{docs.filter(d => d.status === 'Missing').length}</p>
+                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Missing</p>
+                                        </div>
                                     </div>
 
-                                    {/* Progress Bar */}
-                                    <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Compliance Readiness</span>
-                                            <span className={clsx("text-[11px] font-black uppercase tracking-[0.15em]",
-                                                progressPercentage === 100 ? "text-emerald-400" : progressPercentage > 50 ? "text-indigo-400" : "text-amber-400"
-                                            )}>{progressPercentage}%</span>
+                                    <div className="flex items-center gap-6 pl-8 border-l border-white/[0.05]">
+                                        <div className="text-right space-y-1">
+                                            <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Overall Compliance</p>
+                                            <p className="text-3xl font-black text-white leading-none tracking-tighter">{progressPercentage}%</p>
                                         </div>
-                                        <div className="w-full h-2 bg-white/[0.04] rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${progressPercentage}%` }}
-                                                transition={{ duration: 1, ease: "easeOut" }}
-                                                className={clsx("h-full rounded-full",
-                                                    progressPercentage === 100 ? "bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]" :
-                                                        progressPercentage > 50 ? "bg-gradient-to-r from-indigo-600 to-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.3)]" :
-                                                            "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]"
-                                                )}
+                                        <div className="w-16 h-16 relative flex items-center justify-center">
+                                            <svg className="w-full h-full -rotate-90">
+                                                <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-white/5" />
+                                                <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6" className="text-accent-primary" strokeDasharray={176} strokeDashoffset={176 - (176 * progressPercentage) / 100} />
+                                            </svg>
+                                            <ShieldCheckIcon className="absolute w-5 h-5 text-accent-primary opacity-50" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Accordion Categories */}
+                                <div className="space-y-4">
+                                    {['Identity Documents', 'Academic Records', 'Financial Records', 'Medical Records', 'Compliance Artifacts'].map(catName => {
+                                        const catDocs = docs.filter(d => getDocumentCategory(d.document_name) === catName);
+                                        if (catDocs.length === 0 && catName === 'Compliance Artifacts') return null;
+                                        return (
+                                            <DocumentCategoryAccordion
+                                                key={catName}
+                                                category={catName}
+                                                docs={catDocs}
+                                                onVerify={handleVerifyDoc}
+                                                onReject={handleRejectDoc}
+                                                onDownload={handleDownload}
+                                                downloadingId={downloadingId}
                                             />
-                                        </div>
-                                    </div>
-
-                                    {/* Toolbar */}
-                                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-5 bg-red-500 rounded-full shadow-[0_0_12px_rgba(239,68,68,0.3)]" />
-                                            <h4 className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">Mandatory Documents</h4>
-                                            <span className="text-[9px] font-bold text-white/20 bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.04]">
-                                                {mandatoryDocs.filter(d => d.status === 'Verified').length}/{mandatoryDocs.length}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={fetchDocs}
-                                                className="p-2 rounded-lg bg-white/[0.03] text-white/25 hover:text-white hover:bg-white/[0.06] transition-all border border-white/[0.05]"
-                                            >
-                                                <RefreshCwIcon className={clsx("w-4 h-4", loading && "animate-spin")} />
-                                            </button>
-                                            <button
-                                                onClick={() => setIsRequestingDoc(!isRequestingDoc)}
-                                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-black uppercase tracking-[0.15em] rounded-lg transition-all shadow-lg shadow-indigo-500/10 active:scale-95 border border-indigo-400/20"
-                                            >
-                                                <PlusIcon className="w-3.5 h-3.5" />
-                                                Request Document
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Request New Document Form */}
-                                    <AnimatePresence>
-                                        {isRequestingDoc && (
-                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                                <div className="p-4 bg-indigo-600/[0.06] border border-indigo-500/15 rounded-xl flex items-center gap-3">
-                                                    <input
-                                                        value={newDocName} onChange={e => setNewDocName(e.target.value)}
-                                                        placeholder="Enter document name..."
-                                                        className="flex-1 bg-transparent border-none outline-none text-white text-sm font-medium placeholder:text-white/20"
-                                                        autoFocus
-                                                        onKeyDown={e => e.key === 'Enter' && handleRequestDoc()}
-                                                    />
-                                                    <button
-                                                        onClick={handleRequestDoc}
-                                                        disabled={requestingLoading || !newDocName.trim()}
-                                                        className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase active:scale-90 transition-transform disabled:opacity-40"
-                                                    >
-                                                        {requestingLoading ? <Spinner size="sm" /> : 'Add'}
-                                                    </button>
-                                                    <button onClick={() => setIsRequestingDoc(false)} className="p-2 text-white/30 hover:text-white rounded-lg hover:bg-white/5 transition-all">
-                                                        <XIcon className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-
-                                    {/* ═══ MANDATORY DOCUMENTS ═══ */}
-                                    <div className="space-y-2">
-                                        {mandatoryDocs.length > 0 ? (
-                                            mandatoryDocs.map((doc, idx) => (
-                                                <DocumentRow
-                                                    key={doc.id}
-                                                    doc={doc}
-                                                    index={idx}
-                                                    expanded={expandedDoc === doc.id}
-                                                    onToggle={() => setExpandedDoc(expandedDoc === doc.id ? null : doc.id)}
-                                                    onVerify={() => handleVerifyDoc(doc.id)}
-                                                    onReject={() => handleRejectDoc(doc.id)}
-                                                    onDownload={() => handleDownload(doc)}
-                                                    downloading={downloadingId === doc.id}
-                                                />
-                                            ))
-                                        ) : (
-                                            <div className="space-y-3">
-                                                <EmptySlot label="No mandatory documents found in vault" />
-                                                <button
-                                                    onClick={handleInitializeCompliance}
-                                                    disabled={seedingDocs}
-                                                    className="w-full py-4 rounded-xl border border-dashed border-indigo-500/20 hover:border-indigo-500/40 bg-indigo-500/[0.03] hover:bg-indigo-500/[0.06] text-[10px] font-black uppercase text-indigo-400/60 hover:text-indigo-400 transition-all tracking-[0.2em] flex items-center justify-center gap-3"
-                                                >
-                                                    {seedingDocs ? (
-                                                        <><Spinner size="sm" /> Seeding Documents...</>
-                                                    ) : (
-                                                        <><PlusIcon className="w-4 h-4" /> Initialize Compliance Protocol</>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* ═══ SUPPORTING DOCUMENTS ═══ */}
-                                    <div className="space-y-3 mt-8">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-5 bg-indigo-500 rounded-full shadow-[0_0_12px_rgba(99,102,241,0.3)]" />
-                                            <h4 className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">Supporting Evidence</h4>
-                                            <span className="text-[9px] font-bold text-white/20 bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.04]">
-                                                {supportingDocs.length}
-                                            </span>
-                                        </div>
-
-                                        {supportingDocs.length > 0 ? (
-                                            supportingDocs.map((doc, idx) => (
-                                                <DocumentRow
-                                                    key={doc.id}
-                                                    doc={doc}
-                                                    index={idx}
-                                                    expanded={expandedDoc === doc.id}
-                                                    onToggle={() => setExpandedDoc(expandedDoc === doc.id ? null : doc.id)}
-                                                    onVerify={() => handleVerifyDoc(doc.id)}
-                                                    onReject={() => handleRejectDoc(doc.id)}
-                                                    onDownload={() => handleDownload(doc)}
-                                                    downloading={downloadingId === doc.id}
-                                                />
-                                            ))
-                                        ) : (
-                                            <EmptySlot label="No supporting evidence provided" />
-                                        )}
-                                    </div>
+                                        );
+                                    })}
                                 </div>
-                            )}
-
-                            {/* ═══ IDENTITY TAB ═══ */}
-                            {activeTab === 'identity' && (
-                                <div className="space-y-6">
-                                    <div className="bg-white/[0.015] border border-white/[0.05] rounded-2xl p-6 space-y-6 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/[0.04] blur-[80px] -mr-24 -mt-24" />
-                                        <IdentityMeta
-                                            icon={<UserIcon className="w-4.5 h-4.5" />}
-                                            label="Parent / Guardian"
-                                            value={admission.parent_name || (studentData?.parent_guardian_details ? "REGISTRY_LINKED" : "")}
-                                            subValue={admission.parent_name ? "Primary Contact" : "System Placeholder"}
-                                            color="indigo"
-                                        />
-                                        <IdentityMeta
-                                            icon={<MailIcon className="w-4.5 h-4.5" />}
-                                            label="Comm-Link Email"
-                                            value={admission.parent_email || "PROTOCOL_PENDING"}
-                                            color="purple"
-                                        />
-                                        <IdentityMeta
-                                            icon={<PhoneIcon className="w-4.5 h-4.5" />}
-                                            label="Verified Phone"
-                                            value={admission.parent_phone || "UNLINKED_NODE"}
-                                            color="pink"
-                                        />
-                                        <IdentityMeta
-                                            icon={<LocationIcon className="w-4.5 h-4.5" />}
-                                            label="Residential Address"
-                                            value={admission.address || "NO ADDRESS RECORDED"}
-                                            color="indigo"
-                                        />
-                                        <IdentityMeta
-                                            icon={<AlertTriangleIcon className="w-4.5 h-4.5" />}
-                                            label="Emergency Contact"
-                                            value={admission.emergency_contact || "NOT SET"}
-                                            color="purple"
-                                        />
-
-                                        {admission.medical_info && (
-                                            <div className="p-4 bg-red-500/[0.06] border border-red-500/15 rounded-xl">
-                                                <p className="text-[9px] font-black text-red-500 uppercase tracking-[0.15em] mb-1">Medical Alert</p>
-                                                <p className="text-sm text-red-200/80 font-medium">{admission.medical_info}</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Additional Info Cards */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {admission.date_of_birth && (
-                                            <InfoCard label="Date of Birth" value={new Date(admission.date_of_birth).toLocaleDateString(undefined, { day: '2-digit', month: 'long', year: 'numeric' })} />
-                                        )}
-                                        {admission.gender && (
-                                            <InfoCard label="Gender" value={admission.gender} />
-                                        )}
-                                        <InfoCard label="Status" value={admission.status} />
-                                        <InfoCard label="Submitted" value={admission.submitted_at ? new Date(admission.submitted_at).toLocaleDateString() : 'N/A'} />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* ═══ FOOTER ═══ */}
-                <footer className="p-5 sm:px-8 bg-[#04060a]/80 border-t border-white/[0.04] backdrop-blur-3xl flex flex-col sm:flex-row items-center justify-between gap-4 z-20">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div className={clsx("w-2 h-2 rounded-full animate-pulse shrink-0",
-                            admission.status === 'Enrolled' ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" :
-                                allMandatoryVerified ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" :
-                                    "bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]")} />
-                        <div className="min-w-0">
-                            <span className="text-[10px] font-black uppercase text-white/40 tracking-[0.2em] block truncate">
-                                {admission.status === 'Enrolled' ? "Enrollment Active" :
-                                    allMandatoryVerified ? "Ready for Finalization" :
-                                        `${mandatoryDocs.filter(d => d.status !== 'Verified').length} Mandatory Pending`}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        {!allMandatoryVerified && admission.status !== 'Enrolled' && (
-                            <p className="text-[9px] font-bold text-amber-500/50 uppercase tracking-wider text-right max-w-[180px] leading-relaxed hidden sm:block">
-                                Verify all mandatory documents to proceed
-                            </p>
-                        )}
-                        {admission.status === 'Enrolled' ? (
-                            <button
-                                onClick={() => { onClose(); onNavigate?.('Student Management'); }}
-                                className="flex-1 sm:flex-none px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-indigo-500/10 active:scale-95 border border-indigo-400/20"
-                            >
-                                <UsersIcon className="w-4 h-4" /> View in Directory
-                            </button>
+                            </div>
                         ) : (
-                            <button
-                                onClick={handleFinalize}
-                                disabled={!allMandatoryVerified || finalizeState === 'processing'}
-                                className={clsx(
-                                    "flex-1 sm:flex-none px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-95",
-                                    allMandatoryVerified
-                                        ? "bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/20 shadow-xl shadow-indigo-500/10"
-                                        : "bg-white/[0.03] text-white/15 border border-white/[0.04] cursor-not-allowed"
-                                )}
-                            >
-                                {finalizeState === 'processing' ? <Spinner size="sm" /> : (
-                                    <><ShieldCheckIcon className="w-4 h-4" /> Finalize Enrollment</>
-                                )}
-                            </button>
+                            <IdentityTab admission={admission} />
                         )}
-                    </div>
-                </footer>
-            </div>
-            {viewStudentProfile && studentData && (
-                <StudentProfileModal
-                    student={studentData}
-                    onClose={() => setViewStudentProfile(false)}
-                    onUpdate={() => { }}
-                />
-            )}
+                    </section>
+                </main>
+            </motion.div>
         </div>
     );
 };
 
-// ═══ SUB-COMPONENTS ═══
+// ═══ HELPER COMPONENTS ═══
 
-function VaultMetricCard({ label, value, color }: { label: string; value: number; color: string }) {
-    const colorMap: Record<string, string> = {
-        indigo: "from-indigo-500/10 to-indigo-500/[0.02] border-indigo-500/10 text-indigo-400",
-        emerald: "from-emerald-500/10 to-emerald-500/[0.02] border-emerald-500/10 text-emerald-400",
-        amber: "from-amber-500/10 to-amber-500/[0.02] border-amber-500/10 text-amber-400",
-        red: "from-red-500/10 to-red-500/[0.02] border-red-500/10 text-red-400",
+function SummaryBadge({ label, value, color }: { label: string, value: number, color: 'primary' | 'success' | 'warning' | 'error' }) {
+    const colorMap = {
+        primary: 'text-accent-primary border-accent-primary/20 bg-accent-primary/5',
+        success: 'text-accent-success border-accent-success/20 bg-accent-success/5',
+        warning: 'text-accent-warning border-accent-warning/20 bg-accent-warning/5',
+        error: 'text-accent-error border-accent-error/20 bg-accent-error/5',
     };
+
+    return (
+        <div className={clsx("p-4 rounded-xl border flex items-center justify-between", colorMap[color])}>
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</span>
+            <span className="text-xl font-black">{value}</span>
+        </div>
+    );
+}
+
+function SuccessBanner({ provisionedData }: any) {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={clsx("bg-gradient-to-br border rounded-xl p-4 text-center", colorMap[color])}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-16 flex flex-col items-center justify-center text-center gap-6"
         >
-            <p className="text-2xl font-black">{value}</p>
-            <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-50 mt-1">{label}</p>
+            <div className="w-24 h-24 bg-accent-success/10 rounded-3xl flex items-center justify-center ring-4 ring-accent-success/20 overflow-hidden shadow-2xl">
+                <ShieldCheckIcon className="w-12 h-12 text-accent-success" />
+            </div>
+            <div className="space-y-2">
+                <h3 className="text-4xl font-black text-white uppercase tracking-tighter">Enrollment Secure</h3>
+                <p className="text-accent-success font-mono uppercase tracking-[0.4em] text-lg">SID: {provisionedData?.student_id_number}</p>
+            </div>
+            <p className="text-white/30 text-sm max-w-sm mx-auto leading-relaxed font-bold uppercase tracking-widest">
+                Identity and compliance verified. Student record is now globally active.
+            </p>
         </motion.div>
     );
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
-            <p className="text-[9px] font-black text-white/25 uppercase tracking-[0.15em] mb-1">{label}</p>
-            <p className="text-sm font-bold text-white/70 uppercase">{value}</p>
-        </div>
-    );
+interface DocAccordionProps {
+    category: string;
+    docs: any[];
+    onVerify: (id: number) => void;
+    onReject: (id: number) => void;
+    onDownload: (doc: any) => void;
+    downloadingId: number | null;
 }
 
-function IdentityMeta({ icon, label, value, subValue, color }: any) {
-    const colorMap: any = {
-        indigo: "bg-indigo-500/10 text-indigo-400 border-indigo-500/15",
-        purple: "bg-purple-500/10 text-purple-400 border-purple-500/15",
-        pink: "bg-pink-500/10 text-pink-400 border-pink-500/15",
-    };
-    const isEmpty = !value || value.includes('PENDING') || value.includes('UNLINKED');
+function DocumentCategoryAccordion({ category, docs, onVerify, onReject, onDownload, downloadingId }: DocAccordionProps) {
+    const [isExpanded, setIsExpanded] = useState(true);
+    const verified = docs.filter(d => d.status === 'Verified').length;
+    const isComplete = verified === docs.length;
 
     return (
-        <div className="flex items-start sm:items-center gap-4 group/item transition-all hover:translate-x-1 duration-300">
-            <div className={clsx("p-3 rounded-xl border transition-all duration-300 group-hover/item:scale-105 shrink-0", colorMap[color])}>{icon}</div>
-            <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between mb-0.5">
-                    <p className="text-[9px] font-bold text-white/25 uppercase tracking-[0.15em]">{label}</p>
-                    {subValue && <span className="text-[7px] font-black text-indigo-500/40 uppercase tracking-widest hidden sm:inline">{subValue}</span>}
+        <div className="bg-bg-card/40 border border-white/[0.03] rounded-2xl overflow-hidden shadow-lg transition-all hover:border-white/[0.06]">
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full px-8 py-5 flex items-center justify-between hover:bg-white/[0.02] transition-all"
+            >
+                <div className="flex items-center gap-6">
+                    <div className={clsx("w-1.5 h-6 rounded-full transition-colors", isComplete ? "bg-accent-success shadow-[0_0_10px_rgba(34,197,94,0.3)]" : "bg-accent-primary")} />
+                    <div className="text-left">
+                        <h4 className="text-[11px] font-black text-white tracking-[0.2em] uppercase">{category}</h4>
+                        <div className="flex items-center gap-3 mt-1">
+                            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{docs.length} Requirements</span>
+                            <div className="w-1 h-1 rounded-full bg-white/10" />
+                            <span className={clsx("text-[10px] font-black uppercase tracking-widest", isComplete ? "text-accent-success" : "text-accent-primary/60")}>
+                                {verified}/{docs.length} Complete
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <p className={clsx(
-                    "font-bold text-sm sm:text-base tracking-tight uppercase leading-tight transition-colors break-all",
-                    isEmpty ? "text-white/10 italic text-xs" : "text-white group-hover/item:text-indigo-400"
-                )}>{value}</p>
-            </div>
+                <ChevronDownIcon className={clsx("w-5 h-5 text-white/20 transition-transform duration-300", isExpanded && "rotate-180")} />
+            </button>
+
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden border-t border-white/5 bg-black/20"
+                    >
+                        <div className="p-4 space-y-2">
+                            {docs.map(doc => (
+                                <DocumentCard
+                                    key={doc.id}
+                                    doc={doc}
+                                    onVerify={onVerify}
+                                    onReject={onReject}
+                                    onDownload={onDownload}
+                                    downloadingId={downloadingId}
+                                />
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
-function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, downloading, index }: any) {
-    const isVerified = doc.status === 'Verified';
-    const isRejected = doc.status === 'Rejected';
-    const isMissing = doc.status === 'Missing';
+function DocumentCard({ doc, onVerify, onReject, onDownload, downloadingId }: any) {
+    const [expanded, setExpanded] = useState(false);
     const file = doc.admission_documents?.[0];
-
-    const statusConfig = isVerified
-        ? { bg: "bg-emerald-500/8", border: "border-emerald-500/15", icon: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", accent: "emerald", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/15" }
-        : isRejected
-            ? { bg: "bg-red-500/5", border: "border-red-500/15", icon: "bg-red-500/10 text-red-400 border-red-500/20", accent: "red", badge: "bg-red-500/10 text-red-400 border-red-500/15" }
-            : isMissing
-                ? { bg: "bg-white/[0.01]", border: "border-white/[0.04]", icon: "bg-white/[0.03] text-white/15 border-white/[0.05]", accent: "gray", badge: "bg-white/5 text-white/20 border-white/[0.06]" }
-                : { bg: "bg-amber-500/5", border: "border-amber-500/10", icon: "bg-amber-500/10 text-amber-500 border-amber-500/20", accent: "amber", badge: "bg-amber-500/10 text-amber-500 border-amber-500/15" };
+    const status = doc.status;
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.04 }}
-            className={clsx(
-                "group relative border transition-all duration-300 rounded-xl overflow-hidden cursor-pointer",
-                expanded ? `${statusConfig.bg} ${statusConfig.border} shadow-lg` : `border-white/[0.04] hover:border-white/[0.08] bg-white/[0.01] hover:bg-white/[0.02]`
-            )}
-            onClick={onToggle}
+            layout
+            className="flex flex-col bg-bg-card/40 border border-white/[0.03] rounded-xl hover:bg-bg-card/60 transition-all overflow-hidden"
         >
-            {/* Verified Left Accent */}
-            {isVerified && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]" />}
-
-            <div className="px-5 py-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4 min-w-0">
-                    {/* Status Icon */}
-                    <div className={clsx("w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 transition-all", statusConfig.icon)}>
-                        {isVerified ? <ShieldCheckIcon className="w-5 h-5" /> :
-                            isMissing ? <FileTextIcon className="w-5 h-5 opacity-30" /> :
-                                isRejected ? <XIcon className="w-5 h-5" /> :
-                                    <AlertTriangleIcon className="w-5 h-5" />}
+            <div className="flex items-center justify-between gap-6 p-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className={clsx("w-10 h-10 rounded-lg flex items-center justify-center border transition-all",
+                        status === 'Verified' ? "bg-accent-success/10 border-accent-success/20 text-accent-success" :
+                            status === 'Submitted' ? "bg-accent-warning/10 border-accent-warning/20 text-accent-warning shadow-[0_0_15px_rgba(245,158,11,0.1)]" :
+                                "bg-white/[0.03] border-white/10 text-white/20"
+                    )}>
+                        {status === 'Verified' ? <ShieldCheckIcon className="w-5 h-5" /> : <FileTextIcon className="w-5 h-5" />}
                     </div>
-
                     <div className="min-w-0">
-                        <h4 className={clsx(
-                            "text-xs font-black uppercase tracking-wider transition-colors truncate",
-                            isMissing ? "text-white/20" : "text-white/80 group-hover:text-white"
-                        )}>
-                            {doc.document_name}
-                        </h4>
+                        <div className="flex items-center gap-2">
+                            <p className="text-[11px] font-black text-white/80 uppercase tracking-widest truncate">
+                                {doc.document_name}
+                            </p>
+                            {doc.is_mandatory && <span className="text-[8px] text-accent-primary bg-accent-primary/10 px-1.5 py-0.5 rounded border border-accent-primary/20 font-black">REQUIRED</span>}
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
-                            <span className={clsx("text-[8px] font-black uppercase tracking-[0.12em] px-2 py-0.5 rounded-md border", statusConfig.badge)}>
-                                {doc.status}
+                            <span className={clsx("text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-1.5",
+                                status === 'Verified' ? "text-accent-success" :
+                                    status === 'Submitted' ? "text-accent-warning" :
+                                        status === 'Rejected' ? "text-accent-error" :
+                                            "text-white/20"
+                            )}>
+                                <div className={clsx("w-1 h-1 rounded-full", status === 'Verified' ? "bg-accent-success" : status === 'Submitted' ? "bg-accent-warning" : status === 'Rejected' ? "bg-accent-error" : "bg-white/10")} />
+                                {status}
                             </span>
-                            {doc.is_mandatory && !isVerified && (
-                                <span className="flex items-center gap-1 text-[7px] font-black text-red-500/40 uppercase tracking-wider">
-                                    <div className="w-1 h-1 rounded-full bg-red-500/50" /> Required
-                                </span>
+                            {file && (
+                                <>
+                                    <div className="w-0.5 h-0.5 rounded-full bg-white/10" />
+                                    <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
+                                        Last Updated: {new Date(file.uploaded_at).toLocaleDateString()}
+                                    </span>
+                                </>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-                    {file ? (
-                        <div className="flex items-center gap-1 bg-white/[0.03] p-1 rounded-lg border border-white/[0.05]">
-                            <button onClick={() => StorageService.getSignedUrl(BUCKETS.DOCUMENTS, file.storage_path).then(url => window.open(url, '_blank'))} className="p-2 text-white/20 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Preview"><EyeIcon className="w-3.5 h-3.5" /></button>
-                            <button onClick={onDownload} className="p-2 text-white/20 hover:text-white hover:bg-white/5 rounded-lg transition-all" title="Download">{downloading ? <Spinner size="sm" /> : <DownloadIcon className="w-3.5 h-3.5" />}</button>
-                        </div>
-                    ) : (
-                        <span className="text-[8px] font-black uppercase tracking-[0.12em] text-white/15 italic mr-1">Awaiting Upload</span>
+                <div className="flex items-center gap-2">
+                    {file && (
+                        <button
+                            onClick={() => onDownload(doc)}
+                            className="p-2 rounded-lg bg-white/[0.03] text-white/40 hover:text-white hover:bg-white/[0.06] border border-white/[0.05] transition-all"
+                        >
+                            {downloadingId === doc.id ? <RefreshCwIcon className="w-4 h-4 animate-spin" /> : <DownloadIcon className="w-4 h-4" />}
+                        </button>
                     )}
-                    {!isVerified && (
-                        <div className="flex gap-1">
-                            <button onClick={onVerify} className="px-3 py-1.5 bg-emerald-600/15 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all border border-emerald-500/15" title="Approve document">Verify</button>
-                            <button onClick={onReject} className="px-3 py-1.5 bg-red-600/15 hover:bg-red-600 text-red-400 hover:text-white text-[8px] font-black uppercase tracking-wider rounded-lg transition-all border border-red-500/15" title="Reject document">Reject</button>
-                        </div>
-                    )}
-                    <ChevronDownIcon className={clsx("w-4 h-4 transition-all duration-400", expanded ? "rotate-180 text-white/40" : "text-white/10")} />
+                    <button
+                        onClick={() => setExpanded(!expanded)}
+                        className={clsx("p-2 rounded-lg bg-white/[0.03] border border-white/[0.05] transition-all", expanded ? "bg-accent-primary/20 text-accent-primary" : "text-white/20 hover:text-white")}
+                    >
+                        <EyeIcon className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
 
             <AnimatePresence>
                 {expanded && (
                     <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="px-5 pb-5 overflow-hidden"
+                        initial={{ height: 0 }}
+                        animate={{ height: 'auto' }}
+                        exit={{ height: 0 }}
+                        className="overflow-hidden border-t border-white/[0.03] bg-black/20"
                     >
-                        <div className="pt-4 border-t border-white/[0.03] space-y-4">
-                            {isRejected && (
-                                <div className="p-4 bg-red-500/[0.05] border border-red-500/10 rounded-xl flex items-start gap-3">
-                                    <AlertTriangleIcon className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-[9px] font-black text-red-500/50 uppercase tracking-wider">Rejection Reason</p>
-                                        <p className="text-xs text-red-400/80 font-medium italic mt-1">"{doc.rejection_reason}"</p>
-                                    </div>
+                        <div className="p-6 space-y-6">
+                            {(status === 'Submitted' || status === 'Pending' || status === 'Missing') && (
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => onVerify(doc.id)}
+                                        className="flex-1 py-3 bg-accent-success/10 hover:bg-accent-success text-accent-success hover:text-white border border-accent-success/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                    >
+                                        Verify & Secure Artifact
+                                    </button>
+                                    <button
+                                        onClick={() => onReject(doc.id)}
+                                        className="flex-1 py-3 bg-accent-error/10 hover:bg-accent-error text-accent-error hover:text-white border border-accent-error/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                    >
+                                        Reject Asset
+                                    </button>
                                 </div>
                             )}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div>
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-wider mb-2">Vault Audit Trail</p>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                            <p className="text-[10px] text-white/50 font-medium">
-                                                Requirement generated on {new Date(doc.created_at).toLocaleDateString()}
-                                            </p>
+
+                            {doc.rejection_reason && (
+                                <div className="p-4 rounded-xl bg-accent-error/5 border border-accent-error/10">
+                                    <p className="text-[9px] font-black text-accent-error uppercase tracking-widest mb-1 leading-none">Protocol Violation Reason</p>
+                                    <p className="text-sm font-bold text-white/60">{doc.rejection_reason}</p>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-8 pt-4">
+                                <div className="space-y-4">
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Audit Records</p>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-accent-primary" />
+                                            <p className="text-[11px] font-bold text-white/40 uppercase">Requirement initialized</p>
                                         </div>
                                         {file && (
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                <p className="text-[10px] text-white/50 font-medium">
-                                                    Uploaded by <span className="text-indigo-400 font-bold">{file.uploader?.display_name || 'System'}</span> ({file.uploader?.role || 'User'})
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-accent-success" />
+                                                <p className="text-[11px] font-bold text-white/40 uppercase">
+                                                    Uploaded by <span className="text-accent-primary">{file.uploader?.display_name || 'System'}</span>
                                                 </p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-1">
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-wider">Last Activity</p>
-                                    <span className="px-2.5 py-1 bg-white/[0.02] border border-white/[0.06] rounded-md text-[10px] font-mono text-white/25 italic">
-                                        {file ? new Date(file.uploaded_at).toLocaleString([], { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                <div className="text-right">
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-2">Vault Location</p>
+                                    <span className="inline-block px-3 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-lg text-[10px] font-mono text-white/30 truncate max-w-full italic">
+                                        {file?.storage_path || 'AWAITING_UPLINK'}
                                     </span>
                                 </div>
                             </div>
@@ -1036,11 +922,69 @@ function DocumentRow({ doc, expanded, onToggle, onVerify, onReject, onDownload, 
     );
 }
 
-function EmptySlot({ label }: { label: string }) {
+function IdentityTab({ admission }: any) {
     return (
-        <div className="py-10 flex flex-col items-center gap-3 border border-dashed border-white/[0.06] rounded-xl bg-white/[0.01]">
-            <FileTextIcon className="w-8 h-8 text-white/[0.06]" />
-            <p className="text-[10px] font-bold text-white/15 uppercase tracking-[0.2em]">{label}</p>
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <InfoCard
+                    title="Registry Details"
+                    icon={<FileTextIcon className="w-4 h-4" />}
+                    data={[
+                        { label: 'Application Number', value: admission.application_number },
+                        { label: 'Grade of Enrollment', value: `Standard ${admission.grade}` },
+                        { label: 'Registry Status', value: admission.status },
+                        { label: 'Last Update', value: new Date().toLocaleDateString() }
+                    ]}
+                />
+                <InfoCard
+                    title="Guardian Context"
+                    icon={<UserIcon className="w-4 h-4" />}
+                    data={[
+                        { label: 'Guardian Email', value: admission.parent_email },
+                        { label: 'Sync Status', value: 'Synchronized with Cloud Registry' },
+                        { label: 'Communication Node', value: 'Endpoint Active' }
+                    ]}
+                />
+            </div>
+
+            <div className="p-8 bg-bg-card/30 border border-white/[0.03] rounded-3xl space-y-4">
+                <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Compliance Footprint</h4>
+                <div className="grid grid-cols-4 gap-6">
+                    <MetaItem label="Age" value={admission.age} />
+                    <MetaItem label="Gender" value={admission.gender} />
+                    <MetaItem label="Address" value={admission.address} isLong />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function InfoCard({ title, icon, data }: any) {
+    return (
+        <div className="bg-bg-card/50 border border-white/[0.03] rounded-2xl p-8 space-y-6 hover:border-white/10 transition-all">
+            <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-accent-primary/10 text-accent-primary border border-accent-primary/10">
+                    {icon}
+                </div>
+                <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{title}</h4>
+            </div>
+            <div className="space-y-5">
+                {data.map((item: any, idx: number) => (
+                    <div key={idx} className="flex flex-col gap-1.5">
+                        <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">{item.label}</span>
+                        <span className="text-[11px] font-bold text-white/80 uppercase tracking-wider">{item.value || 'N/A'}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function MetaItem({ label, value, isLong }: { label: string; value: any; isLong?: boolean }) {
+    return (
+        <div className={clsx("flex flex-col gap-1.5", isLong && "col-span-2")}>
+            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">{label}</span>
+            <span className="text-[11px] font-bold text-white/70 uppercase tracking-wider leading-relaxed">{value || 'N/A'}</span>
         </div>
     );
 }
